@@ -8,14 +8,19 @@
 - Quản lý nội dung, category, media
 - Thông báo, feedback, báo cáo, dashboard thống kê
 
-## Khởi tạo project (gợi ý React + Vite)
+## Đã có sẵn
 
-```bash
-cd web-admin
-npm create vite@latest . -- --template react-ts
-npm install
-npm install antd axios react-router-dom
-```
+- **Login** (`/login`) — form đăng nhập admin, mock auth khi backend chưa chạy
+- **Layout admin** — sidebar, header, menu điều hướng
+- **Dashboard** (`/`) — trang tổng quan mẫu
+
+### Tài khoản demo (mock)
+
+| Email | Mật khẩu |
+|-------|----------|
+| `admin@sfinity.com` | `admin123` |
+
+Copy `.env.example` → `.env` và chỉnh `VITE_USE_MOCK_AUTH=false` khi backend sẵn sàng.
 
 ## Cấu trúc gợi ý
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
-import '../../../content/presentation/pages/content_list_page.dart';
+import '../../../../core/constants/route_names.dart';
 import '../../../favorites/presentation/pages/favorites_page.dart';
 import '../../../profile/presentation/pages/profile_page.dart';
 import '../../../search/presentation/pages/search_page.dart';
@@ -41,23 +42,23 @@ class _HomeShellPageState extends State<HomeShellPage> {
               title: const Text('Nội dung'),
               onTap: () {
                 Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ContentListPage()),
-                );
+                context.push(RouteNames.contentList);
               },
             ),
             ListTile(
               leading: const Icon(Icons.settings_outlined),
               title: const Text('Cài đặt'),
-              onTap: () => Navigator.pop(context),
+              onTap: () {
+                Navigator.pop(context);
+                context.push(RouteNames.settings);
+              },
             ),
           ],
         ),
       ),
       body: SafeArea(child: _pages[_currentIndex]),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () => context.push(RouteNames.contentCreate),
         child: const Icon(Icons.add),
       ),
       bottomNavigationBar: BottomNavigationBar(

@@ -32,11 +32,19 @@ Các file `*_page.dart` hiện là **placeholder** — bổ sung logic sau.
 
 ## Chạy
 
+**Chrome (web):**
 ```bash
 cd mobile
 flutter pub get
+flutter run -d chrome
+```
+
+**Android / iOS:**
+```bash
 flutter run
 ```
+
+> Chạy Android emulator thì đổi `apiBaseUrl` trong `app_config.dart` thành `http://10.0.2.2:3000/api`.
 
 ## API
 

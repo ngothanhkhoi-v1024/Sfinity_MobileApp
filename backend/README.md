@@ -1,46 +1,37 @@
 # Sfinity — Backend
 
-API server dùng chung cho **mobile** và **web-admin**.
+API NestJS + Prisma (SQLite) dùng chung cho **mobile** và **web-admin**.
 
-## Phạm vi
-
-- Auth (JWT / refresh token), RBAC (user, admin, roles)
-- CRUD: users, content, categories, media
-- Notifications, feedback, reports, analytics cho dashboard
-
-## Stack gợi ý (chọn một)
-
-| Stack | Khởi tạo |
-|-------|----------|
-| Node.js (NestJS) | `npx @nestjs/cli new .` trong thư mục này |
-| Spring Boot | start.spring.io hoặc Spring Initializr |
-| Firebase / Supabase | console cloud — phù hợp đồ án nhanh |
-
-## Cấu trúc gợi ý (NestJS)
-
-```
-backend/
-├── src/
-│   ├── main.ts
-│   ├── auth/
-│   ├── users/
-│   ├── content/
-│   ├── categories/
-│   ├── media/
-│   ├── notifications/
-│   └── admin/          # endpoints chỉ admin
-├── prisma/ hoặc entities/
-└── package.json
-```
-
-## Biến môi trường
-
-Tạo `.env` (không commit) — tham khảo `.env.example` khi có.
-
-## Chạy dev (ví dụ NestJS)
+## Chạy lần đầu
 
 ```bash
+cd backend
+npm install
+npx prisma migrate dev --name init
+npm run prisma:seed
 npm run start:dev
 ```
 
-Mobile & web-admin trỏ `BASE_URL` tới server local (ví dụ `http://localhost:3000`).
+API: `http://localhost:3000/api`
+
+## Tài khoản seed
+
+| Vai trò | Email | Mật khẩu |
+|---------|-------|----------|
+| Admin | admin@sfinity.com | admin123 |
+| User | user@sfinity.com | user123 |
+
+## Endpoints chính
+
+| Method | Path | Mô tả |
+|--------|------|--------|
+| POST | `/api/auth/login` | Đăng nhập user |
+| POST | `/api/auth/admin/login` | Đăng nhập admin |
+| POST | `/api/auth/register` | Đăng ký |
+| GET | `/api/auth/me` | Profile (JWT) |
+| GET | `/api/content` | Danh sách nội dung |
+| CRUD | `/api/users` | Admin only |
+| CRUD | `/api/categories` | Admin write |
+| GET | `/api/admin/dashboard/stats` | Thống kê admin |
+| GET/POST | `/api/favorites` | Yêu thích |
+| POST | `/api/feedback` | Gửi phản hồi |
