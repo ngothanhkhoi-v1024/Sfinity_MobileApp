@@ -1,8 +1,17 @@
-import { FileTextOutlined, MessageOutlined, TeamOutlined, UserOutlined, WarningOutlined } from '@ant-design/icons';
-import { Card, Col, Row, Spin, Statistic, Typography, message } from 'antd';
+import {
+  FileTextOutlined,
+  FolderOutlined,
+  MessageOutlined,
+  TeamOutlined,
+  UserOutlined,
+  WarningOutlined,
+} from '@ant-design/icons';
+import { Col, Row, Spin, message } from 'antd';
 import { useEffect, useState } from 'react';
 
 import { getDashboardStats, type DashboardStats } from '@/api/dashboard';
+import { PageHeader } from '@/components/common/PageHeader';
+import { StatCard } from '@/components/common/StatCard';
 
 export function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -16,61 +25,79 @@ export function DashboardPage() {
   }, []);
 
   if (loading) {
-    return <Spin size="large" style={{ display: 'block', margin: '80px auto' }} />;
+    return <Spin size="large" style={{ display: 'block', margin: '120px auto' }} />;
   }
 
   return (
-    <div>
-      <Typography.Title level={4} style={{ marginTop: 0 }}>
-        Dashboard
-      </Typography.Title>
-      <Typography.Paragraph type="secondary">
-        Tổng quan hệ thống Sfinity
-      </Typography.Paragraph>
+    <div className="page-enter">
+      <PageHeader
+        title="Dashboard"
+        description="Tổng quan hoạt động hệ thống Sfinity hôm nay"
+      />
 
-      <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic title="Người dùng" value={stats?.users ?? 0} prefix={<UserOutlined />} />
-          </Card>
+      <Row gutter={[20, 20]}>
+        <Col xs={24} sm={12} lg={8} xl={6}>
+          <StatCard
+            label="Người dùng"
+            value={stats?.users ?? 0}
+            icon={<UserOutlined />}
+            accent="#6366f1"
+            iconBg="#eef2ff"
+          />
         </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic title="Nội dung" value={stats?.contents ?? 0} prefix={<FileTextOutlined />} />
-          </Card>
+        <Col xs={24} sm={12} lg={8} xl={6}>
+          <StatCard
+            label="Nội dung"
+            value={stats?.contents ?? 0}
+            icon={<FileTextOutlined />}
+            accent="#8b5cf6"
+            iconBg="#f3e8ff"
+          />
         </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic title="Đã xuất bản" value={stats?.publishedContents ?? 0} />
-          </Card>
+        <Col xs={24} sm={12} lg={8} xl={6}>
+          <StatCard
+            label="Đã xuất bản"
+            value={stats?.publishedContents ?? 0}
+            icon={<FileTextOutlined />}
+            accent="#10b981"
+            iconBg="#d1fae5"
+          />
         </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic title="Admin" value={stats?.admins ?? 0} prefix={<TeamOutlined />} />
-          </Card>
+        <Col xs={24} sm={12} lg={8} xl={6}>
+          <StatCard
+            label="Quản trị viên"
+            value={stats?.admins ?? 0}
+            icon={<TeamOutlined />}
+            accent="#0ea5e9"
+            iconBg="#e0f2fe"
+          />
         </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic title="Danh mục" value={stats?.categories ?? 0} />
-          </Card>
+        <Col xs={24} sm={12} lg={8} xl={6}>
+          <StatCard
+            label="Danh mục"
+            value={stats?.categories ?? 0}
+            icon={<FolderOutlined />}
+            accent="#f59e0b"
+            iconBg="#fef3c7"
+          />
         </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="Phản hồi chờ xử lý"
-              value={stats?.pendingFeedback ?? 0}
-              prefix={<MessageOutlined />}
-            />
-          </Card>
+        <Col xs={24} sm={12} lg={8} xl={6}>
+          <StatCard
+            label="Phản hồi chờ xử lý"
+            value={stats?.pendingFeedback ?? 0}
+            icon={<MessageOutlined />}
+            accent="#ec4899"
+            iconBg="#fce7f3"
+          />
         </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="Báo cáo chờ xử lý"
-              value={stats?.pendingReports ?? 0}
-              prefix={<WarningOutlined />}
-            />
-          </Card>
+        <Col xs={24} sm={12} lg={8} xl={6}>
+          <StatCard
+            label="Báo cáo chờ xử lý"
+            value={stats?.pendingReports ?? 0}
+            icon={<WarningOutlined />}
+            accent="#ef4444"
+            iconBg="#fee2e2"
+          />
         </Col>
       </Row>
     </div>
