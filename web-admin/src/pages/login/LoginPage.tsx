@@ -1,5 +1,5 @@
-import { LockOutlined, MailOutlined } from '@ant-design/icons';
-import { Alert, Button, Card, Form, Input, Typography, theme } from 'antd';
+import { LockOutlined, MailOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
+import { Alert, Button, Card, Form, Input, Typography } from 'antd';
 import { useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 
@@ -14,7 +14,6 @@ export function LoginPage() {
   const { login, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { token } = theme.useToken();
 
   const from = (location.state as { from?: { pathname: string } } | null)?.from?.pathname ?? '/';
 
@@ -36,95 +35,94 @@ export function LoginPage() {
   };
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 24,
-        background: `linear-gradient(135deg, ${token.colorPrimaryBg} 0%, ${token.colorBgLayout} 50%, ${token.colorPrimaryBgHover} 100%)`,
-      }}
-    >
-      <Card
-        style={{ width: '100%', maxWidth: 420, boxShadow: token.boxShadowSecondary }}
-        bordered={false}
-      >
-        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+    <div className="login-page">
+      <div className="login-hero">
+        <div className="login-hero-content">
           <div
             style={{
               width: 56,
               height: 56,
-              borderRadius: 12,
-              background: token.colorPrimary,
-              color: '#fff',
-              display: 'inline-flex',
+              borderRadius: 16,
+              background: 'linear-gradient(135deg, #818cf8, #6366f1)',
+              display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: 24,
+              fontSize: 26,
               fontWeight: 700,
-              marginBottom: 16,
+              marginBottom: 32,
+              boxShadow: '0 12px 32px rgba(99, 102, 241, 0.4)',
             }}
           >
             S
           </div>
-          <Typography.Title level={3} style={{ margin: 0 }}>
-            {config.appName}
-          </Typography.Title>
-          <Typography.Text type="secondary">Đăng nhập để quản trị hệ thống</Typography.Text>
+          <h1>Quản trị Sfinity</h1>
+          <p>
+            Bảng điều khiển hiện đại để quản lý người dùng, nội dung và vận hành hệ thống một cách
+            trực quan, nhanh chóng.
+          </p>
+          <div style={{ marginTop: 40, display: 'flex', alignItems: 'center', gap: 10, opacity: 0.85 }}>
+            <SafetyCertificateOutlined style={{ fontSize: 18 }} />
+            <span style={{ fontSize: 13 }}>Bảo mật JWT · Phân quyền admin</span>
+          </div>
         </div>
+      </div>
 
-        {error && (
-          <Alert type="error" message={error} showIcon style={{ marginBottom: 16 }} />
-        )}
+      <div className="login-panel">
+        <Card className="login-card" bordered={false}>
+          <Typography.Title level={3} style={{ marginTop: 0, marginBottom: 8, fontWeight: 700 }}>
+            Đăng nhập
+          </Typography.Title>
+          <Typography.Text type="secondary" style={{ display: 'block', marginBottom: 28 }}>
+            Chào mừng trở lại. Vui lòng đăng nhập để tiếp tục.
+          </Typography.Text>
 
-        {config.useMockAuth && (
-          <Alert
-            type="info"
-            showIcon
-            style={{ marginBottom: 16 }}
-            message="Chế độ demo"
-            description="admin@sfinity.com / admin123"
-          />
-        )}
+          {error && <Alert type="error" message={error} showIcon style={{ marginBottom: 20 }} />}
 
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={onFinish}
-          requiredMark={false}
-          initialValues={{ email: config.useMockAuth ? 'admin@sfinity.com' : '' }}
-        >
-          <Form.Item
-            name="email"
-            label="Email"
-            rules={[
-              { required: true, message: 'Vui lòng nhập email' },
-              { type: 'email', message: 'Email không hợp lệ' },
-            ]}
-          >
-            <Input prefix={<MailOutlined />} placeholder="admin@sfinity.com" size="large" />
-          </Form.Item>
-
-          <Form.Item
-            name="password"
-            label="Mật khẩu"
-            rules={[{ required: true, message: 'Vui lòng nhập mật khẩu' }]}
-          >
-            <Input.Password
-              prefix={<LockOutlined />}
-              placeholder="••••••••"
-              size="large"
+          {config.useMockAuth && (
+            <Alert
+              type="info"
+              showIcon
+              style={{ marginBottom: 20 }}
+              message="Tài khoản demo"
+              description="admin@sfinity.com / admin123"
             />
-          </Form.Item>
+          )}
 
-          <Form.Item style={{ marginBottom: 0 }}>
-            <Button type="primary" htmlType="submit" block size="large" loading={submitting}>
-              Đăng nhập
-            </Button>
-          </Form.Item>
-        </Form>
-      </Card>
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={onFinish}
+            requiredMark={false}
+            size="large"
+            initialValues={{ email: config.useMockAuth ? 'admin@sfinity.com' : '' }}
+          >
+            <Form.Item
+              name="email"
+              label="Email"
+              rules={[
+                { required: true, message: 'Vui lòng nhập email' },
+                { type: 'email', message: 'Email không hợp lệ' },
+              ]}
+            >
+              <Input prefix={<MailOutlined style={{ color: '#94a3b8' }} />} placeholder="admin@sfinity.com" />
+            </Form.Item>
+
+            <Form.Item
+              name="password"
+              label="Mật khẩu"
+              rules={[{ required: true, message: 'Vui lòng nhập mật khẩu' }]}
+            >
+              <Input.Password prefix={<LockOutlined style={{ color: '#94a3b8' }} />} placeholder="••••••••" />
+            </Form.Item>
+
+            <Form.Item style={{ marginBottom: 0, marginTop: 8 }}>
+              <Button type="primary" htmlType="submit" block loading={submitting} style={{ height: 48 }}>
+                Đăng nhập
+              </Button>
+            </Form.Item>
+          </Form>
+        </Card>
+      </div>
     </div>
   );
 }

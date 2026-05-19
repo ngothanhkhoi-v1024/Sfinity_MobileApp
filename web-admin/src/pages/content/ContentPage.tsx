@@ -9,7 +9,6 @@ import {
   Space,
   Table,
   Tag,
-  Typography,
   message,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
@@ -25,6 +24,8 @@ import {
   updateContent,
   type ContentItem,
 } from '@/api/content';
+import { PageHeader } from '@/components/common/PageHeader';
+import { PageShell } from '@/components/common/PageShell';
 
 export function ContentPage() {
   const [data, setData] = useState<ContentItem[]>([]);
@@ -137,17 +138,25 @@ export function ContentPage() {
   ];
 
   return (
-    <div>
-      <Space style={{ width: '100%', justifyContent: 'space-between', marginBottom: 16 }}>
-        <Typography.Title level={4} style={{ margin: 0 }}>
-          Quản lý nội dung
-        </Typography.Title>
-        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-          Thêm nội dung
-        </Button>
-      </Space>
+    <PageShell>
+      <PageHeader
+        title="Quản lý nội dung"
+        description="Tạo, chỉnh sửa và xuất bản bài viết"
+        extra={
+          <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+            Thêm nội dung
+          </Button>
+        }
+      />
 
-      <Table rowKey="id" loading={loading} columns={columns} dataSource={data} pagination={{ pageSize: 10 }} />
+      <Table
+        className="admin-table"
+        rowKey="id"
+        loading={loading}
+        columns={columns}
+        dataSource={data}
+        pagination={{ pageSize: 10 }}
+      />
 
       <Modal
         title={editing ? 'Sửa nội dung' : 'Thêm nội dung'}
@@ -177,6 +186,6 @@ export function ContentPage() {
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </PageShell>
   );
 }

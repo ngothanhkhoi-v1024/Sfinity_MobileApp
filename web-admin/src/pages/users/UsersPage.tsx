@@ -1,9 +1,11 @@
 import { DeleteOutlined, SearchOutlined } from '@ant-design/icons';
-import { Button, Input, Popconfirm, Select, Space, Table, Tag, Typography, message } from 'antd';
+import { Button, Input, Popconfirm, Select, Table, Tag, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useCallback, useEffect, useState } from 'react';
 
 import { deleteUser, fetchUsers, updateUser, type UserRecord } from '@/api/users';
+import { PageHeader } from '@/components/common/PageHeader';
+import { PageShell } from '@/components/common/PageShell';
 
 export function UsersPage() {
   const [data, setData] = useState<UserRecord[]>([]);
@@ -46,13 +48,15 @@ export function UsersPage() {
   };
 
   const columns: ColumnsType<UserRecord> = [
-    { title: 'Tên', dataIndex: 'name', key: 'name' },
-    { title: 'Email', dataIndex: 'email', key: 'email' },
+    { title: 'Tên', dataIndex: 'name', key: 'name', ellipsis: true },
+    { title: 'Email', dataIndex: 'email', key: 'email', ellipsis: true },
     {
       title: 'Vai trò',
       dataIndex: 'role',
       render: (role: string) => (
-        <Tag color={role === 'admin' ? 'purple' : 'blue'}>{role}</Tag>
+        <Tag color={role === 'admin' ? 'purple' : 'geekblue'} style={{ borderRadius: 6 }}>
+          {role}
+        </Tag>
       ),
     },
     {
@@ -62,7 +66,7 @@ export function UsersPage() {
         <Select
           size="small"
           value={status}
-          style={{ width: 120 }}
+          style={{ width: 128 }}
           onChange={(v) => handleStatus(record.id, v)}
           options={[
             { value: 'ACTIVE', label: 'Hoạt động' },
@@ -74,6 +78,7 @@ export function UsersPage() {
     {
       title: 'Thao tác',
       key: 'actions',
+      width: 80,
       render: (_, record) => (
         <Popconfirm title="Xóa người dùng?" onConfirm={() => handleDelete(record.id)}>
           <Button type="text" danger icon={<DeleteOutlined />} />
@@ -83,25 +88,33 @@ export function UsersPage() {
   ];
 
   return (
-    <div>
-      <Typography.Title level={4} style={{ marginTop: 0 }}>
-        Quản lý người dùng
-      </Typography.Title>
-      <Space style={{ marginBottom: 16 }}>
+    <PageShell>
+      <PageHeader
+        title="Quản lý người dùng"
+        description="Xem, tìm kiếm và quản lý trạng thái tài khoản"
+      />
+      <div className="admin-table-toolbar">
         <Input
           placeholder="Tìm theo tên, email..."
-          prefix={<SearchOutlined />}
+          prefix={<SearchOutlined style={{ color: '#94a3b8' }} />}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onPressEnter={load}
-          style={{ width: 280 }}
+          style={{ width: 300, maxWidth: '100%' }}
           allowClear
         />
         <Button type="primary" onClick={load}>
           Tìm kiếm
         </Button>
-      </Space>
-      <Table rowKey="id" loading={loading} columns={columns} dataSource={data} pagination={{ pageSize: 10 }} />
-    </div>
+      </div>
+      <Table
+        className="admin-table"
+        rowKey="id"
+        loading={loading}
+        columns={columns}
+        dataSource={data}
+        pagination={{ pageSize: 10, showSizeChanger: false }}
+      />
+    </PageShell>
   );
 }
