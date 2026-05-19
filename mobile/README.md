@@ -1,6 +1,12 @@
-# Sfinity Mobile
+# Sfinity — Mobile
 
-Flutter app — người dùng cuối (theo yêu cầu đồ án).
+App **Flutter** cho người dùng cuối (Android & iOS).
+
+## Phạm vi
+
+- Authentication, profile, onboarding
+- Danh sách / chi tiết nội dung, tìm kiếm, CRUD, bookmark
+- Thông báo, cài đặt, feedback, media, chia sẻ, lịch sử
 
 ## Cấu trúc `lib/`
 
@@ -31,6 +37,10 @@ cd mobile
 flutter pub get
 flutter run
 ```
+
+## API
+
+Gọi backend tại `backend/` — cấu hình base URL trong `lib/core/config/app_config.dart`.
 
 ## Gói gợi ý (thêm sau)
 
