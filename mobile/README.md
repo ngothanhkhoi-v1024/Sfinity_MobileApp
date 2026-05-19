@@ -8,27 +8,40 @@ App **Flutter** cho người dùng cuối (Android & iOS).
 - Danh sách / chi tiết nội dung, tìm kiếm, CRUD, bookmark
 - Thông báo, cài đặt, feedback, media, chia sẻ, lịch sử
 
-## Khởi tạo project (khi bắt đầu code)
+## Cấu trúc `lib/`
+
+| Thư mục | Nội dung (PDF) |
+|---------|----------------|
+| `core/` | Config, theme, routes, API client |
+| `features/auth/` | Login, Register, Forgot password, OTP |
+| `features/onboarding/` | Welcome, giới thiệu, xin quyền |
+| `features/home/` | Shell: BottomNav, Drawer, FAB |
+| `features/content/` | List, detail, CRUD form |
+| `features/search/` | Tìm kiếm, filter, sort |
+| `features/profile/` | Profile, edit, avatar |
+| `features/favorites/` | Bookmark |
+| `features/history/` | Lịch sử, đã xem |
+| `features/notifications/` | In-app, cài đặt |
+| `features/settings/` | App, ngôn ngữ, theme |
+| `features/feedback/` | Feedback, rate app |
+| `features/security/` | Đổi MK, 2FA, session |
+| `features/media/` | Upload / xem ảnh |
+| `shared/` | Widget dùng chung |
+
+Các file `*_page.dart` hiện là **placeholder** — bổ sung logic sau.
+
+## Chạy
 
 ```bash
 cd mobile
-flutter create . --org com.sfinity --project-name sfinity
-```
-
-## Cấu trúc gợi ý (sau khi `flutter create`)
-
-```
-mobile/
-├── lib/
-│   ├── main.dart
-│   ├── core/           # router, theme, network, errors
-│   ├── features/       # auth, home, profile, ...
-│   └── shared/         # widgets dùng chung
-├── android/
-├── ios/
-└── pubspec.yaml
+flutter pub get
+flutter run
 ```
 
 ## API
 
-Gọi backend tại `backend/` — cấu hình base URL trong `lib/core/config/`.
+Gọi backend tại `backend/` — cấu hình base URL trong `lib/core/config/app_config.dart`.
+
+## Gói gợi ý (thêm sau)
+
+`go_router`, `dio`, `flutter_riverpod`, `shared_preferences`, `image_picker`, `firebase_messaging`

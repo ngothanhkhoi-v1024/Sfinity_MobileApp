@@ -11,6 +11,14 @@ Sfinity/
 └── backend/      # API server — dùng chung cho mobile & web-admin
 ```
 
+## Chạy nhanh
+
+```bash
+cd mobile
+flutter pub get
+flutter run
+```
+
 ## Thứ tự triển khai gợi ý
 
 1. **backend** — auth, user, content API (tối thiểu)
