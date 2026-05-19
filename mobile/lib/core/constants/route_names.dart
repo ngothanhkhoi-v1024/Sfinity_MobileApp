@@ -39,4 +39,5 @@ abstract final class RouteNames {
   static const recentlyViewed = '/history/recent';
   static const feedback = '/feedback';
   static const rateApp = '/feedback/rate';
+  static const report = '/report';
 }

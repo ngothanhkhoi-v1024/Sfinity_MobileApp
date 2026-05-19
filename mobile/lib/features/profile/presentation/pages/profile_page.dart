@@ -22,6 +22,21 @@ class ProfilePage extends StatelessWidget {
         Text(user?['email']?.toString() ?? '', textAlign: TextAlign.center),
         const SizedBox(height: 24),
         ListTile(
+          leading: const Icon(Icons.edit_outlined),
+          title: const Text('Chỉnh sửa hồ sơ'),
+          onTap: () => context.push(RouteNames.editProfile),
+        ),
+        ListTile(
+          leading: const Icon(Icons.lock_outline),
+          title: const Text('Đổi mật khẩu'),
+          onTap: () => context.push(RouteNames.changePassword),
+        ),
+        ListTile(
+          leading: const Icon(Icons.notifications_outlined),
+          title: const Text('Thông báo'),
+          onTap: () => context.push(RouteNames.notifications),
+        ),
+        ListTile(
           leading: const Icon(Icons.article_outlined),
           title: const Text('Nội dung của tôi'),
           onTap: () => context.push(RouteNames.contentList),
@@ -30,6 +45,11 @@ class ProfilePage extends StatelessWidget {
           leading: const Icon(Icons.feedback_outlined),
           title: const Text('Phản hồi'),
           onTap: () => context.push(RouteNames.feedback),
+        ),
+        ListTile(
+          leading: const Icon(Icons.flag_outlined),
+          title: const Text('Báo cáo vi phạm'),
+          onTap: () => context.push(RouteNames.report),
         ),
         ListTile(
           leading: const Icon(Icons.settings_outlined),

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../../core/constants/route_names.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -35,6 +38,16 @@ class _SettingsPageState extends State<SettingsPage> {
               ],
               onChanged: (v) => setState(() => _theme = v ?? ThemeMode.system),
             ),
+          ),
+          ListTile(
+            title: const Text('Thông báo in-app'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(RouteNames.notifications),
+          ),
+          ListTile(
+            title: const Text('Đổi mật khẩu'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(RouteNames.changePassword),
           ),
           const ListTile(
             title: Text('Ngôn ngữ'),

@@ -90,6 +90,10 @@ class _LoginPageState extends State<LoginPage> {
                           : const Text('Đăng nhập'),
                     ),
                     TextButton(
+                      onPressed: () => context.push(RouteNames.forgotPassword),
+                      child: const Text('Quên mật khẩu?'),
+                    ),
+                    TextButton(
                       onPressed: () => context.push(RouteNames.register),
                       child: const Text('Chưa có tài khoản? Đăng ký'),
                     ),

@@ -46,4 +46,9 @@ class AuthState extends ChangeNotifier {
     user = null;
     notifyListeners();
   }
+
+  void setUser(Map<String, dynamic> data) {
+    user = data;
+    notifyListeners();
+  }
 }
