@@ -4,12 +4,15 @@ import {
   LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
+  BellOutlined,
   PictureOutlined,
   SettingOutlined,
   MessageOutlined,
   TagsOutlined,
   TeamOutlined,
   UserOutlined,
+  WarningOutlined,
+  CrownOutlined,
 } from '@ant-design/icons';
 import { Avatar, Button, Dropdown, Layout, Menu, theme, Typography } from 'antd';
 import { useMemo, useState } from 'react';
@@ -26,6 +29,9 @@ const menuItems = [
   { key: '/content', icon: <FileTextOutlined />, label: 'Nội dung' },
   { key: '/categories', icon: <TagsOutlined />, label: 'Danh mục' },
   { key: '/feedback', icon: <MessageOutlined />, label: 'Phản hồi' },
+  { key: '/reports', icon: <WarningOutlined />, label: 'Báo cáo' },
+  { key: '/notifications', icon: <BellOutlined />, label: 'Thông báo' },
+  { key: '/admins', icon: <CrownOutlined />, label: 'Admin' },
   { key: '/media', icon: <PictureOutlined />, label: 'Media' },
   { key: '/settings', icon: <SettingOutlined />, label: 'Cài đặt' },
 ];

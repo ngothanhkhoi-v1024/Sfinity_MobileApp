@@ -4,9 +4,12 @@ import { AdminLayout } from '@/components/layout/AdminLayout';
 import { CategoriesPage } from '@/pages/categories/CategoriesPage';
 import { ContentPage } from '@/pages/content/ContentPage';
 import { DashboardPage } from '@/pages/dashboard/DashboardPage';
+import { AdminsPage } from '@/pages/admins/AdminsPage';
 import { FeedbackPage } from '@/pages/feedback/FeedbackPage';
 import { LoginPage } from '@/pages/login/LoginPage';
+import { NotificationsPage } from '@/pages/notifications/NotificationsPage';
 import { PlaceholderPage } from '@/pages/placeholder/PlaceholderPage';
+import { ReportsPage } from '@/pages/reports/ReportsPage';
 import { UsersPage } from '@/pages/users/UsersPage';
 
 import { ProtectedRoute } from './ProtectedRoute';
@@ -24,6 +27,9 @@ export function AppRoutes() {
             <Route path="content" element={<ContentPage />} />
             <Route path="categories" element={<CategoriesPage />} />
             <Route path="feedback" element={<FeedbackPage />} />
+            <Route path="reports" element={<ReportsPage />} />
+            <Route path="notifications" element={<NotificationsPage />} />
+            <Route path="admins" element={<AdminsPage />} />
             <Route path="media" element={<PlaceholderPage title="Media" />} />
             <Route path="settings" element={<PlaceholderPage title="Cài đặt" />} />
           </Route>

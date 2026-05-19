@@ -8,7 +8,7 @@ export class DashboardService {
   constructor(private prisma: PrismaService) {}
 
   async getStats() {
-    const [users, admins, contents, published, categories, feedback, pendingFeedback] =
+    const [users, admins, contents, published, categories, feedback, pendingFeedback, pendingReports] =
       await Promise.all([
         this.prisma.user.count({ where: { role: UserRole.USER } }),
         this.prisma.user.count({ where: { role: UserRole.ADMIN } }),
@@ -17,6 +17,7 @@ export class DashboardService {
         this.prisma.category.count(),
         this.prisma.feedback.count(),
         this.prisma.feedback.count({ where: { resolved: false } }),
+        this.prisma.report.count({ where: { status: 'PENDING' } }),
       ]);
 
     return {
@@ -28,6 +29,7 @@ export class DashboardService {
       categories,
       feedback,
       pendingFeedback,
+      pendingReports,
     };
   }
 }

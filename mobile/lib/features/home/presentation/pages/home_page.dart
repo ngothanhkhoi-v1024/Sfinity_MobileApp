@@ -22,10 +22,26 @@ class HomePage extends StatelessWidget {
         ),
         Card(
           child: ListTile(
+            leading: const Icon(Icons.notifications_outlined),
+            title: const Text('Thông báo'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(RouteNames.notifications),
+          ),
+        ),
+        Card(
+          child: ListTile(
             leading: const Icon(Icons.feedback_outlined),
             title: const Text('Gửi phản hồi'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push(RouteNames.feedback),
+          ),
+        ),
+        Card(
+          child: ListTile(
+            leading: const Icon(Icons.flag_outlined),
+            title: const Text('Báo cáo vi phạm'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(RouteNames.report),
           ),
         ),
         Card(

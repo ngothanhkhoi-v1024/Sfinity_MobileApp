@@ -22,6 +22,12 @@ enum ContentStatus {
   PUBLISHED
 }
 
+enum ReportStatus {
+  PENDING
+  RESOLVED
+  REJECTED
+}
+
 model User {
   id           String     @id @default(cuid())
   email        String     @unique
@@ -33,9 +39,50 @@ model User {
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
-  contents  Content[]
-  favorites Favorite[]
-  feedbacks Feedback[]
+  contents      Content[]
+  favorites     Favorite[]
+  feedbacks     Feedback[]
+  reports       Report[]
+  notifications Notification[]
+}
+
+model PasswordReset {
+  id        String   @id @default(cuid())
+  email     String
+  code      String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([email])
+}
+
+model Report {
+  id          String       @id @default(cuid())
+  userId      String
+  targetType  String
+  targetId    String?
+  reason      String
+  description String?
+  status      ReportStatus @default(PENDING)
+  resolution  String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  body      String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Category {

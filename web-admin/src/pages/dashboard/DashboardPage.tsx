@@ -1,4 +1,4 @@
-import { FileTextOutlined, MessageOutlined, TeamOutlined, UserOutlined } from '@ant-design/icons';
+import { FileTextOutlined, MessageOutlined, TeamOutlined, UserOutlined, WarningOutlined } from '@ant-design/icons';
 import { Card, Col, Row, Spin, Statistic, Typography, message } from 'antd';
 import { useEffect, useState } from 'react';
 
@@ -60,6 +60,15 @@ export function DashboardPage() {
               title="Phản hồi chờ xử lý"
               value={stats?.pendingFeedback ?? 0}
               prefix={<MessageOutlined />}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Card>
+            <Statistic
+              title="Báo cáo chờ xử lý"
+              value={stats?.pendingReports ?? 0}
+              prefix={<WarningOutlined />}
             />
           </Card>
         </Col>

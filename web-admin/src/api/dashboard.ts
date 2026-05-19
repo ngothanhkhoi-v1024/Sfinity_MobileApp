@@ -9,6 +9,7 @@ export interface DashboardStats {
   categories: number;
   feedback: number;
   pendingFeedback: number;
+  pendingReports: number;
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {
