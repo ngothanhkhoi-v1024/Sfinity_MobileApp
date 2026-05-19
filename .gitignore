@@ -32,3 +32,6 @@ web-admin/dist/
 
 # Backend folder (khi tách riêng)
 backend/node_modules/
+backend/dist/
+backend/prisma/*.db
+backend/prisma/*.db-journal
