@@ -1,0 +1,15 @@
+.idea/
+.vscode/
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
+
+mobile/.dart_tool/
+mobile/build/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+
+backend/node_modules/
+web-admin/node_modules/
