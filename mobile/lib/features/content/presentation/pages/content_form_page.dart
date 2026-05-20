@@ -5,11 +5,13 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/network/api_client.dart';
 
 class ContentFormPage extends StatefulWidget {
-  const ContentFormPage({super.key, this.contentId});
+  const ContentFormPage({super.key, this.contentId, this.contentType = 'document'});
 
   final String? contentId;
+  final String contentType;
 
   bool get isEdit => contentId != null;
+  bool get isDocument => contentType == 'document';
 
   @override
   State<ContentFormPage> createState() => _ContentFormPageState();
@@ -27,6 +29,8 @@ class _ContentFormPageState extends State<ContentFormPage> {
     if (widget.isEdit) _load();
   }
 
+  String get _typeTag => widget.isDocument ? 'document' : 'place';
+
   Future<void> _load() async {
     final data = await ApiClient.instance.get('/content/${widget.contentId}');
     _title.text = data['title']?.toString() ?? '';
@@ -38,7 +42,13 @@ class _ContentFormPageState extends State<ContentFormPage> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
     try {
-      final payload = {'title': _title.text, 'body': _body.text, 'status': 'DRAFT'};
+      final body = [
+        _body.text.trim(),
+        '',
+        '---',
+        'type:$_typeTag',
+      ].join('\n');
+      final payload = {'title': _title.text, 'body': body, 'status': 'DRAFT'};
       if (widget.isEdit) {
         await ApiClient.instance.patch('/content/${widget.contentId}', payload);
       } else {
@@ -59,7 +69,15 @@ class _ContentFormPageState extends State<ContentFormPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.isEdit ? 'Sửa nội dung' : 'Tạo nội dung')),
+      appBar: AppBar(
+        title: Text(
+          widget.isEdit
+              ? 'Sửa bài đăng'
+              : widget.isDocument
+                  ? 'Đăng tài liệu học tập'
+                  : 'Chia sẻ địa điểm',
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -68,13 +86,19 @@ class _ContentFormPageState extends State<ContentFormPage> {
             children: [
               TextFormField(
                 controller: _title,
-                decoration: const InputDecoration(labelText: 'Tiêu đề', border: OutlineInputBorder()),
+                decoration: InputDecoration(
+                  labelText: widget.isDocument ? 'Tên tài liệu / môn học' : 'Tên địa điểm',
+                  border: const OutlineInputBorder(),
+                ),
                 validator: (v) => v != null && v.isNotEmpty ? null : 'Bắt buộc',
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _body,
-                decoration: const InputDecoration(labelText: 'Nội dung', border: OutlineInputBorder()),
+                decoration: InputDecoration(
+                  labelText: widget.isDocument ? 'Mô tả, link, ghi chú…' : 'Mô tả địa điểm',
+                  border: const OutlineInputBorder(),
+                ),
                 maxLines: 8,
                 validator: (v) => v != null && v.length >= 2 ? null : 'Bắt buộc',
               ),
