@@ -3,7 +3,7 @@ import * as bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
 import { config } from '../lib/config';
-import { firebaseAuth } from '../lib/firebase';
+import { getFirebaseAuth } from '../lib/firebase';
 import { HttpError } from '../lib/http-error';
 import { prisma } from '../lib/prisma';
 import type {
@@ -94,10 +94,10 @@ export const authService = {
   },
 
   async loginWithFirebase(dto: FirebaseLoginDto) {
-    let decoded: Awaited<ReturnType<typeof firebaseAuth.verifyIdToken>>;
+    let decoded: Awaited<ReturnType<ReturnType<typeof getFirebaseAuth>['verifyIdToken']>>;
 
     try {
-      decoded = await firebaseAuth.verifyIdToken(dto.idToken);
+      decoded = await getFirebaseAuth().verifyIdToken(dto.idToken);
     } catch {
       throw new HttpError(401, 'Firebase token khong hop le', 'Unauthorized');
     }
