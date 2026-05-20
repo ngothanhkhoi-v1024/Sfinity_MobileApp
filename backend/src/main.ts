@@ -1,22 +1,18 @@
-import { ValidationPipe } from '@nestjs/common';
-import { NestFactory } from '@nestjs/core';
-
-import { AppModule } from './app.module';
+import { createApp } from './app';
+import { config } from './lib/config';
+import { prisma } from './lib/prisma';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  app.setGlobalPrefix('api');
-  app.enableCors({ origin: true, credentials: true });
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      transform: true,
-      forbidNonWhitelisted: true,
-    }),
-  );
-  const port = process.env.PORT ?? 3000;
-  await app.listen(port);
-  console.log(`API: http://localhost:${port}/api`);
+  await prisma.$connect();
+  const app = createApp();
+  const port = config.port;
+  app.listen(port, () => {
+    console.log(`API: http://localhost:${port}/api`);
+    console.log(`Swagger: http://localhost:${port}/api/docs`);
+  });
 }
 
-bootstrap();
+bootstrap().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

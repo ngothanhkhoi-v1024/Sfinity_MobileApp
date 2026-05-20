@@ -44,11 +44,11 @@ flutter run -d chrome
 flutter run
 ```
 
-> Chạy Android emulator thì đổi `apiBaseUrl` trong `app_config.dart` thành `http://10.0.2.2:3000/api`.
+> Base URL backend: chỉnh trong `assets/env/app.env` — file có chú thích từng kiểu run (Chrome, Android emulator, iOS simulator, máy thật / LAN).
 
 ## API
 
-Gọi backend tại `backend/` — cấu hình base URL trong `lib/core/config/app_config.dart`.
+Gọi backend tại `backend/`. Base URL và timeout đọc từ `assets/env/app.env` (được load trong `main.dart` qua `flutter_dotenv`). Đọc [AppConfig](lib/core/config/app_config.dart) trong code.
 
 ## Gói gợi ý (thêm sau)
 
