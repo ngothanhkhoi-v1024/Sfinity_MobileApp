@@ -1,0 +1,54 @@
+import 'package:flutter/foundation.dart';
+
+import '../network/api_client.dart';
+import 'auth_repository.dart';
+
+class AuthState extends ChangeNotifier {
+  AuthState(this._repo);
+
+  final AuthRepository _repo;
+  Map<String, dynamic>? user;
+  bool isLoading = true;
+
+  bool get isAuthenticated => user != null;
+
+  Future<void> init() async {
+    isLoading = true;
+    notifyListeners();
+    try {
+      final token = await _repo.getToken();
+      if (token != null) {
+        ApiClient.instance.setToken(token);
+        user = await _repo.getProfile();
+      }
+    } catch (_) {
+      await _repo.clearSession();
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> login(String email, String password) async {
+    final result = await _repo.login(email, password);
+    user = result['user'] as Map<String, dynamic>;
+    notifyListeners();
+  }
+
+  Future<void> register(String email, String password, String name) async {
+    final result = await _repo.register(email, password, name);
+    user = result['user'] as Map<String, dynamic>;
+    notifyListeners();
+  }
+
+  Future<void> logout() async {
+    await _repo.clearSession();
+    user = null;
+    notifyListeners();
+  }
+
+  void setUser(Map<String, dynamic> data) {
+    user = data;
+    notifyListeners();
+  }
+}

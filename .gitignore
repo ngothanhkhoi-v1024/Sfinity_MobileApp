@@ -1,0 +1,37 @@
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Env & secrets
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backend (Node / Java — bổ sung khi chọn stack)
+node_modules/
+dist/
+build/
+*.log
+
+# Mobile (Flutter) — project nằm trong mobile/
+mobile/.dart_tool/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/.packages
+mobile/build/
+mobile/**/*.g.dart
+
+# Web admin
+web-admin/node_modules/
+web-admin/dist/
+
+# Backend folder (khi tách riêng)
+backend/node_modules/
+backend/dist/
+backend/prisma/*.db
+backend/prisma/*.db-journal
