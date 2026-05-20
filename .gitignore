@@ -44,3 +44,8 @@ backend/node_modules/
 backend/dist/
 backend/prisma/*.db
 backend/prisma/*.db-journal
+
+# Kẻ ngoại tộc Flutter Generated Files cho Desktop
+mobile/linux/flutter/
+mobile/macos/Flutter/
+mobile/windows/flutter/
