@@ -5,6 +5,7 @@ import { validateBody } from '../lib/validate';
 import { jwtAuthMiddleware } from '../middleware/jwt.middleware';
 import { authService } from '../services/auth.service';
 import { LoginDto, RegisterDto } from '../dto/login.dto';
+import { FirebaseLoginDto } from '../dto/firebase-login.dto';
 import {
   ChangePasswordDto,
   ForgotPasswordDto,
@@ -19,6 +20,14 @@ authRouter.post(
   asyncHandler(async (req, res) => {
     const dto = await validateBody(LoginDto, req.body);
     res.json(await authService.login(dto));
+  }),
+);
+
+authRouter.post(
+  '/firebase-login',
+  asyncHandler(async (req, res) => {
+    const dto = await validateBody(FirebaseLoginDto, req.body);
+    res.json(await authService.loginWithFirebase(dto));
   }),
 );
 

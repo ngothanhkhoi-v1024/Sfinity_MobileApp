@@ -15,6 +15,7 @@ class AuthState extends ChangeNotifier {
   Future<void> init() async {
     isLoading = true;
     notifyListeners();
+
     try {
       final token = await _repo.getToken();
       if (token != null) {
@@ -31,6 +32,18 @@ class AuthState extends ChangeNotifier {
 
   Future<void> login(String email, String password) async {
     final result = await _repo.login(email, password);
+    user = result['user'] as Map<String, dynamic>;
+    notifyListeners();
+  }
+
+  Future<void> loginWithGoogle() async {
+    final result = await _repo.loginWithGoogle();
+    user = result['user'] as Map<String, dynamic>;
+    notifyListeners();
+  }
+
+  Future<void> loginWithFacebook() async {
+    final result = await _repo.loginWithFacebook();
     user = result['user'] as Map<String, dynamic>;
     notifyListeners();
   }

@@ -7,6 +7,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+  FACEBOOK
+}
+
 enum UserRole {
   USER
   ADMIN
@@ -29,21 +35,24 @@ enum ReportStatus {
 }
 
 model User {
-  id           String     @id @default(cuid())
-  email        String     @unique
-  passwordHash String
-  name         String
-  avatar       String?
-  role         UserRole   @default(USER)
-  status       UserStatus @default(ACTIVE)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  id             String     @id @default(cuid())
+  email          String     @unique
+  passwordHash   String?
+  name           String
+  avatar         String?
+  role           UserRole   @default(USER)
+  status         UserStatus @default(ACTIVE)
+  authProvider   AuthProvider @default(LOCAL)
+  providerUserId String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
 
   contents      Content[]
   favorites     Favorite[]
   feedbacks     Feedback[]
   reports       Report[]
   notifications Notification[]
+  @@unique([authProvider, providerUserId])
 }
 
 model PasswordReset {
