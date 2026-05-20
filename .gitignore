@@ -26,6 +26,15 @@ mobile/.packages
 mobile/build/
 mobile/**/*.g.dart
 
+# --- BỔ SUNG: Chặn các file tự sinh khi chạy Flutter Desktop/OS ---
+mobile/linux/flutter/generated_plugin_registrant.cc
+mobile/linux/flutter/generated_plugin_registrant.h
+mobile/linux/flutter/generated_plugins.cmake
+mobile/macos/Flutter/GeneratedPluginRegistrant.swift
+mobile/windows/flutter/generated_plugin_registrant.cc
+mobile/windows/flutter/generated_plugin_registrant.h
+mobile/windows/flutter/generated_plugins.cmake
+
 # Web admin
 web-admin/node_modules/
 web-admin/dist/
