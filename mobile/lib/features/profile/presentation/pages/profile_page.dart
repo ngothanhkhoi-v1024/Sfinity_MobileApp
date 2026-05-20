@@ -11,7 +11,7 @@ class ProfilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = SfinityApp.auth.user;
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
       children: [
         CircleAvatar(
           radius: 40,
@@ -38,7 +38,7 @@ class ProfilePage extends StatelessWidget {
         ),
         ListTile(
           leading: const Icon(Icons.article_outlined),
-          title: const Text('Nội dung của tôi'),
+          title: const Text('Bài đăng của tôi'),
           onTap: () => context.push(RouteNames.contentList),
         ),
         ListTile(
