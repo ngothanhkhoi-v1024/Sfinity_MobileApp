@@ -1,6 +1,6 @@
 # Sfinity — Backend
 
-API NestJS + Prisma (SQLite) dùng chung cho **mobile** và **web-admin**.
+API **Express** + **Swagger UI** + **Prisma** (SQLite), dùng chung cho **mobile** và **web-admin**. Hợp đồng endpoint giữ nguyên so với phiên bản NestJS trước đó.
 
 ## Chạy lần đầu
 
@@ -12,7 +12,9 @@ npm run prisma:seed
 npm run start:dev
 ```
 
-API: `http://localhost:3000/api`
+- API: `http://localhost:3000/api`
+- **Swagger (thử API):** `http://localhost:3000/api/docs`
+- OpenAPI JSON: `http://localhost:3000/api/openapi.json`
 
 ## Tài khoản seed
 
