@@ -1,0 +1,90 @@
+{
+  "project_info": {
+    "project_number": "947472672630",
+    "project_id": "mobile-e1ac5",
+    "storage_bucket": "mobile-e1ac5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:947472672630:android:5d2b9b2be1e0d661a1fc57",
+        "android_client_info": {
+          "package_name": "com.example.btl"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "947472672630-di3djrljpuuqi03siud058klk3h92bfa.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.btl",
+            "certificate_hash": "52a0d3334f7455f1301e22b8479ffc268be2d9c8"
+          }
+        },
+        {
+          "client_id": "947472672630-eesvq40cn6mfoa16qnadusgpjph5qpdv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAQ_OvpXu98nrUKPheZOHZ98hLX8g0kB_Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "947472672630-eesvq40cn6mfoa16qnadusgpjph5qpdv.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "947472672630-opobv1kq76gtinf154nrolj29ei6blcn.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.sfinity.sfinity"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:947472672630:android:c05c5553042ad995a1fc57",
+        "android_client_info": {
+          "package_name": "com.sfinity.sfinity"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "947472672630-eesvq40cn6mfoa16qnadusgpjph5qpdv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAQ_OvpXu98nrUKPheZOHZ98hLX8g0kB_Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "947472672630-eesvq40cn6mfoa16qnadusgpjph5qpdv.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "947472672630-opobv1kq76gtinf154nrolj29ei6blcn.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.sfinity.sfinity"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

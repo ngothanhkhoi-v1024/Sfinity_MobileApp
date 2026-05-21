@@ -9,6 +9,9 @@ import '../../features/content/presentation/pages/content_form_page.dart';
 import '../../features/content/presentation/pages/content_list_page.dart';
 import '../../features/feedback/presentation/pages/feedback_page.dart';
 import '../../features/home/presentation/pages/home_shell_page.dart';
+import '../../features/places/presentation/pages/place_share_page.dart';
+import '../../features/search/presentation/pages/search_page.dart';
+import '../../features/favorites/presentation/pages/favorites_page.dart';
 import '../../features/notifications/presentation/pages/notifications_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_page.dart';
 import '../../features/profile/presentation/pages/edit_profile_page.dart';
@@ -49,11 +52,21 @@ GoRouter createAppRouter(AuthState auth) {
       GoRoute(path: RouteNames.forgotPassword, builder: (_, __) => const ForgotPasswordPage()),
       GoRoute(path: RouteNames.otpVerification, builder: (_, __) => const OtpVerificationPage()),
       GoRoute(path: RouteNames.home, builder: (_, __) => const HomeShellPage()),
+      GoRoute(path: RouteNames.search, builder: (_, __) => const SearchPage()),
+      GoRoute(path: RouteNames.favorites, builder: (_, __) => const FavoritesPage()),
+      GoRoute(path: RouteNames.placeShare, builder: (_, __) => const PlaceSharePage()),
       GoRoute(
         path: RouteNames.contentList,
         builder: (_, __) => const ContentListPage(),
         routes: [
-          GoRoute(path: 'create', builder: (_, __) => const ContentFormPage()),
+          GoRoute(
+            path: 'create',
+            builder: (_, state) {
+              final extra = state.extra;
+              final type = extra is Map ? extra['contentType']?.toString() ?? 'document' : 'document';
+              return ContentFormPage(contentType: type);
+            },
+          ),
           GoRoute(
             path: ':id',
             builder: (_, state) => ContentDetailPage(contentId: state.pathParameters['id']!),

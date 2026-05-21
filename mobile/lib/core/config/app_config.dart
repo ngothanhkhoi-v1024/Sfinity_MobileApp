@@ -9,6 +9,7 @@ abstract final class AppConfig {
 
   static String get apiBaseUrl {
     const fallback = 'http://10.0.2.2:3000/api';
+    //const fallback = 'http://your_lan_ip:3000/api';
     if (!dotenv.isInitialized) return fallback;
     final raw = dotenv.maybeGet('API_BASE_URL')?.trim();
     if (raw == null || raw.isEmpty) return fallback;

@@ -40,6 +40,14 @@ dependencies:
   share_plus: ^10.1.4
   intl: ^0.20.2
   flutter_dotenv: ^6.0.1
+  firebase_core: ^4.9.0
+  firebase_auth: ^6.5.1
+  google_sign_in: ^7.2.0
+  flutter_facebook_auth: ^7.1.6
+  cloud_firestore: ^6.4.1
+  flutter_map: ^8.1.1
+  latlong2: ^0.9.1
+  geolocator: ^14.0.1
 
 dev_dependencies:
   flutter_test:

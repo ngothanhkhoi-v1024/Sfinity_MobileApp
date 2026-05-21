@@ -30,6 +30,7 @@ class _SfinityAppState extends State<SfinityApp> {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       title: 'Sfinity',
+      debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       routerConfig: _router,
