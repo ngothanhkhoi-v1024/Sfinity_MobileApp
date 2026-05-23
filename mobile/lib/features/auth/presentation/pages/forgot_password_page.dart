@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/route_names.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/utils/validators.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -181,16 +182,12 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                               keyboardType: TextInputType.emailAddress,
                               textInputAction: TextInputAction.done,
                               onFieldSubmitted: (_) => _submit(),
+                              autovalidateMode: AutovalidateMode.onUserInteraction,
                               decoration: const InputDecoration(
                                 labelText: 'Email',
                                 prefixIcon: Icon(Icons.mail_outline_rounded),
                               ),
-                              validator: (value) {
-                                if (value == null || !value.contains('@')) {
-                                  return 'Nhập email hợp lệ.';
-                                }
-                                return null;
-                              },
+                              validator: AppValidators.validateEmail,
                             ),
                             const SizedBox(height: 24),
                             FilledButton(

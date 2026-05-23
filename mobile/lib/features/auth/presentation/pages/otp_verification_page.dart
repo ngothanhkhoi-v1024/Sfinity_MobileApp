@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/route_names.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/utils/validators.dart';
 
 class OtpVerificationPage extends StatefulWidget {
   const OtpVerificationPage({super.key});
@@ -203,17 +204,13 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
                               keyboardType: TextInputType.number,
                               textInputAction: TextInputAction.next,
                               maxLength: 6,
+                              autovalidateMode: AutovalidateMode.onUserInteraction,
                               decoration: const InputDecoration(
                                 labelText: 'Mã OTP (6 chữ số)',
                                 prefixIcon: Icon(Icons.pin_rounded),
                                 counterText: '',
                               ),
-                              validator: (value) {
-                                if (value == null || value.trim().length != 6) {
-                                  return 'Nhập đủ 6 số OTP.';
-                                }
-                                return null;
-                              },
+                              validator: AppValidators.validateOtp,
                             ),
                             const SizedBox(height: 14),
                             TextFormField(
@@ -221,6 +218,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
                               obscureText: _obscurePassword,
                               textInputAction: TextInputAction.done,
                               onFieldSubmitted: (_) => _submit(),
+                              autovalidateMode: AutovalidateMode.onUserInteraction,
                               decoration: InputDecoration(
                                 labelText: 'Mật khẩu mới',
                                 prefixIcon: const Icon(Icons.key_rounded),
@@ -237,12 +235,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
                                   ),
                                 ),
                               ),
-                              validator: (value) {
-                                if (value == null || value.length < 6) {
-                                  return 'Mật khẩu tối thiểu 6 ký tự.';
-                                }
-                                return null;
-                              },
+                              validator: AppValidators.validatePassword,
                             ),
                             const SizedBox(height: 24),
                             FilledButton(

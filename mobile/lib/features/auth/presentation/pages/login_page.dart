@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../app.dart';
 import '../../../../core/constants/route_names.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/utils/validators.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -203,16 +204,12 @@ class _LoginPageState extends State<LoginPage> {
                               controller: _email,
                               keyboardType: TextInputType.emailAddress,
                               textInputAction: TextInputAction.next,
+                              autovalidateMode: AutovalidateMode.onUserInteraction,
                               decoration: const InputDecoration(
                                 labelText: 'Email',
                                 prefixIcon: Icon(Icons.mail_outline_rounded),
                               ),
-                              validator: (value) {
-                                if (value == null || !value.contains('@')) {
-                                  return 'Nhập email hợp lệ.';
-                                }
-                                return null;
-                              },
+                              validator: AppValidators.validateEmail,
                             ),
                             const SizedBox(height: 14),
                             TextFormField(
@@ -220,6 +217,7 @@ class _LoginPageState extends State<LoginPage> {
                               obscureText: _obscurePassword,
                               textInputAction: TextInputAction.done,
                               onFieldSubmitted: (_) => _submit(),
+                              autovalidateMode: AutovalidateMode.onUserInteraction,
                               decoration: InputDecoration(
                                 labelText: 'Mật khẩu',
                                 prefixIcon: const Icon(Icons.key_rounded),
@@ -236,12 +234,7 @@ class _LoginPageState extends State<LoginPage> {
                                   ),
                                 ),
                               ),
-                              validator: (value) {
-                                if (value == null || value.length < 6) {
-                                  return 'Mật khẩu tối thiểu 6 ký tự.';
-                                }
-                                return null;
-                              },
+                              validator: AppValidators.validateLoginPassword,
                             ),
                             const SizedBox(height: 12),
                             Align(

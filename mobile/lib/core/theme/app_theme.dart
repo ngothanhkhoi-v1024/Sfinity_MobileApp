@@ -34,25 +34,26 @@ abstract final class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: const Color(0xFFF9FAFB),
+        errorMaxLines: 3,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 1.0),
+          borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 1.2),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 1.0),
+          borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 1.2),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: _primary, width: 1.6),
+          borderSide: const BorderSide(color: _primary, width: 2.0),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: Colors.redAccent, width: 1.0),
+          borderSide: const BorderSide(color: Colors.redAccent, width: 1.2),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: Colors.redAccent, width: 1.6),
+          borderSide: const BorderSide(color: Colors.redAccent, width: 2.0),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
       ),
@@ -99,25 +100,26 @@ abstract final class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: const Color(0xFF1E1E1E),
+        errorMaxLines: 3,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: Color(0xFF2D2D2D), width: 1.0),
+          borderSide: const BorderSide(color: Color(0xFF2D2D2D), width: 1.2),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: Color(0xFF2D2D2D), width: 1.0),
+          borderSide: const BorderSide(color: Color(0xFF2D2D2D), width: 1.2),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: _primary, width: 1.6),
+          borderSide: const BorderSide(color: _primary, width: 2.0),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: Colors.redAccent, width: 1.0),
+          borderSide: const BorderSide(color: Colors.redAccent, width: 1.2),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: Colors.redAccent, width: 1.6),
+          borderSide: const BorderSide(color: Colors.redAccent, width: 2.0),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
       ),
