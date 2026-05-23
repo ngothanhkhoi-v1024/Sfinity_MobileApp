@@ -54,7 +54,7 @@ function mapFirebaseProvider(provider: string): AuthProvider {
     case 'facebook.com':
       return AuthProvider.FACEBOOK;
     default:
-      throw new HttpError(400, 'Firebase provider khong hop le', 'Bad Request');
+      throw new HttpError(400, 'Nhà cung cấp Firebase không hợp lệ', 'Bad Request');
   }
 }
 
@@ -63,28 +63,28 @@ export const authService = {
     const user = await prisma.user.findUnique({ where: { email: dto.email } });
 
     if (!user) {
-      throw new HttpError(401, 'Email hoac mat khau khong dung', 'Unauthorized');
+      throw new HttpError(401, 'Email hoặc mật khẩu không đúng', 'Unauthorized');
     }
 
     if (!user.passwordHash) {
       throw new HttpError(
         400,
-        'Tai khoan nay dang su dung Google/Facebook login. Hay dang nhap bang social button.',
+        'Tài khoản này đang sử dụng đăng nhập Google/Facebook. Hãy đăng nhập bằng nút mạng xã hội.',
         'Bad Request',
       );
     }
 
     const valid = await bcrypt.compare(dto.password, user.passwordHash);
     if (!valid) {
-      throw new HttpError(401, 'Email hoac mat khau khong dung', 'Unauthorized');
+      throw new HttpError(401, 'Email hoặc mật khẩu không đúng', 'Unauthorized');
     }
 
     if (user.status === 'BANNED') {
-      throw new HttpError(401, 'Tai khoan da bi khoa', 'Unauthorized');
+      throw new HttpError(401, 'Tài khoản đã bị khóa', 'Unauthorized');
     }
 
     if (adminOnly && user.role !== UserRole.ADMIN) {
-      throw new HttpError(401, 'Tai khoan khong co quyen quan tri', 'Unauthorized');
+      throw new HttpError(401, 'Tài khoản không có quyền quản trị', 'Unauthorized');
     }
 
     return {
@@ -99,20 +99,20 @@ export const authService = {
     try {
       decoded = await getFirebaseAuth().verifyIdToken(dto.idToken);
     } catch {
-      throw new HttpError(401, 'Firebase token khong hop le', 'Unauthorized');
+      throw new HttpError(401, 'Firebase token không hợp lệ', 'Unauthorized');
     }
 
     const tokenProvider = decoded.firebase?.sign_in_provider ?? '';
 
     if (tokenProvider !== dto.provider) {
-      throw new HttpError(400, 'Provider khong khop voi Firebase token', 'Bad Request');
+      throw new HttpError(400, 'Provider không khớp với Firebase token', 'Bad Request');
     }
 
     const authProvider = mapFirebaseProvider(tokenProvider);
     const email = decoded.email?.trim().toLowerCase();
 
     if (!email) {
-      throw new HttpError(400, 'Firebase token khong co email', 'Bad Request');
+      throw new HttpError(400, 'Firebase token không có email', 'Bad Request');
     }
 
     const displayName =
@@ -153,7 +153,7 @@ export const authService = {
     }
 
     if (user.status === 'BANNED') {
-      throw new HttpError(401, 'Tai khoan da bi khoa', 'Unauthorized');
+      throw new HttpError(401, 'Tài khoản đã bị khóa', 'Unauthorized');
     }
 
     return {
@@ -166,7 +166,7 @@ export const authService = {
     const exists = await prisma.user.findUnique({ where: { email: dto.email } });
 
     if (exists) {
-      throw new HttpError(409, 'Email da duoc su dung', 'Conflict');
+      throw new HttpError(409, 'Email đã được sử dụng', 'Conflict');
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
@@ -215,14 +215,14 @@ export const authService = {
     if (!user.passwordHash) {
       throw new HttpError(
         400,
-        'Tai khoan social chua co mat khau local',
+        'Tài khoản mạng xã hội chưa thiết lập mật khẩu',
         'Bad Request',
       );
     }
 
     const valid = await bcrypt.compare(dto.currentPassword, user.passwordHash);
     if (!valid) {
-      throw new HttpError(401, 'Mat khau hien tai khong dung', 'Unauthorized');
+      throw new HttpError(401, 'Mật khẩu hiện tại không đúng', 'Unauthorized');
     }
 
     const passwordHash = await bcrypt.hash(dto.newPassword, 10);
@@ -245,7 +245,7 @@ export const authService = {
     const user = await prisma.user.findUnique({ where: { email: dto.email } });
 
     if (!user) {
-      throw new HttpError(404, 'Khong tim thay tai khoan voi email nay', 'Not Found');
+      throw new HttpError(404, 'Không tìm thấy tài khoản với email này', 'Not Found');
     }
 
     const code = authService.generateOtp();
@@ -261,7 +261,7 @@ export const authService = {
     });
 
     return {
-      message: 'Ma OTP da duoc gui (demo: hien thi truc tiep)',
+      message: 'Mã OTP đã được gửi (demo: hiển thị trực tiếp)',
       code,
       expiresInMinutes: 15,
     };
@@ -279,7 +279,7 @@ export const authService = {
     });
 
     if (!record) {
-      throw new HttpError(400, 'Ma OTP khong hop le hoac da het han', 'Bad Request');
+      throw new HttpError(400, 'Mã OTP không hợp lệ hoặc đã hết hạn', 'Bad Request');
     }
 
     const user = await prisma.user.findUnique({ where: { email: dto.email } });

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../app.dart';
 import '../../../../core/constants/route_names.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/utils/validators.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -47,7 +48,6 @@ class _RegisterPageState extends State<RegisterPage> {
         _password.text,
         _name.text.trim(),
       );
-      await SfinityApp.auth.logout();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -195,38 +195,31 @@ class _RegisterPageState extends State<RegisterPage> {
                             TextFormField(
                               controller: _name,
                               textInputAction: TextInputAction.next,
+                              autovalidateMode: AutovalidateMode.onUserInteraction,
                               decoration: const InputDecoration(
                                 labelText: 'Họ tên',
                                 prefixIcon: Icon(Icons.person_outline_rounded),
                               ),
-                              validator: (value) {
-                                if (value == null || value.trim().length < 2) {
-                                  return 'Nhập họ tên (tối thiểu 2 ký tự).';
-                                }
-                                return null;
-                              },
+                              validator: AppValidators.validateName,
                             ),
                             const SizedBox(height: 14),
                             TextFormField(
                               controller: _email,
                               keyboardType: TextInputType.emailAddress,
                               textInputAction: TextInputAction.next,
+                              autovalidateMode: AutovalidateMode.onUserInteraction,
                               decoration: const InputDecoration(
                                 labelText: 'Email',
                                 prefixIcon: Icon(Icons.mail_outline_rounded),
                               ),
-                              validator: (value) {
-                                if (value == null || !value.contains('@')) {
-                                  return 'Nhập email hợp lệ.';
-                                }
-                                return null;
-                              },
+                              validator: AppValidators.validateEmail,
                             ),
                             const SizedBox(height: 14),
                             TextFormField(
                               controller: _password,
                               obscureText: _obscurePassword,
                               textInputAction: TextInputAction.next,
+                              autovalidateMode: AutovalidateMode.onUserInteraction,
                               decoration: InputDecoration(
                                 labelText: 'Mật khẩu',
                                 prefixIcon: const Icon(Icons.key_rounded),
@@ -243,12 +236,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                   ),
                                 ),
                               ),
-                              validator: (value) {
-                                if (value == null || value.length < 6) {
-                                  return 'Mật khẩu tối thiểu 6 ký tự.';
-                                }
-                                return null;
-                              },
+                              validator: AppValidators.validatePassword,
                             ),
                             const SizedBox(height: 14),
                             TextFormField(
@@ -256,6 +244,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               obscureText: _obscureConfirmPassword,
                               textInputAction: TextInputAction.done,
                               onFieldSubmitted: (_) => _submit(),
+                              autovalidateMode: AutovalidateMode.onUserInteraction,
                               decoration: InputDecoration(
                                 labelText: 'Xác nhận mật khẩu',
                                 prefixIcon: const Icon(Icons.key_rounded),
@@ -272,15 +261,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                   ),
                                 ),
                               ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Nhập lại mật khẩu để xác nhận.';
-                                }
-                                if (value != _password.text) {
-                                  return 'Mật khẩu xác nhận không khớp.';
-                                }
-                                return null;
-                              },
+                              validator: (value) => AppValidators.validateConfirmPassword(value, _password.text),
                             ),
                             const SizedBox(height: 24),
                             FilledButton(

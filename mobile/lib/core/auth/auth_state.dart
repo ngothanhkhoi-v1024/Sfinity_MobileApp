@@ -49,9 +49,8 @@ class AuthState extends ChangeNotifier {
   }
 
   Future<void> register(String email, String password, String name) async {
-    final result = await _repo.register(email, password, name);
-    user = result['user'] as Map<String, dynamic>;
-    notifyListeners();
+    await _repo.register(email, password, name);
+    await _repo.clearSession();
   }
 
   Future<void> logout() async {
