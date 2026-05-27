@@ -90,7 +90,7 @@ class _ContentFormPageState extends State<ContentFormPage> {
                 autovalidateMode: AutovalidateMode.onUserInteraction,
                 decoration: InputDecoration(
                   labelText: widget.isDocument ? 'Tên tài liệu / môn học' : 'Tên địa điểm',
-                  border: const OutlineInputBorder(),
+                  border: OutlineInputBorder()
                 ),
                 validator: AppValidators.validateRequired,
               ),
@@ -99,8 +99,8 @@ class _ContentFormPageState extends State<ContentFormPage> {
                 controller: _body,
                 autovalidateMode: AutovalidateMode.onUserInteraction,
                 decoration: InputDecoration(
-                labelText: widget.isDocument ? 'Mô tả, link, ghi chú…' : 'Mô tả địa điểm',
-                    border: const OutlineInputBorder(),
+                  labelText: widget.isDocument ? 'Mô tả, link, ghi chú…' : 'Mô tả địa điểm',
+                  border: const OutlineInputBorder(),
                 ),
                 maxLines: 8,
                 validator: (v) => v != null && v.length >= 2 ? null : 'Bắt buộc',
