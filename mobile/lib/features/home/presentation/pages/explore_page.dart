@@ -59,17 +59,28 @@ class _ExplorePageState extends State<ExplorePage> {
 
     return RefreshIndicator(
       onRefresh: _load,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-        children: [
+      child: Container(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+          children: [
           Text(
             'Khám phá',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? const Color(0xFFF2F2F2)
+                  : null,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
             'Địa điểm học tập và tài liệu từ cộng đồng',
-            style: TextStyle(color: Colors.grey.shade600),
+            style: TextStyle(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.grey.shade400
+                  : Colors.grey.shade600,
+            ),
           ),
           const SizedBox(height: 16),
           Row(
@@ -91,40 +102,73 @@ class _ExplorePageState extends State<ExplorePage> {
               ),
             ],
           ),
-          const SizedBox(height: 24),
-          Text('Mới nhất', style: Theme.of(context).textTheme.titleMedium),
+           const SizedBox(height: 24),
+           Text(
+             'Mới nhất',
+             style: Theme.of(context).textTheme.titleMedium?.copyWith(
+               color: Theme.of(context).brightness == Brightness.dark
+                   ? const Color(0xFFF2F2F2)
+                   : null,
+             ),
+           ),
           const SizedBox(height: 8),
-          if (_items.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 32),
-              child: Center(child: Text('Chưa có bài chia sẻ — hãy là người đầu tiên!')),
-            )
+           if (_items.isEmpty)
+             Padding(
+               padding: const EdgeInsets.symmetric(vertical: 32),
+               child: Center(
+                 child: Text(
+                   'Chưa có bài chia sẻ — hãy là người đầu tiên!',
+                   style: TextStyle(
+                     color: Theme.of(context).brightness == Brightness.dark
+                         ? Colors.grey.shade400
+                         : null,
+                   ),
+                 ),
+               ),
+             )
           else
             ..._items.map((raw) {
-              final item = raw as Map<String, dynamic>;
-              final isPlace = _isPlace(item);
-              return Card(
-                margin: const EdgeInsets.only(bottom: 10),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: isPlace ? Colors.red.shade50 : Colors.blue.shade50,
-                    child: Icon(
-                      isPlace ? Icons.place_outlined : Icons.menu_book_outlined,
-                      color: isPlace ? Colors.red.shade700 : Colors.blue.shade700,
-                    ),
-                  ),
-                  title: Text(item['title']?.toString() ?? ''),
+               final item = raw as Map<String, dynamic>;
+               final isPlace = _isPlace(item);
+               final isDark = Theme.of(context).brightness == Brightness.dark;
+               return Card(
+                 margin: const EdgeInsets.only(bottom: 10),
+                 child: ListTile(
+                   leading: CircleAvatar(
+                     backgroundColor: isDark
+                         ? (isPlace ? Colors.red.shade900 : Colors.blue.shade900)
+                         : (isPlace ? Colors.red.shade50 : Colors.blue.shade50),
+                     child: Icon(
+                       isPlace ? Icons.place_outlined : Icons.menu_book_outlined,
+                       color: isPlace ? Colors.red.shade400 : Colors.blue.shade400,
+                     ),
+                   ),
+                   title: Text(
+                     item['title']?.toString() ?? '',
+                     style: TextStyle(
+                       color: isDark ? const Color(0xFFF2F2F2) : null,
+                     ),
+                   ),
                   subtitle: Text(
                     isPlace ? 'Địa điểm' : 'Tài liệu học tập',
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.grey.shade400
+                          : Colors.grey.shade600,
+                    ),
                   ),
-                  trailing: const Icon(Icons.chevron_right),
+                   trailing: Icon(
+                     Icons.chevron_right,
+                     color: isDark ? Colors.grey.shade500 : null,
+                   ),
                   onTap: () => context.push('/content/${item['id']}'),
                 ),
               );
             }),
         ],
       ),
+        ),
     );
   }
 }
@@ -142,8 +186,9 @@ class _QuickAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Material(
-      color: Colors.grey.shade100,
+      color: isDark ? const Color(0xFF1A1A1A) : Colors.grey.shade100,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onTap,
@@ -152,9 +197,18 @@ class _QuickAction extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 14),
           child: Column(
             children: [
-              Icon(icon),
+              Icon(
+                icon,
+                color: isDark ? const Color(0xFFF2F2F2) : null,
+              ),
               const SizedBox(height: 6),
-              Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
+              Text(
+                label,
+                style: TextStyle(
+                  fontWeight: FontWeight.w500,
+                  color: isDark ? const Color(0xFFF2F2F2) : null,
+                ),
+              ),
             ],
           ),
         ),

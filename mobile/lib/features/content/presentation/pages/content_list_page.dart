@@ -94,33 +94,39 @@ class _ContentListPageState extends State<ContentListPage> {
   @override
   Widget build(BuildContext context) {
     if (widget.embedded) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 8, 0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Tài liệu',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+      return Container(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 8, 0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Tài liệu',
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? const Color(0xFFF2F2F2)
+                                : null,
+                          ),
+                    ),
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.add),
-                  onPressed: () => context.push(
-                    RouteNames.contentCreate,
-                    extra: const {'contentType': 'document'},
+                  IconButton(
+                    icon: const Icon(Icons.add),
+                    onPressed: () => context.push(
+                      RouteNames.contentCreate,
+                      extra: const {'contentType': 'document'},
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          Expanded(child: _buildBody()),
-        ],
+            Expanded(child: _buildBody()),
+          ],
+        ),
       );
     }
 
@@ -137,7 +143,10 @@ class _ContentListPageState extends State<ContentListPage> {
           ),
         ],
       ),
-      body: _buildBody(),
+      body: Container(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        child: _buildBody(),
+      ),
     );
   }
 }
