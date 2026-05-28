@@ -8,9 +8,11 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
+    return Container(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
         Card(
           child: ListTile(
             leading: const Icon(Icons.article_outlined),
@@ -52,7 +54,8 @@ class HomePage extends StatelessWidget {
             onTap: () => context.push(RouteNames.settings),
           ),
         ),
-      ],
+        ],
+      ),
     );
   }
 }
