@@ -2,11 +2,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../app.dart';
 import '../../../../core/constants/route_names.dart';
 import '../../../../core/network/api_client.dart';
-import '../../../../core/constants/place_tags.dart';
-import '../../../../shared/widgets/error_view.dart';
+import '../controllers/place_detail_controller.dart';
 import '../widgets/place_tag_chips.dart';
 
 class PlaceDetailPage extends StatefulWidget {
@@ -19,42 +17,22 @@ class PlaceDetailPage extends StatefulWidget {
 }
 
 class _PlaceDetailPageState extends State<PlaceDetailPage> {
-  Map<String, dynamic>? _place;
-  List<dynamic> _documents = [];
-  bool _loading = true;
-  String? _error;
+  late final PlaceDetailController _ctrl;
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _ctrl = PlaceDetailController();
+    _ctrl.addListener(() {
+      if (mounted) setState(() {});
+    });
+    _ctrl.load(widget.placeId);
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    try {
-      final place = await ApiClient.instance.get('/document/${widget.placeId}');
-      final docsRes = await SfinityApp.documentRepository.getDocuments(
-        type: 'document',
-        placeId: widget.placeId,
-        publishedOnly: true,
-        limit: 50,
-      );
-
-      _place = place;
-      _documents = docsRes['items'] as List? ?? [];
-    } on DioException catch (e) {
-      _error = ApiClient.instance.errorMessage(e);
-    } catch (e) {
-      _error = e.toString();
-    } finally {
-      if (mounted) {
-        setState(() => _loading = false);
-      }
-    }
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
   }
 
   void _openUploadDocument(String placeTitle) {
@@ -65,12 +43,12 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
         'placeId': widget.placeId,
         'placeTitle': placeTitle,
       },
-    ).then((_) => _load());
+    ).then((_) => _ctrl.load(widget.placeId));
   }
 
   Future<void> _editPlace() async {
     await context.push('/places/${widget.placeId}/edit');
-    if (mounted) _load();
+    if (mounted) _ctrl.load(widget.placeId);
   }
 
   Future<void> _deletePlace() async {
@@ -93,7 +71,7 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
     );
     if (confirmed != true || !mounted) return;
     try {
-      await SfinityApp.documentRepository.deleteDocument(widget.placeId);
+      await _ctrl.deletePlace(widget.placeId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Đã xóa địa điểm')),
@@ -111,34 +89,38 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
+    if (_ctrl.loading) {
       return Scaffold(
         appBar: AppBar(title: const Text('Chi tiết địa điểm')),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
-    if (_error != null || _place == null) {
+    if (_ctrl.error != null || _ctrl.place == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Chi tiết địa điểm')),
-        body: ErrorView(
-          message: _error ?? 'Không tải được địa điểm',
-          onRetry: _load,
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(_ctrl.error ?? 'Không tải được địa điểm', textAlign: TextAlign.center),
+                const SizedBox(height: 16),
+                FilledButton(
+                  onPressed: () => _ctrl.load(widget.placeId),
+                  child: const Text('Thử lại'),
+                ),
+              ],
+            ),
+          ),
         ),
       );
     }
 
-    final place = _place!;
+    final place = _ctrl.place!;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final title = place['title']?.toString() ?? 'Địa điểm';
-    final body = place['body']?.toString() ?? '';
-    final address = place['address']?.toString();
-    final tagIds = PlaceTags.fromDynamicList(place['tags']).toList();
-    final author = place['author'] as Map<String, dynamic>?;
-    final ownerName = author?['name']?.toString() ?? 'Người dùng';
-    final currentUserId = SfinityApp.auth.user?['id']?.toString();
-    final ownerId = author?['id']?.toString() ?? place['authorId']?.toString();
-    final isMine = currentUserId != null && ownerId != null && currentUserId == ownerId;
+    final isMine = _ctrl.isMine();
     final primary = theme.colorScheme.primary;
 
     return Scaffold(
@@ -160,7 +142,7 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: _load,
+        onRefresh: () => _ctrl.load(widget.placeId),
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: [
@@ -196,7 +178,7 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          title,
+                          place.title,
                           style: theme.textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.w700,
                           ),
@@ -208,19 +190,19 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
                   _InfoRow(
                     icon: Icons.person_outline,
                     label: 'Chủ địa điểm',
-                    value: ownerName,
+                    value: place.authorName ?? 'Người dùng',
                     isDark: isDark,
                   ),
-                  if (address != null && address.isNotEmpty) ...[
+                  if (place.address != null && place.address!.isNotEmpty) ...[
                     const SizedBox(height: 10),
                     _InfoRow(
                       icon: Icons.location_on_outlined,
                       label: 'Địa chỉ',
-                      value: address,
+                      value: place.address!,
                       isDark: isDark,
                     ),
                   ],
-                  if (tagIds.isNotEmpty) ...[
+                  if (place.tags.isNotEmpty) ...[
                     const SizedBox(height: 12),
                     Text(
                       'Tiện ích học tập',
@@ -230,14 +212,14 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    PlaceTagDisplay(tagIds: tagIds),
+                    PlaceTagDisplay(tagIds: place.tags),
                   ],
-                  if (body.isNotEmpty) ...[
+                  if (place.body.isNotEmpty) ...[
                     const SizedBox(height: 10),
                     _InfoRow(
                       icon: Icons.notes_outlined,
                       label: 'Mô tả',
-                      value: body,
+                      value: place.body,
                       isDark: isDark,
                     ),
                   ],
@@ -255,7 +237,7 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
                   borderRadius: BorderRadius.circular(18),
                 ),
                 child: FilledButton.icon(
-                  onPressed: () => _openUploadDocument(title),
+                  onPressed: () => _openUploadDocument(place.title),
                   style: FilledButton.styleFrom(
                     backgroundColor: Colors.transparent,
                     shadowColor: Colors.transparent,
@@ -289,7 +271,7 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
               style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 10),
-            if (_documents.isEmpty)
+            if (_ctrl.documents.isEmpty)
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
@@ -321,8 +303,7 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
                 ),
               )
             else
-              ..._documents.map((raw) {
-                final item = raw as Map<String, dynamic>;
+              ..._ctrl.documents.map((item) {
                 final docId = item['id']?.toString() ?? '';
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 8),
