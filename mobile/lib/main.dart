@@ -5,9 +5,17 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'app.dart';
 import "firebase_options.dart";
 
+Future<void> _loadEnv() async {
+  try {
+    await dotenv.load(fileName: 'assets/env/app.local.env');
+  } catch (_) {
+    await dotenv.load(fileName: 'assets/env/app.env');
+  }
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: 'assets/env/app.env');
+  await _loadEnv();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
