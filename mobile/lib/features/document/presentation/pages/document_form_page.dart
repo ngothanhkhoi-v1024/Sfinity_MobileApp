@@ -7,10 +7,18 @@ import '../controllers/document_form_controller.dart';
 import '../widgets/document_upload_section.dart';
 
 class DocumentFormPage extends StatefulWidget {
-  const DocumentFormPage({super.key, this.documentId, this.contentType = 'document'});
+  const DocumentFormPage({
+    super.key,
+    this.documentId,
+    this.contentType = 'document',
+    this.placeId,
+    this.placeTitle,
+  });
 
   final String? documentId;
   final String contentType;
+  final String? placeId;
+  final String? placeTitle;
 
   bool get isEdit => documentId != null;
   bool get isDocument => contentType == 'document';
@@ -34,7 +42,11 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
     super.initState();
     _controller = DocumentFormController();
     _controller.loadCategories(null, widget.isEdit);
-    if (widget.isEdit) _loadExisting();
+    if (widget.isEdit) {
+      _loadExisting();
+    } else if (widget.placeTitle != null && widget.placeTitle!.isNotEmpty) {
+      _body.text = 'Tài liệu học tập tại địa điểm: ${widget.placeTitle}';
+    }
   }
 
   @override
@@ -94,13 +106,23 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
     if (!_formKey.currentState!.validate()) return;
 
     try {
+      var bodyText = _body.text.trim();
+      if (widget.placeId != null && widget.placeId!.isNotEmpty) {
+        bodyText = [
+          bodyText,
+          '',
+          '---',
+          'placeId:${widget.placeId}',
+        ].join('\n');
+      }
+
       final success = await _controller.submit(
         isEdit: widget.isEdit,
         documentId: widget.documentId,
         isDocument: widget.isDocument,
         contentType: widget.contentType,
         title: _title.text.trim(),
-        body: _body.text.trim(),
+        body: bodyText,
         subjectCode: _subjectCode.text.trim(),
         tagsText: _tagsController.text,
         externalUrl: _externalUrlController.text.trim(),
@@ -152,6 +174,33 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (widget.placeTitle != null && widget.placeTitle!.isNotEmpty) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: primary.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: primary.withValues(alpha: 0.2)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.place_outlined, color: primary),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Đang tải tài liệu cho: ${widget.placeTitle}',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: theme.colorScheme.onSurface,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                   if (widget.isDocument) ...[
                     DocumentUploadSection(
                       controller: _controller,

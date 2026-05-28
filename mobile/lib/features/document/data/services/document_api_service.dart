@@ -8,12 +8,16 @@ class DocumentApiService {
   Future<Map<String, dynamic>> getDocuments({
     String? categoryId,
     String? search,
+    String? type,
+    String? authorId,
     bool? publishedOnly,
     int? limit,
   }) {
     return _api.get('/document', query: {
       if (categoryId != null) 'categoryId': categoryId,
       if (search != null) 'search': search,
+      if (type != null) 'type': type,
+      if (authorId != null) 'authorId': authorId,
       if (publishedOnly != null) 'publishedOnly': publishedOnly.toString(),
       if (limit != null) 'limit': limit.toString(),
     });

@@ -393,6 +393,8 @@ export const openApiDocument = {
           { name: 'search', in: 'query', schema: { type: 'string' } },
           { name: 'status', in: 'query', schema: { type: 'string' } },
           { name: 'categoryId', in: 'query', schema: { type: 'string' } },
+          { name: 'type', in: 'query', schema: { type: 'string' } },
+          { name: 'authorId', in: 'query', schema: { type: 'string' } },
           { name: 'page', in: 'query', schema: { type: 'string' } },
           { name: 'limit', in: 'query', schema: { type: 'string' } },
           { name: 'publishedOnly', in: 'query', schema: { type: 'string' } },

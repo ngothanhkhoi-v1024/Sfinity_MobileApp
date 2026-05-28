@@ -9,6 +9,7 @@ import '../../features/document/presentation/pages/document_form_page.dart';
 import '../../features/document/presentation/pages/document_list_page.dart';
 import '../../features/feedback/presentation/pages/feedback_page.dart';
 import '../../features/home/presentation/pages/home_shell_page.dart';
+import '../../features/places/presentation/pages/place_detail_page.dart';
 import '../../features/places/presentation/pages/place_share_page.dart';
 import '../../features/search/presentation/pages/search_page.dart';
 import '../../features/favorites/presentation/pages/favorites_page.dart';
@@ -54,7 +55,12 @@ GoRouter createAppRouter(AuthState auth) {
       GoRoute(path: RouteNames.home, builder: (_, __) => const HomeShellPage()),
       GoRoute(path: RouteNames.search, builder: (_, __) => const SearchPage()),
       GoRoute(path: RouteNames.favorites, builder: (_, __) => const FavoritesPage()),
+      // /places/share phải đứng trước /places/:id, nếu không "share" bị match nhầm thành id.
       GoRoute(path: RouteNames.placeShare, builder: (_, __) => const PlaceSharePage()),
+      GoRoute(
+        path: RouteNames.placeDetail,
+        builder: (_, state) => PlaceDetailPage(placeId: state.pathParameters['id']!),
+      ),
       GoRoute(
         path: RouteNames.documentList,
         builder: (_, __) => const DocumentListPage(),
@@ -63,8 +69,13 @@ GoRouter createAppRouter(AuthState auth) {
             path: 'create',
             builder: (_, state) {
               final extra = state.extra;
-              final type = extra is Map ? extra['contentType']?.toString() ?? 'document' : 'document';
-              return DocumentFormPage(contentType: type);
+              final map = extra is Map ? extra : null;
+              final type = map?['contentType']?.toString() ?? 'document';
+              return DocumentFormPage(
+                contentType: type,
+                placeId: map?['placeId']?.toString(),
+                placeTitle: map?['placeTitle']?.toString(),
+              );
             },
           ),
           GoRoute(

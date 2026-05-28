@@ -15,6 +15,8 @@ export const documentService = {
     search?: string;
     status?: ContentStatus;
     categoryId?: string;
+    type?: string;
+    authorId?: string;
     page?: number;
     limit?: number;
     publishedOnly?: boolean;
@@ -36,6 +38,14 @@ export const documentService = {
     // Filter category
     if (params.categoryId) {
       items = items.filter((item) => item.categoryId === params.categoryId);
+    }
+
+    if (params.type) {
+      items = items.filter((item) => (item.type ?? 'document') === params.type);
+    }
+
+    if (params.authorId) {
+      items = items.filter((item) => item.authorId === params.authorId);
     }
 
     // Filter search term case-insensitively

@@ -74,22 +74,21 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
     }
     setState(() => _loading = true);
     try {
-      final body = [
-        _description.text.trim(),
-        '',
-        '---',
-        'type:place',
-        'lat:${_picked.latitude}',
-        'lng:${_picked.longitude}',
-      ].join('\n');
       await ApiClient.instance.post('/document', {
         'title': _name.text.trim(),
-        'body': body,
-        'status': 'DRAFT',
+        'body': _description.text.trim().isEmpty
+            ? 'Địa điểm học tập do người dùng chia sẻ.'
+            : _description.text.trim(),
+        'type': 'place',
+        'latitude': _picked.latitude,
+        'longitude': _picked.longitude,
+        'address':
+            '${_picked.latitude.toStringAsFixed(5)}, ${_picked.longitude.toStringAsFixed(5)}',
+        'status': 'PUBLISHED',
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đã lưu địa điểm (bản nháp)')),
+          const SnackBar(content: Text('Đã lưu địa điểm')),
         );
         context.pop();
       }
@@ -109,7 +108,7 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
     final picked = MapConfig.sanitize(_picked);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Chia sẻ địa điểm')),
+      appBar: AppBar(title: const Text('Lưu địa điểm')),
       body: Column(
         children: [
           SizedBox(
@@ -172,7 +171,7 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
                   const SizedBox(height: 24),
                   FilledButton(
                     onPressed: _loading ? null : _submit,
-                    child: Text(_loading ? 'Đang lưu…' : 'Đăng địa điểm'),
+                    child: Text(_loading ? 'Đang lưu…' : 'Lưu địa điểm'),
                   ),
                 ],
               ),

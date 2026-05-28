@@ -2,6 +2,8 @@ abstract class DocumentRepository {
   Future<Map<String, dynamic>> getDocuments({
     String? categoryId,
     String? search,
+    String? type,
+    String? authorId,
     bool? publishedOnly,
     int? limit,
   });

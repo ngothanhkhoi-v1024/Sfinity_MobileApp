@@ -18,6 +18,8 @@ documentRouter.get(
     const search = req.query.search as string | undefined;
     const status = req.query.status as ContentStatus | undefined;
     const categoryId = req.query.categoryId as string | undefined;
+    const type = req.query.type as string | undefined;
+    const authorId = req.query.authorId as string | undefined;
     const page = req.query.page as string | undefined;
     const limit = req.query.limit as string | undefined;
     const publishedOnly = req.query.publishedOnly as string | undefined;
@@ -27,6 +29,8 @@ documentRouter.get(
         search,
         status,
         categoryId,
+        type,
+        authorId,
         page: page ? Number(page) : 1,
         limit: limit ? Number(limit) : 20,
         publishedOnly: publishedOnly === 'true',
