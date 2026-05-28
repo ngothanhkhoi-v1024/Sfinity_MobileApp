@@ -58,6 +58,10 @@ GoRouter createAppRouter(AuthState auth) {
       // /places/share phải đứng trước /places/:id, nếu không "share" bị match nhầm thành id.
       GoRoute(path: RouteNames.placeShare, builder: (_, __) => const PlaceSharePage()),
       GoRoute(
+        path: RouteNames.placeEdit,
+        builder: (_, state) => PlaceSharePage(editPlaceId: state.pathParameters['id']!),
+      ),
+      GoRoute(
         path: RouteNames.placeDetail,
         builder: (_, state) => PlaceDetailPage(placeId: state.pathParameters['id']!),
       ),

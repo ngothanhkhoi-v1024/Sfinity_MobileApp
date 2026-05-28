@@ -10,6 +10,10 @@ class DocumentApiService {
     String? search,
     String? type,
     String? authorId,
+    String? placeId,
+    double? lat,
+    double? lng,
+    double? radiusKm,
     bool? publishedOnly,
     int? limit,
   }) {
@@ -18,6 +22,10 @@ class DocumentApiService {
       if (search != null) 'search': search,
       if (type != null) 'type': type,
       if (authorId != null) 'authorId': authorId,
+      if (placeId != null) 'placeId': placeId,
+      if (lat != null) 'lat': lat.toString(),
+      if (lng != null) 'lng': lng.toString(),
+      if (radiusKm != null) 'radiusKm': radiusKm.toString(),
       if (publishedOnly != null) 'publishedOnly': publishedOnly.toString(),
       if (limit != null) 'limit': limit.toString(),
     });

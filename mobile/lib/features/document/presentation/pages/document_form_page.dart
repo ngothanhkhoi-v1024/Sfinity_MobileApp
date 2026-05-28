@@ -106,26 +106,17 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
     if (!_formKey.currentState!.validate()) return;
 
     try {
-      var bodyText = _body.text.trim();
-      if (widget.placeId != null && widget.placeId!.isNotEmpty) {
-        bodyText = [
-          bodyText,
-          '',
-          '---',
-          'placeId:${widget.placeId}',
-        ].join('\n');
-      }
-
       final success = await _controller.submit(
         isEdit: widget.isEdit,
         documentId: widget.documentId,
         isDocument: widget.isDocument,
         contentType: widget.contentType,
         title: _title.text.trim(),
-        body: bodyText,
+        body: _body.text.trim(),
         subjectCode: _subjectCode.text.trim(),
         tagsText: _tagsController.text,
         externalUrl: _externalUrlController.text.trim(),
+        placeId: widget.placeId,
       );
 
       if (success && mounted) {

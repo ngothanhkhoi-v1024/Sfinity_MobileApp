@@ -4,6 +4,10 @@ abstract class DocumentRepository {
     String? search,
     String? type,
     String? authorId,
+    String? placeId,
+    double? lat,
+    double? lng,
+    double? radiusKm,
     bool? publishedOnly,
     int? limit,
   });

@@ -12,6 +12,10 @@ class DocumentRepositoryImpl implements DocumentRepository {
     String? search,
     String? type,
     String? authorId,
+    String? placeId,
+    double? lat,
+    double? lng,
+    double? radiusKm,
     bool? publishedOnly,
     int? limit,
   }) {
@@ -20,6 +24,10 @@ class DocumentRepositoryImpl implements DocumentRepository {
       search: search,
       type: type,
       authorId: authorId,
+      placeId: placeId,
+      lat: lat,
+      lng: lng,
+      radiusKm: radiusKm,
       publishedOnly: publishedOnly,
       limit: limit,
     );

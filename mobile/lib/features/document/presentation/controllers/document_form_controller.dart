@@ -120,6 +120,7 @@ class DocumentFormController extends ChangeNotifier {
     required String subjectCode,
     required String tagsText,
     required String externalUrl,
+    String? placeId,
   }) async {
     // Validation
     if (isDocument) {
@@ -178,6 +179,7 @@ class DocumentFormController extends ChangeNotifier {
         'status': 'PUBLISHED',
         'categoryId': selectedCategoryId,
         'type': contentType,
+        if (isDocument && placeId != null && placeId.isNotEmpty) 'placeId': placeId,
         if (isDocument) ...{
           'fileUrl': finalFileUrl,
           'fileType': useUpload ? (uploadedFileType ?? 'pdf') : 'link',

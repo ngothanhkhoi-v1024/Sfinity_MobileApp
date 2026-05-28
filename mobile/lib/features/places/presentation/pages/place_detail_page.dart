@@ -35,13 +35,9 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
     });
     try {
       final place = await ApiClient.instance.get('/document/${widget.placeId}');
-      final ownerId = place['author']?['id']?.toString() ?? place['authorId']?.toString();
-      if (ownerId == null || ownerId.isEmpty) {
-        throw Exception('Không xác định được chủ địa điểm');
-      }
       final docsRes = await SfinityApp.documentRepository.getDocuments(
         type: 'document',
-        authorId: ownerId,
+        placeId: widget.placeId,
         publishedOnly: true,
         limit: 50,
       );
@@ -70,6 +66,47 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
     ).then((_) => _load());
   }
 
+  Future<void> _editPlace() async {
+    await context.push('/places/${widget.placeId}/edit');
+    if (mounted) _load();
+  }
+
+  Future<void> _deletePlace() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Xóa địa điểm?'),
+        content: const Text(
+          'Địa điểm và liên kết trên bản đồ sẽ bị xóa. Tài liệu đã đăng vẫn giữ trên hệ thống.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Hủy')),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Xóa'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    try {
+      await SfinityApp.documentRepository.deleteDocument(widget.placeId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đã xóa địa điểm')),
+        );
+        context.pop();
+      }
+    } on DioException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(ApiClient.instance.errorMessage(e))),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) {
@@ -93,6 +130,7 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
     final isDark = theme.brightness == Brightness.dark;
     final title = place['title']?.toString() ?? 'Địa điểm';
     final body = place['body']?.toString() ?? '';
+    final address = place['address']?.toString();
     final author = place['author'] as Map<String, dynamic>?;
     final ownerName = author?['name']?.toString() ?? 'Người dùng';
     final currentUserId = SfinityApp.auth.user?['id']?.toString();
@@ -101,7 +139,23 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
     final primary = theme.colorScheme.primary;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Chi tiết địa điểm')),
+      appBar: AppBar(
+        title: const Text('Chi tiết địa điểm'),
+        actions: [
+          if (isMine) ...[
+            IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              tooltip: 'Sửa địa điểm',
+              onPressed: _editPlace,
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete_outline),
+              tooltip: 'Xóa địa điểm',
+              onPressed: _deletePlace,
+            ),
+          ],
+        ],
+      ),
       body: RefreshIndicator(
         onRefresh: _load,
         child: ListView(
@@ -154,6 +208,15 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
                     value: ownerName,
                     isDark: isDark,
                   ),
+                  if (address != null && address.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    _InfoRow(
+                      icon: Icons.location_on_outlined,
+                      label: 'Địa chỉ',
+                      value: address,
+                      isDark: isDark,
+                    ),
+                  ],
                   if (body.isNotEmpty) ...[
                     const SizedBox(height: 10),
                     _InfoRow(

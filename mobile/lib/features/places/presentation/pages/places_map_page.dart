@@ -12,6 +12,8 @@ import '../../../../core/network/api_client.dart';
 import '../widgets/place_list_tile.dart';
 import '../widgets/places_header_panel.dart';
 
+const _nearbyRadiusKm = 50.0;
+
 /// Bản đồ địa điểm — tile OpenStreetMap (open source).
 class PlacesMapPage extends StatefulWidget {
   const PlacesMapPage({super.key});
@@ -30,14 +32,21 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
   bool _communityMode = true;
   bool _listView = false;
   String? _locationHint;
+  final _searchController = TextEditingController();
   List<Map<String, dynamic>> _publicPlaces = [];
   List<Map<String, dynamic>> _myPlaces = [];
 
   @override
   void initState() {
     super.initState();
-    _initLocation();
     _loadPlaces();
+    _initLocation();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   void _safeMove(LatLng target, double zoom) {
@@ -90,6 +99,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
         _locating = false;
       });
       _safeMove(here, 14);
+      await _loadPlaces();
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -102,10 +112,16 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
   Future<void> _loadPlaces() async {
     setState(() => _loadingPlaces = true);
     try {
+      final me = _myLocation;
+      final search = _searchController.text.trim();
       final publicRes = await SfinityApp.documentRepository.getDocuments(
         type: 'place',
         publishedOnly: true,
-        limit: 100,
+        lat: me?.latitude,
+        lng: me?.longitude,
+        radiusKm: me != null ? _nearbyRadiusKm : null,
+        search: search.isNotEmpty ? search : null,
+        limit: 50,
       );
       final currentUserId = SfinityApp.auth.user?['id']?.toString();
       Map<String, dynamic> myRes = const {'items': []};
@@ -113,7 +129,8 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
         myRes = await SfinityApp.documentRepository.getDocuments(
           type: 'place',
           authorId: currentUserId,
-          limit: 100,
+          search: search.isNotEmpty ? search : null,
+          limit: 50,
         );
       }
       if (!mounted) return;
@@ -221,7 +238,9 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
                 Text(
                   count == 0
                       ? 'Chưa có địa điểm'
-                      : '$count địa điểm · sắp xếp theo khoảng cách',
+                      : _myLocation != null
+                          ? '$count địa điểm · trong ${_nearbyRadiusKm.toInt()} km'
+                          : '$count địa điểm',
                   style: TextStyle(
                     fontSize: 12,
                     color: isDark ? Colors.grey.shade400 : const Color(0xFF6B7280),
@@ -309,11 +328,9 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
         final place = sorted[i];
         final point = place['_point'] as LatLng;
         final title = place['title']?.toString() ?? 'Địa điểm';
-        final author = place['author'] as Map<String, dynamic>?;
-        final owner = author?['name']?.toString() ?? 'Người dùng';
         return PlaceListTile(
           title: title,
-          subtitle: _communityMode ? owner : 'Địa điểm của bạn',
+          subtitle: _placeSubtitle(place, community: _communityMode),
           distanceLabel: _distanceLabel(point),
           isCommunity: _communityMode,
           onTap: () => _openPlaceDetail(place),
@@ -337,7 +354,13 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
         children: [
           SafeArea(
             bottom: false,
-            child: _buildHeader(),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildHeader(),
+                _buildSearchBar(),
+              ],
+            ),
           ),
           if (_locationHint != null && !_locating)
             Padding(
@@ -394,6 +417,52 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
     );
   }
 
+  String _placeSubtitle(Map<String, dynamic> place, {required bool community}) {
+    final address = place['address']?.toString();
+    if (address != null && address.isNotEmpty) {
+      return address;
+    }
+    if (community) {
+      final author = place['author'] as Map<String, dynamic>?;
+      return author?['name']?.toString() ?? 'Người dùng';
+    }
+    return 'Địa điểm của bạn';
+  }
+
+  Future<void> _deletePlace(String placeId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Xóa địa điểm?'),
+        content: const Text('Bạn có chắc muốn xóa địa điểm này khỏi bản đồ?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Hủy')),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Xóa'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    try {
+      await SfinityApp.documentRepository.deleteDocument(placeId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đã xóa địa điểm')),
+        );
+        _loadPlaces();
+      }
+    } on DioException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(ApiClient.instance.errorMessage(e))),
+        );
+      }
+    }
+  }
+
   String _distanceLabel(LatLng point) {
     final me = _myLocation;
     if (me == null) return 'Chưa có vị trí của bạn';
@@ -445,10 +514,17 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
 
   void _showPlaceSheet(Map<String, dynamic> place, LatLng point) {
     final title = place['title']?.toString() ?? 'Địa điểm';
-    final subtitle = place['body']?.toString() ?? '';
+    final description = place['body']?.toString() ?? '';
+    final address = place['address']?.toString();
     final placeId = place['id']?.toString() ?? '';
     final isMine = (place['authorId']?.toString() ?? '') ==
         (SfinityApp.auth.user?['id']?.toString() ?? '');
+    final distFromApi = place['distanceMeters'];
+    final distanceText = distFromApi is num
+        ? (distFromApi < 1000
+            ? '${distFromApi.round()} m'
+            : '${(distFromApi / 1000).toStringAsFixed(1)} km')
+        : _distanceLabel(point);
 
     showModalBottomSheet<void>(
       context: context,
@@ -461,15 +537,15 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
             children: [
               Text(title, style: Theme.of(ctx).textTheme.titleLarge),
               const SizedBox(height: 8),
-              if (subtitle.isNotEmpty) Text(subtitle),
+              if (address != null && address.isNotEmpty)
+                Text(address, style: TextStyle(color: Colors.grey.shade700)),
+              if (description.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text(description, maxLines: 3, overflow: TextOverflow.ellipsis),
+              ],
               const SizedBox(height: 8),
               Text(
-                'Khoảng cách: ${_distanceLabel(point)}',
-                style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Tọa độ: ${point.latitude.toStringAsFixed(5)}, ${point.longitude.toStringAsFixed(5)}',
+                'Khoảng cách: $distanceText',
                 style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
               ),
               const SizedBox(height: 16),
@@ -500,10 +576,52 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
                   icon: const Icon(Icons.upload_file_outlined),
                   label: const Text('Tải tài liệu'),
                 ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    context.push('/places/$placeId/edit').then((_) => _loadPlaces());
+                  },
+                  icon: const Icon(Icons.edit_outlined),
+                  label: const Text('Sửa địa điểm'),
+                ),
+                const SizedBox(height: 8),
+                TextButton.icon(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _deletePlace(placeId);
+                  },
+                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                  label: const Text('Xóa địa điểm', style: TextStyle(color: Colors.red)),
+                ),
               ],
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: TextField(
+        controller: _searchController,
+        decoration: InputDecoration(
+          hintText: 'Tìm địa điểm theo tên hoặc địa chỉ…',
+          prefixIcon: const Icon(Icons.search, size: 20),
+          filled: true,
+          fillColor: Theme.of(context).brightness == Brightness.dark
+              ? const Color(0xFF2A2A2A)
+              : Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        ),
+        onSubmitted: (_) => _loadPlaces(),
       ),
     );
   }
@@ -513,6 +631,27 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
     final places = _communityMode ? _publicPlaces : _myPlaces;
     final mapCenter = MapConfig.sanitize(_center);
     final markers = <Marker>[
+      if (_myLocation != null)
+        Marker(
+          point: _myLocation!,
+          width: 22,
+          height: 22,
+          alignment: Alignment.center,
+          child: Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E88E5),
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 3),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF1E88E5).withValues(alpha: 0.4),
+                  blurRadius: 8,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+          ),
+        ),
       for (final p in places)
         Marker(
           point: p['_point'] as LatLng,
@@ -573,6 +712,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 _buildHeader(),
+                _buildSearchBar(),
                 if (_locationHint != null && !_locating)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),

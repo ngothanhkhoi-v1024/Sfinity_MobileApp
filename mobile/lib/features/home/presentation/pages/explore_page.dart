@@ -44,8 +44,19 @@ class _ExplorePageState extends State<ExplorePage> {
   }
 
   bool _isPlace(Map<String, dynamic> item) {
+    if (item['type']?.toString() == 'place') return true;
     final body = item['body']?.toString() ?? '';
     return body.contains('type:place');
+  }
+
+  void _openItem(Map<String, dynamic> item) {
+    final id = item['id']?.toString() ?? '';
+    if (id.isEmpty) return;
+    if (_isPlace(item)) {
+      context.push('/places/$id');
+    } else {
+      context.push('/document/$id');
+    }
   }
 
   @override
@@ -162,7 +173,7 @@ class _ExplorePageState extends State<ExplorePage> {
                      Icons.chevron_right,
                      color: isDark ? Colors.grey.shade500 : null,
                    ),
-                  onTap: () => context.push('/document/${item['id']}'),
+                  onTap: () => _openItem(item),
                 ),
               );
             }),
