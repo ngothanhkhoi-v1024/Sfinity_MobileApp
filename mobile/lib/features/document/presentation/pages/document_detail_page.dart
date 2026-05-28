@@ -5,6 +5,8 @@ import 'package:share_plus/share_plus.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../controllers/document_detail_controller.dart';
+import '../widgets/document_detail_header.dart';
+import '../widgets/document_info_tile.dart';
 
 class DocumentDetailPage extends StatefulWidget {
   const DocumentDetailPage({super.key, required this.documentId});
@@ -107,49 +109,6 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
     return "${size.toStringAsFixed(1)} ${suffixes[i]}";
   }
 
-  Widget _buildInfoTile(BuildContext context, IconData icon, String label, String value) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: theme.brightness == Brightness.light ? Colors.grey.shade50 : Colors.grey.shade900,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: theme.brightness == Brightness.light ? Colors.grey.shade200 : Colors.grey.shade800,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 16, color: theme.colorScheme.primary),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.grey.shade600,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -191,15 +150,6 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
         final systemPrimary = theme.colorScheme.primary;
         final systemSecondary = theme.colorScheme.secondary;
 
-        IconData fileIcon = Icons.article_outlined;
-        if (fileType == 'PDF') {
-          fileIcon = Icons.picture_as_pdf;
-        } else if (fileType == 'DOCX' || fileType == 'DOC') {
-          fileIcon = Icons.description;
-        } else if (fileType == 'LINK') {
-          fileIcon = Icons.cloud_download;
-        }
-
         return Scaffold(
           appBar: AppBar(
             title: const Text('Chi tiết tài liệu', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -220,52 +170,10 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              systemPrimary.withOpacity(0.05),
-                              systemSecondary.withOpacity(0.02),
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: systemPrimary.withOpacity(0.15)),
-                        ),
-                        child: Column(
-                          children: [
-                            Container(
-                              width: 80,
-                              height: 80,
-                              decoration: BoxDecoration(
-                                color: systemPrimary.withOpacity(0.1),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(fileIcon, size: 40, color: systemPrimary),
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              title,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              category,
-                              style: TextStyle(
-                                color: systemPrimary,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
+                      DocumentDetailHeader(
+                        title: title,
+                        category: category,
+                        fileType: fileType,
                       ),
                       const SizedBox(height: 24),
 
@@ -277,10 +185,26 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                         crossAxisSpacing: 12,
                         mainAxisSpacing: 12,
                         children: [
-                          _buildInfoTile(context, Icons.code, 'MÃ MÔN HỌC', subjectCode.toUpperCase()),
-                          _buildInfoTile(context, Icons.insert_drive_file, 'ĐỊNH DẠNG', fileType),
-                          _buildInfoTile(context, Icons.data_usage, 'DUNG LƯỢNG', fileSize),
-                          _buildInfoTile(context, Icons.file_download, 'LƯỢT TẢI', '$downloads'),
+                          DocumentInfoTile(
+                            icon: Icons.code,
+                            label: 'MÃ MÔN HỌC',
+                            value: subjectCode.toUpperCase(),
+                          ),
+                          DocumentInfoTile(
+                            icon: Icons.insert_drive_file,
+                            label: 'ĐỊNH DẠNG',
+                            value: fileType,
+                          ),
+                          DocumentInfoTile(
+                            icon: Icons.data_usage,
+                            label: 'DUNG LƯỢNG',
+                            value: fileSize,
+                          ),
+                          DocumentInfoTile(
+                            icon: Icons.file_download,
+                            label: 'LƯỢT TẢI',
+                            value: '$downloads',
+                          ),
                         ],
                       ),
                       const SizedBox(height: 24),

@@ -48,7 +48,7 @@ class ProfilePage extends StatelessWidget {
           context,
           icon: Icons.article_outlined,
           title: 'Bài đăng của tôi',
-          onTap: () => context.push(RouteNames.contentList),
+          onTap: () => context.push(RouteNames.documentList),
           isDark: isDark,
         ),
         _buildMenuTile(

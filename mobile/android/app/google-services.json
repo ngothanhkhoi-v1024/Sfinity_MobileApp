@@ -58,11 +58,27 @@
       },
       "oauth_client": [
         {
+          "client_id": "947472672630-1696uonpjsojov6kcfkhafu7g2h66pak.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.sfinity.sfinity",
+            "certificate_hash": "debbc38a94ac928bdc3a7c555fcac3fff4a4bd5e"
+          }
+        },
+        {
           "client_id": "947472672630-26s5artpcu4fgm6lq1ounm9esgkb0o4n.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.sfinity.sfinity",
             "certificate_hash": "52a0d3334f7455f1301e22b8479ffc268be2d9c8"
+          }
+        },
+        {
+          "client_id": "947472672630-823kti7gnplujrbvudmmvmk4r7h8oli4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.sfinity.sfinity",
+            "certificate_hash": "07caa3f7d7333aba875acd2300a48a730c62aed3"
           }
         },
         {
