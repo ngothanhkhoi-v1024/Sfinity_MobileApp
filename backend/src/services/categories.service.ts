@@ -11,13 +11,39 @@ const toDate = (val: any): Date => {
 
 export const categoriesService = {
   async findAll() {
-    const snapshot = await getDb().collection('categories').get();
+    let snapshot = await getDb().collection('categories').get();
+
+    // Tự động seed các danh mục mặc định nếu Firestore đang trống
+    if (snapshot.empty) {
+      const defaultCategories = [
+        { name: 'Bài giảng', slug: 'bai-giang', description: 'Slide bài giảng, tài liệu lý thuyết' },
+        { name: 'Đề thi', slug: 'de-thi', description: 'Đề thi ôn tập, đề kiểm tra các kỳ' },
+        { name: 'Ghi chú', slug: 'ghi-chu', description: 'Ghi chú cá nhân, tóm tắt môn học' },
+        { name: 'Khác', slug: 'khac', description: 'Tài liệu học tập khác' },
+      ];
+
+      const batch = getDb().batch();
+      for (const cat of defaultCategories) {
+        const docRef = getDb().collection('categories').doc();
+        batch.set(docRef, {
+          id: docRef.id,
+          ...cat,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+      }
+      await batch.commit();
+
+      // Lấy lại danh sách sau khi đã seed
+      snapshot = await getDb().collection('categories').get();
+    }
+
     const categories = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as any));
 
     const categoriesWithCount = await Promise.all(
       categories.map(async (cat) => {
         const countSnapshot = await getDb()
-          .collection('contents')
+          .collection('documents')
           .where('categoryId', '==', cat.id)
           .count()
           .get();
@@ -30,7 +56,7 @@ export const categoriesService = {
           createdAt: toDate(cat.createdAt),
           updatedAt: toDate(cat.updatedAt),
           _count: {
-            contents: countSnapshot.data().count,
+            documents: countSnapshot.data().count,
           },
         };
       }),
@@ -50,7 +76,7 @@ export const categoriesService = {
     const cat = { id: doc.id, ...doc.data() } as any;
     
     const countSnapshot = await getDb()
-      .collection('contents')
+      .collection('documents')
       .where('categoryId', '==', cat.id)
       .count()
       .get();
@@ -63,7 +89,7 @@ export const categoriesService = {
       createdAt: toDate(cat.createdAt),
       updatedAt: toDate(cat.updatedAt),
       _count: {
-        contents: countSnapshot.data().count,
+        documents: countSnapshot.data().count,
       },
     };
   },

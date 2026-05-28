@@ -58,7 +58,7 @@ void showShareActionSheet(BuildContext context) {
                 onTap: () {
                   Navigator.pop(ctx);
                   context.push(
-                    RouteNames.contentCreate,
+                    RouteNames.documentCreate,
                     extra: const {'contentType': 'document'},
                   );
                 },

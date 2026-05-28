@@ -52,11 +52,11 @@ class _FavoritesPageState extends State<FavoritesPage> {
         itemCount: _items.length,
         itemBuilder: (_, i) {
           final fav = _items[i] as Map<String, dynamic>;
-          final content = fav['content'] as Map<String, dynamic>?;
+          final document = fav['document'] as Map<String, dynamic>?;
           return ListTile(
-            title: Text(content?['title']?.toString() ?? ''),
+            title: Text(document?['title']?.toString() ?? ''),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push('/content/${content?['id']}'),
+            onTap: () => context.push('/document/${document?['id']}'),
           );
         },
       ),

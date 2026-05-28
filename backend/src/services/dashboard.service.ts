@@ -8,7 +8,7 @@ export const dashboardService = {
     const [
       usersSnap,
       adminsSnap,
-      contentsSnap,
+      documentsSnap,
       publishedSnap,
       categoriesSnap,
       feedbackSnap,
@@ -17,8 +17,8 @@ export const dashboardService = {
     ] = await Promise.all([
       db.collection('users').where('role', '==', UserRole.USER).count().get(),
       db.collection('users').where('role', '==', UserRole.ADMIN).count().get(),
-      db.collection('contents').count().get(),
-      db.collection('contents').where('status', '==', ContentStatus.PUBLISHED).count().get(),
+      db.collection('documents').count().get(),
+      db.collection('documents').where('status', '==', ContentStatus.PUBLISHED).count().get(),
       db.collection('categories').count().get(),
       db.collection('feedbacks').count().get(),
       db.collection('feedbacks').where('resolved', '==', false).count().get(),
@@ -27,7 +27,7 @@ export const dashboardService = {
 
     const users = usersSnap.data().count;
     const admins = adminsSnap.data().count;
-    const contents = contentsSnap.data().count;
+    const documents = documentsSnap.data().count;
     const published = publishedSnap.data().count;
     const categories = categoriesSnap.data().count;
     const feedback = feedbackSnap.data().count;
@@ -37,9 +37,9 @@ export const dashboardService = {
     return {
       users,
       admins,
-      contents,
-      publishedContents: published,
-      draftContents: contents - published,
+      documents,
+      publishedDocuments: published,
+      draftDocuments: documents - published,
       categories,
       feedback,
       pendingFeedback,

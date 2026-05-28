@@ -4,9 +4,9 @@ import '../../features/auth/presentation/pages/forgot_password_page.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/otp_verification_page.dart';
 import '../../features/auth/presentation/pages/register_page.dart';
-import '../../features/content/presentation/pages/content_detail_page.dart';
-import '../../features/content/presentation/pages/content_form_page.dart';
-import '../../features/content/presentation/pages/content_list_page.dart';
+import '../../features/document/presentation/pages/document_detail_page.dart';
+import '../../features/document/presentation/pages/document_form_page.dart';
+import '../../features/document/presentation/pages/document_list_page.dart';
 import '../../features/feedback/presentation/pages/feedback_page.dart';
 import '../../features/home/presentation/pages/home_shell_page.dart';
 import '../../features/places/presentation/pages/place_share_page.dart';
@@ -56,24 +56,24 @@ GoRouter createAppRouter(AuthState auth) {
       GoRoute(path: RouteNames.favorites, builder: (_, __) => const FavoritesPage()),
       GoRoute(path: RouteNames.placeShare, builder: (_, __) => const PlaceSharePage()),
       GoRoute(
-        path: RouteNames.contentList,
-        builder: (_, __) => const ContentListPage(),
+        path: RouteNames.documentList,
+        builder: (_, __) => const DocumentListPage(),
         routes: [
           GoRoute(
             path: 'create',
             builder: (_, state) {
               final extra = state.extra;
               final type = extra is Map ? extra['contentType']?.toString() ?? 'document' : 'document';
-              return ContentFormPage(contentType: type);
+              return DocumentFormPage(contentType: type);
             },
           ),
           GoRoute(
             path: ':id',
-            builder: (_, state) => ContentDetailPage(contentId: state.pathParameters['id']!),
+            builder: (_, state) => DocumentDetailPage(documentId: state.pathParameters['id']!),
             routes: [
               GoRoute(
                 path: 'edit',
-                builder: (_, state) => ContentFormPage(contentId: state.pathParameters['id']!),
+                builder: (_, state) => DocumentFormPage(documentId: state.pathParameters['id']!),
               ),
             ],
           ),

@@ -31,7 +31,7 @@ npm run start:dev
 | POST | `/api/auth/admin/login` | Đăng nhập admin |
 | POST | `/api/auth/register` | Đăng ký |
 | GET | `/api/auth/me` | Profile (JWT) |
-| GET | `/api/content` | Danh sách nội dung |
+| GET | `/api/document` | Danh sách tài liệu |
 | CRUD | `/api/users` | Admin only |
 | CRUD | `/api/categories` | Admin write |
 | GET | `/api/admin/dashboard/stats` | Thống kê admin |

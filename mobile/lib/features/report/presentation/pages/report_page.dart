@@ -13,7 +13,7 @@ class ReportPage extends StatefulWidget {
 class _ReportPageState extends State<ReportPage> {
   final _reason = TextEditingController();
   final _description = TextEditingController();
-  String _targetType = 'content';
+  String _targetType = 'document';
   final _targetId = TextEditingController();
 
   Future<void> _submit() async {
@@ -51,11 +51,11 @@ class _ReportPageState extends State<ReportPage> {
               value: _targetType,
               decoration: const InputDecoration(labelText: 'Loại', border: OutlineInputBorder()),
               items: const [
-                DropdownMenuItem(value: 'content', child: Text('Nội dung')),
+                DropdownMenuItem(value: 'document', child: Text('Tài liệu')),
                 DropdownMenuItem(value: 'user', child: Text('Người dùng')),
                 DropdownMenuItem(value: 'other', child: Text('Khác')),
               ],
-              onChanged: (v) => setState(() => _targetType = v ?? 'content'),
+              onChanged: (v) => setState(() => _targetType = v ?? 'document'),
             ),
             const SizedBox(height: 12),
             TextField(

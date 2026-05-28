@@ -1,7 +1,7 @@
 import { getDb } from '../lib/firebase';
 import { HttpError } from '../lib/http-error';
 import { ContentStatus, UserRole } from '../types/enums';
-import type { CreateContentDto, UpdateContentDto } from '../dto/content.dto';
+import type { CreateDocumentDto, UpdateDocumentDto } from '../dto/document.dto';
 
 const toDate = (val: any): Date => {
   if (!val) return new Date();
@@ -10,7 +10,7 @@ const toDate = (val: any): Date => {
   return new Date(val);
 };
 
-export const contentService = {
+export const documentService = {
   async findAll(params: {
     search?: string;
     status?: ContentStatus;
@@ -23,7 +23,7 @@ export const contentService = {
     const limit = params.limit ?? 20;
     const skip = (page - 1) * limit;
 
-    const snapshot = await getDb().collection('contents').get();
+    const snapshot = await getDb().collection('documents').get();
     let items = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as any));
 
     // Filter status
@@ -76,11 +76,8 @@ export const contentService = {
         }
 
         return {
+          ...item,
           id: item.id,
-          title: item.title,
-          body: item.body,
-          status: item.status,
-          authorId: item.authorId,
           categoryId: item.categoryId ?? null,
           createdAt: toDate(item.createdAt),
           updatedAt: toDate(item.updatedAt),
@@ -94,9 +91,9 @@ export const contentService = {
   },
 
   async findOne(id: string) {
-    const doc = await getDb().collection('contents').doc(id).get();
+    const doc = await getDb().collection('documents').doc(id).get();
     if (!doc.exists) {
-      throw new HttpError(404, 'Không tìm thấy nội dung', 'Not Found');
+      throw new HttpError(404, 'Không tìm thấy tài liệu', 'Not Found');
     }
     const item = { id: doc.id, ...doc.data() } as any;
 
@@ -119,11 +116,8 @@ export const contentService = {
     }
 
     return {
+      ...item,
       id: item.id,
-      title: item.title,
-      body: item.body,
-      status: item.status,
-      authorId: item.authorId,
       categoryId: item.categoryId ?? null,
       createdAt: toDate(item.createdAt),
       updatedAt: toDate(item.updatedAt),
@@ -132,46 +126,69 @@ export const contentService = {
     };
   },
 
-  async create(authorId: string, dto: CreateContentDto) {
-    const docRef = getDb().collection('contents').doc();
-    const newContent = {
+  async create(authorId: string, dto: CreateDocumentDto) {
+    const docRef = getDb().collection('documents').doc();
+    const type = dto.type ?? 'document';
+
+    const newDocument: any = {
       id: docRef.id,
       title: dto.title,
       body: dto.body,
       status: dto.status ?? ContentStatus.DRAFT,
       authorId,
       categoryId: dto.categoryId ?? null,
+      type,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
-    await docRef.set(newContent);
-    return contentService.findOne(docRef.id);
+    if (type === 'document') {
+      newDocument.fileUrl = dto.fileUrl ?? null;
+      newDocument.fileType = dto.fileType ?? null;
+      newDocument.fileSize = dto.fileSize ?? null;
+      newDocument.subjectCode = dto.subjectCode ?? null;
+      newDocument.tags = dto.tags ?? [];
+      newDocument.downloadsCount = 0;
+      newDocument.likesCount = 0;
+    } else if (type === 'place') {
+      newDocument.latitude = dto.latitude ?? null;
+      newDocument.longitude = dto.longitude ?? null;
+      newDocument.address = dto.address ?? null;
+    }
+
+    await docRef.set(newDocument);
+    return documentService.findOne(docRef.id);
   },
 
-  async update(id: string, dto: UpdateContentDto, userId: string, role: UserRole) {
-    const item = await contentService.findOne(id);
+  async update(id: string, dto: UpdateDocumentDto, userId: string, role: UserRole) {
+    const item = await documentService.findOne(id);
     if (role !== UserRole.ADMIN && item.authorId !== userId) {
       throw new HttpError(404, 'Not Found', 'Not Found');
     }
 
-    const docRef = getDb().collection('contents').doc(id);
+    const docRef = getDb().collection('documents').doc(id);
     const updateData: any = {
-      ...dto,
       updatedAt: new Date(),
     };
 
+    // Filter out undefined properties to prevent Firestore crash
+    for (const [key, value] of Object.entries(dto)) {
+      if (value !== undefined) {
+        updateData[key] = value;
+      }
+    }
+
     await docRef.update(updateData);
-    return contentService.findOne(id);
+    return documentService.findOne(id);
   },
 
   async remove(id: string, userId: string, role: UserRole) {
-    const item = await contentService.findOne(id);
+    const item = await documentService.findOne(id);
     if (role !== UserRole.ADMIN && item.authorId !== userId) {
       throw new HttpError(404, 'Not Found', 'Not Found');
     }
 
-    await getDb().collection('contents').doc(id).delete();
+    await getDb().collection('documents').doc(id).delete();
     return { success: true };
   },
 };

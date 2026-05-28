@@ -39,7 +39,7 @@ class ProfilePage extends StatelessWidget {
         ListTile(
           leading: const Icon(Icons.article_outlined),
           title: const Text('Bài đăng của tôi'),
-          onTap: () => context.push(RouteNames.contentList),
+          onTap: () => context.push(RouteNames.documentList),
         ),
         ListTile(
           leading: const Icon(Icons.feedback_outlined),

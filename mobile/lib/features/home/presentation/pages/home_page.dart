@@ -17,7 +17,7 @@ class HomePage extends StatelessWidget {
             title: const Text('Xem nội dung'),
             subtitle: const Text('Danh sách bài viết đã xuất bản'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push(RouteNames.contentList),
+            onTap: () => context.push(RouteNames.documentList),
           ),
         ),
         Card(

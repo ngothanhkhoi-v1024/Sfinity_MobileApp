@@ -12,7 +12,7 @@ export const openApiDocument = {
     { name: 'auth' },
     { name: 'users' },
     { name: 'categories' },
-    { name: 'content' },
+    { name: 'document' },
     { name: 'favorites' },
     { name: 'feedback' },
     { name: 'reports' },
@@ -109,7 +109,7 @@ export const openApiDocument = {
           description: { type: 'string' },
         },
       },
-      CreateContentDto: {
+      CreateDocumentDto: {
         type: 'object',
         required: ['title', 'body'],
         properties: {
@@ -119,7 +119,7 @@ export const openApiDocument = {
           categoryId: { type: 'string' },
         },
       },
-      UpdateContentDto: {
+      UpdateDocumentDto: {
         type: 'object',
         properties: {
           title: { type: 'string', minLength: 2 },
@@ -385,10 +385,10 @@ export const openApiDocument = {
         responses: { '200': { description: 'OK' } },
       },
     },
-    '/api/content': {
+    '/api/document': {
       get: {
-        tags: ['content'],
-        summary: 'List content (paginated)',
+        tags: ['document'],
+        summary: 'List document (paginated)',
         parameters: [
           { name: 'search', in: 'query', schema: { type: 'string' } },
           { name: 'status', in: 'query', schema: { type: 'string' } },
@@ -400,61 +400,61 @@ export const openApiDocument = {
         responses: { '200': { description: 'OK' } },
       },
       post: {
-        tags: ['content'],
-        summary: 'Create content',
+        tags: ['document'],
+        summary: 'Create document',
         security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
           content: {
             'application/json': {
-              schema: { $ref: '#/components/schemas/CreateContentDto' },
+              schema: { $ref: '#/components/schemas/CreateDocumentDto' },
             },
           },
         },
         responses: { '200': { description: 'OK' } },
       },
     },
-    '/api/content/{id}': {
+    '/api/document/{id}': {
       get: {
-        tags: ['content'],
-        summary: 'Get content',
+        tags: ['document'],
+        summary: 'Get document',
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
         responses: { '200': { description: 'OK' } },
       },
       patch: {
-        tags: ['content'],
-        summary: 'Update content',
+        tags: ['document'],
+        summary: 'Update document',
         security: [{ bearerAuth: [] }],
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
         requestBody: {
           content: {
             'application/json': {
-              schema: { $ref: '#/components/schemas/UpdateContentDto' },
+              schema: { $ref: '#/components/schemas/UpdateDocumentDto' },
             },
           },
         },
         responses: { '200': { description: 'OK' } },
       },
       delete: {
-        tags: ['content'],
-        summary: 'Delete content',
+        tags: ['document'],
+        summary: 'Delete document',
         security: [{ bearerAuth: [] }],
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
         responses: { '200': { description: 'OK' } },
       },
     },
-    '/api/content/{id}/publish': {
+    '/api/document/{id}/publish': {
       patch: {
-        tags: ['content'],
+        tags: ['document'],
         summary: 'Publish (admin)',
         security: [{ bearerAuth: [] }],
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
         responses: { '200': { description: 'OK' } },
       },
     },
-    '/api/content/{id}/unpublish': {
+    '/api/document/{id}/unpublish': {
       patch: {
-        tags: ['content'],
+        tags: ['document'],
         summary: 'Unpublish (admin)',
         security: [{ bearerAuth: [] }],
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
@@ -469,13 +469,13 @@ export const openApiDocument = {
         responses: { '200': { description: 'OK' } },
       },
     },
-    '/api/favorites/{contentId}': {
+    '/api/favorites/{documentId}': {
       post: {
         tags: ['favorites'],
         summary: 'Add favorite',
         security: [{ bearerAuth: [] }],
         parameters: [
-          { name: 'contentId', in: 'path', required: true, schema: { type: 'string' } },
+          { name: 'documentId', in: 'path', required: true, schema: { type: 'string' } },
         ],
         responses: { '200': { description: 'OK' } },
       },
@@ -484,7 +484,7 @@ export const openApiDocument = {
         summary: 'Remove favorite',
         security: [{ bearerAuth: [] }],
         parameters: [
-          { name: 'contentId', in: 'path', required: true, schema: { type: 'string' } },
+          { name: 'documentId', in: 'path', required: true, schema: { type: 'string' } },
         ],
         responses: { '200': { description: 'OK' } },
       },
