@@ -10,12 +10,26 @@ class DocumentRepositoryImpl implements DocumentRepository {
   Future<Map<String, dynamic>> getDocuments({
     String? categoryId,
     String? search,
+    String? type,
+    String? authorId,
+    String? placeId,
+    String? tags,
+    double? lat,
+    double? lng,
+    double? radiusKm,
     bool? publishedOnly,
     int? limit,
   }) {
     return _apiService.getDocuments(
       categoryId: categoryId,
       search: search,
+      type: type,
+      authorId: authorId,
+      placeId: placeId,
+      tags: tags,
+      lat: lat,
+      lng: lng,
+      radiusKm: radiusKm,
       publishedOnly: publishedOnly,
       limit: limit,
     );
