@@ -32,13 +32,14 @@ class FloatingPillNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Material(
       color: Colors.transparent,
       child: Container(
         height: 72,
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
           borderRadius: BorderRadius.circular(40),
           boxShadow: [
             BoxShadow(
@@ -95,7 +96,10 @@ class _TabButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? Colors.black : Colors.grey.shade500;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = selected
+        ? (isDark ? const Color(0xFFF2F2F2) : Colors.black)
+        : (isDark ? Colors.grey.shade500 : Colors.grey.shade500);
     return Expanded(
       child: InkWell(
         onTap: onTap,

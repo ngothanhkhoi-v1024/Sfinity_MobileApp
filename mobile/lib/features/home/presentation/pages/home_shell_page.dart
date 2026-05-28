@@ -62,7 +62,7 @@ class _HomeShellPageState extends State<HomeShellPage> {
 
     return Scaffold(
       extendBody: true,
-      backgroundColor: const Color(0xFFF3F4F6),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       drawer: Drawer(
         child: ListView(
           children: [
