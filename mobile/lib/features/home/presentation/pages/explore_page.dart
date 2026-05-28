@@ -31,7 +31,7 @@ class _ExplorePageState extends State<ExplorePage> {
       _error = null;
     });
     try {
-      final res = await ApiClient.instance.get('/content', query: {
+      final res = await ApiClient.instance.get('/document', query: {
         'publishedOnly': 'true',
         'limit': '20',
       });
@@ -162,7 +162,7 @@ class _ExplorePageState extends State<ExplorePage> {
                      Icons.chevron_right,
                      color: isDark ? Colors.grey.shade500 : null,
                    ),
-                  onTap: () => context.push('/content/${item['id']}'),
+                  onTap: () => context.push('/document/${item['id']}'),
                 ),
               );
             }),

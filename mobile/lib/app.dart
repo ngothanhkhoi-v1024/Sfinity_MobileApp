@@ -12,11 +12,15 @@ import 'features/auth/data/services/auth_local_database.dart';
 import 'features/auth/data/services/firebase_auth_service.dart';
 import 'features/auth/data/services/firestore_user_service.dart';
 import 'features/auth/data/services/social_auth_service.dart';
+import 'features/document/data/repositories/document_repository.dart';
+import 'features/document/data/repositories/document_repository_impl.dart';
+import 'features/document/data/services/document_api_service.dart';
 
 class SfinityApp extends StatefulWidget {
   const SfinityApp({super.key});
 
   static AuthState get auth => _SfinityAppState.auth;
+  static late final DocumentRepository documentRepository;
   static ThemeManager get themeManager => _SfinityAppState.themeManager;
 
   @override
@@ -32,6 +36,8 @@ class _SfinityAppState extends State<SfinityApp> {
   void initState() {
     super.initState();
     final apiService = AuthApiService(ApiClient.instance);
+    final docApiService = DocumentApiService(ApiClient.instance);
+    SfinityApp.documentRepository = DocumentRepositoryImpl(docApiService);
     final localDatabase = AuthLocalDatabase();
     final firebaseAuthService = FirebaseAuthService();
     final socialAuthService = SocialAuthService();

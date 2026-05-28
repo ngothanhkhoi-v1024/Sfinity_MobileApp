@@ -16,19 +16,19 @@ favoritesRouter.get(
 );
 
 favoritesRouter.post(
-  '/:contentId',
+  '/:documentId',
   asyncHandler(async (req, res) => {
     res.json(
-      await favoritesService.add(req.user!.sub, req.params.contentId),
+      await favoritesService.add(req.user!.sub, req.params.documentId),
     );
   }),
 );
 
 favoritesRouter.delete(
-  '/:contentId',
+  '/:documentId',
   asyncHandler(async (req, res) => {
     res.json(
-      await favoritesService.remove(req.user!.sub, req.params.contentId),
+      await favoritesService.remove(req.user!.sub, req.params.documentId),
     );
   }),
 );

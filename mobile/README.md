@@ -16,7 +16,7 @@ App **Flutter** cho người dùng cuối (Android & iOS).
 | `features/auth/` | Login, Register, Forgot password, OTP |
 | `features/onboarding/` | Welcome, giới thiệu, xin quyền |
 | `features/home/` | Shell: BottomNav, Drawer, FAB |
-| `features/content/` | List, detail, CRUD form |
+| `features/document/` | List, detail, CRUD form |
 | `features/search/` | Tìm kiếm, filter, sort |
 | `features/profile/` | Profile, edit, avatar |
 | `features/favorites/` | Bookmark |

@@ -1,6 +1,6 @@
 import { getDb } from '../lib/firebase';
 import { HttpError } from '../lib/http-error';
-import { contentService } from './content.service';
+import { documentService } from './document.service';
 
 const toDate = (val: any): Date => {
   if (!val) return new Date();
@@ -21,33 +21,33 @@ export const favoritesService = {
     // Sort by createdAt desc in memory
     list.sort((a, b) => toDate(b.createdAt).getTime() - toDate(a.createdAt).getTime());
 
-    // Resolve contents for the favorite items
+    // Resolve documents for the favorite items
     const resolvedList = await Promise.all(
       list.map(async (fav) => {
-        let content = null;
+        let document = null;
         try {
-          content = await contentService.findOne(fav.contentId);
+          document = await documentService.findOne(fav.documentId);
         } catch (err) {
-          // Content might have been deleted, ignore
+          // Document might have been deleted, ignore
         }
         return {
           id: fav.id,
           userId: fav.userId,
-          contentId: fav.contentId,
+          documentId: fav.documentId,
           createdAt: toDate(fav.createdAt),
-          content,
+          document,
         };
       }),
     );
 
-    // Filter out deleted contents
-    return resolvedList.filter((item) => item.content !== null);
+    // Filter out deleted documents
+    return resolvedList.filter((item) => item.document !== null);
   },
 
-  async add(userId: string, contentId: string) {
-    const content = await contentService.findOne(contentId); // Throws 404 if content not found
+  async add(userId: string, documentId: string) {
+    const document = await documentService.findOne(documentId); // Throws 404 if document not found
 
-    const favId = `${userId}_${contentId}`;
+    const favId = `${userId}_${documentId}`;
     const favRef = getDb().collection('favorites').doc(favId);
     const doc = await favRef.get();
 
@@ -58,7 +58,7 @@ export const favoritesService = {
     const newFav = {
       id: favId,
       userId,
-      contentId,
+      documentId,
       createdAt: new Date(),
     };
 
@@ -66,12 +66,12 @@ export const favoritesService = {
 
     return {
       ...newFav,
-      content,
+      document,
     };
   },
 
-  async remove(userId: string, contentId: string) {
-    const favId = `${userId}_${contentId}`;
+  async remove(userId: string, documentId: string) {
+    const favId = `${userId}_${documentId}`;
     const favRef = getDb().collection('favorites').doc(favId);
     const doc = await favRef.get();
 
