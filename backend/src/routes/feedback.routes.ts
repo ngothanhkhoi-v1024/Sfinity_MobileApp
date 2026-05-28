@@ -1,4 +1,4 @@
-import { UserRole } from '@prisma/client';
+import { UserRole } from '../types/enums';
 import { Router } from 'express';
 
 import { CreateFeedbackDto, ReplyFeedbackDto } from '../dto/feedback.dto';

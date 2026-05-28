@@ -1,7 +1,5 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import '../../../../app.dart';
-import '../../../../core/network/api_client.dart';
 
 class ForgotPasswordController extends ChangeNotifier {
   bool isLoading = false;
@@ -15,9 +13,6 @@ class ForgotPasswordController extends ChangeNotifier {
     try {
       await SfinityApp.auth.forgotPassword(email);
       return true;
-    } on DioException catch (e) {
-      errorMessage = ApiClient.instance.errorMessage(e);
-      return false;
     } catch (e) {
       errorMessage = e.toString();
       return false;

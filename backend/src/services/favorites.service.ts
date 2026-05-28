@@ -1,49 +1,85 @@
+import { getDb } from '../lib/firebase';
 import { HttpError } from '../lib/http-error';
-import { prisma } from '../lib/prisma';
+import { contentService } from './content.service';
+
+const toDate = (val: any): Date => {
+  if (!val) return new Date();
+  if (val instanceof Date) return val;
+  if (typeof val.toDate === 'function') return val.toDate();
+  return new Date(val);
+};
 
 export const favoritesService = {
-  findByUser(userId: string) {
-    return prisma.favorite.findMany({
-      where: { userId },
-      include: {
-        content: {
-          include: {
-            category: { select: { id: true, name: true } },
-            author: { select: { id: true, name: true } },
-          },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+  async findByUser(userId: string) {
+    const snapshot = await getDb()
+      .collection('favorites')
+      .where('userId', '==', userId)
+      .get();
+
+    const list = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as any));
+
+    // Sort by createdAt desc in memory
+    list.sort((a, b) => toDate(b.createdAt).getTime() - toDate(a.createdAt).getTime());
+
+    // Resolve contents for the favorite items
+    const resolvedList = await Promise.all(
+      list.map(async (fav) => {
+        let content = null;
+        try {
+          content = await contentService.findOne(fav.contentId);
+        } catch (err) {
+          // Content might have been deleted, ignore
+        }
+        return {
+          id: fav.id,
+          userId: fav.userId,
+          contentId: fav.contentId,
+          createdAt: toDate(fav.createdAt),
+          content,
+        };
+      }),
+    );
+
+    // Filter out deleted contents
+    return resolvedList.filter((item) => item.content !== null);
   },
 
   async add(userId: string, contentId: string) {
-    const content = await prisma.content.findUnique({ where: { id: contentId } });
-    if (!content) {
-      throw new HttpError(404, 'Không tìm thấy nội dung', 'Not Found');
-    }
+    const content = await contentService.findOne(contentId); // Throws 404 if content not found
 
-    const existing = await prisma.favorite.findUnique({
-      where: { userId_contentId: { userId, contentId } },
-    });
-    if (existing) {
+    const favId = `${userId}_${contentId}`;
+    const favRef = getDb().collection('favorites').doc(favId);
+    const doc = await favRef.get();
+
+    if (doc.exists) {
       throw new HttpError(409, 'Đã có trong yêu thích', 'Conflict');
     }
 
-    return prisma.favorite.create({
-      data: { userId, contentId },
-      include: { content: true },
-    });
+    const newFav = {
+      id: favId,
+      userId,
+      contentId,
+      createdAt: new Date(),
+    };
+
+    await favRef.set(newFav);
+
+    return {
+      ...newFav,
+      content,
+    };
   },
 
   async remove(userId: string, contentId: string) {
-    const fav = await prisma.favorite.findUnique({
-      where: { userId_contentId: { userId, contentId } },
-    });
-    if (!fav) {
+    const favId = `${userId}_${contentId}`;
+    const favRef = getDb().collection('favorites').doc(favId);
+    const doc = await favRef.get();
+
+    if (!doc.exists) {
       throw new HttpError(404, 'Not Found', 'Not Found');
     }
-    await prisma.favorite.delete({ where: { id: fav.id } });
+
+    await favRef.delete();
     return { success: true };
   },
 };

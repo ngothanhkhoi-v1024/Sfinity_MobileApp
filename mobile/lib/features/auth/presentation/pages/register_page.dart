@@ -53,13 +53,33 @@ class _RegisterPageState extends State<RegisterPage> {
       _name.text.trim(),
     );
     if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Đăng ký tài khoản thành công! Vui lòng đăng nhập.'),
-          backgroundColor: Colors.green,
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: const [
+              Icon(Icons.mark_email_unread_rounded, color: Colors.blue, size: 28),
+              SizedBox(width: 10),
+              Text('Xác thực Email', style: TextStyle(fontWeight: FontWeight.bold)),
+            ],
+          ),
+          content: const Text(
+            'Đăng ký tài khoản thành công!\n\nChúng tôi đã gửi một liên kết xác thực đến email của bạn. Vui lòng kiểm tra hộp thư (bao gồm cả thư rác/spam nếu không thấy) và nhấp vào liên kết để kích hoạt tài khoản của bạn trước khi tiến hành đăng nhập.',
+            style: TextStyle(fontSize: 15, height: 1.4),
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                context.go(RouteNames.login);
+              },
+              child: const Text('Đã hiểu & Đăng nhập'),
+            ),
+          ],
         ),
       );
-      context.go(RouteNames.login);
     }
   }
 

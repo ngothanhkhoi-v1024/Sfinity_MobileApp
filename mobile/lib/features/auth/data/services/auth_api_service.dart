@@ -12,11 +12,12 @@ class AuthApiService {
     });
   }
 
-  Future<Map<String, dynamic>> register(String email, String password, String name) {
+  Future<Map<String, dynamic>> register(String email, String password, String name, {String? uid}) {
     return _api.post('/auth/register', {
       'email': email,
       'password': password,
       'name': name,
+      if (uid != null) 'uid': uid,
     });
   }
 

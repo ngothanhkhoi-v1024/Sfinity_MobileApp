@@ -2,8 +2,9 @@ import type { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 
 import { config } from '../lib/config';
+import { getDb } from '../lib/firebase';
 import { HttpError } from '../lib/http-error';
-import { prisma } from '../lib/prisma';
+import { UserStatus } from '../types/enums';
 
 export async function jwtAuthMiddleware(
   req: Request,
@@ -21,12 +22,19 @@ export async function jwtAuthMiddleware(
       email?: string;
       role?: string;
     };
-    const user = await prisma.user.findUnique({ where: { id: decoded.sub } });
-    if (!user || user.status === 'BANNED') {
+    
+    const doc = await getDb().collection('users').doc(decoded.sub).get();
+    if (!doc.exists) {
       throw new HttpError(401, 'Unauthorized', 'Unauthorized');
     }
+    
+    const user = doc.data() as any;
+    if (user.status === UserStatus.BANNED) {
+      throw new HttpError(401, 'Unauthorized', 'Unauthorized');
+    }
+    
     req.user = {
-      sub: user.id,
+      sub: doc.id,
       email: user.email,
       role: user.role,
     };

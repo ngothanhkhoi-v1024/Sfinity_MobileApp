@@ -1,11 +1,11 @@
-import { AuthProvider, UserRole } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
 import { config } from '../lib/config';
-import { getFirebaseAuth } from '../lib/firebase';
+import { getDb, getFirebaseAuth } from '../lib/firebase';
 import { HttpError } from '../lib/http-error';
-import { prisma } from '../lib/prisma';
+import { AuthProvider, UserRole, UserStatus } from '../types/enums';
+import { mailService } from './mail.service';
 import type {
   ChangePasswordDto,
   ForgotPasswordDto,
@@ -15,6 +15,13 @@ import type {
 import type { LoginDto, RegisterDto } from '../dto/login.dto';
 import type { FirebaseLoginDto } from '../dto/firebase-login.dto';
 
+const toDate = (val: any): Date => {
+  if (!val) return new Date();
+  if (val instanceof Date) return val;
+  if (typeof val.toDate === 'function') return val.toDate();
+  return new Date(val);
+};
+
 function sanitizeUser(user: {
   id: string;
   email: string;
@@ -23,7 +30,7 @@ function sanitizeUser(user: {
   role: UserRole;
   status: string;
   authProvider: AuthProvider;
-  createdAt: Date;
+  createdAt: any;
 }) {
   return {
     id: user.id,
@@ -33,7 +40,7 @@ function sanitizeUser(user: {
     role: user.role.toLowerCase() as 'admin' | 'user',
     status: user.status,
     authProvider: user.authProvider.toLowerCase() as 'local' | 'google' | 'facebook',
-    createdAt: user.createdAt,
+    createdAt: toDate(user.createdAt),
   };
 }
 
@@ -53,6 +60,8 @@ function mapFirebaseProvider(provider: string): AuthProvider {
       return AuthProvider.GOOGLE;
     case 'facebook.com':
       return AuthProvider.FACEBOOK;
+    case 'password':
+      return AuthProvider.LOCAL;
     default:
       throw new HttpError(400, 'Nhà cung cấp Firebase không hợp lệ', 'Bad Request');
   }
@@ -60,11 +69,14 @@ function mapFirebaseProvider(provider: string): AuthProvider {
 
 export const authService = {
   async login(dto: LoginDto, adminOnly = false) {
-    const user = await prisma.user.findUnique({ where: { email: dto.email } });
-
-    if (!user) {
+    const email = dto.email.trim().toLowerCase();
+    const snapshot = await getDb().collection('users').where('email', '==', email).limit(1).get();
+    
+    if (snapshot.empty) {
       throw new HttpError(401, 'Email hoặc mật khẩu không đúng', 'Unauthorized');
     }
+
+    const user = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as any;
 
     if (!user.passwordHash) {
       throw new HttpError(
@@ -79,12 +91,29 @@ export const authService = {
       throw new HttpError(401, 'Email hoặc mật khẩu không đúng', 'Unauthorized');
     }
 
-    if (user.status === 'BANNED') {
+    if (user.status === UserStatus.BANNED) {
       throw new HttpError(401, 'Tài khoản đã bị khóa', 'Unauthorized');
     }
 
     if (adminOnly && user.role !== UserRole.ADMIN) {
       throw new HttpError(401, 'Tài khoản không có quyền quản trị', 'Unauthorized');
+    }
+
+    // Kiểm tra trạng thái xác thực email thông qua Firebase Auth
+    if (user.role === UserRole.USER && user.authProvider === AuthProvider.LOCAL) {
+      try {
+        const firebaseUser = await getFirebaseAuth().getUserByEmail(email);
+        if (!firebaseUser.emailVerified) {
+          throw new HttpError(
+            403,
+            'Email chưa được xác thực. Vui lòng xác thực email của bạn qua liên kết đã được gửi trước khi đăng nhập.',
+            'Forbidden',
+          );
+        }
+      } catch (err: any) {
+        if (err instanceof HttpError) throw err;
+        console.error('Lỗi kiểm tra trạng thái xác thực email từ Firebase:', err);
+      }
     }
 
     return {
@@ -125,34 +154,40 @@ export const authService = {
         ? decoded.picture
         : null;
 
-    let user = await prisma.user.findUnique({
-      where: { email },
-    });
+    const usersColl = getDb().collection('users');
+    const snapshot = await usersColl.where('email', '==', email).limit(1).get();
+    let user: any;
 
-    if (!user) {
-      user = await prisma.user.create({
-        data: {
-          email,
-          name: displayName,
-          avatar,
-          role: UserRole.USER,
-          authProvider,
-          providerUserId: decoded.uid,
-        },
-      });
+    if (snapshot.empty) {
+      const docRef = usersColl.doc();
+      user = {
+        id: docRef.id,
+        email,
+        name: displayName,
+        avatar,
+        role: UserRole.USER,
+        status: UserStatus.ACTIVE,
+        authProvider,
+        providerUserId: decoded.uid,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      await docRef.set(user);
     } else {
-      user = await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          name: user.name.trim().length > 0 ? user.name : displayName,
-          avatar: user.avatar ?? avatar,
-          authProvider,
-          providerUserId: decoded.uid,
-        },
-      });
+      const doc = snapshot.docs[0];
+      user = { id: doc.id, ...doc.data() } as any;
+      const updatedData = {
+        name: user.name.trim().length > 0 ? user.name : displayName,
+        avatar: user.avatar ?? avatar,
+        authProvider,
+        providerUserId: decoded.uid,
+        updatedAt: new Date(),
+      };
+      await usersColl.doc(user.id).update(updatedData);
+      user = { ...user, ...updatedData };
     }
 
-    if (user.status === 'BANNED') {
+    if (user.status === UserStatus.BANNED) {
       throw new HttpError(401, 'Tài khoản đã bị khóa', 'Unauthorized');
     }
 
@@ -163,22 +198,56 @@ export const authService = {
   },
 
   async register(dto: RegisterDto) {
-    const exists = await prisma.user.findUnique({ where: { email: dto.email } });
+    const email = dto.email.trim().toLowerCase();
+    const usersColl = getDb().collection('users');
+    const snapshot = await usersColl.where('email', '==', email).limit(1).get();
 
-    if (exists) {
+    if (!snapshot.empty) {
       throw new HttpError(409, 'Email đã được sử dụng', 'Conflict');
     }
 
+    let uid = dto.uid;
+
+    // If UID is not provided, create user on Firebase Auth using the Admin SDK
+    if (!uid) {
+      try {
+        const firebaseUser = await getFirebaseAuth().createUser({
+          email: email,
+          password: dto.password,
+          displayName: dto.name,
+        });
+        uid = firebaseUser.uid;
+      } catch (err: any) {
+        // If user already exists in Firebase Auth but not in our Firestore, fetch their UID
+        if (err.code === 'auth/email-already-exists') {
+          const fbUser = await getFirebaseAuth().getUserByEmail(email);
+          uid = fbUser.uid;
+        } else {
+          throw new HttpError(
+            500,
+            `Không thể tạo tài khoản trên Firebase Auth: ${err.message}`,
+            'Internal Server Error',
+          );
+        }
+      }
+    }
+
     const passwordHash = await bcrypt.hash(dto.password, 10);
-    const user = await prisma.user.create({
-      data: {
-        email: dto.email,
-        passwordHash,
-        name: dto.name,
-        role: UserRole.USER,
-        authProvider: AuthProvider.LOCAL,
-      },
-    });
+    const user = {
+      id: uid,
+      email,
+      passwordHash,
+      name: dto.name,
+      avatar: null,
+      role: UserRole.USER,
+      status: UserStatus.ACTIVE,
+      authProvider: AuthProvider.LOCAL,
+      providerUserId: uid,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    await usersColl.doc(uid).set(user);
 
     return {
       ...signToken(user),
@@ -187,30 +256,42 @@ export const authService = {
   },
 
   async getProfile(userId: string) {
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const doc = await getDb().collection('users').doc(userId).get();
 
-    if (!user) {
+    if (!doc.exists) {
       throw new HttpError(401, 'Unauthorized', 'Unauthorized');
     }
 
+    const user = { id: doc.id, ...doc.data() } as any;
     return sanitizeUser(user);
   },
 
   async updateProfile(userId: string, dto: UpdateProfileDto) {
-    const user = await prisma.user.update({
-      where: { id: userId },
-      data: { name: dto.name, avatar: dto.avatar },
-    });
+    const userRef = getDb().collection('users').doc(userId);
+    const updateData: any = {
+      name: dto.name,
+      updatedAt: new Date(),
+    };
+    if (dto.avatar !== undefined) {
+      updateData.avatar = dto.avatar;
+    }
+
+    await userRef.update(updateData);
+    const doc = await userRef.get();
+    const user = { id: doc.id, ...doc.data() } as any;
 
     return sanitizeUser(user);
   },
 
   async changePassword(userId: string, dto: ChangePasswordDto) {
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const userRef = getDb().collection('users').doc(userId);
+    const doc = await userRef.get();
 
-    if (!user) {
+    if (!doc.exists) {
       throw new HttpError(401, 'Unauthorized', 'Unauthorized');
     }
+
+    const user = doc.data() as any;
 
     if (!user.passwordHash) {
       throw new HttpError(
@@ -226,12 +307,10 @@ export const authService = {
     }
 
     const passwordHash = await bcrypt.hash(dto.newPassword, 10);
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        passwordHash,
-        authProvider: AuthProvider.LOCAL,
-      },
+    await userRef.update({
+      passwordHash,
+      authProvider: AuthProvider.LOCAL,
+      updatedAt: new Date(),
     });
 
     return { success: true };
@@ -242,66 +321,108 @@ export const authService = {
   },
 
   async forgotPassword(dto: ForgotPasswordDto) {
-    const user = await prisma.user.findUnique({ where: { email: dto.email } });
+    const email = dto.email.trim().toLowerCase();
+    const snapshot = await getDb().collection('users').where('email', '==', email).limit(1).get();
 
-    if (!user) {
+    if (snapshot.empty) {
       throw new HttpError(404, 'Không tìm thấy tài khoản với email này', 'Not Found');
     }
 
+    const user = snapshot.docs[0].data() as any;
     const code = authService.generateOtp();
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
-    await prisma.passwordReset.updateMany({
-      where: { email: dto.email, used: false },
-      data: { used: true },
+    // Mark previous unused reset codes for this email as used
+    const resetsColl = getDb().collection('password_resets');
+    const prevResets = await resetsColl.where('email', '==', email).where('used', '==', false).get();
+    const batch = getDb().batch();
+    prevResets.forEach((doc) => {
+      batch.update(doc.ref, { used: true });
     });
 
-    await prisma.passwordReset.create({
-      data: { email: dto.email, code, expiresAt },
+    const newResetRef = resetsColl.doc();
+    batch.set(newResetRef, {
+      id: newResetRef.id,
+      email,
+      code,
+      expiresAt,
+      used: false,
+      createdAt: new Date(),
     });
+
+    await batch.commit();
+
+    // Gửi email thực sự chứa mã OTP khôi phục mật khẩu
+    try {
+      await mailService.sendForgotPasswordOtp(email, user.name, code);
+    } catch (err) {
+      console.error('Lỗi khi gửi email lấy lại mật khẩu OTP:', err);
+    }
 
     return {
-      message: 'Mã OTP đã được gửi (demo: hiển thị trực tiếp)',
-      code,
+      message: 'Mã OTP khôi phục mật khẩu đã được gửi thành công.',
       expiresInMinutes: 15,
     };
   },
 
   async resetPassword(dto: ResetPasswordDto) {
-    const record = await prisma.passwordReset.findFirst({
-      where: {
-        email: dto.email,
-        code: dto.code,
-        used: false,
-        expiresAt: { gt: new Date() },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    const email = dto.email.trim().toLowerCase();
+    const resetsColl = getDb().collection('password_resets');
+    
+    // Fetch resets for email & code to check in memory
+    const snapshot = await resetsColl
+      .where('email', '==', email)
+      .where('code', '==', dto.code)
+      .where('used', '==', false)
+      .get();
+
+    let record: any = null;
+    if (!snapshot.empty) {
+      const records = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as any));
+      // Sort desc by createdAt to get latest
+      records.sort((a, b) => toDate(b.createdAt).getTime() - toDate(a.createdAt).getTime());
+      
+      const latest = records[0];
+      if (toDate(latest.expiresAt).getTime() > Date.now()) {
+        record = latest;
+      }
+    }
 
     if (!record) {
       throw new HttpError(400, 'Mã OTP không hợp lệ hoặc đã hết hạn', 'Bad Request');
     }
 
-    const user = await prisma.user.findUnique({ where: { email: dto.email } });
-    if (!user) {
+    const usersColl = getDb().collection('users');
+    const userSnap = await usersColl.where('email', '==', email).limit(1).get();
+    if (userSnap.empty) {
       throw new HttpError(404, 'Not Found', 'Not Found');
     }
 
+    const userId = userSnap.docs[0].id;
     const passwordHash = await bcrypt.hash(dto.newPassword, 10);
 
-    await prisma.$transaction([
-      prisma.user.update({
-        where: { id: user.id },
-        data: {
-          passwordHash,
-          authProvider: AuthProvider.LOCAL,
-        },
-      }),
-      prisma.passwordReset.update({
-        where: { id: record.id },
-        data: { used: true },
-      }),
-    ]);
+    // Đồng bộ mật khẩu mới sang Firebase Auth để đảm bảo đồng bộ đăng nhập
+    try {
+      const firebaseUser = await getFirebaseAuth().getUserByEmail(email);
+      await getFirebaseAuth().updateUser(firebaseUser.uid, {
+        password: dto.newPassword,
+      });
+      console.log(`Đã đồng bộ cập nhật mật khẩu mới sang Firebase Auth cho: ${email}`);
+    } catch (err) {
+      console.error('Không thể đồng bộ cập nhật mật khẩu sang Firebase Auth:', err);
+    }
+
+    const batch = getDb().batch();
+    batch.update(usersColl.doc(userId), {
+      passwordHash,
+      authProvider: AuthProvider.LOCAL,
+      updatedAt: new Date(),
+    });
+    batch.update(resetsColl.doc(record.id), {
+      used: true,
+    });
+
+    await batch.commit();
 
     return { success: true };
   },

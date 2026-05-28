@@ -1,4 +1,4 @@
-import { ContentStatus } from '@prisma/client';
+import { ContentStatus } from '../types/enums';
 import { IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class CreateContentDto {

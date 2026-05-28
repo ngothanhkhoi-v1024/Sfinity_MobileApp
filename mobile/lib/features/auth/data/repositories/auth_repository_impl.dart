@@ -67,21 +67,18 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<Map<String, dynamic>> register(String email, String password, String name) async {
-    final data = await _apiService.register(email, password, name);
+    String? uid;
 
     try {
       final credential = await _firebaseAuthService.createUserWithEmail(email, password);
       await credential.user?.updateDisplayName(name);
-      if (credential.user != null) {
-        await _firestoreUserService.syncUser(
-          credential.user!,
-          displayName: name,
-          provider: 'password',
-        );
-      }
+      await credential.user?.sendEmailVerification();
+      uid = credential.user?.uid;
     } catch (e) {
       print('Firebase Auth register error: $e');
     }
+
+    final data = await _apiService.register(email, password, name, uid: uid);
 
     await _saveSession(data);
     return data;

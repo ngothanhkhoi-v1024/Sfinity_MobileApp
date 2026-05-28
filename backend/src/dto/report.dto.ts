@@ -1,4 +1,4 @@
-import { ReportStatus } from '@prisma/client';
+import { ReportStatus } from '../types/enums';
 import { IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class CreateReportDto {

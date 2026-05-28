@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class LoginDto {
   @IsEmail({}, { message: 'Nhập email hợp lệ.' })
@@ -20,4 +20,8 @@ export class RegisterDto {
   @IsString({ message: 'Họ tên phải là chuỗi ký tự.' })
   @MinLength(2, { message: 'Nhập họ tên (tối thiểu 2 ký tự).' })
   name!: string;
+
+  @IsOptional()
+  @IsString()
+  uid?: string;
 }
