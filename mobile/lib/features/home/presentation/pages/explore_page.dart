@@ -5,6 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/route_names.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../shared/widgets/error_view.dart';
+import '../../../study_near_me/presentation/controllers/study_near_me_controller.dart';
+import '../../../study_near_me/presentation/widgets/study_near_me_button.dart';
+import '../../../study_near_me/presentation/widgets/study_near_me_results_sheet.dart';
 
 /// Tab Khám phá — feed địa điểm & tài liệu.
 class ExplorePage extends StatefulWidget {
@@ -18,11 +21,41 @@ class _ExplorePageState extends State<ExplorePage> {
   List<dynamic> _items = [];
   bool _loading = true;
   String? _error;
+  late final StudyNearMeController _studyNearMeCtrl;
 
   @override
   void initState() {
     super.initState();
+    _studyNearMeCtrl = StudyNearMeController();
+    _studyNearMeCtrl.addListener(() {
+      if (mounted) setState(() {});
+    });
     _load();
+  }
+
+  @override
+  void dispose() {
+    _studyNearMeCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _onStudyNearMe() async {
+    final ok = await _studyNearMeCtrl.loadNearby();
+    if (!mounted) return;
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_studyNearMeCtrl.error ?? 'Không tìm được kết quả')),
+      );
+      return;
+    }
+    final result = _studyNearMeCtrl.result;
+    if (result != null) {
+      await StudyNearMeResultsSheet.show(
+        context,
+        result: result,
+        onRetry: _onStudyNearMe,
+      );
+    }
   }
 
   Future<void> _load() async {
@@ -91,6 +124,13 @@ class _ExplorePageState extends State<ExplorePage> {
               color: Theme.of(context).brightness == Brightness.dark
                   ? Colors.grey.shade400
                   : Colors.grey.shade600,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Center(
+            child: StudyNearMeButton(
+              loading: _studyNearMeCtrl.loading,
+              onPressed: _onStudyNearMe,
             ),
           ),
           const SizedBox(height: 16),

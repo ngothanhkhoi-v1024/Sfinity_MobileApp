@@ -15,10 +15,16 @@ import 'features/auth/data/services/social_auth_service.dart';
 import 'features/document/data/repositories/document_repository.dart';
 import 'features/document/data/repositories/document_repository_impl.dart';
 import 'features/document/data/services/document_api_service.dart';
+import 'features/place_reviews/data/repositories/place_engagement_repository.dart';
+import 'features/place_reviews/data/repositories/place_engagement_repository_impl.dart';
+import 'features/place_reviews/data/services/place_engagement_api_service.dart';
 import 'features/places/data/repositories/place_repository.dart';
 import 'features/places/data/repositories/place_repository_impl.dart';
 import 'features/places/data/services/place_api_service.dart';
 import 'features/places/data/services/place_location_service.dart';
+import 'features/study_near_me/data/repositories/study_near_me_repository.dart';
+import 'features/study_near_me/data/repositories/study_near_me_repository_impl.dart';
+import 'features/study_near_me/data/services/study_near_me_api_service.dart';
 
 class SfinityApp extends StatefulWidget {
   const SfinityApp({super.key});
@@ -26,6 +32,8 @@ class SfinityApp extends StatefulWidget {
   static AuthState get auth => _SfinityAppState.auth;
   static late final DocumentRepository documentRepository;
   static late final PlaceRepository placeRepository;
+  static late final StudyNearMeRepository studyNearMeRepository;
+  static late final PlaceEngagementRepository placeEngagementRepository;
   static ThemeManager get themeManager => _SfinityAppState.themeManager;
 
   @override
@@ -46,6 +54,13 @@ class _SfinityAppState extends State<SfinityApp> {
     SfinityApp.placeRepository = PlaceRepositoryImpl(
       PlaceApiService(docApiService),
       PlaceLocationService(),
+    );
+    SfinityApp.studyNearMeRepository = StudyNearMeRepositoryImpl(
+      StudyNearMeApiService(ApiClient.instance),
+      PlaceLocationService(),
+    );
+    SfinityApp.placeEngagementRepository = PlaceEngagementRepositoryImpl(
+      PlaceEngagementApiService(ApiClient.instance),
     );
     final localDatabase = AuthLocalDatabase();
     final firebaseAuthService = FirebaseAuthService();

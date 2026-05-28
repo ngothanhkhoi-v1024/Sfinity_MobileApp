@@ -22,6 +22,7 @@ class PlaceRepositoryImpl implements PlaceRepository {
       lat: query.lat,
       lng: query.lng,
       radiusKm: query.radiusKm,
+      zone: query.zone,
       authorId: query.authorId,
       publishedOnly: query.publishedOnly,
       limit: query.limit,

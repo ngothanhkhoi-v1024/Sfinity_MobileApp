@@ -7,6 +7,7 @@ class PlaceModel {
     required this.title,
     required this.body,
     this.address,
+    this.zone,
     this.tags = const [],
     this.latitude,
     this.longitude,
@@ -14,12 +15,15 @@ class PlaceModel {
     this.authorId,
     this.authorName,
     this.distanceMeters,
+    this.avgRating,
+    this.reviewCount,
   });
 
   final String id;
   final String title;
   final String body;
   final String? address;
+  final String? zone;
   final List<String> tags;
   final double? latitude;
   final double? longitude;
@@ -27,6 +31,8 @@ class PlaceModel {
   final String? authorId;
   final String? authorName;
   final int? distanceMeters;
+  final double? avgRating;
+  final int? reviewCount;
 
   bool get hasPoint => point != null;
 }
@@ -39,6 +45,7 @@ class PlaceListQuery {
     this.lat,
     this.lng,
     this.radiusKm,
+    this.zone,
     this.authorId,
     this.publishedOnly = false,
     this.limit = 50,
@@ -49,6 +56,7 @@ class PlaceListQuery {
   final double? lat;
   final double? lng;
   final double? radiusKm;
+  final String? zone;
   final String? authorId;
   final bool publishedOnly;
   final int limit;
@@ -62,6 +70,7 @@ class PlaceUpsertPayload {
     required this.latitude,
     required this.longitude,
     required this.address,
+    this.zone,
     this.tags = const [],
   });
 
@@ -70,6 +79,7 @@ class PlaceUpsertPayload {
   final double latitude;
   final double longitude;
   final String address;
+  final String? zone;
   final List<String> tags;
 
   Map<String, dynamic> toJson() => {
@@ -79,6 +89,7 @@ class PlaceUpsertPayload {
         'latitude': latitude,
         'longitude': longitude,
         'address': address,
+        if (zone != null && zone!.isNotEmpty) 'zone': zone,
         'tags': tags,
         'status': 'PUBLISHED',
       };

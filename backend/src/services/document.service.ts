@@ -1,4 +1,5 @@
 import { itemHasAllTags, parseTagsQuery } from '../constants/place-tags';
+import { isValidPlaceZone } from '../constants/place-zones';
 import { getDb } from '../lib/firebase';
 import { distanceMeters } from '../lib/geo';
 import { HttpError } from '../lib/http-error';
@@ -68,6 +69,7 @@ export const documentService = {
     authorId?: string;
     placeId?: string;
     tags?: string;
+    zone?: string;
     lat?: number;
     lng?: number;
     radiusKm?: number;
@@ -116,6 +118,10 @@ export const documentService = {
     const requiredTags = parseTagsQuery(params.tags);
     if (requiredTags.length > 0) {
       items = items.filter((item) => itemHasAllTags(item, requiredTags));
+    }
+
+    if (params.zone) {
+      items = items.filter((item) => item.zone === params.zone);
     }
 
     if (params.search) {
@@ -249,9 +255,13 @@ export const documentService = {
         newDocument.placeId = dto.placeId;
       }
     } else if (type === 'place') {
+      if (dto.zone != null && !isValidPlaceZone(dto.zone)) {
+        throw new HttpError(400, 'Khu vực không hợp lệ', 'Bad Request');
+      }
       newDocument.latitude = dto.latitude ?? null;
       newDocument.longitude = dto.longitude ?? null;
       newDocument.address = dto.address ?? null;
+      newDocument.zone = dto.zone ?? null;
       newDocument.tags = dto.tags ?? [];
     }
 
@@ -268,6 +278,9 @@ export const documentService = {
     const docType = item.type ?? 'document';
     if (docType === 'document' && dto.placeId) {
       await assertPlaceOwnerForDocument(dto.placeId, userId, role);
+    }
+    if (docType === 'place' && dto.zone != null && !isValidPlaceZone(dto.zone)) {
+      throw new HttpError(400, 'Khu vực không hợp lệ', 'Bad Request');
     }
 
     const docRef = getDb().collection('documents').doc(id);
