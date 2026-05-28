@@ -1,35 +1,45 @@
-import { ContentStatus, UserRole } from '@prisma/client';
-
-import { prisma } from '../lib/prisma';
+import { getDb } from '../lib/firebase';
+import { ContentStatus, UserRole, ReportStatus } from '../types/enums';
 
 export const dashboardService = {
   async getStats() {
+    const db = getDb();
+    
     const [
-      users,
-      admins,
-      contents,
-      published,
-      categories,
-      feedback,
-      pendingFeedback,
-      pendingReports,
+      usersSnap,
+      adminsSnap,
+      documentsSnap,
+      publishedSnap,
+      categoriesSnap,
+      feedbackSnap,
+      pendingFeedbackSnap,
+      pendingReportsSnap,
     ] = await Promise.all([
-      prisma.user.count({ where: { role: UserRole.USER } }),
-      prisma.user.count({ where: { role: UserRole.ADMIN } }),
-      prisma.content.count(),
-      prisma.content.count({ where: { status: ContentStatus.PUBLISHED } }),
-      prisma.category.count(),
-      prisma.feedback.count(),
-      prisma.feedback.count({ where: { resolved: false } }),
-      prisma.report.count({ where: { status: 'PENDING' } }),
+      db.collection('users').where('role', '==', UserRole.USER).count().get(),
+      db.collection('users').where('role', '==', UserRole.ADMIN).count().get(),
+      db.collection('documents').count().get(),
+      db.collection('documents').where('status', '==', ContentStatus.PUBLISHED).count().get(),
+      db.collection('categories').count().get(),
+      db.collection('feedbacks').count().get(),
+      db.collection('feedbacks').where('resolved', '==', false).count().get(),
+      db.collection('reports').where('status', '==', ReportStatus.PENDING).count().get(),
     ]);
+
+    const users = usersSnap.data().count;
+    const admins = adminsSnap.data().count;
+    const documents = documentsSnap.data().count;
+    const published = publishedSnap.data().count;
+    const categories = categoriesSnap.data().count;
+    const feedback = feedbackSnap.data().count;
+    const pendingFeedback = pendingFeedbackSnap.data().count;
+    const pendingReports = pendingReportsSnap.data().count;
 
     return {
       users,
       admins,
-      contents,
-      publishedContents: published,
-      draftContents: contents - published,
+      documents,
+      publishedDocuments: published,
+      draftDocuments: documents - published,
       categories,
       feedback,
       pendingFeedback,

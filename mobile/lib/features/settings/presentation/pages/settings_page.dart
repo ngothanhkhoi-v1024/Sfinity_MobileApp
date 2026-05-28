@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../app.dart';
 import '../../../../core/constants/route_names.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -12,7 +13,13 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   bool _notifications = true;
-  ThemeMode _theme = ThemeMode.system;
+  late ThemeMode _theme;
+
+  @override
+  void initState() {
+    super.initState();
+    _theme = SfinityApp.themeManager.themeMode;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +35,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           ListTile(
             title: const Text('Giao diện'),
-            subtitle: Text(_theme.name),
+            subtitle: Text(_getThemeName(_theme)),
             trailing: DropdownButton<ThemeMode>(
               value: _theme,
               items: const [
@@ -36,7 +43,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 DropdownMenuItem(value: ThemeMode.light, child: Text('Sáng')),
                 DropdownMenuItem(value: ThemeMode.dark, child: Text('Tối')),
               ],
-              onChanged: (v) => setState(() => _theme = v ?? ThemeMode.system),
+              onChanged: (v) => _updateTheme(v ?? ThemeMode.system),
             ),
           ),
           ListTile(
@@ -57,5 +64,21 @@ class _SettingsPageState extends State<SettingsPage> {
         ],
       ),
     );
+  }
+
+  void _updateTheme(ThemeMode mode) {
+    setState(() => _theme = mode);
+    SfinityApp.themeManager.setThemeMode(mode);
+  }
+
+  String _getThemeName(ThemeMode mode) {
+    switch (mode) {
+      case ThemeMode.system:
+        return 'Hệ thống';
+      case ThemeMode.light:
+        return 'Sáng';
+      case ThemeMode.dark:
+        return 'Tối';
+    }
   }
 }

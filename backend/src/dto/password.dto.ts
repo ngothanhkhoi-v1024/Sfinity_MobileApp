@@ -1,20 +1,20 @@
 import { IsEmail, IsOptional, IsString, Length, MinLength } from 'class-validator';
 
 export class ForgotPasswordDto {
-  @IsEmail()
+  @IsEmail({}, { message: 'Nhập email hợp lệ.' })
   email!: string;
 }
 
 export class ResetPasswordDto {
-  @IsEmail()
+  @IsEmail({}, { message: 'Nhập email hợp lệ.' })
   email!: string;
 
-  @IsString()
-  @Length(6, 6)
+  @IsString({ message: 'Mã OTP phải là chuỗi ký tự.' })
+  @Length(6, 6, { message: 'Mã OTP phải gồm 6 chữ số.' })
   code!: string;
 
-  @IsString()
-  @MinLength(6)
+  @IsString({ message: 'Mật khẩu phải là chuỗi ký tự.' })
+  @MinLength(6, { message: 'Mật khẩu tối thiểu 6 ký tự.' })
   newPassword!: string;
 }
 

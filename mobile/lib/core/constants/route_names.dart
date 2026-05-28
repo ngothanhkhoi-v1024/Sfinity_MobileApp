@@ -18,11 +18,11 @@ abstract final class RouteNames {
   // Places
   static const placeShare = '/places/share';
 
-  // Content
-  static const contentList = '/content';
-  static const contentDetail = '/content/:id';
-  static const contentCreate = '/content/create';
-  static const contentEdit = '/content/:id/edit';
+  // Document
+  static const documentList = '/document';
+  static const documentDetail = '/document/:id';
+  static const documentCreate = '/document/create';
+  static const documentEdit = '/document/:id/edit';
 
   // Notifications & settings
   static const notifications = '/notifications';

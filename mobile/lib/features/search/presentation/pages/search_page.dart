@@ -20,7 +20,7 @@ class _SearchPageState extends State<SearchPage> {
     if (_query.text.trim().isEmpty) return;
     setState(() => _loading = true);
     try {
-      final res = await ApiClient.instance.get('/content', query: {
+      final res = await ApiClient.instance.get('/document', query: {
         'search': _query.text.trim(),
         'publishedOnly': 'true',
       });
@@ -64,7 +64,7 @@ class _SearchPageState extends State<SearchPage> {
               final item = _results[i] as Map<String, dynamic>;
               return ListTile(
                 title: Text(item['title']?.toString() ?? ''),
-                onTap: () => context.push('/content/${item['id']}'),
+                onTap: () => context.push('/document/${item['id']}'),
               );
             },
           ),

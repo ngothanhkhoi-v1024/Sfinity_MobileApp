@@ -8,16 +8,18 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
+    return Container(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
         Card(
           child: ListTile(
             leading: const Icon(Icons.article_outlined),
             title: const Text('Xem nội dung'),
             subtitle: const Text('Danh sách bài viết đã xuất bản'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push(RouteNames.contentList),
+            onTap: () => context.push(RouteNames.documentList),
           ),
         ),
         Card(
@@ -52,7 +54,8 @@ class HomePage extends StatelessWidget {
             onTap: () => context.push(RouteNames.settings),
           ),
         ),
-      ],
+        ],
+      ),
     );
   }
 }

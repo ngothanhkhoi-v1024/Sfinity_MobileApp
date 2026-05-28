@@ -82,7 +82,7 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
         'lat:${_picked.latitude}',
         'lng:${_picked.longitude}',
       ].join('\n');
-      await ApiClient.instance.post('/content', {
+      await ApiClient.instance.post('/document', {
         'title': _name.text.trim(),
         'body': body,
         'status': 'DRAFT',

@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/route_names.dart';
 import '../../../../shared/widgets/floating_pill_nav_bar.dart';
 import '../../../../shared/widgets/share_action_sheet.dart';
-import '../../../content/presentation/pages/content_list_page.dart';
+import '../../../document/presentation/pages/document_list_page.dart';
 import '../../../places/presentation/pages/places_map_page.dart';
 import '../../../profile/presentation/pages/profile_page.dart';
 import 'explore_page.dart';
@@ -52,7 +52,7 @@ class _HomeShellPageState extends State<HomeShellPage> {
   late final List<Widget> _pages = const [
     ExplorePage(),
     PlacesMapPage(),
-    ContentListPage(embedded: true),
+    DocumentListPage(embedded: true),
     ProfilePage(),
   ];
 
@@ -62,7 +62,7 @@ class _HomeShellPageState extends State<HomeShellPage> {
 
     return Scaffold(
       extendBody: true,
-      backgroundColor: const Color(0xFFF3F4F6),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       drawer: Drawer(
         child: ListView(
           children: [
@@ -125,6 +125,16 @@ class _HomeShellPageState extends State<HomeShellPage> {
                     )
                   : null,
               automaticallyImplyLeading: _navIndex == 0,
+              actions: [
+                if (_navIndex == 3)
+                  IconButton(
+                    icon: Icon(Icons.add_circle_outline, color: Theme.of(context).colorScheme.primary, size: 26),
+                    onPressed: () => context.push(
+                      RouteNames.documentCreate,
+                      extra: const {'contentType': 'document'},
+                    ),
+                  ),
+              ],
             ),
       body: IndexedStack(
         index: _pageIndex,

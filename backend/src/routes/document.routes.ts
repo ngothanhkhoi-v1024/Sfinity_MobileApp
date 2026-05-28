@@ -1,18 +1,18 @@
-import { ContentStatus, UserRole } from '@prisma/client';
+import { ContentStatus, UserRole } from '../types/enums';
 import { Router } from 'express';
 
-import { CreateContentDto, UpdateContentDto } from '../dto/content.dto';
+import { CreateDocumentDto, UpdateDocumentDto } from '../dto/document.dto';
 import { asyncHandler } from '../lib/async-handler';
 import { validateBody } from '../lib/validate';
 import { jwtAuthMiddleware } from '../middleware/jwt.middleware';
 import { rolesMiddleware } from '../middleware/roles.middleware';
-import { contentService } from '../services/content.service';
+import { documentService } from '../services/document.service';
 
 const adminOnly = [jwtAuthMiddleware, rolesMiddleware(UserRole.ADMIN)] as const;
 
-export const contentRouter = Router();
+export const documentRouter = Router();
 
-contentRouter.get(
+documentRouter.get(
   '/',
   asyncHandler(async (req, res) => {
     const search = req.query.search as string | undefined;
@@ -23,7 +23,7 @@ contentRouter.get(
     const publishedOnly = req.query.publishedOnly as string | undefined;
 
     res.json(
-      await contentService.findAll({
+      await documentService.findAll({
         search,
         status,
         categoryId,
@@ -35,21 +35,21 @@ contentRouter.get(
   }),
 );
 
-contentRouter.post(
+documentRouter.post(
   '/',
   jwtAuthMiddleware,
   asyncHandler(async (req, res) => {
-    const dto = await validateBody(CreateContentDto, req.body);
-    res.json(await contentService.create(req.user!.sub, dto));
+    const dto = await validateBody(CreateDocumentDto, req.body);
+    res.json(await documentService.create(req.user!.sub, dto));
   }),
 );
 
-contentRouter.patch(
+documentRouter.patch(
   '/:id/publish',
   ...adminOnly,
   asyncHandler(async (req, res) => {
     res.json(
-      await contentService.update(
+      await documentService.update(
         req.params.id,
         { status: ContentStatus.PUBLISHED },
         '',
@@ -59,12 +59,12 @@ contentRouter.patch(
   }),
 );
 
-contentRouter.patch(
+documentRouter.patch(
   '/:id/unpublish',
   ...adminOnly,
   asyncHandler(async (req, res) => {
     res.json(
-      await contentService.update(
+      await documentService.update(
         req.params.id,
         { status: ContentStatus.DRAFT },
         '',
@@ -74,20 +74,20 @@ contentRouter.patch(
   }),
 );
 
-contentRouter.get(
+documentRouter.get(
   '/:id',
   asyncHandler(async (req, res) => {
-    res.json(await contentService.findOne(req.params.id));
+    res.json(await documentService.findOne(req.params.id));
   }),
 );
 
-contentRouter.patch(
+documentRouter.patch(
   '/:id',
   jwtAuthMiddleware,
   asyncHandler(async (req, res) => {
-    const dto = await validateBody(UpdateContentDto, req.body);
+    const dto = await validateBody(UpdateDocumentDto, req.body);
     res.json(
-      await contentService.update(
+      await documentService.update(
         req.params.id,
         dto,
         req.user!.sub,
@@ -97,12 +97,12 @@ contentRouter.patch(
   }),
 );
 
-contentRouter.delete(
+documentRouter.delete(
   '/:id',
   jwtAuthMiddleware,
   asyncHandler(async (req, res) => {
     res.json(
-      await contentService.remove(req.params.id, req.user!.sub, req.user!.role),
+      await documentService.remove(req.params.id, req.user!.sub, req.user!.role),
     );
   }),
 );

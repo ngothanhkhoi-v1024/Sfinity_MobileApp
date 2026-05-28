@@ -10,6 +10,8 @@ class ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = SfinityApp.auth.user;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
       children: [
@@ -21,51 +23,106 @@ class ProfilePage extends StatelessWidget {
         Text(user?['name']?.toString() ?? '', style: Theme.of(context).textTheme.titleLarge, textAlign: TextAlign.center),
         Text(user?['email']?.toString() ?? '', textAlign: TextAlign.center),
         const SizedBox(height: 24),
-        ListTile(
-          leading: const Icon(Icons.edit_outlined),
-          title: const Text('Chỉnh sửa hồ sơ'),
+        _buildMenuTile(
+          context,
+          icon: Icons.edit_outlined,
+          title: 'Chỉnh sửa hồ sơ',
           onTap: () => context.push(RouteNames.editProfile),
+          isDark: isDark,
         ),
-        ListTile(
-          leading: const Icon(Icons.lock_outline),
-          title: const Text('Đổi mật khẩu'),
+        _buildMenuTile(
+          context,
+          icon: Icons.lock_outline,
+          title: 'Đổi mật khẩu',
           onTap: () => context.push(RouteNames.changePassword),
+          isDark: isDark,
         ),
-        ListTile(
-          leading: const Icon(Icons.notifications_outlined),
-          title: const Text('Thông báo'),
+        _buildMenuTile(
+          context,
+          icon: Icons.notifications_outlined,
+          title: 'Thông báo',
           onTap: () => context.push(RouteNames.notifications),
+          isDark: isDark,
         ),
-        ListTile(
-          leading: const Icon(Icons.article_outlined),
-          title: const Text('Bài đăng của tôi'),
+        _buildMenuTile(
+          context,
+          icon: Icons.article_outlined,
+          title: 'Bài đăng của tôi',
           onTap: () => context.push(RouteNames.contentList),
+          isDark: isDark,
         ),
-        ListTile(
-          leading: const Icon(Icons.feedback_outlined),
-          title: const Text('Phản hồi'),
+        _buildMenuTile(
+          context,
+          icon: Icons.feedback_outlined,
+          title: 'Phản hồi',
           onTap: () => context.push(RouteNames.feedback),
+          isDark: isDark,
         ),
-        ListTile(
-          leading: const Icon(Icons.flag_outlined),
-          title: const Text('Báo cáo vi phạm'),
+        _buildMenuTile(
+          context,
+          icon: Icons.flag_outlined,
+          title: 'Báo cáo vi phạm',
           onTap: () => context.push(RouteNames.report),
+          isDark: isDark,
         ),
-        ListTile(
-          leading: const Icon(Icons.settings_outlined),
-          title: const Text('Cài đặt'),
+        _buildMenuTile(
+          context,
+          icon: Icons.settings_outlined,
+          title: 'Cài đặt',
           onTap: () => context.push(RouteNames.settings),
+          isDark: isDark,
         ),
         const Divider(),
-        ListTile(
-          leading: Icon(Icons.logout, color: Theme.of(context).colorScheme.error),
-          title: const Text('Đăng xuất'),
+        _buildMenuTile(
+          context,
+          icon: Icons.logout,
+          title: 'Đăng xuất',
           onTap: () async {
             await SfinityApp.auth.logout();
             if (context.mounted) context.go(RouteNames.login);
           },
+          isDark: isDark,
+          isLogout: true,
         ),
       ],
     );
   }
+
+  Widget _buildMenuTile(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    required bool isDark,
+    bool isLogout = false,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1A1A1A) : Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+      ),
+       child: ListTile(
+         leading: Icon(
+           icon,
+           color: isLogout
+               ? Theme.of(context).colorScheme.error
+               : (isDark
+                   ? const Color(0xFFF2F2F2)
+                   : const Color(0xFF1F2937)),
+         ),
+         title: Text(
+           title,
+           style: TextStyle(
+             color: isLogout
+                 ? Theme.of(context).colorScheme.error
+                 : (isDark
+                     ? const Color(0xFFF2F2F2)
+                     : const Color(0xFF1F2937)),
+           ),
+         ),
+         onTap: onTap,
+       ),
+     );
+   }
 }
