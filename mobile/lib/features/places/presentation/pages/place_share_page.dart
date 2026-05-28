@@ -5,8 +5,10 @@ import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../core/constants/map_config.dart';
+import '../../../../core/constants/place_tags.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/services/geocoding_service.dart';
+import '../widgets/place_tag_chips.dart';
 
 /// Chọn vị trí trên OSM và đăng / sửa địa điểm.
 class PlaceSharePage extends StatefulWidget {
@@ -32,6 +34,7 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
   bool _pickedFromRoute = false;
   bool _mapReady = false;
   List<GeocodingResult> _searchResults = [];
+  Set<String> _selectedTags = {};
 
   bool get _isEdit => widget.editPlaceId != null && widget.editPlaceId!.isNotEmpty;
 
@@ -75,6 +78,7 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
       _name.text = data['title']?.toString() ?? '';
       _description.text = data['body']?.toString() ?? '';
       _address = data['address']?.toString();
+      _selectedTags = PlaceTags.fromDynamicList(data['tags']);
       if (_address == null || _address!.isEmpty) {
         await _resolveAddress(_picked);
       }
@@ -172,6 +176,7 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
         'longitude': _picked.longitude,
         'address': _address ??
             '${_picked.latitude.toStringAsFixed(5)}, ${_picked.longitude.toStringAsFixed(5)}',
+        'tags': _selectedTags.toList(),
         'status': 'PUBLISHED',
       };
       if (_isEdit) {
@@ -323,10 +328,15 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
                   TextField(
                     controller: _description,
                     decoration: const InputDecoration(
-                      labelText: 'Mô tả (WiFi, ổ cắm, giờ mở cửa…)',
+                      labelText: 'Mô tả thêm (ghi chú, giờ mở cửa…)',
                       border: OutlineInputBorder(),
                     ),
                     maxLines: 4,
+                  ),
+                  const SizedBox(height: 20),
+                  PlaceTagSelector(
+                    selected: _selectedTags,
+                    onChanged: (v) => setState(() => _selectedTags = v),
                   ),
                   const SizedBox(height: 24),
                   FilledButton(

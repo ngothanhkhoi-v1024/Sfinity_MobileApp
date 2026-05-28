@@ -1,3 +1,4 @@
+import { itemHasAllTags, parseTagsQuery } from '../constants/place-tags';
 import { getDb } from '../lib/firebase';
 import { distanceMeters } from '../lib/geo';
 import { HttpError } from '../lib/http-error';
@@ -66,6 +67,7 @@ export const documentService = {
     type?: string;
     authorId?: string;
     placeId?: string;
+    tags?: string;
     lat?: number;
     lng?: number;
     radiusKm?: number;
@@ -109,6 +111,11 @@ export const documentService = {
 
     if (params.placeId) {
       items = items.filter((item) => itemMatchesPlaceId(item, params.placeId!));
+    }
+
+    const requiredTags = parseTagsQuery(params.tags);
+    if (requiredTags.length > 0) {
+      items = items.filter((item) => itemHasAllTags(item, requiredTags));
     }
 
     if (params.search) {
@@ -245,6 +252,7 @@ export const documentService = {
       newDocument.latitude = dto.latitude ?? null;
       newDocument.longitude = dto.longitude ?? null;
       newDocument.address = dto.address ?? null;
+      newDocument.tags = dto.tags ?? [];
     }
 
     await docRef.set(newDocument);

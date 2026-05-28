@@ -5,6 +5,7 @@ abstract class DocumentRepository {
     String? type,
     String? authorId,
     String? placeId,
+    String? tags,
     double? lat,
     double? lng,
     double? radiusKm,

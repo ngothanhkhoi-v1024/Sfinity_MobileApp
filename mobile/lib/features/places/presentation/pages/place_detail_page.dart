@@ -5,7 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../../../app.dart';
 import '../../../../core/constants/route_names.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/constants/place_tags.dart';
 import '../../../../shared/widgets/error_view.dart';
+import '../widgets/place_tag_chips.dart';
 
 class PlaceDetailPage extends StatefulWidget {
   const PlaceDetailPage({super.key, required this.placeId});
@@ -131,6 +133,7 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
     final title = place['title']?.toString() ?? 'Địa điểm';
     final body = place['body']?.toString() ?? '';
     final address = place['address']?.toString();
+    final tagIds = PlaceTags.fromDynamicList(place['tags']).toList();
     final author = place['author'] as Map<String, dynamic>?;
     final ownerName = author?['name']?.toString() ?? 'Người dùng';
     final currentUserId = SfinityApp.auth.user?['id']?.toString();
@@ -216,6 +219,18 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
                       value: address,
                       isDark: isDark,
                     ),
+                  ],
+                  if (tagIds.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      'Tiện ích học tập',
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.grey.shade300 : Colors.grey.shade800,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    PlaceTagDisplay(tagIds: tagIds),
                   ],
                   if (body.isNotEmpty) ...[
                     const SizedBox(height: 10),

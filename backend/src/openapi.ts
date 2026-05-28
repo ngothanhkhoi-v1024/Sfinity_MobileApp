@@ -411,6 +411,12 @@ export const openApiDocument = {
           { name: 'type', in: 'query', schema: { type: 'string' } },
           { name: 'authorId', in: 'query', schema: { type: 'string' } },
           { name: 'placeId', in: 'query', schema: { type: 'string' } },
+          {
+            name: 'tags',
+            in: 'query',
+            schema: { type: 'string' },
+            description: 'Comma-separated place tags (wifi,outlet,quiet,open_late,ac,parking) — AND filter',
+          },
           { name: 'lat', in: 'query', schema: { type: 'number' }, description: 'Nearby filter (with lng, radiusKm)' },
           { name: 'lng', in: 'query', schema: { type: 'number' } },
           { name: 'radiusKm', in: 'query', schema: { type: 'number', default: 25 } },

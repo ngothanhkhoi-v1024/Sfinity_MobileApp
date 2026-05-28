@@ -7,9 +7,11 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../../app.dart';
 import '../../../../core/constants/map_config.dart';
+import '../../../../core/constants/place_tags.dart';
 import '../../../../core/constants/route_names.dart';
 import '../../../../core/network/api_client.dart';
 import '../widgets/place_list_tile.dart';
+import '../widgets/place_tag_chips.dart';
 import '../widgets/places_header_panel.dart';
 
 const _nearbyRadiusKm = 50.0;
@@ -33,6 +35,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
   bool _listView = false;
   String? _locationHint;
   final _searchController = TextEditingController();
+  Set<String> _filterTags = {};
   List<Map<String, dynamic>> _publicPlaces = [];
   List<Map<String, dynamic>> _myPlaces = [];
 
@@ -114,6 +117,8 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
     try {
       final me = _myLocation;
       final search = _searchController.text.trim();
+      final tagsQuery = PlaceTags.toQueryParam(_filterTags);
+      final tagParam = tagsQuery.isNotEmpty ? tagsQuery : null;
       final publicRes = await SfinityApp.documentRepository.getDocuments(
         type: 'place',
         publishedOnly: true,
@@ -121,6 +126,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
         lng: me?.longitude,
         radiusKm: me != null ? _nearbyRadiusKm : null,
         search: search.isNotEmpty ? search : null,
+        tags: tagParam,
         limit: 50,
       );
       final currentUserId = SfinityApp.auth.user?['id']?.toString();
@@ -130,6 +136,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
           type: 'place',
           authorId: currentUserId,
           search: search.isNotEmpty ? search : null,
+          tags: tagParam,
           limit: 50,
         );
       }
@@ -237,10 +244,14 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
                 const SizedBox(height: 2),
                 Text(
                   count == 0
-                      ? 'Chưa có địa điểm'
-                      : _myLocation != null
-                          ? '$count địa điểm · trong ${_nearbyRadiusKm.toInt()} km'
-                          : '$count địa điểm',
+                      ? (_filterTags.isEmpty
+                          ? 'Chưa có địa điểm'
+                          : 'Không có địa điểm phù hợp bộ lọc')
+                      : _filterTags.isNotEmpty
+                          ? '$count địa điểm · ${PlaceTags.labelsFor(_filterTags.toList())}'
+                          : _myLocation != null
+                              ? '$count địa điểm · trong ${_nearbyRadiusKm.toInt()} km'
+                              : '$count địa điểm',
                   style: TextStyle(
                     fontSize: 12,
                     color: isDark ? Colors.grey.shade400 : const Color(0xFF6B7280),
@@ -359,6 +370,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
               children: [
                 _buildHeader(),
                 _buildSearchBar(),
+                _buildTagFilterBar(),
               ],
             ),
           ),
@@ -417,7 +429,20 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
     );
   }
 
+  List<String> _placeTagIds(Map<String, dynamic> place) {
+    return PlaceTags.fromDynamicList(place['tags']).toList();
+  }
+
   String _placeSubtitle(Map<String, dynamic> place, {required bool community}) {
+    final tagIds = _placeTagIds(place);
+    if (tagIds.isNotEmpty) {
+      final tagLine = PlaceTags.labelsFor(tagIds);
+      final address = place['address']?.toString();
+      if (address != null && address.isNotEmpty) {
+        return '$tagLine · $address';
+      }
+      return tagLine;
+    }
     final address = place['address']?.toString();
     if (address != null && address.isNotEmpty) {
       return address;
@@ -539,6 +564,8 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
               const SizedBox(height: 8),
               if (address != null && address.isNotEmpty)
                 Text(address, style: TextStyle(color: Colors.grey.shade700)),
+              const SizedBox(height: 8),
+              PlaceTagDisplay(tagIds: _placeTagIds(place)),
               if (description.isNotEmpty) ...[
                 const SizedBox(height: 6),
                 Text(description, maxLines: 3, overflow: TextOverflow.ellipsis),
@@ -622,6 +649,17 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         ),
         onSubmitted: (_) => _loadPlaces(),
+      ),
+    );
+  }
+
+  Widget _buildTagFilterBar() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: PlaceTagFilterBar(
+        selected: _filterTags,
+        onChanged: (v) => setState(() => _filterTags = v),
+        onApply: _loadPlaces,
       ),
     );
   }
@@ -713,6 +751,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
               children: [
                 _buildHeader(),
                 _buildSearchBar(),
+                _buildTagFilterBar(),
                 if (_locationHint != null && !_locating)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
