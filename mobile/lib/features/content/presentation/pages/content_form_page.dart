@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/network/api_client.dart';
+import '../../../../core/utils/validators.dart';
 
 class ContentFormPage extends StatefulWidget {
   const ContentFormPage({super.key, this.contentId, this.contentType = 'document'});
@@ -86,15 +87,17 @@ class _ContentFormPageState extends State<ContentFormPage> {
             children: [
               TextFormField(
                 controller: _title,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
                 decoration: InputDecoration(
                   labelText: widget.isDocument ? 'Tên tài liệu / môn học' : 'Tên địa điểm',
-                  border: const OutlineInputBorder(),
+                  border: OutlineInputBorder()
                 ),
-                validator: (v) => v != null && v.isNotEmpty ? null : 'Bắt buộc',
+                validator: AppValidators.validateRequired,
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _body,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
                 decoration: InputDecoration(
                   labelText: widget.isDocument ? 'Mô tả, link, ghi chú…' : 'Mô tả địa điểm',
                   border: const OutlineInputBorder(),
