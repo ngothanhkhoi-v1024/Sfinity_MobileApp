@@ -15,6 +15,7 @@ class DocumentApiService {
     double? lat,
     double? lng,
     double? radiusKm,
+    String? zone,
     bool? publishedOnly,
     int? limit,
   }) {
@@ -28,6 +29,7 @@ class DocumentApiService {
       if (lat != null) 'lat': lat.toString(),
       if (lng != null) 'lng': lng.toString(),
       if (radiusKm != null) 'radiusKm': radiusKm.toString(),
+      if (zone != null && zone.isNotEmpty) 'zone': zone,
       if (publishedOnly != null) 'publishedOnly': publishedOnly.toString(),
       if (limit != null) 'limit': limit.toString(),
     });

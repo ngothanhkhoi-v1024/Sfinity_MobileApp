@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/route_names.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../place_reviews/presentation/controllers/place_engagement_controller.dart';
+import '../../../place_reviews/presentation/widgets/place_photo_gallery.dart';
+import '../../../place_reviews/presentation/widgets/place_rating_section.dart';
 import '../controllers/place_detail_controller.dart';
 import '../widgets/place_tag_chips.dart';
 
@@ -18,20 +21,33 @@ class PlaceDetailPage extends StatefulWidget {
 
 class _PlaceDetailPageState extends State<PlaceDetailPage> {
   late final PlaceDetailController _ctrl;
+  late final PlaceEngagementController _engagementCtrl;
 
   @override
   void initState() {
     super.initState();
     _ctrl = PlaceDetailController();
+    _engagementCtrl = PlaceEngagementController();
     _ctrl.addListener(() {
       if (mounted) setState(() {});
     });
-    _ctrl.load(widget.placeId);
+    _engagementCtrl.addListener(() {
+      if (mounted) setState(() {});
+    });
+    _loadAll();
+  }
+
+  Future<void> _loadAll() async {
+    await Future.wait([
+      _ctrl.load(widget.placeId),
+      _engagementCtrl.load(widget.placeId),
+    ]);
   }
 
   @override
   void dispose() {
     _ctrl.dispose();
+    _engagementCtrl.dispose();
     super.dispose();
   }
 
@@ -43,12 +59,12 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
         'placeId': widget.placeId,
         'placeTitle': placeTitle,
       },
-    ).then((_) => _ctrl.load(widget.placeId));
+    ).then((_) => _loadAll());
   }
 
   Future<void> _editPlace() async {
     await context.push('/places/${widget.placeId}/edit');
-    if (mounted) _ctrl.load(widget.placeId);
+    if (mounted) _loadAll();
   }
 
   Future<void> _deletePlace() async {
@@ -107,7 +123,7 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
                 Text(_ctrl.error ?? 'Không tải được địa điểm', textAlign: TextAlign.center),
                 const SizedBox(height: 16),
                 FilledButton(
-                  onPressed: () => _ctrl.load(widget.placeId),
+                  onPressed: _loadAll,
                   child: const Text('Thử lại'),
                 ),
               ],
@@ -142,7 +158,7 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () => _ctrl.load(widget.placeId),
+        onRefresh: _loadAll,
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: [
@@ -226,6 +242,25 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
                 ],
               ),
             ),
+            const SizedBox(height: 24),
+            if (_engagementCtrl.loading)
+              const Center(child: Padding(
+                padding: EdgeInsets.all(16),
+                child: CircularProgressIndicator(),
+              ))
+            else if (_engagementCtrl.reviewSummary != null) ...[
+              PlaceRatingSection(
+                controller: _engagementCtrl,
+                placeId: widget.placeId,
+                summary: _engagementCtrl.reviewSummary!,
+              ),
+              const SizedBox(height: 20),
+              PlacePhotoGallery(
+                controller: _engagementCtrl,
+                placeId: widget.placeId,
+                photos: _engagementCtrl.photoResult?.photos ?? [],
+              ),
+            ],
             if (isMine) ...[
               const SizedBox(height: 16),
               Container(

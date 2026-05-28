@@ -17,6 +17,7 @@ abstract final class PlaceMapper {
       title: json['title']?.toString() ?? 'Địa điểm',
       body: json['body']?.toString() ?? '',
       address: json['address']?.toString(),
+      zone: json['zone']?.toString(),
       tags: PlaceTags.fromDynamicList(json['tags']).toList(),
       latitude: point.latitude,
       longitude: point.longitude,
@@ -24,6 +25,8 @@ abstract final class PlaceMapper {
       authorId: author?['id']?.toString() ?? json['authorId']?.toString(),
       authorName: author?['name']?.toString(),
       distanceMeters: dist is num ? dist.round() : null,
+      avgRating: (json['avgRating'] as num?)?.toDouble(),
+      reviewCount: (json['reviewCount'] as num?)?.toInt(),
     );
   }
 

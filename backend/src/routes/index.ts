@@ -7,7 +7,9 @@ import { dashboardRouter } from './dashboard.routes';
 import { favoritesRouter } from './favorites.routes';
 import { feedbackRouter } from './feedback.routes';
 import { notificationsRouter } from './notifications.routes';
+import { placesRouter } from './places.routes';
 import { reportsRouter } from './reports.routes';
+import { studyNearMeRouter } from './study-near-me.routes';
 import { usersRouter } from './users.routes';
 
 export const apiRouter = Router();
@@ -16,6 +18,8 @@ apiRouter.use('/auth', authRouter);
 apiRouter.use('/users', usersRouter);
 apiRouter.use('/categories', categoriesRouter);
 apiRouter.use('/document', documentRouter);
+apiRouter.use('/places', placesRouter);
+apiRouter.use('/study-near-me', studyNearMeRouter);
 apiRouter.use('/favorites', favoritesRouter);
 apiRouter.use('/feedback', feedbackRouter);
 apiRouter.use('/reports', reportsRouter);

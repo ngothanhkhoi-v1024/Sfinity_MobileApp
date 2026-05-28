@@ -22,6 +22,7 @@ documentRouter.get(
     const authorId = req.query.authorId as string | undefined;
     const placeId = req.query.placeId as string | undefined;
     const tags = req.query.tags as string | undefined;
+    const zone = req.query.zone as string | undefined;
     const lat = req.query.lat as string | undefined;
     const lng = req.query.lng as string | undefined;
     const radiusKm = req.query.radiusKm as string | undefined;
@@ -38,6 +39,7 @@ documentRouter.get(
         authorId,
         placeId,
         tags,
+        zone,
         lat: lat != null ? Number(lat) : undefined,
         lng: lng != null ? Number(lng) : undefined,
         radiusKm: radiusKm != null ? Number(radiusKm) : undefined,

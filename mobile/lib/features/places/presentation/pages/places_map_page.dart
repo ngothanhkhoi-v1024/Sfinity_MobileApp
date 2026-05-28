@@ -8,6 +8,9 @@ import '../../../../core/constants/map_config.dart';
 import '../../../../core/constants/route_names.dart';
 import '../../../../core/network/api_client.dart';
 import '../../data/models/place_model.dart';
+import '../../../study_near_me/presentation/controllers/study_near_me_controller.dart';
+import '../../../study_near_me/presentation/widgets/study_near_me_button.dart';
+import '../../../study_near_me/presentation/widgets/study_near_me_results_sheet.dart';
 import '../controllers/places_map_controller.dart';
 import '../widgets/place_list_tile.dart';
 import '../widgets/place_tag_chips.dart';
@@ -25,13 +28,16 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
   final _mapController = MapController();
   final _searchController = TextEditingController();
   late final PlacesMapController _ctrl;
+  late final StudyNearMeController _studyNearMeCtrl;
   bool _mapReady = false;
 
   @override
   void initState() {
     super.initState();
     _ctrl = PlacesMapController();
+    _studyNearMeCtrl = StudyNearMeController();
     _ctrl.addListener(_onControllerUpdate);
+    _studyNearMeCtrl.addListener(_onControllerUpdate);
     _ctrl.init();
   }
 
@@ -42,7 +48,9 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
   @override
   void dispose() {
     _ctrl.removeListener(_onControllerUpdate);
+    _studyNearMeCtrl.removeListener(_onControllerUpdate);
     _ctrl.dispose();
+    _studyNearMeCtrl.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -260,6 +268,25 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
     );
   }
 
+  Future<void> _onStudyNearMe() async {
+    final ok = await _studyNearMeCtrl.loadNearby(location: _ctrl.myLocation);
+    if (!mounted) return;
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_studyNearMeCtrl.error ?? 'Không tìm được kết quả')),
+      );
+      return;
+    }
+    final result = _studyNearMeCtrl.result;
+    if (result != null) {
+      await StudyNearMeResultsSheet.show(
+        context,
+        result: result,
+        onRetry: _onStudyNearMe,
+      );
+    }
+  }
+
   Widget _buildHeader() {
     return PlacesHeaderPanel(
       communityMode: _ctrl.communityMode,
@@ -406,6 +433,17 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
               children: [
                 _buildHeader(),
                 _buildSearchBar(),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: StudyNearMeButton(
+                      compact: true,
+                      loading: _studyNearMeCtrl.loading,
+                      onPressed: _onStudyNearMe,
+                    ),
+                  ),
+                ),
                 _buildTagFilterBar(),
               ],
             ),
@@ -572,6 +610,17 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
               children: [
                 _buildHeader(),
                 _buildSearchBar(),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: StudyNearMeButton(
+                      compact: true,
+                      loading: _studyNearMeCtrl.loading,
+                      onPressed: _onStudyNearMe,
+                    ),
+                  ),
+                ),
                 _buildTagFilterBar(),
                 if (_ctrl.locationHint != null && !_ctrl.locating)
                   Padding(
