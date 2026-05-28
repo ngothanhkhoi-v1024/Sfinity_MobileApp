@@ -250,22 +250,22 @@ class _LoginPageState extends State<LoginPage> {
                             onPressed: _controller.isLoading ? null : _loginWithGoogle,
                           ),
                           const SizedBox(height: 12),
-                          SocialLoginButton(
-                            label: 'Đăng nhập với Facebook',
-                            color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF9FAFB),
-                            borderColor: cardBorderColor,
-                            textColor: onSurfaceColor,
-                            icon: const CircleAvatar(
-                              radius: 12,
-                              backgroundColor: Color(0xFF1877F2),
-                              child: Icon(
-                                Icons.facebook_rounded,
-                                size: 16,
-                                color: Colors.white,
-                              ),
-                            ),
-                            onPressed: _controller.isLoading ? null : _loginWithFacebook,
-                          ),
+                          // SocialLoginButton(
+                          //   label: 'Đăng nhập với Facebook',
+                          //   color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF9FAFB),
+                          //   borderColor: cardBorderColor,
+                          //   textColor: onSurfaceColor,
+                          //   icon: const CircleAvatar(
+                          //     radius: 12,
+                          //     backgroundColor: Color(0xFF1877F2),
+                          //     child: Icon(
+                          //       Icons.facebook_rounded,
+                          //       size: 16,
+                          //       color: Colors.white,
+                          //     ),
+                          //   ),
+                          //   onPressed: _controller.isLoading ? null : _loginWithFacebook,
+                          // ),
                           const SizedBox(height: 18),
                           TextButton(
                             onPressed: _controller.isLoading

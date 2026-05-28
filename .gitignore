@@ -25,6 +25,7 @@ mobile/.flutter-plugins-dependencies
 mobile/.packages
 mobile/build/
 mobile/**/*.g.dart
+mobile/assets/env/app.local.env
 
 # --- BỔ SUNG: Chặn các file tự sinh khi chạy Flutter Desktop/OS ---
 mobile/linux/flutter/generated_plugin_registrant.cc
