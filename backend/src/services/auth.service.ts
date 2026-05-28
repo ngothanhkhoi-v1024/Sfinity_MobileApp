@@ -34,12 +34,12 @@ function sanitizeUser(user: {
 }) {
   return {
     id: user.id,
-    email: user.email,
-    name: user.name,
+    email: user.email ?? '',
+    name: user.name ?? '',
     avatar: user.avatar ?? undefined,
-    role: user.role.toLowerCase() as 'admin' | 'user',
-    status: user.status,
-    authProvider: user.authProvider.toLowerCase() as 'local' | 'google' | 'facebook',
+    role: (user.role ?? UserRole.USER).toLowerCase() as 'admin' | 'user',
+    status: user.status ?? UserStatus.ACTIVE,
+    authProvider: (user.authProvider ?? AuthProvider.LOCAL).toLowerCase() as 'local' | 'google' | 'facebook',
     createdAt: toDate(user.createdAt),
   };
 }
@@ -177,7 +177,7 @@ export const authService = {
       const doc = snapshot.docs[0];
       user = { id: doc.id, ...doc.data() } as any;
       const updatedData = {
-        name: user.name.trim().length > 0 ? user.name : displayName,
+        name: (user.name ?? '').trim().length > 0 ? user.name : displayName,
         avatar: user.avatar ?? avatar,
         authProvider,
         providerUserId: decoded.uid,
