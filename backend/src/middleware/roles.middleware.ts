@@ -1,4 +1,4 @@
-import type { UserRole } from '@prisma/client';
+import type { UserRole } from '../types/enums';
 import type { NextFunction, Request, Response } from 'express';
 
 import { HttpError } from '../lib/http-error';

@@ -1,4 +1,4 @@
-import { ContentStatus, UserRole } from '@prisma/client';
+import { ContentStatus, UserRole } from '../types/enums';
 import { Router } from 'express';
 
 import { CreateContentDto, UpdateContentDto } from '../dto/content.dto';

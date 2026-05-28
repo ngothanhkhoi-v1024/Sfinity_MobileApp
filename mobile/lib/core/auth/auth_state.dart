@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-
 import '../network/api_client.dart';
 import 'auth_repository.dart';
 
@@ -20,7 +19,14 @@ class AuthState extends ChangeNotifier {
       final token = await _repo.getToken();
       if (token != null) {
         ApiClient.instance.setToken(token);
-        user = await _repo.getProfile();
+        try {
+          // Thử tải thông tin trực tiếp từ Server qua Internet
+          user = await _repo.getProfile();
+        } catch (e) {
+          print('Mất kết nối mạng, tải thông tin profile từ SQLite local: $e');
+          // Offline -> Sử dụng thông tin người dùng được lưu trữ cục bộ trong SQLite
+          user = await _repo.getCachedProfile();
+        }
       }
     } catch (_) {
       await _repo.clearSession();
@@ -62,5 +68,21 @@ class AuthState extends ChangeNotifier {
   void setUser(Map<String, dynamic> data) {
     user = data;
     notifyListeners();
+  }
+
+  Future<void> forgotPassword(String email) async {
+    await _repo.forgotPassword(email);
+  }
+
+  Future<void> resetPassword({
+    required String email,
+    required String code,
+    required String newPassword,
+  }) async {
+    await _repo.resetPassword(
+      email: email,
+      code: code,
+      newPassword: newPassword,
+    );
   }
 }

@@ -1,17 +1,16 @@
-import { ContentStatus, UserRole } from '@prisma/client';
-
+import { getDb } from '../lib/firebase';
 import { HttpError } from '../lib/http-error';
-import { prisma } from '../lib/prisma';
+import { ContentStatus, UserRole } from '../types/enums';
 import type { CreateContentDto, UpdateContentDto } from '../dto/content.dto';
 
-export const contentService = {
-  include() {
-    return {
-      author: { select: { id: true, name: true, email: true } },
-      category: { select: { id: true, name: true, slug: true } },
-    };
-  },
+const toDate = (val: any): Date => {
+  if (!val) return new Date();
+  if (val instanceof Date) return val;
+  if (typeof val.toDate === 'function') return val.toDate();
+  return new Date(val);
+};
 
+export const contentService = {
   async findAll(params: {
     search?: string;
     status?: ContentStatus;
@@ -24,50 +23,130 @@ export const contentService = {
     const limit = params.limit ?? 20;
     const skip = (page - 1) * limit;
 
-    const where = {
-      ...(params.publishedOnly ? { status: ContentStatus.PUBLISHED } : {}),
-      ...(params.status ? { status: params.status } : {}),
-      ...(params.categoryId ? { categoryId: params.categoryId } : {}),
-      ...(params.search
-        ? {
-            OR: [
-              { title: { contains: params.search } },
-              { body: { contains: params.search } },
-            ],
+    const snapshot = await getDb().collection('contents').get();
+    let items = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as any));
+
+    // Filter status
+    if (params.publishedOnly) {
+      items = items.filter((item) => item.status === ContentStatus.PUBLISHED);
+    } else if (params.status) {
+      items = items.filter((item) => item.status === params.status);
+    }
+
+    // Filter category
+    if (params.categoryId) {
+      items = items.filter((item) => item.categoryId === params.categoryId);
+    }
+
+    // Filter search term case-insensitively
+    if (params.search) {
+      const term = params.search.toLowerCase();
+      items = items.filter(
+        (item) =>
+          (item.title && item.title.toLowerCase().includes(term)) ||
+          (item.body && item.body.toLowerCase().includes(term)),
+      );
+    }
+
+    // Sort by createdAt desc in memory
+    items.sort((a, b) => toDate(b.createdAt).getTime() - toDate(a.createdAt).getTime());
+
+    const total = items.length;
+    const paginatedItems = items.slice(skip, skip + limit);
+
+    // Resolve author and category relationships for the paginated slice
+    const resolvedItems = await Promise.all(
+      paginatedItems.map(async (item) => {
+        let author = null;
+        if (item.authorId) {
+          const authorDoc = await getDb().collection('users').doc(item.authorId).get();
+          if (authorDoc.exists) {
+            const a = authorDoc.data() as any;
+            author = { id: authorDoc.id, name: a.name, email: a.email };
           }
-        : {}),
-    };
+        }
 
-    const [items, total] = await Promise.all([
-      prisma.content.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-        include: contentService.include(),
+        let category = null;
+        if (item.categoryId) {
+          const categoryDoc = await getDb().collection('categories').doc(item.categoryId).get();
+          if (categoryDoc.exists) {
+            const c = categoryDoc.data() as any;
+            category = { id: categoryDoc.id, name: c.name, slug: c.slug };
+          }
+        }
+
+        return {
+          id: item.id,
+          title: item.title,
+          body: item.body,
+          status: item.status,
+          authorId: item.authorId,
+          categoryId: item.categoryId ?? null,
+          createdAt: toDate(item.createdAt),
+          updatedAt: toDate(item.updatedAt),
+          author,
+          category,
+        };
       }),
-      prisma.content.count({ where }),
-    ]);
+    );
 
-    return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
+    return { items: resolvedItems, total, page, limit, totalPages: Math.ceil(total / limit) };
   },
 
   async findOne(id: string) {
-    const item = await prisma.content.findUnique({
-      where: { id },
-      include: contentService.include(),
-    });
-    if (!item) {
+    const doc = await getDb().collection('contents').doc(id).get();
+    if (!doc.exists) {
       throw new HttpError(404, 'Không tìm thấy nội dung', 'Not Found');
     }
-    return item;
+    const item = { id: doc.id, ...doc.data() } as any;
+
+    let author = null;
+    if (item.authorId) {
+      const authorDoc = await getDb().collection('users').doc(item.authorId).get();
+      if (authorDoc.exists) {
+        const a = authorDoc.data() as any;
+        author = { id: authorDoc.id, name: a.name, email: a.email };
+      }
+    }
+
+    let category = null;
+    if (item.categoryId) {
+      const categoryDoc = await getDb().collection('categories').doc(item.categoryId).get();
+      if (categoryDoc.exists) {
+        const c = categoryDoc.data() as any;
+        category = { id: categoryDoc.id, name: c.name, slug: c.slug };
+      }
+    }
+
+    return {
+      id: item.id,
+      title: item.title,
+      body: item.body,
+      status: item.status,
+      authorId: item.authorId,
+      categoryId: item.categoryId ?? null,
+      createdAt: toDate(item.createdAt),
+      updatedAt: toDate(item.updatedAt),
+      author,
+      category,
+    };
   },
 
-  create(authorId: string, dto: CreateContentDto) {
-    return prisma.content.create({
-      data: { ...dto, authorId },
-      include: contentService.include(),
-    });
+  async create(authorId: string, dto: CreateContentDto) {
+    const docRef = getDb().collection('contents').doc();
+    const newContent = {
+      id: docRef.id,
+      title: dto.title,
+      body: dto.body,
+      status: dto.status ?? ContentStatus.DRAFT,
+      authorId,
+      categoryId: dto.categoryId ?? null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    await docRef.set(newContent);
+    return contentService.findOne(docRef.id);
   },
 
   async update(id: string, dto: UpdateContentDto, userId: string, role: UserRole) {
@@ -75,11 +154,15 @@ export const contentService = {
     if (role !== UserRole.ADMIN && item.authorId !== userId) {
       throw new HttpError(404, 'Not Found', 'Not Found');
     }
-    return prisma.content.update({
-      where: { id },
-      data: dto,
-      include: contentService.include(),
-    });
+
+    const docRef = getDb().collection('contents').doc(id);
+    const updateData: any = {
+      ...dto,
+      updatedAt: new Date(),
+    };
+
+    await docRef.update(updateData);
+    return contentService.findOne(id);
   },
 
   async remove(id: string, userId: string, role: UserRole) {
@@ -87,7 +170,8 @@ export const contentService = {
     if (role !== UserRole.ADMIN && item.authorId !== userId) {
       throw new HttpError(404, 'Not Found', 'Not Found');
     }
-    await prisma.content.delete({ where: { id } });
+
+    await getDb().collection('contents').doc(id).delete();
     return { success: true };
   },
 };

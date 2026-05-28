@@ -1,4 +1,4 @@
-import { ReportStatus, UserRole } from '@prisma/client';
+import { ReportStatus, UserRole } from '../types/enums';
 import { Router } from 'express';
 
 import { CreateReportDto, ResolveReportDto } from '../dto/report.dto';
