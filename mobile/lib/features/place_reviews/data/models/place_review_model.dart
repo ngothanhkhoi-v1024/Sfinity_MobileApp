@@ -4,6 +4,7 @@ class PlaceReviewModel {
     required this.rating,
     this.comment,
     this.authorName,
+    this.userId,
     this.createdAt,
   });
 
@@ -11,14 +12,17 @@ class PlaceReviewModel {
   final int rating;
   final String? comment;
   final String? authorName;
+  final String? userId;
   final DateTime? createdAt;
 
   factory PlaceReviewModel.fromJson(Map<String, dynamic> json) {
+    final author = json['author'] as Map<String, dynamic>?;
     return PlaceReviewModel(
       id: json['id']?.toString() ?? '',
       rating: (json['rating'] as num?)?.round() ?? 0,
       comment: json['comment']?.toString(),
-      authorName: (json['author'] as Map<String, dynamic>?)?['name']?.toString(),
+      authorName: author?['name']?.toString(),
+      userId: json['userId']?.toString() ?? author?['id']?.toString(),
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'].toString())
           : null,

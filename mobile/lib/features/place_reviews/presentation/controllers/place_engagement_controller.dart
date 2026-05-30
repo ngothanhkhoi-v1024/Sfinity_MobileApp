@@ -25,6 +25,36 @@ class PlaceEngagementController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void _applyOwnReviewOrdering() {
+    final summary = reviewSummary;
+    if (summary == null || summary.reviews.isEmpty) return;
+
+    final currentUserId = SfinityApp.auth.user?['id']?.toString();
+    if (currentUserId == null) return;
+
+    PlaceReviewModel? ownReview;
+    final others = <PlaceReviewModel>[];
+    for (final review in summary.reviews) {
+      if (review.userId == currentUserId) {
+        ownReview = review;
+      } else {
+        others.add(review);
+      }
+    }
+
+    if (ownReview == null) return;
+
+    draftRating = ownReview.rating;
+    if (commentController.text.isEmpty) {
+      commentController.text = ownReview.comment ?? '';
+    }
+    reviewSummary = PlaceReviewSummary(
+      avgRating: summary.avgRating,
+      reviewCount: summary.reviewCount,
+      reviews: [ownReview, ...others],
+    );
+  }
+
   Future<void> load(String placeId) async {
     loading = true;
     error = null;
@@ -38,6 +68,7 @@ class PlaceEngagementController extends ChangeNotifier {
       final results = await Future.wait([reviewsFuture, photosFuture]);
       reviewSummary = results[0] as PlaceReviewSummary;
       photoResult = results[1] as PlacePhotoListResult;
+      _applyOwnReviewOrdering();
     } on DioException catch (e) {
       error = ApiClient.instance.errorMessage(e);
     } catch (e) {

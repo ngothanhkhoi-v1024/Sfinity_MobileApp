@@ -6,6 +6,7 @@ import '../../../../shared/widgets/floating_pill_nav_bar.dart';
 import '../../../../shared/widgets/share_action_sheet.dart';
 import '../../../document/presentation/pages/document_list_page.dart';
 import '../../../places/presentation/pages/places_map_page.dart';
+import '../../../places/presentation/places_map_focus.dart';
 import '../../../profile/presentation/pages/profile_page.dart';
 import 'explore_page.dart';
 
@@ -55,6 +56,25 @@ class _HomeShellPageState extends State<HomeShellPage> {
     DocumentListPage(embedded: true),
     ProfilePage(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    PlacesMapFocus.pending.addListener(_onPlacesMapFocus);
+  }
+
+  @override
+  void dispose() {
+    PlacesMapFocus.pending.removeListener(_onPlacesMapFocus);
+    super.dispose();
+  }
+
+  void _onPlacesMapFocus() {
+    if (PlacesMapFocus.pending.value == null || !mounted) return;
+    if (_navIndex != 1) {
+      setState(() => _navIndex = 1);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -239,6 +239,45 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
                     selected: _ctrl.selectedTags,
                     onChanged: _ctrl.setSelectedTags,
                   ),
+                  const SizedBox(height: 20),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Ai có thể thấy địa điểm này?',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SegmentedButton<bool>(
+                    segments: const [
+                      ButtonSegment<bool>(
+                        value: false,
+                        label: Text('Chỉ mình tôi'),
+                        icon: Icon(Icons.lock_outline, size: 18),
+                      ),
+                      ButtonSegment<bool>(
+                        value: true,
+                        label: Text('Cộng đồng'),
+                        icon: Icon(Icons.public, size: 18),
+                      ),
+                    ],
+                    selected: {_ctrl.isPublic},
+                    onSelectionChanged: (selection) {
+                      _ctrl.setIsPublic(selection.first);
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _ctrl.isPublic
+                        ? 'Địa điểm hiển thị trên bản đồ cộng đồng cho mọi người.'
+                        : 'Chỉ bạn thấy trong tab Của tôi, không hiện trên bản đồ cộng đồng.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
                   const SizedBox(height: 24),
                   FilledButton(
                     onPressed: _ctrl.loading ? null : _submit,
