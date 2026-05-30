@@ -2,11 +2,13 @@ import { ContentStatus, UserRole } from '../types/enums';
 import { Router } from 'express';
 
 import { CreateDocumentDto, UpdateDocumentDto } from '../dto/document.dto';
+import { CreateDocumentReviewDto } from '../dto/document-review.dto';
 import { asyncHandler } from '../lib/async-handler';
 import { validateBody } from '../lib/validate';
 import { jwtAuthMiddleware } from '../middleware/jwt.middleware';
 import { rolesMiddleware } from '../middleware/roles.middleware';
 import { documentService } from '../services/document.service';
+import { documentReviewService } from '../services/document-review.service';
 
 const adminOnly = [jwtAuthMiddleware, rolesMiddleware(UserRole.ADMIN)] as const;
 
@@ -122,3 +124,36 @@ documentRouter.delete(
     );
   }),
 );
+
+documentRouter.patch(
+  '/:id/download',
+  asyncHandler(async (req, res) => {
+    res.json(await documentService.incrementDownload(req.params.id));
+  }),
+);
+
+documentRouter.get(
+  '/:id/reviews',
+  asyncHandler(async (req, res) => {
+    res.json(await documentReviewService.list(req.params.id));
+  }),
+);
+
+documentRouter.post(
+  '/:id/reviews',
+  jwtAuthMiddleware,
+  asyncHandler(async (req, res) => {
+    const dto = await validateBody(CreateDocumentReviewDto, req.body);
+    res.json(await documentReviewService.upsert(req.params.id, req.user!.sub, dto));
+  }),
+);
+
+documentRouter.delete(
+  '/:id/reviews',
+  jwtAuthMiddleware,
+  asyncHandler(async (req, res) => {
+    res.json(await documentReviewService.remove(req.params.id, req.user!.sub));
+  }),
+);
+
+
