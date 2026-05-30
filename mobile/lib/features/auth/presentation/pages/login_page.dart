@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/route_names.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../../../../core/utils/validators.dart';
 import '../controllers/login_controller.dart';
 import '../widgets/auth_card.dart';
@@ -70,6 +71,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final isDark = theme.brightness == Brightness.dark;
 
     final primaryColor = theme.colorScheme.primary;
@@ -136,7 +138,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           const SizedBox(height: 18),
                           Text(
-                            'Đăng nhập',
+                            l10n.login,
                             style: theme.textTheme.headlineMedium?.copyWith(
                               fontWeight: FontWeight.w800,
                               color: onSurfaceColor,
@@ -145,7 +147,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Chào mừng bạn quay lại với Sfinity.',
+                            l10n.welcomeBack,
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: onSurfaceColor.withOpacity(0.75),
                             ),
@@ -174,7 +176,7 @@ class _LoginPageState extends State<LoginPage> {
                           ],
                           AuthTextField(
                             controller: _email,
-                            labelText: 'Email',
+                            labelText: l10n.email,
                             prefixIcon: const Icon(Icons.mail_outline_rounded),
                             keyboardType: TextInputType.emailAddress,
                             validator: AppValidators.validateEmail,
@@ -182,7 +184,7 @@ class _LoginPageState extends State<LoginPage> {
                           const SizedBox(height: 14),
                           PasswordField(
                             controller: _password,
-                            labelText: 'Mật khẩu',
+                            labelText: l10n.password,
                             validator: AppValidators.validateLoginPassword,
                             onFieldSubmitted: (_) => _submit(),
                           ),
@@ -192,8 +194,8 @@ class _LoginPageState extends State<LoginPage> {
                             child: TextButton(
                               onPressed: _controller.isLoading
                                   ? null
-                                  : () => context.push(RouteNames.forgotPassword),
-                              child: const Text('Quên mật khẩu?'),
+                                    : () => context.push(RouteNames.forgotPassword),
+                                  child: Text(l10n.forgotPasswordQuestion),
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -208,7 +210,7 @@ class _LoginPageState extends State<LoginPage> {
                                       color: Colors.white,
                                     ),
                                   )
-                                : const Text('Đăng nhập'),
+                                : Text(l10n.login),
                           ),
                           const SizedBox(height: 24),
                           Row(
@@ -222,7 +224,7 @@ class _LoginPageState extends State<LoginPage> {
                               Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 12),
                                 child: Text(
-                                  'Hoặc tiếp tục với',
+                                  l10n.orContinueWith,
                                   style: theme.textTheme.bodySmall?.copyWith(
                                     color: onSurfaceColor.withOpacity(0.65),
                                     fontWeight: FontWeight.w600,
@@ -239,7 +241,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           const SizedBox(height: 18),
                           SocialLoginButton(
-                            label: 'Đăng nhập với Google',
+                            label: l10n.continueWithGoogle,
                             color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF9FAFB),
                             borderColor: cardBorderColor,
                             textColor: onSurfaceColor,
@@ -271,7 +273,7 @@ class _LoginPageState extends State<LoginPage> {
                             onPressed: _controller.isLoading
                                 ? null
                                 : () => context.push(RouteNames.register),
-                            child: const Text('Chưa có tài khoản? Đăng ký'),
+                            child: Text(l10n.noAccountYetRegister),
                           ),
                         ],
                       ),

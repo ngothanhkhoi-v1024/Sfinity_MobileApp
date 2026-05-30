@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'core/auth/auth_state.dart';
 import 'core/network/api_client.dart';
+import 'core/i18n/app_text.dart';
 import 'core/router/app_router.dart';
+import 'core/services/locale_manager.dart';
+import 'core/services/notification_manager.dart';
 import 'core/services/theme_manager.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/data/repositories/auth_repository_impl.dart';
@@ -34,6 +38,8 @@ class SfinityApp extends StatefulWidget {
   static late final PlaceRepository placeRepository;
   static late final StudyNearMeRepository studyNearMeRepository;
   static late final PlaceEngagementRepository placeEngagementRepository;
+  static LocaleManager get localeManager => _SfinityAppState.localeManager;
+  static NotificationManager get notificationManager => _SfinityAppState.notificationManager;
   static ThemeManager get themeManager => _SfinityAppState.themeManager;
 
   @override
@@ -42,6 +48,8 @@ class SfinityApp extends StatefulWidget {
 
 class _SfinityAppState extends State<SfinityApp> {
   static late final AuthState auth;
+  static late final LocaleManager localeManager;
+  static late final NotificationManager notificationManager;
   static late final ThemeManager themeManager;
   late final GoRouter _router = createAppRouter(auth);
 
@@ -78,14 +86,20 @@ class _SfinityAppState extends State<SfinityApp> {
     auth = AuthState(authRepository);
     auth.init();
 
+    localeManager = LocaleManager();
+    localeManager.init();
+
+    notificationManager = NotificationManager();
+    notificationManager.init();
+
     themeManager = ThemeManager();
     themeManager.init();
   }
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: themeManager,
+    return AnimatedBuilder(
+      animation: Listenable.merge([themeManager, localeManager, notificationManager]),
       builder: (context, child) {
         return MaterialApp.router(
           title: 'Sfinity',
@@ -93,6 +107,14 @@ class _SfinityAppState extends State<SfinityApp> {
           theme: AppTheme.light,
           darkTheme: AppTheme.dark,
           themeMode: themeManager.themeMode,
+          locale: localeManager.locale,
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
           routerConfig: _router,
         );
       },

@@ -1,4 +1,3 @@
-import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class SocialAuthService {
@@ -12,31 +11,28 @@ class SocialAuthService {
 
   Future<String> signInWithGoogle() async {
     await ensureGoogleInitialized();
+
     final account = await GoogleSignIn.instance.authenticate();
     final googleAuth = account.authentication;
     final idToken = googleAuth.idToken;
+
     if (idToken == null || idToken.isEmpty) {
       throw Exception('Google login không trả về idToken.');
     }
+
     return idToken;
   }
 
+  // Tạm thời vô hiệu hóa Facebook Login
   Future<String> signInWithFacebook() async {
-    final result = await FacebookAuth.instance.login(
-      permissions: const ['email', 'public_profile'],
+    throw UnimplementedError(
+      'Facebook login đã được tạm thời vô hiệu hóa',
     );
-    if (result.status != LoginStatus.success || result.accessToken == null) {
-      throw Exception(result.message ?? 'Facebook login thất bại.');
-    }
-    return result.accessToken!.tokenString;
   }
 
   Future<void> signOut() async {
     try {
       await GoogleSignIn.instance.signOut();
-    } catch (_) {}
-    try {
-      await FacebookAuth.instance.logOut();
     } catch (_) {}
   }
 }
