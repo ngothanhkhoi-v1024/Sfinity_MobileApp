@@ -13,7 +13,6 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  bool _notifications = true;
   late ThemeMode _theme;
 
   @override
@@ -25,6 +24,7 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     final locale = SfinityApp.localeManager.locale;
+    final notificationsEnabled = SfinityApp.notificationManager.enabled;
     final l10n = context.l10n;
     return Scaffold(
       appBar: AppBar(title: Text(l10n.settings)),
@@ -32,9 +32,18 @@ class _SettingsPageState extends State<SettingsPage> {
         children: [
           SwitchListTile(
             title: Text(l10n.notifications),
-            subtitle: Text(l10n.receiveInAppNotifications),
-            value: _notifications,
-            onChanged: (v) => setState(() => _notifications = v),
+            subtitle: Text(notificationsEnabled ? l10n.receiveInAppNotifications : l10n.notificationsDisabled),
+            value: notificationsEnabled,
+            onChanged: (v) async {
+              await SfinityApp.notificationManager.setEnabled(v);
+              if (mounted) setState(() {});
+            },
+          ),
+          ListTile(
+            title: Text(l10n.inAppNotificationSettings),
+            subtitle: Text(l10n.notificationSettingsDescription),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(RouteNames.notificationSettings),
           ),
           ListTile(
             title: Text(l10n.theme),

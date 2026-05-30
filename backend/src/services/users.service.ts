@@ -20,6 +20,7 @@ export const usersService = {
     avatar: string | null;
     role: UserRole;
     status: string;
+    notificationsEnabled?: boolean;
     createdAt: any;
     updatedAt: any;
   }) {
@@ -30,6 +31,7 @@ export const usersService = {
       avatar: user.avatar,
       role: user.role.toLowerCase(),
       status: user.status,
+      notificationsEnabled: user.notificationsEnabled ?? true,
       createdAt: toDate(user.createdAt),
       updatedAt: toDate(user.updatedAt),
     };
@@ -106,6 +108,7 @@ export const usersService = {
       role: UserRole.ADMIN,
       status: UserStatus.ACTIVE,
       authProvider: AuthProvider.LOCAL,
+      notificationsEnabled: true,
       createdAt: new Date(),
       updatedAt: new Date(),
     };

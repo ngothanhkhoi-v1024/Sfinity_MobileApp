@@ -1,4 +1,4 @@
-import { Button, Form, Input, Modal, Table, Typography, message } from 'antd';
+import { Button, Form, Input, Modal, Table, Tag, Typography, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -49,6 +49,17 @@ export function NotificationsPage() {
     { title: 'Tiêu đề', dataIndex: 'title' },
     { title: 'Nội dung', dataIndex: 'body', ellipsis: true },
     { title: 'Người nhận', dataIndex: ['user', 'name'] },
+    {
+      title: 'Thông báo',
+      render: (_, record) => {
+        const enabled = record.user?.notificationsEnabled;
+        return (
+          <Tag color={enabled === false ? 'red' : 'green'} style={{ borderRadius: 6 }}>
+            {enabled === false ? 'Đã tắt' : 'Đang bật'}
+          </Tag>
+        );
+      },
+    },
     { title: 'Đã đọc', dataIndex: 'read', render: (v: boolean) => (v ? 'Có' : 'Chưa') },
     { title: 'Thời gian', dataIndex: 'createdAt', render: (v: string) => new Date(v).toLocaleString('vi-VN') },
   ];
@@ -79,9 +90,11 @@ export function NotificationsPage() {
           </Form.Item>
           <datalist id="user-ids">
             {users.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.name}
-              </option>
+              <option
+                key={u.id}
+                value={u.id}
+                label={`${u.name}${u.notificationsEnabled === false ? ' (đã tắt thông báo)' : ''}`}
+              />
             ))}
           </datalist>
         </Form>

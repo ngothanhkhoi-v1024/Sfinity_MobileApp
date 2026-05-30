@@ -26,6 +26,10 @@ class AppLocalizations {
       'notificationsInApp': 'Thông báo trong ứng dụng',
       'receiveInAppNotifications': 'Nhận thông báo in-app',
       'inAppNotificationSettings': 'Thông báo trong ứng dụng',
+      'notificationSettingsDescription': 'Quản lý việc nhận và hiển thị thông báo trong ứng dụng.',
+      'notificationsDisabled': 'Đã tắt thông báo',
+      'notificationsDisabledDescription': 'Bạn sẽ không thấy danh sách thông báo trong ứng dụng cho đến khi bật lại.',
+      'enableNotifications': 'Bật lại thông báo',
       'theme': 'Giao diện',
       'changePassword': 'Đổi mật khẩu',
       'language': 'Ngôn ngữ',
@@ -117,6 +121,10 @@ class AppLocalizations {
       'notificationsInApp': 'In-app notifications',
       'receiveInAppNotifications': 'Receive in-app notifications',
       'inAppNotificationSettings': 'In-app notifications',
+      'notificationSettingsDescription': 'Manage how in-app notifications are received and displayed.',
+      'notificationsDisabled': 'Notifications turned off',
+      'notificationsDisabledDescription': 'You will not see the in-app notification list until you turn it back on.',
+      'enableNotifications': 'Enable notifications',
       'theme': 'Theme',
       'changePassword': 'Change password',
       'language': 'Language',
@@ -221,6 +229,10 @@ class AppLocalizations {
   String get notificationsInApp => _text('notificationsInApp');
   String get receiveInAppNotifications => _text('receiveInAppNotifications');
   String get inAppNotificationSettings => _text('inAppNotificationSettings');
+  String get notificationSettingsDescription => _text('notificationSettingsDescription');
+  String get notificationsDisabled => _text('notificationsDisabled');
+  String get notificationsDisabledDescription => _text('notificationsDisabledDescription');
+  String get enableNotifications => _text('enableNotifications');
   String get theme => _text('theme');
   String get changePassword => _text('changePassword');
   String get language => _text('language');

@@ -1,4 +1,4 @@
-import { IsEmail, IsOptional, IsString, Length, MinLength } from 'class-validator';
+import { IsBoolean, IsEmail, IsOptional, IsString, Length, MinLength } from 'class-validator';
 
 export class ForgotPasswordDto {
   @IsEmail({}, { message: 'Nhập email hợp lệ.' })
@@ -37,3 +37,9 @@ export class UpdateProfileDto {
   @IsString()
   avatar?: string;
 }
+
+export class UpdateNotificationPreferencesDto {
+  @IsBoolean({ message: 'Trạng thái thông báo phải là boolean.' })
+  notificationsEnabled!: boolean;
+}
+

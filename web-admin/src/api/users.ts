@@ -6,6 +6,7 @@ export interface UserRecord {
   name: string;
   role: string;
   status: string;
+  notificationsEnabled?: boolean;
   createdAt: string;
   updatedAt: string;
 }

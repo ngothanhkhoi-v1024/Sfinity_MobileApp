@@ -6,7 +6,7 @@ export interface NotificationItem {
   body: string;
   read: boolean;
   createdAt: string;
-  user?: { id: string; name: string; email: string };
+  user?: { id: string; name: string; email: string; notificationsEnabled?: boolean };
 }
 
 export async function fetchNotificationHistory(): Promise<NotificationItem[]> {

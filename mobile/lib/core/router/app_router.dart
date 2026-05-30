@@ -14,6 +14,7 @@ import '../../features/places/presentation/pages/place_share_page.dart';
 import '../../features/search/presentation/pages/search_page.dart';
 import '../../features/favorites/presentation/pages/favorites_page.dart';
 import '../../features/notifications/presentation/pages/notifications_page.dart';
+import '../../features/notifications/presentation/pages/notification_settings_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_page.dart';
 import '../../features/profile/presentation/pages/edit_profile_page.dart';
 import '../../features/report/presentation/pages/report_page.dart';
@@ -97,6 +98,7 @@ GoRouter createAppRouter(AuthState auth) {
       ),
       GoRoute(path: RouteNames.settings, builder: (_, __) => const SettingsPage()),
       GoRoute(path: RouteNames.languageSettings, builder: (_, __) => const LanguageSettingsPage()),
+      GoRoute(path: RouteNames.notificationSettings, builder: (_, __) => const NotificationSettingsPage()),
       GoRoute(path: RouteNames.feedback, builder: (_, __) => const FeedbackPage()),
       GoRoute(path: RouteNames.report, builder: (_, __) => const ReportPage()),
       GoRoute(path: RouteNames.notifications, builder: (_, __) => const NotificationsPage()),

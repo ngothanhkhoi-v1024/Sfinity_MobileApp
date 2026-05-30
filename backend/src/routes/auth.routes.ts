@@ -10,6 +10,7 @@ import {
   ChangePasswordDto,
   ForgotPasswordDto,
   ResetPasswordDto,
+  UpdateNotificationPreferencesDto,
   UpdateProfileDto,
 } from '../dto/password.dto';
 
@@ -77,6 +78,15 @@ authRouter.patch(
   asyncHandler(async (req, res) => {
     const dto = await validateBody(UpdateProfileDto, req.body);
     res.json(await authService.updateProfile(req.user!.sub, dto));
+  }),
+);
+
+authRouter.patch(
+  '/notification-preferences',
+  jwtAuthMiddleware,
+  asyncHandler(async (req, res) => {
+    const dto = await validateBody(UpdateNotificationPreferencesDto, req.body);
+    res.json(await authService.updateNotificationPreferences(req.user!.sub, dto));
   }),
 );
 
