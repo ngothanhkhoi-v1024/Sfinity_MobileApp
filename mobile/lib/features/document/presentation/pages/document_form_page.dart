@@ -33,7 +33,6 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
   final _body = TextEditingController();
   final _subjectCode = TextEditingController();
   final _tagsController = TextEditingController();
-  final _externalUrlController = TextEditingController();
 
   late final DocumentFormController _controller;
 
@@ -55,7 +54,6 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
     _body.dispose();
     _subjectCode.dispose();
     _tagsController.dispose();
-    _externalUrlController.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -79,12 +77,6 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
         _controller.uploadedFileName = fileUrl.split('/').last.split('?').first;
         _controller.uploadedFileType = data['fileType']?.toString() ?? 'pdf';
         _controller.uploadedFileSize = data['fileSize'] as int?;
-        if (fileUrl.contains('firebasestorage.googleapis.com') || fileUrl.contains('firebasestorage.app')) {
-          _controller.setUseUpload(true);
-        } else {
-          _controller.setUseUpload(false);
-          _externalUrlController.text = fileUrl;
-        }
       }
       _controller.loadCategories(categoryId, widget.isEdit);
     } catch (_) {}
@@ -115,7 +107,7 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
         body: _body.text.trim(),
         subjectCode: _subjectCode.text.trim(),
         tagsText: _tagsController.text,
-        externalUrl: _externalUrlController.text.trim(),
+        externalUrl: '',
         placeId: widget.placeId,
       );
 
@@ -195,7 +187,6 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
                   if (widget.isDocument) ...[
                     DocumentUploadSection(
                       controller: _controller,
-                      externalUrlController: _externalUrlController,
                       onPickFile: _pickFile,
                     ),
                     const SizedBox(height: 20),

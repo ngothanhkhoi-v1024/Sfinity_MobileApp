@@ -7,23 +7,35 @@ import '../models/place_model.dart';
 /// GPS / quyền vị trí cho tab địa điểm.
 class PlaceLocationService {
   Future<LatLng?> getCurrentLocation() async {
-    if (!await Geolocator.isLocationServiceEnabled()) return null;
-    var permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
-    if (permission == LocationPermission.denied ||
-        permission == LocationPermission.deniedForever) {
+    try {
+      if (!await Geolocator.isLocationServiceEnabled()) return null;
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        return null;
+      }
+
+      // Try to get fresh current position
+      final current = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.medium,
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
+      return MapConfig.latLngFromCoords(current.latitude, current.longitude);
+    } catch (e) {
+      // Fallback: try to get the last known position if getting current position times out or fails
+      try {
+        final lastKnown = await Geolocator.getLastKnownPosition();
+        if (lastKnown != null) {
+          return MapConfig.latLngFromCoords(lastKnown.latitude, lastKnown.longitude);
+        }
+      } catch (_) {}
       return null;
     }
-
-    final current = await Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.medium,
-        timeLimit: Duration(seconds: 12),
-      ),
-    );
-    return MapConfig.latLngFromCoords(current.latitude, current.longitude);
   }
 
   String distanceLabel(LatLng from, LatLng to) {
