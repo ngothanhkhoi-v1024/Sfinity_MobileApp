@@ -12,23 +12,23 @@ class PillNavItem {
   final IconData selectedIcon;
 }
 
-/// Thanh điều hướng dạng viên thuốc, nút [+] ở giữa (không phải tab).
+/// Thanh điều hướng dạng viên thuốc, hỗ trợ 3-6 tab.
 class FloatingPillNavBar extends StatelessWidget {
   const FloatingPillNavBar({
     super.key,
     required this.selectedIndex,
     required this.onTabSelected,
-    required this.onCenterTap,
     required this.items,
+    @Deprecated('Không còn dùng nút giữa. Bỏ qua.') VoidCallback? onCenterTap,
   });
 
-  /// Chỉ số tab: 0, 1, 3, 4 (bỏ qua 2 = nút giữa).
+  /// Chỉ số tab hiện tại (0-based).
   final int selectedIndex;
   final ValueChanged<int> onTabSelected;
-  final VoidCallback onCenterTap;
   final List<PillNavItem> items;
 
-  static const centerSlotIndex = 2;
+  /// Giữ lại để tương thích ngược, không dùng nữa.
+  static const centerSlotIndex = -1;
 
   @override
   Widget build(BuildContext context) {
@@ -50,33 +50,14 @@ class FloatingPillNavBar extends StatelessWidget {
           ],
         ),
         child: Row(
-          children: [
-            _TabButton(
-              item: items[0],
-              selected: selectedIndex == 0,
-              onTap: () => onTabSelected(0),
+          children: List.generate(
+            items.length,
+            (i) => _TabButton(
+              item: items[i],
+              selected: selectedIndex == i,
+              onTap: () => onTabSelected(i),
             ),
-            _TabButton(
-              item: items[1],
-              selected: selectedIndex == 1,
-              onTap: () => onTabSelected(1),
-            ),
-            Expanded(
-              child: Center(
-                child: _CenterActionButton(onTap: onCenterTap),
-              ),
-            ),
-            _TabButton(
-              item: items[2],
-              selected: selectedIndex == 3,
-              onTap: () => onTabSelected(3),
-            ),
-            _TabButton(
-              item: items[3],
-              selected: selectedIndex == 4,
-              onTap: () => onTabSelected(4),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -118,34 +99,6 @@ class _TabButton extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CenterActionButton extends StatelessWidget {
-  const _CenterActionButton({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Transform.translate(
-      offset: const Offset(0, -12),
-      child: Material(
-        color: Colors.black,
-        shape: const CircleBorder(),
-        elevation: 6,
-        shadowColor: Colors.black26,
-        child: InkWell(
-          onTap: onTap,
-          customBorder: const CircleBorder(),
-          child: const SizedBox(
-            width: 52,
-            height: 52,
-            child: Icon(Icons.add, color: Colors.white, size: 28),
-          ),
         ),
       ),
     );

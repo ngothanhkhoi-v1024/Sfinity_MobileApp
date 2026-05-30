@@ -18,6 +18,8 @@ export const openApiDocument = {
     { name: 'reports' },
     { name: 'notifications' },
     { name: 'admin' },
+    { name: 'friends' },
+    { name: 'groups' },
   ],
   components: {
     securitySchemes: {
@@ -661,6 +663,209 @@ export const openApiDocument = {
         tags: ['admin'],
         summary: 'Dashboard stats',
         security: [{ bearerAuth: [] }],
+        responses: { '200': { description: 'OK' } },
+      },
+    },
+    '/api/friends': {
+      get: {
+        tags: ['friends'],
+        summary: 'List friends',
+        security: [{ bearerAuth: [] }],
+        responses: { '200': { description: 'OK' } },
+      },
+    },
+    '/api/friends/pending': {
+      get: {
+        tags: ['friends'],
+        summary: 'List pending friend requests',
+        security: [{ bearerAuth: [] }],
+        responses: { '200': { description: 'OK' } },
+      },
+    },
+    '/api/friends/search': {
+      get: {
+        tags: ['friends'],
+        summary: 'Search users to add as friends',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'q', in: 'query', required: true, schema: { type: 'string' } },
+        ],
+        responses: { '200': { description: 'OK' } },
+      },
+    },
+    '/api/friends/request': {
+      post: {
+        tags: ['friends'],
+        summary: 'Send friend request',
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['addresseeId'],
+                properties: { addresseeId: { type: 'string' } },
+              },
+            },
+          },
+        },
+        responses: { '201': { description: 'Created' } },
+      },
+    },
+    '/api/friends/{id}/respond': {
+      patch: {
+        tags: ['friends'],
+        summary: 'Respond to friend request (accept/reject)',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['action'],
+                properties: { action: { type: 'string', enum: ['accept', 'reject'] } },
+              },
+            },
+          },
+        },
+        responses: { '200': { description: 'OK' } },
+      },
+    },
+    '/api/friends/{id}': {
+      delete: {
+        tags: ['friends'],
+        summary: 'Unfriend / cancel request',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'OK' } },
+      },
+    },
+    '/api/groups': {
+      get: {
+        tags: ['groups'],
+        summary: 'List user\'s groups',
+        security: [{ bearerAuth: [] }],
+        responses: { '200': { description: 'OK' } },
+      },
+      post: {
+        tags: ['groups'],
+        summary: 'Create group',
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['name'],
+                properties: {
+                  name: { type: 'string' },
+                  description: { type: 'string' },
+                  isPublic: { type: 'boolean' },
+                },
+              },
+            },
+          },
+        },
+        responses: { '201': { description: 'Created' } },
+      },
+    },
+    '/api/groups/discover': {
+      get: {
+        tags: ['groups'],
+        summary: 'Discover public groups',
+        security: [{ bearerAuth: [] }],
+        responses: { '200': { description: 'OK' } },
+      },
+    },
+    '/api/groups/{id}': {
+      get: {
+        tags: ['groups'],
+        summary: 'Get group details',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'OK' } },
+      },
+      patch: {
+        tags: ['groups'],
+        summary: 'Update group details',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  name: { type: 'string' },
+                  description: { type: 'string' },
+                  isPublic: { type: 'boolean' },
+                },
+              },
+            },
+          },
+        },
+        responses: { '200': { description: 'OK' } },
+      },
+      delete: {
+        tags: ['groups'],
+        summary: 'Delete group',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'OK' } },
+      },
+    },
+    '/api/groups/{id}/join': {
+      post: {
+        tags: ['groups'],
+        summary: 'Join a public group',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '201': { description: 'Created' } },
+      },
+    },
+    '/api/groups/{id}/leave': {
+      post: {
+        tags: ['groups'],
+        summary: 'Leave a group',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'OK' } },
+      },
+    },
+    '/api/groups/{id}/members': {
+      post: {
+        tags: ['groups'],
+        summary: 'Add member to group',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['userId'],
+                properties: { userId: { type: 'string' } },
+              },
+            },
+          },
+        },
+        responses: { '201': { description: 'Created' } },
+      },
+    },
+    '/api/groups/{id}/members/{uid}': {
+      delete: {
+        tags: ['groups'],
+        summary: 'Remove member from group',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
+          { name: 'uid', in: 'path', required: true, schema: { type: 'string' } },
+        ],
         responses: { '200': { description: 'OK' } },
       },
     },

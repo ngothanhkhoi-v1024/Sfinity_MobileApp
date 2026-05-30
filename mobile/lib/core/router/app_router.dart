@@ -8,6 +8,10 @@ import '../../features/document/presentation/pages/document_detail_page.dart';
 import '../../features/document/presentation/pages/document_form_page.dart';
 import '../../features/document/presentation/pages/document_list_page.dart';
 import '../../features/feedback/presentation/pages/feedback_page.dart';
+import '../../features/group/presentation/pages/friends_page.dart';
+import '../../features/group/presentation/pages/group_chat_page.dart';
+import '../../features/group/presentation/pages/group_detail_page.dart';
+import '../../features/group/presentation/pages/group_list_page.dart';
 import '../../features/home/presentation/pages/home_shell_page.dart';
 import '../../features/places/presentation/pages/place_detail_page.dart';
 import '../../features/places/presentation/pages/place_share_page.dart';
@@ -105,6 +109,22 @@ GoRouter createAppRouter(AuthState auth) {
       GoRoute(path: RouteNames.notifications, builder: (_, __) => const NotificationsPage()),
       GoRoute(path: RouteNames.editProfile, builder: (_, __) => const EditProfilePage()),
       GoRoute(path: RouteNames.changePassword, builder: (_, __) => const ChangePasswordPage()),
+      // Group & Friends routes
+      GoRoute(path: RouteNames.friends, builder: (_, __) => const FriendsPage()),
+      GoRoute(path: RouteNames.groups, builder: (_, __) => const GroupListPage()),
+      GoRoute(
+        path: '/groups/:id',
+        builder: (_, state) => GroupDetailPage(groupId: state.pathParameters['id']!),
+        routes: [
+          GoRoute(
+            path: 'chat',
+            builder: (_, state) => GroupChatPage(
+              groupId: state.pathParameters['id']!,
+              groupName: state.uri.queryParameters['name'],
+            ),
+          ),
+        ],
+      ),
     ],
   );
 }

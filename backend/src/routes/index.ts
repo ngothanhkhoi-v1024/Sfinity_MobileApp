@@ -6,6 +6,8 @@ import { documentRouter } from './document.routes';
 import { dashboardRouter } from './dashboard.routes';
 import { favoritesRouter } from './favorites.routes';
 import { feedbackRouter } from './feedback.routes';
+import { friendshipRouter } from './friendship.routes';
+import { groupRouter } from './group.routes';
 import { notificationsRouter } from './notifications.routes';
 import { placesRouter } from './places.routes';
 import { reportsRouter } from './reports.routes';
@@ -25,3 +27,6 @@ apiRouter.use('/feedback', feedbackRouter);
 apiRouter.use('/reports', reportsRouter);
 apiRouter.use('/notifications', notificationsRouter);
 apiRouter.use('/admin/dashboard', dashboardRouter);
+apiRouter.use('/friends', friendshipRouter);
+apiRouter.use('/groups', groupRouter);
+

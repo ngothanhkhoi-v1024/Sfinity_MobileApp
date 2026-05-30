@@ -15,6 +15,12 @@ import 'features/auth/data/services/social_auth_service.dart';
 import 'features/document/data/repositories/document_repository.dart';
 import 'features/document/data/repositories/document_repository_impl.dart';
 import 'features/document/data/services/document_api_service.dart';
+import 'features/group/data/repositories/friendship_repository_impl.dart';
+import 'features/group/data/repositories/group_repository_impl.dart';
+import 'features/group/data/services/friendship_api_service.dart';
+import 'features/group/data/services/group_api_service.dart';
+import 'features/group/presentation/controllers/friendship_controller.dart';
+import 'features/group/presentation/controllers/group_controller.dart';
 import 'features/place_reviews/data/repositories/place_engagement_repository.dart';
 import 'features/place_reviews/data/repositories/place_engagement_repository_impl.dart';
 import 'features/place_reviews/data/services/place_engagement_api_service.dart';
@@ -34,6 +40,8 @@ class SfinityApp extends StatefulWidget {
   static late final PlaceRepository placeRepository;
   static late final StudyNearMeRepository studyNearMeRepository;
   static late final PlaceEngagementRepository placeEngagementRepository;
+  static late final FriendshipController friendshipController;
+  static late final GroupController groupController;
   static ThemeManager get themeManager => _SfinityAppState.themeManager;
 
   @override
@@ -62,6 +70,17 @@ class _SfinityAppState extends State<SfinityApp> {
     SfinityApp.placeEngagementRepository = PlaceEngagementRepositoryImpl(
       PlaceEngagementApiService(ApiClient.instance),
     );
+
+    // Group feature
+    final friendshipApiService = FriendshipApiService(ApiClient.instance);
+    final groupApiService = GroupApiService(ApiClient.instance);
+    SfinityApp.friendshipController = FriendshipController(
+      FriendshipRepositoryImpl(friendshipApiService),
+    );
+    SfinityApp.groupController = GroupController(
+      GroupRepositoryImpl(groupApiService),
+    );
+
     final localDatabase = AuthLocalDatabase();
     final firebaseAuthService = FirebaseAuthService();
     final socialAuthService = SocialAuthService();

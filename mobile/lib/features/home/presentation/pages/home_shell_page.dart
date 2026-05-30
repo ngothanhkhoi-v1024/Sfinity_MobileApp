@@ -3,14 +3,14 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/route_names.dart';
 import '../../../../shared/widgets/floating_pill_nav_bar.dart';
-import '../../../../shared/widgets/share_action_sheet.dart';
 import '../../../document/presentation/pages/document_list_page.dart';
+import '../../../group/presentation/pages/group_list_page.dart';
 import '../../../places/presentation/pages/places_map_page.dart';
 import '../../../places/presentation/places_map_focus.dart';
 import '../../../profile/presentation/pages/profile_page.dart';
 import 'explore_page.dart';
 
-/// Shell chính: pill nav + nút chia sẻ giữa + tab Địa điểm (OSM).
+/// Shell chính: pill nav với 5 tab (Khám phá, Địa điểm, Tài liệu, Nhóm, Cá nhân).
 class HomeShellPage extends StatefulWidget {
   const HomeShellPage({super.key});
 
@@ -19,7 +19,7 @@ class HomeShellPage extends StatefulWidget {
 }
 
 class _HomeShellPageState extends State<HomeShellPage> {
-  /// Chỉ số thanh nav: 0 Khám phá, 1 Địa điểm, 3 Tài liệu, 4 Cá nhân.
+  /// 0 Khám phá, 1 Địa điểm, 2 Tài liệu, 3 Nhóm, 4 Cá nhân.
   int _navIndex = 0;
 
   static const _navItems = [
@@ -39,21 +39,22 @@ class _HomeShellPageState extends State<HomeShellPage> {
       selectedIcon: Icons.menu_book,
     ),
     PillNavItem(
+      label: 'Nhóm',
+      icon: Icons.group_outlined,
+      selectedIcon: Icons.group,
+    ),
+    PillNavItem(
       label: 'Cá nhân',
       icon: Icons.person_outline,
       selectedIcon: Icons.person,
     ),
   ];
 
-  int get _pageIndex {
-    if (_navIndex <= 1) return _navIndex;
-    return _navIndex - 1;
-  }
-
   late final List<Widget> _pages = const [
     ExplorePage(),
     PlacesMapPage(),
     DocumentListPage(embedded: true),
+    GroupListPage(),
     ProfilePage(),
   ];
 
@@ -132,7 +133,7 @@ class _HomeShellPageState extends State<HomeShellPage> {
           ],
         ),
       ),
-      appBar: _navIndex == 1
+      appBar: (_navIndex == 1 || _navIndex == 3)
           ? null
           : AppBar(
               title: Text(_titleForNavIndex(_navIndex)),
@@ -146,7 +147,7 @@ class _HomeShellPageState extends State<HomeShellPage> {
                   : null,
               automaticallyImplyLeading: _navIndex == 0,
               actions: [
-                if (_navIndex == 3)
+                if (_navIndex == 2)
                   IconButton(
                     icon: Icon(Icons.add_circle_outline, color: Theme.of(context).colorScheme.primary, size: 26),
                     onPressed: () => context.push(
@@ -157,7 +158,7 @@ class _HomeShellPageState extends State<HomeShellPage> {
               ],
             ),
       body: IndexedStack(
-        index: _pageIndex,
+        index: _navIndex,
         children: _pages,
       ),
       bottomNavigationBar: Padding(
@@ -165,11 +166,7 @@ class _HomeShellPageState extends State<HomeShellPage> {
         child: FloatingPillNavBar(
           selectedIndex: _navIndex,
           items: _navItems,
-          onTabSelected: (i) {
-            if (i == FloatingPillNavBar.centerSlotIndex) return;
-            setState(() => _navIndex = i);
-          },
-          onCenterTap: () => showShareActionSheet(context),
+          onTabSelected: (i) => setState(() => _navIndex = i),
         ),
       ),
     );
@@ -178,7 +175,8 @@ class _HomeShellPageState extends State<HomeShellPage> {
   String _titleForNavIndex(int index) {
     return switch (index) {
       0 => 'Khám phá',
-      3 => 'Tài liệu',
+      2 => 'Tài liệu',
+      3 => 'Nhóm học tập',
       4 => 'Cá nhân',
       _ => 'Sfinity',
     };

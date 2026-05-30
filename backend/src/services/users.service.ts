@@ -25,11 +25,11 @@ export const usersService = {
   }) {
     return {
       id: user.id,
-      email: user.email,
-      name: user.name,
-      avatar: user.avatar,
-      role: user.role.toLowerCase(),
-      status: user.status,
+      email: user.email ?? '',
+      name: user.name ?? 'Unknown',
+      avatar: user.avatar ?? null,
+      role: (user.role ?? 'USER').toLowerCase(),
+      status: user.status ?? 'ACTIVE',
       createdAt: toDate(user.createdAt),
       updatedAt: toDate(user.updatedAt),
     };
