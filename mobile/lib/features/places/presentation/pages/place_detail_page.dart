@@ -8,6 +8,7 @@ import '../../../place_reviews/presentation/controllers/place_engagement_control
 import '../../../place_reviews/presentation/widgets/place_photo_gallery.dart';
 import '../../../place_reviews/presentation/widgets/place_rating_section.dart';
 import '../controllers/place_detail_controller.dart';
+import '../places_map_focus.dart';
 import '../widgets/place_tag_chips.dart';
 
 class PlaceDetailPage extends StatefulWidget {
@@ -65,6 +66,19 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
   Future<void> _editPlace() async {
     await context.push('/places/${widget.placeId}/edit');
     if (mounted) _loadAll();
+  }
+
+  void _viewOnMap() {
+    final place = _ctrl.place;
+    final point = place?.point;
+    if (place == null || point == null) return;
+
+    PlacesMapFocus.request(
+      placeId: place.id,
+      lat: point.latitude,
+      lng: point.longitude,
+    );
+    context.go(RouteNames.home);
   }
 
   Future<void> _deletePlace() async {
@@ -242,6 +256,26 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
                 ],
               ),
             ),
+            if (place.hasPoint) ...[
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: _viewOnMap,
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                icon: Icon(Icons.map_outlined, color: primary),
+                label: Text(
+                  'Xem địa điểm này trên bản đồ',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: primary,
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 24),
             if (_engagementCtrl.loading)
               const Center(child: Padding(

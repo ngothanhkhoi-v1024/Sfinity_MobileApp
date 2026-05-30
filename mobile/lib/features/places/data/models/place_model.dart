@@ -17,6 +17,7 @@ class PlaceModel {
     this.distanceMeters,
     this.avgRating,
     this.reviewCount,
+    this.status,
   });
 
   final String id;
@@ -33,8 +34,10 @@ class PlaceModel {
   final int? distanceMeters;
   final double? avgRating;
   final int? reviewCount;
+  final String? status;
 
   bool get hasPoint => point != null;
+  bool get isPublic => status == null || status == 'PUBLISHED';
 }
 
 /// Tham số liệt kê địa điểm.
@@ -72,6 +75,7 @@ class PlaceUpsertPayload {
     required this.address,
     this.zone,
     this.tags = const [],
+    this.isPublic = true,
   });
 
   final String title;
@@ -81,6 +85,7 @@ class PlaceUpsertPayload {
   final String address;
   final String? zone;
   final List<String> tags;
+  final bool isPublic;
 
   Map<String, dynamic> toJson() => {
         'title': title,
@@ -91,6 +96,6 @@ class PlaceUpsertPayload {
         'address': address,
         if (zone != null && zone!.isNotEmpty) 'zone': zone,
         'tags': tags,
-        'status': 'PUBLISHED',
+        'status': isPublic ? 'PUBLISHED' : 'DRAFT',
       };
 }

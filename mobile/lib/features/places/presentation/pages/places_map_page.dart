@@ -12,6 +12,7 @@ import '../../../study_near_me/presentation/controllers/study_near_me_controller
 import '../../../study_near_me/presentation/widgets/study_near_me_button.dart';
 import '../../../study_near_me/presentation/widgets/study_near_me_results_sheet.dart';
 import '../controllers/places_map_controller.dart';
+import '../places_map_focus.dart';
 import '../widgets/place_list_tile.dart';
 import '../widgets/place_tag_chips.dart';
 import '../widgets/places_header_panel.dart';
@@ -38,6 +39,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
     _studyNearMeCtrl = StudyNearMeController();
     _ctrl.addListener(_onControllerUpdate);
     _studyNearMeCtrl.addListener(_onControllerUpdate);
+    PlacesMapFocus.pending.addListener(_onPendingMapFocus);
     _ctrl.init();
   }
 
@@ -45,10 +47,40 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
     if (mounted) setState(() {});
   }
 
+  void _onPendingMapFocus() {
+    final req = PlacesMapFocus.pending.value;
+    if (req == null || !mounted) return;
+    PlacesMapFocus.pending.value = null;
+    _applyMapFocus(req);
+  }
+
+  void _applyMapFocus(PlacesMapFocusRequest req) {
+    PlaceModel? matched;
+    for (final place in [..._ctrl.publicPlaces, ..._ctrl.myPlaces]) {
+      if (place.id == req.placeId) {
+        matched = place;
+        break;
+      }
+    }
+
+    if (matched != null && matched.point != null) {
+      _focusPlaceOnMap(matched);
+      return;
+    }
+
+    final point = LatLng(req.lat, req.lng);
+    _ctrl.setListView(false);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _safeMove(point, 15);
+    });
+  }
+
   @override
   void dispose() {
     _ctrl.removeListener(_onControllerUpdate);
     _studyNearMeCtrl.removeListener(_onControllerUpdate);
+    PlacesMapFocus.pending.removeListener(_onPendingMapFocus);
     _ctrl.dispose();
     _studyNearMeCtrl.dispose();
     _searchController.dispose();
@@ -570,12 +602,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
     ];
 
     if (_ctrl.listView) {
-      return Stack(
-        children: [
-          _buildListViewLayout(),
-          Positioned(right: 16, bottom: 96, child: _buildFabColumn()),
-        ],
-      );
+      return _buildListViewLayout();
     }
 
     return Stack(
