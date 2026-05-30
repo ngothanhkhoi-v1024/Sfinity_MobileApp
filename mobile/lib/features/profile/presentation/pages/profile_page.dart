@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app.dart';
 import '../../../../core/constants/route_names.dart';
+import '../../../../core/i18n/app_text.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -26,49 +27,49 @@ class ProfilePage extends StatelessWidget {
         _buildMenuTile(
           context,
           icon: Icons.edit_outlined,
-          title: 'Chỉnh sửa hồ sơ',
+          title: context.l10n.editProfile,
           onTap: () => context.push(RouteNames.editProfile),
           isDark: isDark,
         ),
         _buildMenuTile(
           context,
           icon: Icons.lock_outline,
-          title: 'Đổi mật khẩu',
+          title: context.l10n.changePassword,
           onTap: () => context.push(RouteNames.changePassword),
           isDark: isDark,
         ),
         _buildMenuTile(
           context,
           icon: Icons.notifications_outlined,
-          title: 'Thông báo',
+          title: context.l10n.notifications,
           onTap: () => context.push(RouteNames.notifications),
           isDark: isDark,
         ),
         _buildMenuTile(
           context,
           icon: Icons.article_outlined,
-          title: 'Bài đăng của tôi',
+          title: context.l10n.myPosts,
           onTap: () => context.push(RouteNames.documentList),
           isDark: isDark,
         ),
         _buildMenuTile(
           context,
           icon: Icons.feedback_outlined,
-          title: 'Phản hồi',
+          title: context.l10n.feedback,
           onTap: () => context.push(RouteNames.feedback),
           isDark: isDark,
         ),
         _buildMenuTile(
           context,
           icon: Icons.flag_outlined,
-          title: 'Báo cáo vi phạm',
+          title: context.l10n.reportViolation,
           onTap: () => context.push(RouteNames.report),
           isDark: isDark,
         ),
         _buildMenuTile(
           context,
           icon: Icons.settings_outlined,
-          title: 'Cài đặt',
+          title: context.l10n.settings,
           onTap: () => context.push(RouteNames.settings),
           isDark: isDark,
         ),
@@ -76,7 +77,7 @@ class ProfilePage extends StatelessWidget {
         _buildMenuTile(
           context,
           icon: Icons.logout,
-          title: 'Đăng xuất',
+          title: context.l10n.signOut,
           onTap: () async {
             await SfinityApp.auth.logout();
             if (context.mounted) context.go(RouteNames.login);

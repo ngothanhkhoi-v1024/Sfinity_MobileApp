@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/network/api_client.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../../../../shared/widgets/error_view.dart';
 
 class NotificationsPage extends StatefulWidget {
@@ -48,11 +49,12 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Thông báo'),
+        title: Text(l10n.notifications),
         actions: [
-          TextButton(onPressed: _markAllRead, child: const Text('Đọc tất cả')),
+          TextButton(onPressed: _markAllRead, child: Text(l10n.markAllRead)),
         ],
       ),
       body: _loading
@@ -60,7 +62,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
           : _error != null
               ? ErrorView(message: _error!, onRetry: _load)
               : _items.isEmpty
-                  ? const Center(child: Text('Không có thông báo'))
+                  ? Center(child: Text(l10n.noNotifications))
                   : RefreshIndicator(
                       onRefresh: _load,
                       child: ListView.builder(

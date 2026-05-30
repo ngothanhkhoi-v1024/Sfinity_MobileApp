@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/route_names.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../../../../core/utils/validators.dart';
 import '../controllers/forgot_password_controller.dart';
 import '../widgets/auth_card.dart';
@@ -51,6 +52,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final isDark = theme.brightness == Brightness.dark;
 
     final primaryColor = theme.colorScheme.primary;
@@ -60,7 +62,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Quên mật khẩu'),
+        title: Text(l10n.forgotPassword),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -121,7 +123,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                           ),
                           const SizedBox(height: 18),
                           Text(
-                            'Quên mật khẩu',
+                            l10n.forgotPassword,
                             style: theme.textTheme.headlineMedium?.copyWith(
                               fontWeight: FontWeight.w800,
                               color: onSurfaceColor,
@@ -130,7 +132,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Nhập email đã đăng ký để nhận mã OTP khôi phục mật khẩu.',
+                            l10n.forgotPasswordDescription,
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: onSurfaceColor.withOpacity(0.75),
                             ),
@@ -159,7 +161,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                           ],
                           AuthTextField(
                             controller: _email,
-                            labelText: 'Email',
+                            labelText: l10n.email,
                             prefixIcon: const Icon(Icons.mail_outline_rounded),
                             keyboardType: TextInputType.emailAddress,
                             textInputAction: TextInputAction.done,
@@ -178,12 +180,12 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                                       color: Colors.white,
                                     ),
                                   )
-                                : const Text('Gửi mã OTP'),
+                                : Text(l10n.sendOtp),
                           ),
                           const SizedBox(height: 18),
                           TextButton(
                             onPressed: _controller.isLoading ? null : () => context.pop(),
-                            child: const Text('Quay lại đăng nhập'),
+                            child: Text(l10n.backToSignIn),
                           ),
                         ],
                       ),

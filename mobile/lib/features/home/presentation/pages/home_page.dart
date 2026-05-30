@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/route_names.dart';
+import '../../../../core/i18n/app_text.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Container(
       color: Theme.of(context).scaffoldBackgroundColor,
       child: ListView(
@@ -16,8 +18,8 @@ class HomePage extends StatelessWidget {
         Card(
           child: ListTile(
             leading: const Icon(Icons.article_outlined),
-            title: const Text('Xem nội dung'),
-            subtitle: const Text('Danh sách bài viết đã xuất bản'),
+              title: Text(l10n.viewContent),
+              subtitle: Text(l10n.publishedPostsList),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push(RouteNames.documentList),
           ),
@@ -25,7 +27,7 @@ class HomePage extends StatelessWidget {
         Card(
           child: ListTile(
             leading: const Icon(Icons.notifications_outlined),
-            title: const Text('Thông báo'),
+              title: Text(l10n.notifications),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push(RouteNames.notifications),
           ),
@@ -33,7 +35,7 @@ class HomePage extends StatelessWidget {
         Card(
           child: ListTile(
             leading: const Icon(Icons.feedback_outlined),
-            title: const Text('Gửi phản hồi'),
+              title: Text(l10n.sendFeedback),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push(RouteNames.feedback),
           ),
@@ -41,7 +43,7 @@ class HomePage extends StatelessWidget {
         Card(
           child: ListTile(
             leading: const Icon(Icons.flag_outlined),
-            title: const Text('Báo cáo vi phạm'),
+              title: Text(l10n.reportViolationTitle),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push(RouteNames.report),
           ),
@@ -49,7 +51,7 @@ class HomePage extends StatelessWidget {
         Card(
           child: ListTile(
             leading: const Icon(Icons.settings_outlined),
-            title: const Text('Cài đặt'),
+              title: Text(l10n.settings),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push(RouteNames.settings),
           ),

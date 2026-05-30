@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/network/api_client.dart';
+import '../../../../core/i18n/app_text.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -34,6 +35,7 @@ class _SearchPageState extends State<SearchPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Column(
       children: [
         Padding(
@@ -43,8 +45,8 @@ class _SearchPageState extends State<SearchPage> {
               Expanded(
                 child: TextField(
                   controller: _query,
-                  decoration: const InputDecoration(
-                    hintText: 'Tìm kiếm...',
+                  decoration: InputDecoration(
+                    hintText: l10n.searchHint,
                     border: OutlineInputBorder(),
                     isDense: true,
                   ),
