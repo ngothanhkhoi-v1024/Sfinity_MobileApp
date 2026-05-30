@@ -78,6 +78,10 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
         _controller.uploadedFileType = data['fileType']?.toString() ?? 'pdf';
         _controller.uploadedFileSize = data['fileSize'] as int?;
       }
+      final status = data['status']?.toString();
+      if (status != null) {
+        _controller.selectStatus(status);
+      }
       _controller.loadCategories(categoryId, widget.isEdit);
     } catch (_) {}
   }
@@ -228,6 +232,26 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
                       }).toList(),
                       onChanged: _controller.selectCategory,
                       validator: (v) => v == null ? 'Vui lòng chọn danh mục' : null,
+                    ),
+                    const SizedBox(height: 16),
+
+                    DropdownButtonFormField<String>(
+                      value: _controller.selectedStatus,
+                      decoration: const InputDecoration(
+                        labelText: 'Chế độ hiển thị',
+                        prefixIcon: Icon(Icons.visibility_outlined),
+                      ),
+                      items: const [
+                        DropdownMenuItem<String>(
+                          value: 'PUBLISHED',
+                          child: Text('Công khai (Mọi người đều thấy)'),
+                        ),
+                        DropdownMenuItem<String>(
+                          value: 'DRAFT',
+                          child: Text('Chỉ mình tôi (Bản nháp)'),
+                        ),
+                      ],
+                      onChanged: _controller.selectStatus,
                     ),
                     const SizedBox(height: 16),
 
