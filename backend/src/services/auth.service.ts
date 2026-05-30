@@ -10,6 +10,7 @@ import type {
   ChangePasswordDto,
   ForgotPasswordDto,
   ResetPasswordDto,
+  UpdateNotificationPreferencesDto,
   UpdateProfileDto,
 } from '../dto/password.dto';
 import type { LoginDto, RegisterDto } from '../dto/login.dto';
@@ -31,6 +32,7 @@ function sanitizeUser(user: {
   status: string;
   authProvider: AuthProvider;
   createdAt: any;
+  notificationsEnabled?: boolean;
 }) {
   return {
     id: user.id,
@@ -41,6 +43,7 @@ function sanitizeUser(user: {
     status: user.status ?? UserStatus.ACTIVE,
     authProvider: (user.authProvider ?? AuthProvider.LOCAL).toLowerCase() as 'local' | 'google' | 'facebook',
     createdAt: toDate(user.createdAt),
+    notificationsEnabled: user.notificationsEnabled ?? true,
   };
 }
 
@@ -64,6 +67,25 @@ function mapFirebaseProvider(provider: string): AuthProvider {
       return AuthProvider.LOCAL;
     default:
       throw new HttpError(400, 'Nhà cung cấp Firebase không hợp lệ', 'Bad Request');
+  }
+}
+
+async function clearUserNotifications(userId: string) {
+  const snapshot = await getDb()
+    .collection('notifications')
+    .where('userId', '==', userId)
+    .get();
+
+  if (snapshot.empty) return;
+
+  const chunkSize = 400;
+  for (let i = 0; i < snapshot.docs.length; i += chunkSize) {
+    const chunk = snapshot.docs.slice(i, i + chunkSize);
+    const batch = getDb().batch();
+
+    chunk.forEach((doc) => batch.delete(doc.ref));
+
+    await batch.commit();
   }
 }
 
@@ -169,6 +191,7 @@ export const authService = {
         status: UserStatus.ACTIVE,
         authProvider,
         providerUserId: decoded.uid,
+        notificationsEnabled: true,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -243,6 +266,7 @@ export const authService = {
       status: UserStatus.ACTIVE,
       authProvider: AuthProvider.LOCAL,
       providerUserId: uid,
+      notificationsEnabled: true,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -279,6 +303,29 @@ export const authService = {
     await userRef.update(updateData);
     const doc = await userRef.get();
     const user = { id: doc.id, ...doc.data() } as any;
+
+    return sanitizeUser(user);
+  },
+
+  async updateNotificationPreferences(userId: string, dto: UpdateNotificationPreferencesDto) {
+    const userRef = getDb().collection('users').doc(userId);
+    const doc = await userRef.get();
+
+    if (!doc.exists) {
+      throw new HttpError(401, 'Unauthorized', 'Unauthorized');
+    }
+
+    await userRef.update({
+      notificationsEnabled: dto.notificationsEnabled,
+      updatedAt: new Date(),
+    });
+
+    if (!dto.notificationsEnabled) {
+      await clearUserNotifications(userId);
+    }
+
+    const updated = await userRef.get();
+    const user = { id: updated.id, ...updated.data() } as any;
 
     return sanitizeUser(user);
   },

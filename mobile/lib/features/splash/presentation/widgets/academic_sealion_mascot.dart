@@ -51,6 +51,7 @@ class _AcademicSealionMascotState extends State<AcademicSealionMascot>
 
         return Transform.scale(
           scale: 0.72 + entry * 0.28,
+          alignment: Alignment.center,
           child: Opacity(
             opacity: Curves.easeOut.transform(_entry.value.clamp(0.0, 1.0)),
             child: SizedBox(
@@ -89,6 +90,7 @@ class _AcademicSealionPainter extends CustomPainter {
   });
 
   static const _baseSize = 220.0;
+  static const _contentBounds = Rect.fromLTRB(-92, -106, 92, 64);
 
   final double bob;
   final double headNod;
@@ -102,9 +104,13 @@ class _AcademicSealionPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final scale = size.width / _baseSize;
+    final contentCenter = _contentBounds.center;
 
     canvas.save();
-    canvas.translate(size.width / 2, size.height / 2 + bob * scale);
+    canvas.translate(
+      size.width / 2 - contentCenter.dx * scale,
+      size.height / 2 + bob * scale - contentCenter.dy * scale,
+    );
     canvas.scale(scale);
 
     _drawOrbitIcons(canvas);

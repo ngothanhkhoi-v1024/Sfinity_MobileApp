@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/route_names.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../../../../shared/widgets/floating_pill_nav_bar.dart';
 import '../../../document/presentation/pages/document_list_page.dart';
 import '../../../group/presentation/pages/group_list_page.dart';
@@ -21,34 +22,6 @@ class HomeShellPage extends StatefulWidget {
 class _HomeShellPageState extends State<HomeShellPage> {
   /// 0 Khám phá, 1 Địa điểm, 2 Tài liệu, 3 Nhóm, 4 Cá nhân.
   int _navIndex = 0;
-
-  static const _navItems = [
-    PillNavItem(
-      label: 'Khám phá',
-      icon: Icons.explore_outlined,
-      selectedIcon: Icons.explore,
-    ),
-    PillNavItem(
-      label: 'Địa điểm',
-      icon: Icons.map_outlined,
-      selectedIcon: Icons.map,
-    ),
-    PillNavItem(
-      label: 'Tài liệu',
-      icon: Icons.menu_book_outlined,
-      selectedIcon: Icons.menu_book,
-    ),
-    PillNavItem(
-      label: 'Nhóm',
-      icon: Icons.group_outlined,
-      selectedIcon: Icons.group,
-    ),
-    PillNavItem(
-      label: 'Cá nhân',
-      icon: Icons.person_outline,
-      selectedIcon: Icons.person,
-    ),
-  ];
 
   late final List<Widget> _pages = const [
     ExplorePage(),
@@ -79,6 +52,14 @@ class _HomeShellPageState extends State<HomeShellPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final navItems = [
+      PillNavItem(label: l10n.explore, icon: Icons.explore_outlined, selectedIcon: Icons.explore),
+      PillNavItem(label: l10n.places, icon: Icons.map_outlined, selectedIcon: Icons.map),
+      PillNavItem(label: l10n.documents, icon: Icons.menu_book_outlined, selectedIcon: Icons.menu_book),
+      const PillNavItem(label: 'Nhóm', icon: Icons.group_outlined, selectedIcon: Icons.group),
+      PillNavItem(label: l10n.profile, icon: Icons.person_outline, selectedIcon: Icons.person),
+    ];
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
@@ -87,20 +68,20 @@ class _HomeShellPageState extends State<HomeShellPage> {
       drawer: Drawer(
         child: ListView(
           children: [
-            const DrawerHeader(
+            DrawerHeader(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Text('Sfinity', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                  SizedBox(height: 4),
-                  Text('Địa điểm & tài liệu học tập', style: TextStyle(fontSize: 13)),
+                  Text(l10n.appName, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  Text(l10n.shareDescription, style: const TextStyle(fontSize: 13)),
                 ],
               ),
             ),
             ListTile(
               leading: const Icon(Icons.search),
-              title: const Text('Tìm kiếm'),
+              title: Text(l10n.search),
               onTap: () {
                 Navigator.pop(context);
                 context.push(RouteNames.search);
@@ -108,7 +89,7 @@ class _HomeShellPageState extends State<HomeShellPage> {
             ),
             ListTile(
               leading: const Icon(Icons.bookmark_outline),
-              title: const Text('Đã lưu'),
+              title: Text(l10n.saved),
               onTap: () {
                 Navigator.pop(context);
                 context.push(RouteNames.favorites);
@@ -116,7 +97,7 @@ class _HomeShellPageState extends State<HomeShellPage> {
             ),
             ListTile(
               leading: const Icon(Icons.notifications_outlined),
-              title: const Text('Thông báo'),
+              title: Text(l10n.notifications),
               onTap: () {
                 Navigator.pop(context);
                 context.push(RouteNames.notifications);
@@ -124,7 +105,7 @@ class _HomeShellPageState extends State<HomeShellPage> {
             ),
             ListTile(
               leading: const Icon(Icons.settings_outlined),
-              title: const Text('Cài đặt'),
+              title: Text(l10n.settings),
               onTap: () {
                 Navigator.pop(context);
                 context.push(RouteNames.settings);
@@ -136,7 +117,7 @@ class _HomeShellPageState extends State<HomeShellPage> {
       appBar: (_navIndex == 1 || _navIndex == 3)
           ? null
           : AppBar(
-              title: Text(_titleForNavIndex(_navIndex)),
+              title: Text(_titleForNavIndex(context, _navIndex)),
               leading: _navIndex == 0
                   ? Builder(
                       builder: (ctx) => IconButton(
@@ -165,20 +146,21 @@ class _HomeShellPageState extends State<HomeShellPage> {
         padding: EdgeInsets.fromLTRB(20, 0, 20, 12 + bottomInset),
         child: FloatingPillNavBar(
           selectedIndex: _navIndex,
-          items: _navItems,
+          items: navItems,
           onTabSelected: (i) => setState(() => _navIndex = i),
         ),
       ),
     );
   }
 
-  String _titleForNavIndex(int index) {
+  String _titleForNavIndex(BuildContext context, int index) {
+    final l10n = context.l10n;
     return switch (index) {
-      0 => 'Khám phá',
-      2 => 'Tài liệu',
+      0 => l10n.explore,
+      2 => l10n.documents,
       3 => 'Nhóm học tập',
-      4 => 'Cá nhân',
-      _ => 'Sfinity',
+      4 => l10n.profile,
+      _ => l10n.appName,
     };
   }
 }

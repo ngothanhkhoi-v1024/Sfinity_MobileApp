@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/route_names.dart';
+import '../../core/i18n/app_text.dart';
 
-/// Bottom sheet: chia sẻ địa điểm hoặc đăng tài liệu học tập.
+/// Bottom sheet: share a place or upload study materials.
 void showShareActionSheet(BuildContext context) {
   showModalBottomSheet<void>(
     context: context,
@@ -12,6 +13,7 @@ void showShareActionSheet(BuildContext context) {
     ),
     backgroundColor: Theme.of(context).scaffoldBackgroundColor,
     builder: (ctx) {
+      final l10n = ctx.l10n;
       final isDark = Theme.of(context).brightness == Brightness.dark;
       return SafeArea(
         child: Padding(
@@ -31,17 +33,17 @@ void showShareActionSheet(BuildContext context) {
                 ),
               ),
               const SizedBox(height: 16),
-               Text(
-                 'Chia sẻ trên Sfinity',
-                 style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
-                   fontWeight: FontWeight.w600,
-                   color: isDark ? const Color(0xFFF2F2F2) : null,
-                 ),
-                 textAlign: TextAlign.center,
-               ),
+              Text(
+                l10n.shareOnSfinity,
+                style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? const Color(0xFFF2F2F2) : null,
+                ),
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 8),
               Text(
-                'Địa điểm học tập hoặc tài liệu cho cộng đồng',
+                l10n.shareDescription,
                 style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
                   color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                 ),
@@ -50,8 +52,8 @@ void showShareActionSheet(BuildContext context) {
               const SizedBox(height: 20),
               _ShareOption(
                 icon: Icons.place_outlined,
-                title: 'Chia sẻ địa điểm',
-                subtitle: 'Thư viện, quán cà phê, không gian học nhóm…',
+                title: l10n.sharePlace,
+                subtitle: l10n.sharePlaceSubtitle,
                 onTap: () {
                   Navigator.pop(ctx);
                   context.push(RouteNames.placeShare);
@@ -61,8 +63,8 @@ void showShareActionSheet(BuildContext context) {
               const SizedBox(height: 12),
               _ShareOption(
                 icon: Icons.menu_book_outlined,
-                title: 'Đăng tài liệu học tập',
-                subtitle: 'Ghi chú, slide, đề thi, tóm tắt môn học…',
+                title: l10n.uploadStudyMaterials,
+                subtitle: l10n.uploadStudyMaterialsSubtitle,
                 onTap: () {
                   Navigator.pop(ctx);
                   context.push(

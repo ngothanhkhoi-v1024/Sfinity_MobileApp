@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/network/api_client.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../../../../shared/widgets/error_view.dart';
 
 class FavoritesPage extends StatefulWidget {
@@ -39,11 +40,12 @@ class _FavoritesPageState extends State<FavoritesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     if (_loading) return const Center(child: CircularProgressIndicator());
     if (_error != null) return ErrorView(message: _error!, onRetry: _load);
 
     if (_items.isEmpty) {
-      return const Center(child: Text('Chưa có mục yêu thích'));
+      return Center(child: Text(l10n.noFavoritesYet));
     }
 
     return RefreshIndicator(

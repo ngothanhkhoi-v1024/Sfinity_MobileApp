@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/route_names.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../../../../core/utils/validators.dart';
 import '../controllers/otp_verification_controller.dart';
 import '../widgets/auth_card.dart';
@@ -58,7 +59,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
     );
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Đặt lại mật khẩu thành công')),
+        SnackBar(content: Text(context.l10n.passwordResetSuccessful)),
       );
       context.go(RouteNames.login);
     }
@@ -67,6 +68,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final isDark = theme.brightness == Brightness.dark;
 
     final primaryColor = theme.colorScheme.primary;
@@ -76,7 +78,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Xác thực OTP'),
+        title: Text(l10n.otpVerification),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -137,7 +139,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
                           ),
                           const SizedBox(height: 18),
                           Text(
-                            'Xác thực OTP',
+                            l10n.otpVerification,
                             style: theme.textTheme.headlineMedium?.copyWith(
                               fontWeight: FontWeight.w800,
                               color: onSurfaceColor,
@@ -146,7 +148,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Nhập mã OTP gồm 6 chữ số đã được gửi tới email của bạn:',
+                            l10n.otpDescription,
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: onSurfaceColor.withOpacity(0.75),
                             ),
@@ -184,7 +186,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
                           ],
                           AuthTextField(
                             controller: _code,
-                            labelText: 'Mã OTP (6 chữ số)',
+                            labelText: l10n.otpCode6Digits,
                             prefixIcon: const Icon(Icons.pin_rounded),
                             keyboardType: TextInputType.number,
                             maxLength: 6,
@@ -193,7 +195,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
                           const SizedBox(height: 14),
                           PasswordField(
                             controller: _password,
-                            labelText: 'Mật khẩu mới',
+                            labelText: l10n.newPassword,
                             validator: AppValidators.validatePassword,
                             onFieldSubmitted: (_) => _submit(),
                           ),
@@ -209,14 +211,14 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
                                       color: Colors.white,
                                     ),
                                   )
-                                : const Text('Đặt lại mật khẩu'),
+                                : Text(l10n.resetPassword),
                           ),
                           const SizedBox(height: 18),
                           TextButton(
                             onPressed: _controller.isLoading
                                 ? null
                                 : () => context.go(RouteNames.login),
-                            child: const Text('Quay lại đăng nhập'),
+                            child: Text(l10n.backToSignIn),
                           ),
                         ],
                       ),

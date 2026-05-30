@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/network/api_client.dart';
+import '../../../../core/i18n/app_text.dart';
 
 class ReportPage extends StatefulWidget {
   const ReportPage({super.key});
@@ -17,6 +18,7 @@ class _ReportPageState extends State<ReportPage> {
   final _targetId = TextEditingController();
 
   Future<void> _submit() async {
+    final l10n = context.l10n;
     try {
       await ApiClient.instance.post('/reports', {
         'targetType': _targetType,
@@ -26,7 +28,7 @@ class _ReportPageState extends State<ReportPage> {
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đã gửi báo cáo')),
+          SnackBar(content: Text(l10n.reportSubmitted)),
         );
         Navigator.pop(context);
       }
@@ -41,43 +43,44 @@ class _ReportPageState extends State<ReportPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: const Text('Báo cáo vi phạm')),
+      appBar: AppBar(title: Text(l10n.reportViolationTitle)),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             DropdownButtonFormField<String>(
               value: _targetType,
-              decoration: const InputDecoration(labelText: 'Loại', border: OutlineInputBorder()),
-              items: const [
-                DropdownMenuItem(value: 'document', child: Text('Tài liệu')),
-                DropdownMenuItem(value: 'user', child: Text('Người dùng')),
-                DropdownMenuItem(value: 'other', child: Text('Khác')),
+              decoration: InputDecoration(labelText: l10n.type, border: const OutlineInputBorder()),
+              items: [
+                DropdownMenuItem(value: 'document', child: Text(l10n.documentType)),
+                DropdownMenuItem(value: 'user', child: Text(l10n.userType)),
+                DropdownMenuItem(value: 'other', child: Text(l10n.otherType)),
               ],
               onChanged: (v) => setState(() => _targetType = v ?? 'document'),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _targetId,
-              decoration: const InputDecoration(
-                labelText: 'ID đối tượng (tuỳ chọn)',
+              decoration: InputDecoration(
+                labelText: l10n.targetIdOptional,
                 border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _reason,
-              decoration: const InputDecoration(labelText: 'Lý do', border: OutlineInputBorder()),
+              decoration: InputDecoration(labelText: l10n.reason, border: const OutlineInputBorder()),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _description,
-              decoration: const InputDecoration(labelText: 'Mô tả chi tiết', border: OutlineInputBorder()),
+              decoration: InputDecoration(labelText: l10n.detailedDescription, border: const OutlineInputBorder()),
               maxLines: 4,
             ),
             const SizedBox(height: 24),
-            FilledButton(onPressed: _submit, child: const Text('Gửi báo cáo')),
+            FilledButton(onPressed: _submit, child: Text(l10n.submitReport)),
           ],
         ),
       ),

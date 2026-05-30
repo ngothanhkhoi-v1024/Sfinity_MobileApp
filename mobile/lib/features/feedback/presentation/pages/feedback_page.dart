@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/network/api_client.dart';
+import '../../../../core/i18n/app_text.dart';
 
 class FeedbackPage extends StatefulWidget {
   const FeedbackPage({super.key});
@@ -16,9 +17,10 @@ class _FeedbackPageState extends State<FeedbackPage> {
   bool _loading = false;
 
   Future<void> _submit() async {
+    final l10n = context.l10n;
     if (_message.text.trim().length < 5) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nhập ít nhất 5 ký tự')),
+        SnackBar(content: Text(l10n.enterAtLeast5Characters)),
       );
       return;
     }
@@ -30,7 +32,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Cảm ơn phản hồi của bạn!')),
+          SnackBar(content: Text(l10n.thanksForYourFeedback)),
         );
         _message.clear();
       }
@@ -47,13 +49,14 @@ class _FeedbackPageState extends State<FeedbackPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: const Text('Gửi phản hồi')),
+      appBar: AppBar(title: Text(l10n.sendFeedback)),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Text('Đánh giá: $_rating sao'),
+            Text(l10n.ratingLabel(_rating)),
             Slider(
               min: 1,
               max: 5,
@@ -64,8 +67,8 @@ class _FeedbackPageState extends State<FeedbackPage> {
             ),
             TextField(
               controller: _message,
-              decoration: const InputDecoration(
-                labelText: 'Nội dung phản hồi',
+              decoration: InputDecoration(
+                labelText: l10n.feedbackContent,
                 border: OutlineInputBorder(),
               ),
               maxLines: 5,
@@ -73,7 +76,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
             const SizedBox(height: 16),
             FilledButton(
               onPressed: _loading ? null : _submit,
-              child: const Text('Gửi'),
+              child: Text(l10n.submit),
             ),
           ],
         ),

@@ -69,6 +69,20 @@ export const openApiDocument = {
           avatar: { type: 'string' },
         },
       },
+      UserRecord: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          email: { type: 'string' },
+          name: { type: 'string' },
+          avatar: { type: 'string', nullable: true },
+          role: { type: 'string' },
+          status: { type: 'string' },
+          notificationsEnabled: { type: 'boolean' },
+          createdAt: { type: 'string', format: 'date-time' },
+          updatedAt: { type: 'string', format: 'date-time' },
+        },
+      },
       ChangePasswordDto: {
         type: 'object',
         required: ['currentPassword', 'newPassword'],
