@@ -55,6 +55,7 @@ dependencies:
   image_picker: ^1.1.2
   url_launcher: ^6.3.2
   syncfusion_flutter_pdfviewer: ^33.2.8
+  flutter_map_marker_cluster: ^8.2.2
 
 dev_dependencies:
   flutter_test:
