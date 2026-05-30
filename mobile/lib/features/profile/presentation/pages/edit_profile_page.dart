@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../../app.dart';
 import '../../../../core/network/api_client.dart';
+import 'avatar_crop_page.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -44,9 +45,18 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
 
     if (picked == null) return;
+    if (!mounted) return;
+
+    final cropped = await Navigator.of(context).push<File?>(
+      MaterialPageRoute(
+        builder: (_) => AvatarCropPage(imageFile: File(picked.path)),
+      ),
+    );
+
+    if (cropped == null || !mounted) return;
 
     setState(() {
-      _pickedAvatar = File(picked.path);
+      _pickedAvatar = cropped;
     });
   }
 
