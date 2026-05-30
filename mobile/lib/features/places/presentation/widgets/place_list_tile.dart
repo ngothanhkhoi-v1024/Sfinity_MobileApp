@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
+
+import 'place_mini_map_preview.dart';
 
 class PlaceListTile extends StatelessWidget {
   const PlaceListTile({
@@ -10,6 +13,8 @@ class PlaceListTile extends StatelessWidget {
     required this.onTap,
     this.showMapAction = false,
     this.onMapTap,
+    this.mapPoint,
+    this.showMiniMap = false,
   });
 
   final String title;
@@ -19,6 +24,8 @@ class PlaceListTile extends StatelessWidget {
   final VoidCallback onTap;
   final bool showMapAction;
   final VoidCallback? onMapTap;
+  final LatLng? mapPoint;
+  final bool showMiniMap;
 
   @override
   Widget build(BuildContext context) {
@@ -41,22 +48,25 @@ class PlaceListTile extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(14, 14, 12, 14),
             child: Row(
               children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        accent.withValues(alpha: 0.18),
-                        accent.withValues(alpha: 0.06),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+                if (showMiniMap && mapPoint != null)
+                  PlaceMiniMapPreview(point: mapPoint!, accentColor: accent)
+                else
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          accent.withValues(alpha: 0.18),
+                          accent.withValues(alpha: 0.06),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(14),
                     ),
-                    borderRadius: BorderRadius.circular(14),
+                    child: Icon(Icons.place_rounded, color: accent, size: 26),
                   ),
-                  child: Icon(Icons.place_rounded, color: accent, size: 26),
-                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
