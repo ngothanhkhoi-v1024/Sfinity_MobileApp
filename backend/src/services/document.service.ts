@@ -307,4 +307,18 @@ export const documentService = {
     await getDb().collection('documents').doc(id).delete();
     return { success: true };
   },
+
+  async incrementDownload(id: string) {
+    const docRef = getDb().collection('documents').doc(id);
+    const doc = await docRef.get();
+    if (!doc.exists) {
+      throw new HttpError(404, 'Không tìm thấy tài liệu', 'Not Found');
+    }
+    const currentCount = (doc.data() as any).downloadsCount ?? 0;
+    await docRef.update({
+      downloadsCount: currentCount + 1,
+      updatedAt: new Date(),
+    });
+    return documentService.findOne(id);
+  },
 };
