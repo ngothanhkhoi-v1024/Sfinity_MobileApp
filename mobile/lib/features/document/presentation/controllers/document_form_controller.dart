@@ -20,6 +20,12 @@ class DocumentFormController extends ChangeNotifier {
   double uploadProgress = 0.0;
   bool uploading = false;
   File? localFileToUpload;
+  String selectedStatus = 'PUBLISHED';
+
+  void selectStatus(String? val) {
+    selectedStatus = val ?? 'PUBLISHED';
+    notifyListeners();
+  }
 
   Future<void> loadCategories(String? initialCategoryId, bool isEdit) async {
     try {
@@ -168,7 +174,7 @@ class DocumentFormController extends ChangeNotifier {
       final payload = {
         'title': title,
         'body': body,
-        'status': 'PUBLISHED',
+        'status': selectedStatus,
         'categoryId': selectedCategoryId,
         'type': contentType,
         if (isDocument && placeId != null && placeId.isNotEmpty) 'placeId': placeId,

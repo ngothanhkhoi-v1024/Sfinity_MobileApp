@@ -10,9 +10,15 @@ class DocumentListController extends ChangeNotifier {
   String? error;
   String searchQuery = '';
   String selectedCategory = 'Tất cả';
+  bool communityMode = true;
 
   final List<String> categories = ['Tất cả', 'Bài giảng', 'Đề thi', 'Ghi chú', 'Khác'];
   final TextEditingController searchController = TextEditingController();
+
+  void setCommunityMode(bool val) {
+    communityMode = val;
+    load();
+  }
 
   Future<void> load() async {
     loading = true;
@@ -20,8 +26,10 @@ class DocumentListController extends ChangeNotifier {
     notifyListeners();
 
     try {
+      final currentUserId = SfinityApp.auth.user?['id']?.toString();
       final res = await SfinityApp.documentRepository.getDocuments(
-        publishedOnly: true,
+        publishedOnly: communityMode ? true : null,
+        authorId: communityMode ? null : currentUserId,
         limit: 50,
       );
       final raw = res['items'] as List? ?? [];

@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -12,9 +15,12 @@ import '../../../study_near_me/presentation/controllers/study_near_me_controller
 import '../../../study_near_me/presentation/widgets/study_near_me_button.dart';
 import '../../../study_near_me/presentation/widgets/study_near_me_results_sheet.dart';
 import '../controllers/places_map_controller.dart';
+import '../places_map_focus.dart';
 import '../widgets/place_list_tile.dart';
 import '../widgets/place_tag_chips.dart';
 import '../widgets/places_header_panel.dart';
+import '../widgets/places_map_loading_skeleton.dart';
+import '../widgets/places_map_zoom_controls.dart';
 
 /// Bản đồ địa điểm — tile OpenStreetMap (open source).
 class PlacesMapPage extends StatefulWidget {
@@ -29,6 +35,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
   final _searchController = TextEditingController();
   late final PlacesMapController _ctrl;
   late final StudyNearMeController _studyNearMeCtrl;
+  Timer? _searchDebounce;
   bool _mapReady = false;
 
   @override
@@ -38,6 +45,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
     _studyNearMeCtrl = StudyNearMeController();
     _ctrl.addListener(_onControllerUpdate);
     _studyNearMeCtrl.addListener(_onControllerUpdate);
+    PlacesMapFocus.pending.addListener(_onPendingMapFocus);
     _ctrl.init();
   }
 
@@ -45,14 +53,90 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
     if (mounted) setState(() {});
   }
 
+  void _onPendingMapFocus() {
+    final req = PlacesMapFocus.pending.value;
+    if (req == null || !mounted) return;
+    PlacesMapFocus.pending.value = null;
+    _applyMapFocus(req);
+  }
+
+  void _applyMapFocus(PlacesMapFocusRequest req) {
+    PlaceModel? matched;
+    for (final place in [..._ctrl.publicPlaces, ..._ctrl.myPlaces]) {
+      if (place.id == req.placeId) {
+        matched = place;
+        break;
+      }
+    }
+
+    if (matched != null && matched.point != null) {
+      _focusPlaceOnMap(matched);
+      return;
+    }
+
+    final point = LatLng(req.lat, req.lng);
+    _ctrl.setListView(false);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _safeMove(point, 15);
+    });
+  }
+
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _ctrl.removeListener(_onControllerUpdate);
     _studyNearMeCtrl.removeListener(_onControllerUpdate);
+    PlacesMapFocus.pending.removeListener(_onPendingMapFocus);
     _ctrl.dispose();
     _studyNearMeCtrl.dispose();
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _zoomBy(double delta) {
+    if (!_mapReady) return;
+    try {
+      final camera = _mapController.camera;
+      final newZoom = (camera.zoom + delta).clamp(3.0, 18.0);
+      _mapController.move(camera.center, newZoom);
+    } catch (_) {}
+  }
+
+  void _onSearchChanged(String value) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 400), () {
+      if (!mounted) return;
+      _ctrl.setSearchQuery(value);
+      _ctrl.loadPlaces();
+    });
+  }
+
+  PlaceModel? _placeFromMarker(Marker marker) {
+    final key = marker.key;
+    if (key is! ValueKey<String>) return null;
+    final id = key.value;
+    for (final place in _ctrl.activePlaces) {
+      if (place.id == id) return place;
+    }
+    return null;
+  }
+
+  List<Marker> _buildPlaceMarkers(List<PlaceModel> places) {
+    final pinColor = _ctrl.communityMode ? const Color(0xFFE53935) : const Color(0xFF1565C0);
+
+    return [
+      for (final p in places)
+        if (p.point != null)
+          Marker(
+            key: ValueKey(p.id),
+            point: p.point!,
+            width: 40,
+            height: 40,
+            alignment: Alignment.bottomCenter,
+            child: Icon(Icons.place_rounded, color: pinColor, size: 36),
+          ),
+    ];
   }
 
   void _safeMove(LatLng target, double zoom) {
@@ -120,6 +204,11 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
               const SizedBox(height: 8),
               Text(
                 'Tọa độ đã chọn: ${point.latitude.toStringAsFixed(5)}, ${point.longitude.toStringAsFixed(5)}',
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Mẹo: nhấn giữ bản đồ để chọn vị trí, hoặc dùng nút +',
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
               ),
               const SizedBox(height: 16),
               FilledButton.icon(
@@ -233,6 +322,16 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
         decoration: InputDecoration(
           hintText: 'Tìm địa điểm theo tên hoặc địa chỉ…',
           prefixIcon: const Icon(Icons.search, size: 20),
+          suffixIcon: _searchController.text.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.close, size: 18),
+                  onPressed: () {
+                    _searchController.clear();
+                    _onSearchChanged('');
+                    setState(() {});
+                  },
+                )
+              : null,
           filled: true,
           fillColor: Theme.of(context).brightness == Brightness.dark
               ? const Color(0xFF2A2A2A)
@@ -244,10 +343,11 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
           isDense: true,
           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         ),
-        onSubmitted: (_) {
-          _ctrl.setSearchQuery(_searchController.text);
-          _ctrl.loadPlaces();
+        onChanged: (value) {
+          setState(() {});
+          _onSearchChanged(value);
         },
+        onSubmitted: _onSearchChanged,
       ),
     );
   }
@@ -359,7 +459,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
     final sorted = _ctrl.sortedActivePlaces();
 
     if (_ctrl.loadingPlaces) {
-      return const Center(child: CircularProgressIndicator());
+      return PlacesMapLoadingSkeleton(listMode: listMode);
     }
 
     if (sorted.isEmpty) {
@@ -383,8 +483,8 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
               const SizedBox(height: 6),
               Text(
                 _ctrl.communityMode
-                    ? 'Lưu địa điểm đầu tiên bằng nút + hoặc chạm bản đồ.'
-                    : 'Chạm bản đồ hoặc nút + để thêm địa điểm.',
+                    ? 'Thêm địa điểm đầu tiên bằng nút + trên bản đồ.'
+                    : 'Nhấn giữ bản đồ hoặc nút + để thêm địa điểm.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
@@ -410,6 +510,8 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
           onTap: () => context.push('/places/${place.id}'),
           showMapAction: listMode,
           onMapTap: listMode ? () => _focusPlaceOnMap(place) : null,
+          mapPoint: place.point,
+          showMiniMap: listMode && place.point != null,
         );
       },
     );
@@ -526,59 +628,15 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final places = _ctrl.activePlaces;
+  Widget _buildMapLayout(List<PlaceModel> places) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final mapCenter = MapConfig.sanitize(_ctrl.center);
-    final markers = <Marker>[
-      if (_ctrl.myLocation != null)
-        Marker(
-          point: _ctrl.myLocation!,
-          width: 22,
-          height: 22,
-          alignment: Alignment.center,
-          child: Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFF1E88E5),
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 3),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF1E88E5).withValues(alpha: 0.4),
-                  blurRadius: 8,
-                  spreadRadius: 2,
-                ),
-              ],
-            ),
-          ),
-        ),
-      for (final p in places)
-        if (p.point != null)
-          Marker(
-            point: p.point!,
-            width: 40,
-            height: 40,
-            child: GestureDetector(
-              onTap: () => _showPlaceSheet(p, p.point!),
-              child: Icon(
-                Icons.place,
-                color: _ctrl.communityMode ? const Color(0xFFE53935) : const Color(0xFF1565C0),
-                size: 36,
-              ),
-            ),
-          ),
-    ];
-
-    if (_ctrl.listView) {
-      return Stack(
-        children: [
-          _buildListViewLayout(),
-          Positioned(right: 16, bottom: 96, child: _buildFabColumn()),
-        ],
-      );
-    }
+    final placeMarkers = _buildPlaceMarkers(places);
+    final primary = theme.colorScheme.primary;
 
     return Stack(
+      key: const ValueKey('map_view'),
       children: [
         FlutterMap(
           mapController: _mapController,
@@ -586,7 +644,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
             initialCenter: mapCenter,
             initialZoom: MapConfig.defaultZoom,
             onMapReady: () => _mapReady = true,
-            onTap: (_, point) {
+            onLongPress: (_, point) {
               if (!MapConfig.isValidLatLng(point)) return;
               _showPickLocationSheet(point);
             },
@@ -596,7 +654,74 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
               urlTemplate: MapConfig.tileUrlTemplate,
               userAgentPackageName: MapConfig.userAgentPackageName,
             ),
-            MarkerLayer(markers: markers),
+            if (_ctrl.myLocation != null)
+              MarkerLayer(
+                markers: [
+                  Marker(
+                    point: _ctrl.myLocation!,
+                    width: 22,
+                    height: 22,
+                    alignment: Alignment.center,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E88E5),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 3),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF1E88E5).withValues(alpha: 0.4),
+                            blurRadius: 8,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            if (placeMarkers.isNotEmpty)
+              MarkerClusterLayerWidget(
+                options: MarkerClusterLayerOptions(
+                  maxClusterRadius: 50,
+                  size: const Size(44, 44),
+                  alignment: Alignment.center,
+                  padding: const EdgeInsets.all(50),
+                  maxZoom: 16,
+                  zoomToBoundsOnClick: true,
+                  markers: placeMarkers,
+                  onMarkerTap: (marker) {
+                    final place = _placeFromMarker(marker);
+                    if (place?.point != null) {
+                      _showPlaceSheet(place!, place.point!);
+                    }
+                  },
+                  builder: (context, markers) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: primary,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: primary.withValues(alpha: 0.35),
+                            blurRadius: 8,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Text(
+                          markers.length.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
           ],
         ),
         Positioned(
@@ -632,32 +757,76 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
           ),
         ),
         if (_ctrl.loadingPlaces)
-          const Positioned(
-            top: 140,
+          Positioned(
+            top: 200,
             left: 0,
             right: 0,
-            child: Center(child: CircularProgressIndicator()),
+            bottom: 0,
+            child: const PlacesMapLoadingSkeleton(),
           ),
+        Positioned(
+          left: 16,
+          bottom: 96,
+          child: PlacesMapZoomControls(
+            onZoomIn: () => _zoomBy(1),
+            onZoomOut: () => _zoomBy(-1),
+          ),
+        ),
         Positioned(right: 16, bottom: 96, child: _buildFabColumn()),
         Positioned(
           left: 12,
-          bottom: 96,
+          bottom: 168,
           child: DecoratedBox(
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.92),
+              color: (isDark ? const Color(0xFF242424) : Colors.white).withValues(alpha: 0.92),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               child: Text(
                 '© OpenStreetMap contributors',
-                style: TextStyle(fontSize: 11, color: Colors.black54),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: isDark ? Colors.white60 : Colors.black54,
+                ),
               ),
             ),
           ),
         ),
       ],
     );
+  }
+
+  Widget _buildAnimatedBody(List<PlaceModel> places) {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 350),
+      switchInCurve: Curves.easeOutCubic,
+      switchOutCurve: Curves.easeInCubic,
+      transitionBuilder: (child, animation) {
+        final isList = child.key == const ValueKey('list_view');
+        final slide = Tween<Offset>(
+          begin: Offset(0, isList ? 0.04 : -0.04),
+          end: Offset.zero,
+        ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic));
+
+        return FadeTransition(
+          opacity: animation,
+          child: SlideTransition(position: slide, child: child),
+        );
+      },
+      child: _ctrl.listView
+          ? KeyedSubtree(
+              key: const ValueKey('list_view'),
+              child: _buildListViewLayout(),
+            )
+          : _buildMapLayout(places),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final places = _ctrl.activePlaces;
+    return _buildAnimatedBody(places);
   }
 }
 

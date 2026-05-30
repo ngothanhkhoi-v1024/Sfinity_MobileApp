@@ -22,6 +22,7 @@ class PlaceFormController extends ChangeNotifier {
   LatLng picked = MapConfig.defaultCenter;
   String? address;
   Set<String> selectedTags = {};
+  bool isPublic = true;
   bool loading = false;
   bool loadingPlace = false;
   bool geocodingAddress = false;
@@ -38,6 +39,7 @@ class PlaceFormController extends ChangeNotifier {
       descriptionController.text = place.body;
       address = place.address;
       selectedTags = place.tags.toSet();
+      isPublic = place.isPublic;
       if (address == null || address!.isEmpty) {
         await resolveAddress(picked);
       }
@@ -113,6 +115,7 @@ class PlaceFormController extends ChangeNotifier {
         address: address ??
             '${picked.latitude.toStringAsFixed(5)}, ${picked.longitude.toStringAsFixed(5)}',
         tags: selectedTags.toList(),
+        isPublic: isPublic,
       );
 
       if (editPlaceId != null && editPlaceId.isNotEmpty) {
@@ -130,6 +133,11 @@ class PlaceFormController extends ChangeNotifier {
 
   void setSelectedTags(Set<String> tags) {
     selectedTags = tags;
+    notifyListeners();
+  }
+
+  void setIsPublic(bool value) {
+    isPublic = value;
     notifyListeners();
   }
 

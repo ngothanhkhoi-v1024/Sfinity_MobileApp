@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../app.dart';
 import '../../data/models/place_review_model.dart';
 import '../controllers/place_engagement_controller.dart';
 
@@ -107,7 +108,10 @@ class PlaceRatingSection extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             ...summary.reviews.take(5).map(
-                  (r) => Padding(
+                  (r) {
+                    final isOwn = r.userId != null &&
+                        r.userId == SfinityApp.auth.user?['id']?.toString();
+                    return Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -128,12 +132,40 @@ class PlaceRatingSection extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                r.authorName ?? 'Người dùng',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13,
-                                ),
+                              Row(
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      r.authorName ?? 'Người dùng',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ),
+                                  if (isOwn) ...[
+                                    const SizedBox(width: 6),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: theme.colorScheme.primary
+                                            .withValues(alpha: 0.12),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        'Bạn',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w700,
+                                          color: theme.colorScheme.primary,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
                               ),
                               if (r.comment != null && r.comment!.isNotEmpty)
                                 Text(r.comment!, style: const TextStyle(fontSize: 12)),
@@ -142,7 +174,8 @@ class PlaceRatingSection extends StatelessWidget {
                         ),
                       ],
                     ),
-                  ),
+                  );
+                  },
                 ),
           ],
         ],
