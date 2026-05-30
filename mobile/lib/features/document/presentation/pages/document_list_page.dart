@@ -8,6 +8,7 @@ import '../widgets/document_card.dart';
 import '../widgets/document_empty_state.dart';
 import '../widgets/document_filter_chips.dart';
 import '../widgets/document_search_bar.dart';
+import '../widgets/document_mode_toggle.dart';
 
 class DocumentListPage extends StatefulWidget {
   const DocumentListPage({super.key, this.embedded = false});
@@ -82,6 +83,10 @@ class _DocumentListPageState extends State<DocumentListPage> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              DocumentModeToggle(
+                communityMode: _controller.communityMode,
+                onChanged: _controller.setCommunityMode,
+              ),
               DocumentSearchBar(
                 controller: _controller.searchController,
                 onChanged: _controller.updateSearchQuery,
@@ -117,6 +122,10 @@ class _DocumentListPageState extends State<DocumentListPage> {
           ),
           body: Column(
             children: [
+              DocumentModeToggle(
+                communityMode: _controller.communityMode,
+                onChanged: _controller.setCommunityMode,
+              ),
               DocumentSearchBar(
                 controller: _controller.searchController,
                 onChanged: _controller.updateSearchQuery,

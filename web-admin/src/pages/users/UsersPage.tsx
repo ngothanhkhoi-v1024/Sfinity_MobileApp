@@ -76,6 +76,15 @@ export function UsersPage() {
       ),
     },
     {
+      title: 'Thông báo',
+      dataIndex: 'notificationsEnabled',
+      render: (enabled?: boolean) => (
+        <Tag color={enabled === false ? 'red' : 'green'} style={{ borderRadius: 6 }}>
+          {enabled === false ? 'Đã tắt' : 'Đang bật'}
+        </Tag>
+      ),
+    },
+    {
       title: 'Thao tác',
       key: 'actions',
       width: 80,

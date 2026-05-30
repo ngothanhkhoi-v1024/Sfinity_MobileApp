@@ -20,6 +20,12 @@ class DocumentFormController extends ChangeNotifier {
   double uploadProgress = 0.0;
   bool uploading = false;
   File? localFileToUpload;
+  String selectedStatus = 'PUBLISHED';
+
+  void selectStatus(String? val) {
+    selectedStatus = val ?? 'PUBLISHED';
+    notifyListeners();
+  }
 
   Future<void> loadCategories(String? initialCategoryId, bool isEdit) async {
     try {
@@ -45,7 +51,7 @@ class DocumentFormController extends ChangeNotifier {
     try {
       final result = await FilePicker.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['pdf', 'docx', 'doc', 'png', 'jpg', 'txt'],
+        allowedExtensions: ['pdf'],
       );
 
       if (result == null || result.files.isEmpty) return;
@@ -55,7 +61,7 @@ class DocumentFormController extends ChangeNotifier {
 
       localFileToUpload = File(file.path!);
       uploadedFileName = file.name;
-      uploadedFileType = file.extension ?? 'pdf';
+      uploadedFileType = 'pdf';
       uploadedFileSize = file.size;
       uploadedFileUrl = null; // Clear previous url since new local file is picked
       uploadProgress = 0.0;
@@ -120,17 +126,12 @@ class DocumentFormController extends ChangeNotifier {
     required String subjectCode,
     required String tagsText,
     required String externalUrl,
+    String? placeId,
   }) async {
     // Validation
     if (isDocument) {
-      if (useUpload) {
-        if (localFileToUpload == null && uploadedFileUrl == null) {
-          throw 'Vui lòng chọn tệp tài liệu để tải lên!';
-        }
-      } else {
-        if (externalUrl.isEmpty) {
-          throw 'Vui lòng nhập liên kết tài liệu!';
-        }
+      if (localFileToUpload == null && uploadedFileUrl == null) {
+        throw 'Vui lòng chọn tệp PDF tài liệu để tải lên!';
       }
     }
 
@@ -141,7 +142,7 @@ class DocumentFormController extends ChangeNotifier {
       String? finalFileUrl = uploadedFileUrl;
 
       // 1. Upload local file to Firebase Storage if selected
-      if (isDocument && useUpload && localFileToUpload != null) {
+      if (isDocument && localFileToUpload != null) {
         uploading = true;
         uploadProgress = 0.0;
         notifyListeners();
@@ -162,8 +163,6 @@ class DocumentFormController extends ChangeNotifier {
           notifyListeners();
           throw 'Tải tệp lên thất bại: $e';
         }
-      } else if (!isDocument || !useUpload) {
-        finalFileUrl = externalUrl;
       }
 
       final tags = tagsText
@@ -175,13 +174,14 @@ class DocumentFormController extends ChangeNotifier {
       final payload = {
         'title': title,
         'body': body,
-        'status': 'PUBLISHED',
+        'status': selectedStatus,
         'categoryId': selectedCategoryId,
         'type': contentType,
+        if (isDocument && placeId != null && placeId.isNotEmpty) 'placeId': placeId,
         if (isDocument) ...{
           'fileUrl': finalFileUrl,
-          'fileType': useUpload ? (uploadedFileType ?? 'pdf') : 'link',
-          'fileSize': useUpload ? uploadedFileSize : 0,
+          'fileType': 'pdf',
+          'fileSize': uploadedFileSize ?? 0,
           'subjectCode': subjectCode,
           'tags': tags,
         }

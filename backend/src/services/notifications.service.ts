@@ -9,8 +9,15 @@ const toDate = (val: any): Date => {
   return new Date(val);
 };
 
+const allowsNotifications = (userData: any): boolean => userData?.notificationsEnabled !== false;
+
 export const notificationsService = {
   async findByUser(userId: string) {
+    const userDoc = await getDb().collection('users').doc(userId).get();
+    if (userDoc.exists && !allowsNotifications(userDoc.data())) {
+      return [];
+    }
+
     const snapshot = await getDb()
       .collection('notifications')
       .where('userId', '==', userId)
@@ -32,6 +39,11 @@ export const notificationsService = {
   },
 
   async markRead(userId: string, id: string) {
+    const userDoc = await getDb().collection('users').doc(userId).get();
+    if (userDoc.exists && !allowsNotifications(userDoc.data())) {
+      return { success: true };
+    }
+
     const docRef = getDb().collection('notifications').doc(id);
     const doc = await docRef.get();
 
@@ -54,6 +66,11 @@ export const notificationsService = {
   },
 
   async markAllRead(userId: string) {
+    const userDoc = await getDb().collection('users').doc(userId).get();
+    if (userDoc.exists && !allowsNotifications(userDoc.data())) {
+      return { success: true };
+    }
+
     const snapshot = await getDb()
       .collection('notifications')
       .where('userId', '==', userId)
@@ -73,6 +90,11 @@ export const notificationsService = {
 
   async create(dto: CreateNotificationDto) {
     if (dto.userId) {
+      const userDoc = await getDb().collection('users').doc(dto.userId).get();
+      if (userDoc.exists && !allowsNotifications(userDoc.data())) {
+        return { sent: 0, skipped: 1 };
+      }
+
       const docRef = getDb().collection('notifications').doc();
       const notif = {
         id: docRef.id,
@@ -97,11 +119,15 @@ export const notificationsService = {
       return { sent: 0 };
     }
 
+    const eligibleUsers = usersSnap.docs.filter((userDoc) => allowsNotifications(userDoc.data()));
+    if (eligibleUsers.length === 0) {
+      return { sent: 0 };
+    }
+
     // Write in batch (chunk to 400 docs per batch to stay under the Firestore 500 limit)
-    const docs = usersSnap.docs;
     const chunkSize = 400;
-    for (let i = 0; i < docs.length; i += chunkSize) {
-      const chunk = docs.slice(i, i + chunkSize);
+    for (let i = 0; i < eligibleUsers.length; i += chunkSize) {
+      const chunk = eligibleUsers.slice(i, i + chunkSize);
       const batch = getDb().batch();
       
       chunk.forEach((userDoc) => {
@@ -119,7 +145,7 @@ export const notificationsService = {
       await batch.commit();
     }
 
-    return { sent: docs.length };
+    return { sent: eligibleUsers.length };
   },
 
   async findAllAdmin() {
@@ -138,7 +164,7 @@ export const notificationsService = {
           const userDoc = await getDb().collection('users').doc(notif.userId).get();
           if (userDoc.exists) {
             const u = userDoc.data() as any;
-            user = { id: userDoc.id, name: u.name, email: u.email };
+            user = { id: userDoc.id, name: u.name, email: u.email, notificationsEnabled: u.notificationsEnabled ?? true };
           }
         }
         return {

@@ -64,6 +64,16 @@ export class CreateDocumentDto {
   @IsOptional()
   @IsString()
   address?: string;
+
+  /** Khu vực campus (chỉ type=place). */
+  @IsOptional()
+  @IsString()
+  zone?: string;
+
+  /** Liên kết tài liệu với địa điểm (id document type=place). */
+  @IsOptional()
+  @IsString()
+  placeId?: string;
 }
 
 export class UpdateDocumentDto {
@@ -131,4 +141,12 @@ export class UpdateDocumentDto {
   @IsOptional()
   @IsString()
   address?: string | null;
+
+  @IsOptional()
+  @IsString()
+  zone?: string | null;
+
+  @IsOptional()
+  @IsString()
+  placeId?: string | null;
 }

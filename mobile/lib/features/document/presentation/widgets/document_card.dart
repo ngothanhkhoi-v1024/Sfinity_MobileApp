@@ -85,6 +85,14 @@ class DocumentCard extends StatelessWidget {
                           color: Colors.grey.shade700,
                           backgroundColor: Colors.grey.shade200,
                         ),
+                        if (item['status'] == 'DRAFT') ...[
+                          const SizedBox(width: 6),
+                          _Badge(
+                            text: 'Bản nháp',
+                            color: Colors.orange.shade800,
+                            backgroundColor: Colors.orange.shade100,
+                          ),
+                        ],
                       ],
                     ),
                     const SizedBox(height: 8),

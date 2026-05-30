@@ -8,12 +8,28 @@ class DocumentApiService {
   Future<Map<String, dynamic>> getDocuments({
     String? categoryId,
     String? search,
+    String? type,
+    String? authorId,
+    String? placeId,
+    String? tags,
+    double? lat,
+    double? lng,
+    double? radiusKm,
+    String? zone,
     bool? publishedOnly,
     int? limit,
   }) {
     return _api.get('/document', query: {
       if (categoryId != null) 'categoryId': categoryId,
       if (search != null) 'search': search,
+      if (type != null) 'type': type,
+      if (authorId != null) 'authorId': authorId,
+      if (placeId != null) 'placeId': placeId,
+      if (tags != null && tags.isNotEmpty) 'tags': tags,
+      if (lat != null) 'lat': lat.toString(),
+      if (lng != null) 'lng': lng.toString(),
+      if (radiusKm != null) 'radiusKm': radiusKm.toString(),
+      if (zone != null && zone.isNotEmpty) 'zone': zone,
       if (publishedOnly != null) 'publishedOnly': publishedOnly.toString(),
       if (limit != null) 'limit': limit.toString(),
     });

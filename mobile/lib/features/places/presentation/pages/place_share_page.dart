@@ -1,15 +1,18 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../core/constants/map_config.dart';
-import '../../../../core/network/api_client.dart';
+import '../../../../core/services/geocoding_service.dart';
+import '../controllers/place_form_controller.dart';
+import '../widgets/place_tag_chips.dart';
 
-/// Chọn vị trí trên OSM và đăng chia sẻ địa điểm.
+/// Chọn vị trí trên OSM và đăng / sửa địa điểm.
 class PlaceSharePage extends StatefulWidget {
-  const PlaceSharePage({super.key});
+  const PlaceSharePage({super.key, this.editPlaceId});
+
+  final String? editPlaceId;
 
   @override
   State<PlaceSharePage> createState() => _PlaceSharePageState();
@@ -17,34 +20,53 @@ class PlaceSharePage extends StatefulWidget {
 
 class _PlaceSharePageState extends State<PlaceSharePage> {
   final _mapController = MapController();
-  final _name = TextEditingController();
-  final _description = TextEditingController();
-  LatLng _picked = MapConfig.defaultCenter;
-  bool _loading = false;
+  late final PlaceFormController _ctrl;
   bool _pickedFromRoute = false;
   bool _mapReady = false;
+
+  bool get _isEdit => widget.editPlaceId != null && widget.editPlaceId!.isNotEmpty;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = PlaceFormController();
+    _ctrl.addListener(() {
+      if (mounted) setState(() {});
+    });
+    if (_isEdit) {
+      _ctrl.loadForEdit(widget.editPlaceId!).catchError((e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(e.toString())),
+          );
+        }
+      });
+    }
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_pickedFromRoute) return;
+    if (_pickedFromRoute || _isEdit) return;
     final extra = GoRouterState.of(context).extra;
     if (extra is Map) {
       final lat = extra['lat'];
       final lng = extra['lng'];
       if (lat is num && lng is num) {
-        final fromRoute = MapConfig.latLngFromCoords(lat.toDouble(), lng.toDouble());
-        if (fromRoute != null) {
-          _picked = fromRoute;
-          _pickedFromRoute = true;
-        }
+        _ctrl.setPickedFromCoords(lat.toDouble(), lng.toDouble());
+        _pickedFromRoute = true;
       }
     }
   }
 
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
   void _onMapTap(LatLng point) {
-    if (!MapConfig.isValidLatLng(point)) return;
-    setState(() => _picked = point);
+    _ctrl.onMapTap(point);
     if (_mapReady) {
       try {
         _mapController.move(point, _mapController.camera.zoom);
@@ -52,68 +74,98 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
     }
   }
 
-  @override
-  void dispose() {
-    _name.dispose();
-    _description.dispose();
-    super.dispose();
+  void _selectSearchResult(GeocodingResult result) {
+    _ctrl.selectSearchResult(result);
+    final point = _ctrl.picked;
+    if (_mapReady) {
+      try {
+        _mapController.move(point, 16);
+      } catch (_) {}
+    }
   }
 
   Future<void> _submit() async {
-    if (_name.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nhập tên địa điểm')),
-      );
-      return;
-    }
-    if (!MapConfig.isValidLatLng(_picked)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Chọn vị trí hợp lệ trên bản đồ')),
-      );
-      return;
-    }
-    setState(() => _loading = true);
     try {
-      final body = [
-        _description.text.trim(),
-        '',
-        '---',
-        'type:place',
-        'lat:${_picked.latitude}',
-        'lng:${_picked.longitude}',
-      ].join('\n');
-      await ApiClient.instance.post('/document', {
-        'title': _name.text.trim(),
-        'body': body,
-        'status': 'DRAFT',
-      });
+      await _ctrl.submit(editPlaceId: widget.editPlaceId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đã lưu địa điểm (bản nháp)')),
+          SnackBar(content: Text(_isEdit ? 'Đã cập nhật địa điểm' : 'Đã lưu địa điểm')),
         );
         context.pop();
       }
-    } on DioException catch (e) {
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(ApiClient.instance.errorMessage(e))),
+          SnackBar(content: Text(e.toString())),
         );
       }
-    } finally {
-      if (mounted) setState(() => _loading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final picked = MapConfig.sanitize(_picked);
+    if (_ctrl.loadingPlace) {
+      return Scaffold(
+        appBar: AppBar(title: Text(_isEdit ? 'Sửa địa điểm' : 'Lưu địa điểm')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final picked = MapConfig.sanitize(_ctrl.picked);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Chia sẻ địa điểm')),
+      appBar: AppBar(title: Text(_isEdit ? 'Sửa địa điểm' : 'Lưu địa điểm')),
       body: Column(
         children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _ctrl.searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Tìm theo tên hoặc địa chỉ…',
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    ),
+                    onSubmitted: (_) => _ctrl.runSearch(),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton.filled(
+                  onPressed: _ctrl.runSearch,
+                  icon: const Icon(Icons.search),
+                ),
+              ],
+            ),
+          ),
+          if (_ctrl.searchResults.isNotEmpty)
+            SizedBox(
+              height: 120,
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: _ctrl.searchResults.length,
+                itemBuilder: (_, i) {
+                  final r = _ctrl.searchResults[i];
+                  return ListTile(
+                    dense: true,
+                    leading: const Icon(Icons.location_on_outlined, size: 20),
+                    title: Text(
+                      r.displayName,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                    onTap: () => _selectSearchResult(r),
+                  );
+                },
+              ),
+            ),
           SizedBox(
-            height: 220,
+            height: 200,
             child: FlutterMap(
               mapController: _mapController,
               options: MapOptions(
@@ -142,9 +194,22 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Text(
-              'Chạm bản đồ để chọn vị trí · ${picked.latitude.toStringAsFixed(5)}, ${picked.longitude.toStringAsFixed(5)}',
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (_ctrl.geocodingAddress)
+                  const Text('Đang lấy địa chỉ…', style: TextStyle(fontSize: 12))
+                else if (_ctrl.address != null && _ctrl.address!.isNotEmpty)
+                  Text(
+                    _ctrl.address!,
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                  )
+                else
+                  Text(
+                    'Chạm bản đồ để chọn vị trí · ${picked.latitude.toStringAsFixed(5)}, ${picked.longitude.toStringAsFixed(5)}',
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  ),
+              ],
             ),
           ),
           Expanded(
@@ -153,7 +218,7 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
               child: Column(
                 children: [
                   TextField(
-                    controller: _name,
+                    controller: _ctrl.nameController,
                     decoration: const InputDecoration(
                       labelText: 'Tên địa điểm',
                       border: OutlineInputBorder(),
@@ -162,17 +227,65 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
                   ),
                   const SizedBox(height: 12),
                   TextField(
-                    controller: _description,
+                    controller: _ctrl.descriptionController,
                     decoration: const InputDecoration(
-                      labelText: 'Mô tả (WiFi, ổ cắm, giờ mở cửa…)',
+                      labelText: 'Mô tả thêm (ghi chú, giờ mở cửa…)',
                       border: OutlineInputBorder(),
                     ),
                     maxLines: 4,
                   ),
+                  const SizedBox(height: 20),
+                  PlaceTagSelector(
+                    selected: _ctrl.selectedTags,
+                    onChanged: _ctrl.setSelectedTags,
+                  ),
+                  const SizedBox(height: 20),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Ai có thể thấy địa điểm này?',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SegmentedButton<bool>(
+                    segments: const [
+                      ButtonSegment<bool>(
+                        value: false,
+                        label: Text('Chỉ mình tôi'),
+                        icon: Icon(Icons.lock_outline, size: 18),
+                      ),
+                      ButtonSegment<bool>(
+                        value: true,
+                        label: Text('Cộng đồng'),
+                        icon: Icon(Icons.public, size: 18),
+                      ),
+                    ],
+                    selected: {_ctrl.isPublic},
+                    onSelectionChanged: (selection) {
+                      _ctrl.setIsPublic(selection.first);
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _ctrl.isPublic
+                        ? 'Địa điểm hiển thị trên bản đồ cộng đồng cho mọi người.'
+                        : 'Chỉ bạn thấy trong tab Của tôi, không hiện trên bản đồ cộng đồng.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
                   const SizedBox(height: 24),
                   FilledButton(
-                    onPressed: _loading ? null : _submit,
-                    child: Text(_loading ? 'Đang lưu…' : 'Đăng địa điểm'),
+                    onPressed: _ctrl.loading ? null : _submit,
+                    child: Text(
+                      _ctrl.loading
+                          ? 'Đang lưu…'
+                          : (_isEdit ? 'Cập nhật địa điểm' : 'Lưu địa điểm'),
+                    ),
                   ),
                 ],
               ),

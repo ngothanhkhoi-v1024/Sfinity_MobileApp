@@ -9,33 +9,40 @@ import '../../features/document/presentation/pages/document_form_page.dart';
 import '../../features/document/presentation/pages/document_list_page.dart';
 import '../../features/feedback/presentation/pages/feedback_page.dart';
 import '../../features/home/presentation/pages/home_shell_page.dart';
+import '../../features/places/presentation/pages/place_detail_page.dart';
 import '../../features/places/presentation/pages/place_share_page.dart';
 import '../../features/search/presentation/pages/search_page.dart';
 import '../../features/favorites/presentation/pages/favorites_page.dart';
 import '../../features/notifications/presentation/pages/notifications_page.dart';
+import '../../features/notifications/presentation/pages/notification_settings_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_page.dart';
+import '../../features/splash/presentation/pages/splash_page.dart';
 import '../../features/profile/presentation/pages/edit_profile_page.dart';
 import '../../features/report/presentation/pages/report_page.dart';
 import '../../features/security/presentation/pages/change_password_page.dart';
+import '../../features/settings/presentation/pages/language_settings_page.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
 import '../auth/auth_state.dart';
 import '../constants/route_names.dart';
 
 GoRouter createAppRouter(AuthState auth) {
   return GoRouter(
-    initialLocation: RouteNames.onboarding,
+    initialLocation: RouteNames.splash,
     refreshListenable: auth,
     redirect: (context, state) {
       if (auth.isLoading) return null;
 
       final path = state.matchedLocation;
       final publicRoutes = {
+        RouteNames.splash,
         RouteNames.login,
         RouteNames.register,
         RouteNames.onboarding,
         RouteNames.forgotPassword,
         RouteNames.otpVerification,
       };
+
+      if (path == RouteNames.splash) return null;
 
       if (!auth.isAuthenticated) {
         if (publicRoutes.contains(path)) return null;
@@ -46,6 +53,7 @@ GoRouter createAppRouter(AuthState auth) {
       return null;
     },
     routes: [
+      GoRoute(path: RouteNames.splash, builder: (_, __) => const SplashPage()),
       GoRoute(path: RouteNames.onboarding, builder: (_, __) => const OnboardingPage()),
       GoRoute(path: RouteNames.login, builder: (_, __) => const LoginPage()),
       GoRoute(path: RouteNames.register, builder: (_, __) => const RegisterPage()),
@@ -54,7 +62,16 @@ GoRouter createAppRouter(AuthState auth) {
       GoRoute(path: RouteNames.home, builder: (_, __) => const HomeShellPage()),
       GoRoute(path: RouteNames.search, builder: (_, __) => const SearchPage()),
       GoRoute(path: RouteNames.favorites, builder: (_, __) => const FavoritesPage()),
+      // /places/share phải đứng trước /places/:id, nếu không "share" bị match nhầm thành id.
       GoRoute(path: RouteNames.placeShare, builder: (_, __) => const PlaceSharePage()),
+      GoRoute(
+        path: RouteNames.placeEdit,
+        builder: (_, state) => PlaceSharePage(editPlaceId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: RouteNames.placeDetail,
+        builder: (_, state) => PlaceDetailPage(placeId: state.pathParameters['id']!),
+      ),
       GoRoute(
         path: RouteNames.documentList,
         builder: (_, __) => const DocumentListPage(),
@@ -63,8 +80,13 @@ GoRouter createAppRouter(AuthState auth) {
             path: 'create',
             builder: (_, state) {
               final extra = state.extra;
-              final type = extra is Map ? extra['contentType']?.toString() ?? 'document' : 'document';
-              return DocumentFormPage(contentType: type);
+              final map = extra is Map ? extra : null;
+              final type = map?['contentType']?.toString() ?? 'document';
+              return DocumentFormPage(
+                contentType: type,
+                placeId: map?['placeId']?.toString(),
+                placeTitle: map?['placeTitle']?.toString(),
+              );
             },
           ),
           GoRoute(
@@ -80,6 +102,8 @@ GoRouter createAppRouter(AuthState auth) {
         ],
       ),
       GoRoute(path: RouteNames.settings, builder: (_, __) => const SettingsPage()),
+      GoRoute(path: RouteNames.languageSettings, builder: (_, __) => const LanguageSettingsPage()),
+      GoRoute(path: RouteNames.notificationSettings, builder: (_, __) => const NotificationSettingsPage()),
       GoRoute(path: RouteNames.feedback, builder: (_, __) => const FeedbackPage()),
       GoRoute(path: RouteNames.report, builder: (_, __) => const ReportPage()),
       GoRoute(path: RouteNames.notifications, builder: (_, __) => const NotificationsPage()),

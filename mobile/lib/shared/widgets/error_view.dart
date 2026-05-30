@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/i18n/app_text.dart';
+
 // PDF: Error Handling — hiển thị lỗi + Retry
 
 class ErrorView extends StatelessWidget {
@@ -14,6 +16,7 @@ class ErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -21,7 +24,7 @@ class ErrorView extends StatelessWidget {
           Text(message, textAlign: TextAlign.center),
           if (onRetry != null) ...[
             const SizedBox(height: 16),
-            FilledButton(onPressed: onRetry, child: const Text('Thử lại')),
+            FilledButton(onPressed: onRetry, child: Text(l10n.retry)),
           ],
         ],
       ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/route_names.dart';
+import '../../../../core/i18n/app_text.dart';
 
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({super.key});
@@ -14,14 +15,15 @@ class _OnboardingPageState extends State<OnboardingPage> {
   final _controller = PageController();
   int _index = 0;
 
-  static const _slides = [
-    ('Chào mừng Sfinity', 'Khám phá nội dung và quản lý yêu thích của bạn.'),
-    ('Tìm kiếm thông minh', 'Lọc, sắp xếp và tìm nội dung nhanh chóng.'),
-    ('Kết nối mọi lúc', 'Đăng nhập để đồng bộ dữ liệu trên mọi thiết bị.'),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final slides = [
+      (l10n.welcomeTitle, l10n.welcomeSubtitle),
+      (l10n.smartSearchTitle, l10n.smartSearchSubtitle),
+      (l10n.stayConnectedTitle, l10n.stayConnectedSubtitle),
+    ];
+
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -29,10 +31,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
             Expanded(
               child: PageView.builder(
                 controller: _controller,
-                itemCount: _slides.length,
+                itemCount: slides.length,
                 onPageChanged: (i) => setState(() => _index = i),
                 itemBuilder: (_, i) {
-                  final (title, subtitle) = _slides[i];
+                  final (title, subtitle) = slides[i];
                   return Padding(
                     padding: const EdgeInsets.all(32),
                     child: Column(
@@ -52,7 +54,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(
-                _slides.length,
+                slides.length,
                 (i) => Container(
                   margin: const EdgeInsets.all(4),
                   width: 8,
@@ -68,13 +70,13 @@ class _OnboardingPageState extends State<OnboardingPage> {
               padding: const EdgeInsets.all(24),
               child: FilledButton(
                 onPressed: () {
-                  if (_index < _slides.length - 1) {
+                  if (_index < slides.length - 1) {
                     _controller.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
                   } else {
                     context.go(RouteNames.login);
                   }
                 },
-                child: Text(_index < _slides.length - 1 ? 'Tiếp theo' : 'Bắt đầu'),
+                child: Text(_index < slides.length - 1 ? l10n.next : l10n.getStarted),
               ),
             ),
           ],

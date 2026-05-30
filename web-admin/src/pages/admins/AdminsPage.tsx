@@ -68,6 +68,11 @@ export function AdminsPage() {
           { title: 'Tên', dataIndex: 'name' },
           { title: 'Email', dataIndex: 'email' },
           { title: 'Trạng thái', dataIndex: 'status' },
+          {
+            title: 'Thông báo',
+            dataIndex: 'notificationsEnabled',
+            render: (enabled?: boolean) => (enabled === false ? 'Đã tắt' : 'Đang bật'),
+          },
         ]}
       />
     </div>

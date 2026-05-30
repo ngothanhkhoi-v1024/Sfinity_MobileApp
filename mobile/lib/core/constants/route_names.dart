@@ -6,6 +6,9 @@ abstract final class RouteNames {
   static const forgotPassword = '/forgot-password';
   static const otpVerification = '/otp-verification';
 
+  // Splash
+  static const splash = '/splash';
+
   // Onboarding
   static const onboarding = '/onboarding';
 
@@ -16,6 +19,8 @@ abstract final class RouteNames {
   static const profile = '/profile';
 
   // Places
+  static const placeDetail = '/places/:id';
+  static const placeEdit = '/places/:id/edit';
   static const placeShare = '/places/share';
 
   // Document

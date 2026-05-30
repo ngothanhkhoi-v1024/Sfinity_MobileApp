@@ -7,10 +7,18 @@ import '../controllers/document_form_controller.dart';
 import '../widgets/document_upload_section.dart';
 
 class DocumentFormPage extends StatefulWidget {
-  const DocumentFormPage({super.key, this.documentId, this.contentType = 'document'});
+  const DocumentFormPage({
+    super.key,
+    this.documentId,
+    this.contentType = 'document',
+    this.placeId,
+    this.placeTitle,
+  });
 
   final String? documentId;
   final String contentType;
+  final String? placeId;
+  final String? placeTitle;
 
   bool get isEdit => documentId != null;
   bool get isDocument => contentType == 'document';
@@ -25,7 +33,6 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
   final _body = TextEditingController();
   final _subjectCode = TextEditingController();
   final _tagsController = TextEditingController();
-  final _externalUrlController = TextEditingController();
 
   late final DocumentFormController _controller;
 
@@ -34,7 +41,11 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
     super.initState();
     _controller = DocumentFormController();
     _controller.loadCategories(null, widget.isEdit);
-    if (widget.isEdit) _loadExisting();
+    if (widget.isEdit) {
+      _loadExisting();
+    } else if (widget.placeTitle != null && widget.placeTitle!.isNotEmpty) {
+      _body.text = 'Tài liệu học tập tại địa điểm: ${widget.placeTitle}';
+    }
   }
 
   @override
@@ -43,7 +54,6 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
     _body.dispose();
     _subjectCode.dispose();
     _tagsController.dispose();
-    _externalUrlController.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -67,12 +77,10 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
         _controller.uploadedFileName = fileUrl.split('/').last.split('?').first;
         _controller.uploadedFileType = data['fileType']?.toString() ?? 'pdf';
         _controller.uploadedFileSize = data['fileSize'] as int?;
-        if (fileUrl.contains('firebasestorage.googleapis.com') || fileUrl.contains('firebasestorage.app')) {
-          _controller.setUseUpload(true);
-        } else {
-          _controller.setUseUpload(false);
-          _externalUrlController.text = fileUrl;
-        }
+      }
+      final status = data['status']?.toString();
+      if (status != null) {
+        _controller.selectStatus(status);
       }
       _controller.loadCategories(categoryId, widget.isEdit);
     } catch (_) {}
@@ -103,7 +111,8 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
         body: _body.text.trim(),
         subjectCode: _subjectCode.text.trim(),
         tagsText: _tagsController.text,
-        externalUrl: _externalUrlController.text.trim(),
+        externalUrl: '',
+        placeId: widget.placeId,
       );
 
       if (success && mounted) {
@@ -152,10 +161,36 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (widget.placeTitle != null && widget.placeTitle!.isNotEmpty) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: primary.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: primary.withValues(alpha: 0.2)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.place_outlined, color: primary),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Đang tải tài liệu cho: ${widget.placeTitle}',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: theme.colorScheme.onSurface,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                   if (widget.isDocument) ...[
                     DocumentUploadSection(
                       controller: _controller,
-                      externalUrlController: _externalUrlController,
                       onPickFile: _pickFile,
                     ),
                     const SizedBox(height: 20),
@@ -197,6 +232,26 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
                       }).toList(),
                       onChanged: _controller.selectCategory,
                       validator: (v) => v == null ? 'Vui lòng chọn danh mục' : null,
+                    ),
+                    const SizedBox(height: 16),
+
+                    DropdownButtonFormField<String>(
+                      value: _controller.selectedStatus,
+                      decoration: const InputDecoration(
+                        labelText: 'Chế độ hiển thị',
+                        prefixIcon: Icon(Icons.visibility_outlined),
+                      ),
+                      items: const [
+                        DropdownMenuItem<String>(
+                          value: 'PUBLISHED',
+                          child: Text('Công khai (Mọi người đều thấy)'),
+                        ),
+                        DropdownMenuItem<String>(
+                          value: 'DRAFT',
+                          child: Text('Chỉ mình tôi (Bản nháp)'),
+                        ),
+                      ],
+                      onChanged: _controller.selectStatus,
                     ),
                     const SizedBox(height: 16),
 
