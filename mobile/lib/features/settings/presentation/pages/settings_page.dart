@@ -40,12 +40,6 @@ class _SettingsPageState extends State<SettingsPage> {
             },
           ),
           ListTile(
-            title: Text(l10n.inAppNotificationSettings),
-            subtitle: Text(l10n.notificationSettingsDescription),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push(RouteNames.notificationSettings),
-          ),
-          ListTile(
             title: Text(l10n.theme),
             subtitle: Text(_getThemeName(context, _theme)),
             trailing: DropdownButton<ThemeMode>(
@@ -57,16 +51,6 @@ class _SettingsPageState extends State<SettingsPage> {
               ],
               onChanged: (v) => _updateTheme(v ?? ThemeMode.system),
             ),
-          ),
-          ListTile(
-            title: Text(l10n.notificationsInApp),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push(RouteNames.notifications),
-          ),
-          ListTile(
-            title: Text(l10n.changePassword),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push(RouteNames.changePassword),
           ),
           ListTile(
             title: Text(l10n.language),
