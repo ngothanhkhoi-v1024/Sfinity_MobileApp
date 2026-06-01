@@ -11,4 +11,8 @@ abstract class GroupRepository {
   Future<void> leaveGroup(String groupId);
   Future<List<GroupModel>> discoverPublicGroups();
   Future<GroupMemberModel> joinGroup(String groupId);
+  Future<void> inviteMember(String groupId, String userId);
+  Future<List<dynamic>> getGroupInvitations(String groupId);
+  Future<List<dynamic>> getReceivedInvitations();
+  Future<void> respondToInvitation(String inviteId, bool accept);
 }

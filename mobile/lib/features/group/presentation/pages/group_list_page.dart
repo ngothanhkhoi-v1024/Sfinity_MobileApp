@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../app.dart';
 import '../../../../core/constants/route_names.dart';
-import '../../data/models/group_model.dart';
 import '../controllers/group_controller.dart';
 import '../widgets/group_card.dart';
 import '../widgets/discover_group_card.dart';
@@ -24,6 +23,7 @@ class _GroupListPageState extends State<GroupListPage> {
     _ctrl = SfinityApp.groupController;
     _ctrl.loadMyGroups();
     _ctrl.loadDiscoverGroups();
+    _ctrl.loadReceivedInvitations();
   }
 
   @override
@@ -91,29 +91,233 @@ class _GroupListPageState extends State<GroupListPage> {
   }
 
   Widget _buildMyGroupsTab(BuildContext context, ColorScheme cs) {
+    final isDark = cs.brightness == Brightness.dark;
+
     return ListenableBuilder(
       listenable: _ctrl,
       builder: (context, _) {
-        if (_ctrl.isLoading && _ctrl.groups.isEmpty) {
+        if (_ctrl.isLoading && _ctrl.groups.isEmpty && _ctrl.receivedInvitations.isEmpty) {
           return const Center(child: CircularProgressIndicator());
         }
-        if (_ctrl.error != null && _ctrl.groups.isEmpty) {
-          return _ErrorState(message: _ctrl.error!, onRetry: _ctrl.loadMyGroups);
+        if (_ctrl.error != null && _ctrl.groups.isEmpty && _ctrl.receivedInvitations.isEmpty) {
+          return _ErrorState(message: _ctrl.error!, onRetry: () {
+            _ctrl.loadMyGroups();
+            _ctrl.loadReceivedInvitations();
+          });
         }
-        if (_ctrl.groups.isEmpty) {
+
+        final invites = _ctrl.receivedInvitations;
+        final myGroups = _ctrl.groups;
+
+        if (myGroups.isEmpty && invites.isEmpty) {
           return _EmptyState(onCreateGroup: () => _showCreateDialog(context));
         }
+
         return RefreshIndicator(
-          onRefresh: _ctrl.loadMyGroups,
-          child: ListView.builder(
+          onRefresh: () async {
+            await Future.wait([
+              _ctrl.loadMyGroups(),
+              _ctrl.loadReceivedInvitations(),
+            ]);
+          },
+          child: ListView(
             padding: const EdgeInsets.symmetric(vertical: 8),
-            itemCount: _ctrl.groups.length,
-            itemBuilder: (_, i) => GroupCard(
-              group: _ctrl.groups[i],
-              onTap: () => context.push(
-                RouteNames.groupDetail.replaceFirst(':id', _ctrl.groups[i].id),
+            children: [
+              // ─── Danh sách lời mời nhóm đã nhận ───
+              if (invites.isNotEmpty) ...[
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                  child: Row(
+                    children: [
+                      Icon(Icons.mail_outline_rounded, color: cs.primary, size: 20),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Lời mời tham gia nhóm học tập (${invites.length})',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: isDark ? Colors.white : Colors.black87,
+                          letterSpacing: 0.1,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                ...invites.map((inv) {
+                  final inviteId = inv['id']?.toString() ?? '';
+                  final groupName = inv['groupName']?.toString() ?? 'Nhóm học tập';
+                  final inviterName = inv['inviterName']?.toString() ?? 'Ai đó';
+                  final avatarUrl = inv['groupAvatarUrl']?.toString();
+
+                  return Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white.withValues(alpha: 0.03) : cs.surfaceContainerLowest,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: isDark ? Colors.white.withValues(alpha: 0.05) : cs.outlineVariant.withValues(alpha: 0.4),
+                        width: 0.8,
+                      ),
+                      boxShadow: isDark
+                          ? []
+                          : [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.03),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              )
+                            ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 20,
+                              backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
+                                  ? NetworkImage(avatarUrl)
+                                  : null,
+                              backgroundColor: cs.primary.withValues(alpha: 0.1),
+                              child: avatarUrl == null || avatarUrl.isEmpty
+                                  ? Text(
+                                      groupName.isNotEmpty ? groupName[0].toUpperCase() : '?',
+                                      style: TextStyle(
+                                        color: cs.primary,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
+                                    )
+                                  : null,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: RichText(
+                                text: TextSpan(
+                                  style: TextStyle(
+                                    fontSize: 13.5,
+                                    color: isDark ? Colors.white.withValues(alpha: 0.85) : Colors.black87,
+                                    height: 1.3,
+                                  ),
+                                  children: [
+                                    TextSpan(
+                                      text: inviterName,
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                    const TextSpan(text: ' mời bạn tham gia nhóm '),
+                                    TextSpan(
+                                      text: '"$groupName"',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: cs.primary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            // Nút Từ chối (Decline)
+                            OutlinedButton(
+                              onPressed: () async {
+                                final ok = await _ctrl.respondToInvitation(inviteId, false);
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(ok
+                                          ? 'Đã từ chối lời mời vào nhóm "$groupName"'
+                                          : 'Từ chối lời mời thất bại. Vui lòng thử lại.'),
+                                    ),
+                                  );
+                                }
+                              },
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: isDark ? Colors.white70 : Colors.black54,
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                side: BorderSide(
+                                  color: isDark ? Colors.white.withValues(alpha: 0.15) : cs.outlineVariant,
+                                ),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              child: const Text('Từ chối', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+                            ),
+                            const SizedBox(width: 8),
+                            // Nút Chấp nhận (Accept)
+                            Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [cs.primary, const Color(0xFFFF5A36)],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: ElevatedButton(
+                                onPressed: () async {
+                                  final ok = await _ctrl.respondToInvitation(inviteId, true);
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(ok
+                                            ? 'Chúc mừng! Bạn đã gia nhập nhóm "$groupName"'
+                                            : 'Gia nhập nhóm thất bại. Vui lòng thử lại.'),
+                                        backgroundColor: ok ? Colors.green.shade700 : null,
+                                      ),
+                                    );
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.transparent,
+                                  shadowColor: Colors.transparent,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                                child: const Text('Chấp nhận', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+                const SizedBox(height: 16),
+                const Divider(height: 1, thickness: 0.5),
+                const SizedBox(height: 8),
+              ],
+
+              // ─── Danh sách các nhóm học tập của tôi ───
+              if (myGroups.isEmpty && invites.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
+                  child: Column(
+                    children: [
+                      Icon(Icons.group_outlined, size: 40, color: cs.onSurfaceVariant.withValues(alpha: 0.3)),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Bạn chưa tham gia nhóm nào.\nHãy đồng ý lời mời hoặc tạo nhóm mới!',
+                        style: TextStyle(color: cs.onSurfaceVariant.withValues(alpha: 0.7), height: 1.4),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ...myGroups.map(
+                (g) => GroupCard(
+                  group: g,
+                  onTap: () => context.push(
+                    RouteNames.groupDetail.replaceFirst(':id', g.id),
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
         );
       },

@@ -36,6 +36,23 @@ groupRouter.get(
   }),
 );
 
+/** Danh sách lời mời nhóm học tập đã nhận */
+groupRouter.get(
+  '/invitations/received',
+  asyncHandler(async (req, res) => {
+    res.json(await groupService.getReceivedInvitations(req.user!.sub));
+  }),
+);
+
+/** Trả lời lời mời nhóm học tập */
+groupRouter.post(
+  '/invitations/:inviteId/respond',
+  asyncHandler(async (req, res) => {
+    const { accept } = req.body;
+    res.json(await groupService.respondToInvitation(req.params.inviteId, req.user!.sub, accept === true));
+  }),
+);
+
 /** Chi tiết nhóm */
 groupRouter.get(
   '/:id',
@@ -91,5 +108,22 @@ groupRouter.post(
   '/:id/join',
   asyncHandler(async (req, res) => {
     res.status(201).json(await groupService.joinGroup(req.params.id, req.user!.sub));
+  }),
+);
+
+/** Mời thành viên vào nhóm */
+groupRouter.post(
+  '/:id/invite',
+  asyncHandler(async (req, res) => {
+    const { userId } = req.body;
+    res.json(await groupService.inviteMember(req.params.id, req.user!.sub, userId));
+  }),
+);
+
+/** Xem danh sách lời mời đang chờ của nhóm */
+groupRouter.get(
+  '/:id/invitations',
+  asyncHandler(async (req, res) => {
+    res.json(await groupService.getGroupInvitations(req.params.id));
   }),
 );

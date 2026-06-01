@@ -1,10 +1,9 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../app.dart';
 import '../../../../core/auth/auth_state.dart';
-import '../../../../core/constants/route_names.dart';
 import '../../data/models/group_model.dart';
+import '../../data/models/friend_model.dart';
 import '../../data/models/group_message_model.dart';
 import '../../data/services/group_chat_service.dart';
 import '../controllers/group_controller.dart';
@@ -114,18 +113,22 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
             body: const Center(child: Text('Không tìm thấy nhóm học tập')),
           );
         }
+        final cs = Theme.of(context).colorScheme;
+
         return DefaultTabController(
-          length: 2,
+          length: 3,
           child: Scaffold(
+            backgroundColor: cs.brightness == Brightness.dark ? const Color(0xFF0A0A0A) : cs.surface,
             body: NestedScrollView(
               headerSliverBuilder: (context, innerBoxIsScrolled) {
                 return [
-                  _buildSliverAppBar(context, group),
+                  _buildSliverAppBar(context, group, innerBoxIsScrolled),
                 ];
               },
               body: TabBarView(
                 children: [
                   _buildChatTab(context, group),
+                  _buildFilesTab(context, group),
                   _buildMembersTab(context, group),
                 ],
               ),
@@ -136,156 +139,208 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     );
   }
 
-  Widget _buildSliverAppBar(BuildContext context, GroupModel group) {
+  Widget _buildSliverAppBar(BuildContext context, GroupModel group, bool innerBoxIsScrolled) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    final isOwnerOrAdmin = group.isAdmin;
+    final isDark = cs.brightness == Brightness.dark;
 
     return SliverAppBar(
-      expandedHeight: 220,
       pinned: true,
-      stretch: true,
-      backgroundColor: Colors.transparent,
       elevation: 0,
-      leading: Container(
-        margin: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.3),
-          shape: BoxShape.circle,
+      scrolledUnderElevation: 0,
+      backgroundColor: isDark ? const Color(0xFF0A0A0A) : cs.surface,
+      centerTitle: true,
+      leading: IconButton(
+        icon: Icon(
+          Icons.arrow_back,
+          color: isDark ? Colors.white : cs.onSurface,
+          size: 24,
         ),
-        child: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
-          onPressed: () => context.pop(),
-        ),
+        onPressed: () => context.pop(),
       ),
-      actions: [
-        if (isOwnerOrAdmin)
-          Container(
-            margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.3),
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.edit_outlined, color: Colors.white, size: 20),
-              onPressed: () => _showEditDialog(context, group),
-            ),
-          ),
-        if (group.isOwner)
-          Container(
-            margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.3),
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              icon: Icon(Icons.delete_outline, color: cs.error, size: 20),
-              onPressed: () => _confirmDelete(context, group),
-            ),
-          ),
-      ],
-      flexibleSpace: FlexibleSpaceBar(
-        stretchModes: const [StretchMode.zoomBackground, StretchMode.blurBackground],
-        collapseMode: CollapseMode.pin,
-        background: Stack(
-          fit: StackFit.expand,
-          children: [
-            _GroupHeaderBackground(group: group),
-            // Glassmorphism Overlay
-            ClipRRect(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                child: Container(
-                  color: Colors.black.withValues(alpha: 0.25),
+      title: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                group.name,
+                style: TextStyle(
+                  color: isDark ? Colors.white : cs.onSurface,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16.5,
                 ),
               ),
-            ),
-            // Info Column
-            Positioned(
-              bottom: 60,
-              left: 20,
-              right: 20,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: group.isPublic
-                              ? cs.tertiaryContainer.withValues(alpha: 0.9)
-                              : cs.errorContainer.withValues(alpha: 0.9),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          group.isPublic ? 'Công khai' : 'Riêng tư',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: group.isPublic ? cs.onTertiaryContainer : cs.onErrorContainer,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+                decoration: BoxDecoration(
+                  color: group.isPublic ? const Color(0xFF4CAF50) : const Color(0xFFE53935),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  group.isPublic ? 'CÔNG KHAI' : 'RIÊNG TƯ',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 8.5,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.5,
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    group.name,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      shadows: [
-                        Shadow(color: Colors.black38, blurRadius: 4, offset: Offset(0, 2)),
-                      ],
-                    ),
-                  ),
-                  if (group.description != null && group.description!.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      group.description!,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.85),
-                        fontSize: 13,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ],
+                ),
               ),
+            ],
+          ),
+          const SizedBox(height: 3),
+          Text(
+            '${group.memberCount} thành viên • ${group.memberCount ~/ 3 + 1} đang online',
+            style: TextStyle(
+              fontSize: 11.5,
+              color: isDark ? Colors.white.withValues(alpha: 0.55) : cs.onSurface.withValues(alpha: 0.6),
+              fontWeight: FontWeight.w400,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
+      actions: [
+        IconButton(
+          icon: Icon(
+            Icons.more_vert_rounded,
+            color: isDark ? Colors.white : cs.onSurface,
+            size: 24,
+          ),
+          onPressed: () => _showGroupSettingsBottomSheet(context, group),
+        ),
+      ],
       bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(48),
+        preferredSize: const Size.fromHeight(52),
         child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: cs.surface,
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(24),
-              topRight: Radius.circular(24),
+            color: isDark ? const Color(0xFF0A0A0A) : cs.surface,
+            border: Border(
+              bottom: BorderSide(
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : cs.outlineVariant.withValues(alpha: 0.2),
+                width: 0.8,
+              ),
             ),
           ),
           child: TabBar(
-            isScrollable: true,
-            tabAlignment: TabAlignment.start,
+            indicator: BoxDecoration(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : cs.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            indicatorSize: TabBarIndicatorSize.tab,
+            dividerColor: Colors.transparent,
+            labelColor: isDark ? Colors.white : cs.primary,
+            unselectedLabelColor: isDark ? Colors.white.withValues(alpha: 0.5) : cs.onSurfaceVariant.withValues(alpha: 0.6),
+            labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+            unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13.5),
             tabs: const [
               Tab(text: 'Trò chuyện'),
+              Tab(text: 'Tài liệu'),
               Tab(text: 'Thành viên'),
             ],
-            indicatorWeight: 3.5,
-            labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-            unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal, fontSize: 14),
-            labelColor: cs.primary,
-            unselectedLabelColor: cs.onSurfaceVariant,
-            indicatorColor: cs.primary,
-            indicatorSize: TabBarIndicatorSize.label,
           ),
         ),
+      ),
+    );
+  }
+  void _showGroupSettingsBottomSheet(BuildContext context, GroupModel group) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = cs.brightness == Brightness.dark;
+    final isOwnerOrAdmin = group.isAdmin || group.members.any((m) => m.user.id == _userId && (m.role == 'OWNER' || m.role == 'ADMIN'));
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? const Color(0xFF161616) : cs.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 10),
+              Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white.withValues(alpha: 0.15) : cs.onSurfaceVariant.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                child: Text(
+                  'Tùy chọn nhóm học tập',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : cs.onSurface,
+                  ),
+                ),
+              ),
+              const Divider(height: 1, thickness: 0.5),
+              if (isOwnerOrAdmin) ...[
+                ListTile(
+                  leading: Icon(Icons.edit_outlined, color: isDark ? Colors.white.withValues(alpha: 0.7) : cs.onSurfaceVariant),
+                  title: const Text('Chỉnh sửa thông tin nhóm', style: TextStyle(fontWeight: FontWeight.w500)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showEditDialog(context, group);
+                  },
+                ),
+                ListTile(
+                  leading: Icon(Icons.person_add_outlined, color: isDark ? Colors.white.withValues(alpha: 0.7) : cs.onSurfaceVariant),
+                  title: const Text('Thêm thành viên', style: TextStyle(fontWeight: FontWeight.w500)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showInviteMemberSheet(context, group);
+                  },
+                ),
+              ],
+              if (group.isOwner)
+                ListTile(
+                  leading: Icon(Icons.delete_outline_rounded, color: cs.error),
+                  title: Text('Giải tán nhóm', style: TextStyle(color: cs.error, fontWeight: FontWeight.w500)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _confirmDelete(context, group);
+                  },
+                ),
+              if (!group.isOwner)
+                ListTile(
+                  leading: Icon(Icons.exit_to_app_rounded, color: cs.error),
+                  title: Text('Rời khỏi nhóm', style: TextStyle(color: cs.error, fontWeight: FontWeight.w500)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _confirmLeave(context, group);
+                  },
+                ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showInviteMemberSheet(BuildContext context, GroupModel group) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _InviteMemberSheet(
+        group: group,
+        groupCtrl: _groupCtrl,
+        friendCtrl: _friendCtrl,
       ),
     );
   }
@@ -296,7 +351,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     final cs = theme.colorScheme;
 
     return Container(
-      color: cs.surface,
+      color: cs.brightness == Brightness.dark ? const Color(0xFF0A0A0A) : cs.surface,
       child: Column(
         children: [
           Expanded(
@@ -367,373 +422,209 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
-    // Simulate list of files/documents for demonstration (wow feature)
-    final mockDocs = [
-      {'title': 'Đề cương Ôn tập Giải tích 1.pdf', 'type': 'pdf', 'size': '2.4 MB', 'author': 'Nguyễn Văn A'},
-      {'title': 'Tài liệu Tự học Flutter Cơ bản.pdf', 'type': 'pdf', 'size': '5.1 MB', 'author': 'Trần Thị B'},
-      {'title': 'Source Code Project mẫu.zip', 'type': 'zip', 'size': '12.8 MB', 'author': 'Chủ nhóm'},
-      {'title': 'Ghi chú kiến thức Web Design.docx', 'type': 'doc', 'size': '850 KB', 'author': 'Lê Văn C'},
-    ];
-
     return Container(
-      color: cs.surface,
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Tài liệu học tập (${mockDocs.length})',
-                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                OutlinedButton.icon(
-                  onPressed: _showShareDocumentSheet,
-                  icon: const Icon(Icons.share, size: 16),
-                  label: const Text('Chia sẻ tài liệu'),
-                  style: OutlinedButton.styleFrom(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: mockDocs.length,
-              itemBuilder: (ctx, i) {
-                final doc = mockDocs[i];
-                final isPdf = doc['type'] == 'pdf';
-                return Card(
-                  elevation: 0,
-                  color: cs.surfaceContainerLowest,
-                  margin: const EdgeInsets.only(bottom: 10),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    side: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3)),
-                  ),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    leading: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: isPdf
-                            ? Colors.red.shade50
-                            : doc['type'] == 'zip'
-                                ? Colors.amber.shade50
-                                : Colors.blue.shade50,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        isPdf
-                            ? Icons.picture_as_pdf_rounded
-                            : doc['type'] == 'zip'
-                                ? Icons.folder_zip_rounded
-                                : Icons.description_rounded,
-                        color: isPdf
-                            ? Colors.red.shade700
-                            : doc['type'] == 'zip'
-                                ? Colors.amber.shade800
-                                : Colors.blue.shade700,
+      color: cs.brightness == Brightness.dark ? const Color(0xFF0A0A0A) : cs.surface,
+      child: StreamBuilder<List<GroupMessageModel>>(
+        stream: _chatService.sharedDocumentsStream(group.id),
+        builder: (context, snap) {
+          if (snap.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snap.hasError) {
+            return Center(child: Text('Lỗi: ${snap.error}'));
+          }
+          final docs = snap.data ?? [];
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Tài liệu học tập (${docs.length})',
+                      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: _showShareDocumentSheet,
+                      icon: const Icon(Icons.share, size: 16),
+                      label: const Text('Chia sẻ tài liệu'),
+                      style: OutlinedButton.styleFrom(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                     ),
-                    title: Text(
-                      doc['title']!,
-                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    subtitle: Text(
-                      '${doc['size']} • Chia sẻ bởi ${doc['author']}',
-                      style: theme.textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
-                    ),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.download_rounded),
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Bắt đầu tải tài liệu về thiết bị...')),
-                        );
-                      },
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ─── TAB 3: STUDY GOALS & LEADERBOARD ──────────────────────────────────────
-  Widget _buildGoalsTab(BuildContext context, GroupModel group) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-
-    // Leaderboard entries with contribution score (hours studied)
-    final leaderboard = [
-      {'name': 'Nguyễn Văn A', 'hours': '18.5h', 'rank': 1, 'avatar': null},
-      {'name': 'Trần Thị B', 'hours': '14.2h', 'rank': 2, 'avatar': null},
-      {'name': 'Lê Văn C', 'hours': '10.0h', 'rank': 3, 'avatar': null},
-      {'name': 'Chủ nhóm', 'hours': '8.5h', 'rank': 4, 'avatar': null},
-    ];
-
-    return Container(
-      color: cs.surface,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Study goal card
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [cs.primaryContainer, cs.primaryContainer.withValues(alpha: 0.6)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+                  ],
                 ),
-                borderRadius: BorderRadius.circular(24),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: cs.onPrimaryContainer.withValues(alpha: 0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(Icons.emoji_events_rounded, color: cs.primary, size: 24),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
+              Expanded(
+                child: docs.isEmpty
+                    ? Center(
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
-                              'Mục tiêu chung tuần này',
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                color: cs.onPrimaryContainer,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            Icon(
+                              Icons.folder_open_rounded,
+                              size: 64,
+                              color: cs.onSurfaceVariant.withValues(alpha: 0.3),
                             ),
+                            const SizedBox(height: 12),
+                            Text('Chưa có tài liệu nào', style: TextStyle(color: cs.onSurfaceVariant)),
+                            const SizedBox(height: 4),
                             Text(
-                              'Tổng thời gian tự học nhóm đạt 50 giờ',
+                              'Nhấn nút chia sẻ để đăng tài liệu lên nhóm!',
                               style: theme.textTheme.bodySmall?.copyWith(
-                                color: cs.onPrimaryContainer.withValues(alpha: 0.8),
+                                color: cs.onSurfaceVariant.withValues(alpha: 0.7),
                               ),
                             ),
                           ],
                         ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: docs.length,
+                        itemBuilder: (ctx, i) {
+                          final docMsg = docs[i];
+                          final docId = docMsg.sharedDocumentId ?? '';
+                          final docTitle = docMsg.sharedDocumentTitle ?? 'Tài liệu không tên';
+
+                          return Card(
+                            elevation: 0,
+                            color: cs.surfaceContainerLowest,
+                            margin: const EdgeInsets.only(bottom: 10),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              side: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3)),
+                            ),
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                              leading: Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.shade50,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  Icons.picture_as_pdf_rounded,
+                                  color: Colors.red.shade700,
+                                ),
+                              ),
+                              title: Text(
+                                docTitle,
+                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              subtitle: Text(
+                                'Chia sẻ bởi ${docMsg.senderName}',
+                                style: theme.textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+                              ),
+                              trailing: IconButton(
+                                icon: Icon(Icons.arrow_forward_ios_rounded, size: 16, color: cs.onSurfaceVariant),
+                                onPressed: () {
+                                  context.push('/document/$docId');
+                                },
+                              ),
+                            ),
+                          );
+                        },
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Tiến trình: 51.2h / 50h',
-                        style: TextStyle(
-                          color: cs.primary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                      Text(
-                        '102%',
-                        style: TextStyle(
-                          color: cs.primary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: LinearProgressIndicator(
-                      value: 1.0,
-                      backgroundColor: cs.onPrimaryContainer.withValues(alpha: 0.1),
-                      color: cs.primary,
-                      minHeight: 8,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    '🎉 Tuyệt vời! Nhóm đã hoàn thành xuất sắc mục tiêu tuần này!',
-                    style: TextStyle(
-                      color: cs.onPrimaryContainer,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
               ),
-            ),
-            const SizedBox(height: 24),
-
-            // Leaderboard Title
-            Text(
-              '🏆 Bảng xếp hạng đóng góp tuần',
-              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: leaderboard.length,
-              itemBuilder: (ctx, i) {
-                final item = leaderboard[i];
-                final rank = item['rank'] as int;
-
-                return Card(
-                  elevation: 0,
-                  color: rank <= 3 ? cs.surfaceContainerHighest.withValues(alpha: 0.3) : cs.surface,
-                  margin: const EdgeInsets.only(bottom: 8),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    side: BorderSide(
-                      color: rank <= 3 ? cs.primary.withValues(alpha: 0.2) : cs.outlineVariant.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    leading: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 32,
-                          alignment: Alignment.center,
-                          child: rank == 1
-                              ? const Icon(Icons.workspace_premium_rounded, color: Colors.amber)
-                              : rank == 2
-                                  ? const Icon(Icons.workspace_premium_rounded, color: Colors.grey)
-                                  : rank == 3
-                                      ? const Icon(Icons.workspace_premium_rounded, color: Colors.brown)
-                                      : Text('#$rank', style: TextStyle(color: cs.onSurfaceVariant, fontWeight: FontWeight.bold)),
-                        ),
-                        const SizedBox(width: 8),
-                        const CircleAvatar(
-                          radius: 18,
-                          child: Icon(Icons.person, size: 20),
-                        ),
-                      ],
-                    ),
-                    title: Text(
-                      item['name'] as String,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                    ),
-                    trailing: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: cs.primaryContainer,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        item['hours'] as String,
-                        style: TextStyle(
-                          color: cs.onPrimaryContainer,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
+            ],
+          );
+        },
       ),
     );
   }
+
 
   // ─── TAB 4: MEMBER MANAGEMENT ──────────────────────────────────────────────
   Widget _buildMembersTab(BuildContext context, GroupModel group) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    final isOwnerOrAdmin = group.isAdmin;
+    final isDark = cs.brightness == Brightness.dark;
+    final isOwnerOrAdmin = group.isAdmin || group.members.any((m) => m.user.id == _userId && (m.role == 'OWNER' || m.role == 'ADMIN'));
 
     return Container(
-      color: cs.surface,
+      color: isDark ? const Color(0xFF0A0A0A) : cs.surface,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Thành viên nhóm (${group.members.length})',
-                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                if (isOwnerOrAdmin)
-                  FilledButton.icon(
-                    onPressed: () => _showAddMemberDialog(context, group),
-                    icon: const Icon(Icons.person_add_rounded, size: 16),
-                    label: const Text('Mời thành viên'),
-                    style: FilledButton.styleFrom(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
-              ],
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            child: Text(
+              'Thành viên nhóm (${group.members.length})',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : cs.onSurface,
+              ),
             ),
           ),
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: group.members.length,
+              itemCount: group.members.length + (isOwnerOrAdmin ? 1 : 0),
               itemBuilder: (ctx, i) {
-                final member = group.members[i];
+                if (isOwnerOrAdmin && i == 0) {
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white.withValues(alpha: 0.03) : cs.surfaceContainerLowest,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isDark ? Colors.white.withValues(alpha: 0.05) : cs.outlineVariant.withValues(alpha: 0.3),
+                        width: 0.8,
+                      ),
+                    ),
+                    child: ListTile(
+                      onTap: () => _showInviteMemberSheet(context, group),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      leading: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: cs.primary.withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.person_add_rounded,
+                          color: cs.primary,
+                          size: 20,
+                        ),
+                      ),
+                      title: Text(
+                        'Thêm thành viên',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black87,
+                          fontSize: 14,
+                        ),
+                      ),
+                      subtitle: Text(
+                        'Mời bạn bè vào nhóm học tập này',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: cs.onSurfaceVariant.withValues(alpha: 0.6),
+                          fontSize: 11,
+                        ),
+                      ),
+                      trailing: Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 14,
+                        color: cs.onSurfaceVariant.withValues(alpha: 0.5),
+                      ),
+                    ),
+                  );
+                }
+
+                final member = group.members[isOwnerOrAdmin ? i - 1 : i];
                 return _MemberTile(
                   member: member,
                   myUid: _myUid,
-                  isGroupAdmin: isOwnerOrAdmin,
+                  isGroupAdmin: false,
                   isOwner: group.isOwner,
-                  onRemove: group.isAdmin
-                      ? () async {
-                          final ok = await _groupCtrl.removeMember(group.id, member.user.id);
-                          if (!ok && context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(_groupCtrl.error ?? 'Lỗi'),
-                                backgroundColor: cs.error,
-                              ),
-                            );
-                          }
-                        }
-                      : null,
+                  onRemove: null,
                 );
               },
             ),
           ),
-          if (!group.isOwner)
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () => _confirmLeave(context, group),
-                  icon: const Icon(Icons.exit_to_app_rounded),
-                  label: const Text('Rời khỏi nhóm này'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: cs.error,
-                    side: BorderSide(color: cs.error.withValues(alpha: 0.5)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                ),
-              ),
-            ),
         ],
       ),
     );
@@ -741,57 +632,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
 
   // ─── DIALOGS & HELPER METHODS ──────────────────────────────────────────────
 
-  Future<void> _showAddMemberDialog(BuildContext context, GroupModel group) async {
-    final friends = _friendCtrl.friends;
-    final existingIds = group.members.map((m) => m.user.id).toSet();
-    final available = friends.where((f) => !existingIds.contains(f.user.id)).toList();
-
-    if (available.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Tất cả bạn bè đã ở trong nhóm học tập')),
-      );
-      return;
-    }
-
-    await showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Mời bạn bè vào nhóm', style: TextStyle(fontWeight: FontWeight.bold)),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: available.length,
-            itemBuilder: (_, i) {
-              final friend = available[i];
-              return ListTile(
-                leading: CircleAvatar(
-                  backgroundImage: friend.user.avatar != null ? NetworkImage(friend.user.avatar!) : null,
-                  backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                  child: friend.user.avatar == null
-                      ? Text(friend.user.name.isNotEmpty ? friend.user.name[0].toUpperCase() : '?')
-                      : null,
-                ),
-                title: Text(friend.user.name),
-                trailing: const Icon(Icons.add_circle_outline),
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  final ok = await _groupCtrl.addMember(group.id, friend.user.id);
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text(ok ? 'Đã thêm ${friend.user.name}' : (_groupCtrl.error ?? 'Lỗi')),
-                      backgroundColor: ok ? null : Colors.red,
-                    ));
-                  }
-                },
-              );
-            },
-          ),
-        ),
-        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Đóng'))],
-      ),
-    );
-  }
 
   Future<void> _showEditDialog(BuildContext context, GroupModel group) async {
     final nameCtrl = TextEditingController(text: group.name);
@@ -902,39 +742,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   }
 }
 
-// ─── Group Header Background ──────────────────────────────────────────────────
-class _GroupHeaderBackground extends StatelessWidget {
-  const _GroupHeaderBackground({required this.group});
-  final GroupModel group;
-
-  @override
-  Widget build(BuildContext context) {
-    if (group.avatarUrl != null && group.avatarUrl!.isNotEmpty) {
-      return Image.network(group.avatarUrl!, fit: BoxFit.cover);
-    }
-    final colors = _gradientForName(group.name);
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: colors,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-    );
-  }
-
-  List<Color> _gradientForName(String name) {
-    final palettes = [
-      [const Color(0xFF6366F1), const Color(0xFF8B5CF6)],
-      [const Color(0xFFEC4899), const Color(0xFFF97316)],
-      [const Color(0xFF0EA5E9), const Color(0xFF06B6D4)],
-      [const Color(0xFF10B981), const Color(0xFF34D399)],
-    ];
-    final idx = name.isNotEmpty ? name.codeUnitAt(0) % palettes.length : 0;
-    return palettes[idx];
-  }
-}
 
 // ─── Member Tile Component ────────────────────────────────────────────────────
 class _MemberTile extends StatelessWidget {
@@ -1034,50 +841,597 @@ class _ShareDocumentSheet extends StatefulWidget {
 }
 
 class _ShareDocumentSheetState extends State<_ShareDocumentSheet> {
+  List<dynamic> _docs = [];
+  bool _loading = true;
+  String? _error;
+  String _searchQuery = '';
+  bool _manualMode = false;
+
   final _idCtrl = TextEditingController();
   final _titleCtrl = TextEditingController();
+  final _searchCtrl = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDocs();
+  }
+
+  @override
+  void dispose() {
+    _idCtrl.dispose();
+    _titleCtrl.dispose();
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadDocs() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final res = await SfinityApp.documentRepository.getDocuments(
+        search: _searchQuery.isNotEmpty ? _searchQuery : null,
+        limit: 30,
+      );
+      final items = res['items'] as List? ?? [];
+      setState(() {
+        _docs = items.where((e) {
+          final itemMap = e as Map<String, dynamic>;
+          final type = itemMap['type']?.toString();
+          if (type != null) {
+            return type == 'document';
+          }
+          final body = itemMap['body']?.toString() ?? '';
+          return !body.contains('type:place');
+        }).toList();
+        _loading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'Không thể tải danh sách tài liệu. Vui lòng thử lại.';
+        _loading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(20, 0, 20, MediaQuery.viewInsetsOf(context).bottom + 20),
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    return Container(
+      height: MediaQuery.sizeOf(context).height * 0.75,
+      padding: EdgeInsets.fromLTRB(20, 8, 20, MediaQuery.viewInsetsOf(context).bottom + 20),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(28),
+          topRight: Radius.circular(28),
+        ),
+      ),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Chia sẻ tài liệu',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _idCtrl,
-            decoration: const InputDecoration(
-              labelText: 'ID tài liệu',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.link),
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: cs.onSurfaceVariant.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Chia sẻ tài liệu',
+                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              TextButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _manualMode = !_manualMode;
+                  });
+                },
+                icon: Icon(_manualMode ? Icons.list_alt_rounded : Icons.edit_note_rounded),
+                label: Text(_manualMode ? 'Chọn từ danh sách' : 'Nhập ID thủ công'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (_manualMode) ...[
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _idCtrl,
+                      decoration: InputDecoration(
+                        labelText: 'ID tài liệu',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                        prefixIcon: const Icon(Icons.link),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _titleCtrl,
+                      decoration: InputDecoration(
+                        labelText: 'Tên tài liệu',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                        prefixIcon: const Icon(Icons.picture_as_pdf_rounded),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: FilledButton.icon(
+                        onPressed: () async {
+                          final id = _idCtrl.text.trim();
+                          final title = _titleCtrl.text.trim();
+                          if (id.isEmpty || title.isEmpty) return;
+                          await widget.onShare(id, title);
+                        },
+                        style: FilledButton.styleFrom(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        ),
+                        icon: const Icon(Icons.share_rounded),
+                        label: const Text('Chia sẻ vào nhóm'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ] else ...[
+            TextField(
+              controller: _searchCtrl,
+              decoration: InputDecoration(
+                hintText: 'Tìm kiếm tài liệu học tập...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchCtrl.clear();
+                          setState(() {
+                            _searchQuery = '';
+                          });
+                          _loadDocs();
+                        },
+                      )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: cs.outlineVariant),
+                ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+              ),
+              onSubmitted: (val) {
+                setState(() {
+                  _searchQuery = val.trim();
+                });
+                _loadDocs();
+              },
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _error != null
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(_error!, style: TextStyle(color: cs.error)),
+                              const SizedBox(height: 8),
+                              ElevatedButton(
+                                onPressed: _loadDocs,
+                                child: const Text('Thử lại'),
+                              ),
+                            ],
+                          ),
+                        )
+                      : _docs.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.folder_open_outlined, size: 64, color: cs.onSurfaceVariant.withValues(alpha: 0.3)),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    'Không tìm thấy tài liệu nào',
+                                    style: TextStyle(color: cs.onSurfaceVariant),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : ListView.builder(
+                              itemCount: _docs.length,
+                              itemBuilder: (ctx, i) {
+                                final doc = _docs[i] as Map<String, dynamic>;
+                                final docId = doc['id']?.toString() ?? '';
+                                final docTitle = doc['title']?.toString() ?? 'Tài liệu không tên';
+                                final subjectCode = doc['subjectCode']?.toString();
+                                final category = (doc['category'] as Map?)?['name']?.toString() ?? 'Tài liệu';
+
+                                return Card(
+                                  elevation: 0,
+                                  color: cs.surfaceContainerLowest,
+                                  margin: const EdgeInsets.only(bottom: 10),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    side: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3)),
+                                  ),
+                                  child: ListTile(
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                                    leading: Container(
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: cs.primaryContainer,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Icon(
+                                        Icons.description_rounded,
+                                        color: cs.onPrimaryContainer,
+                                      ),
+                                    ),
+                                    title: Text(
+                                      docTitle,
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    subtitle: Text(
+                                      '${subjectCode != null ? "$subjectCode • " : ""}$category',
+                                      style: theme.textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+                                    ),
+                                    trailing: TextButton.icon(
+                                      onPressed: () async {
+                                        await widget.onShare(docId, docTitle);
+                                      },
+                                      icon: const Icon(Icons.send_rounded, size: 14),
+                                      label: const Text('Chia sẻ'),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Invite Member Bottom Sheet Widget ──────────────────────────────────────
+
+class _InviteMemberSheet extends StatefulWidget {
+  const _InviteMemberSheet({
+    required this.group,
+    required this.groupCtrl,
+    required this.friendCtrl,
+  });
+
+  final GroupModel group;
+  final GroupController groupCtrl;
+  final FriendshipController friendCtrl;
+
+  @override
+  State<_InviteMemberSheet> createState() => _InviteMemberSheetState();
+}
+
+class _InviteMemberSheetState extends State<_InviteMemberSheet> {
+  final _searchCtrl = TextEditingController();
+  String _query = '';
+  final Map<String, bool> _sendingMap = {};
+
+  void _onFriendCtrlChange() {
+    if (mounted) setState(() {});
+  }
+
+  void _onGroupCtrlChange() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    widget.groupCtrl.loadGroupInvitations(widget.group.id);
+    widget.friendCtrl.loadFriends();
+    widget.friendCtrl.addListener(_onFriendCtrlChange);
+    widget.groupCtrl.addListener(_onGroupCtrlChange);
+  }
+
+  @override
+  void dispose() {
+    widget.friendCtrl.removeListener(_onFriendCtrlChange);
+    widget.groupCtrl.removeListener(_onGroupCtrlChange);
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = cs.brightness == Brightness.dark;
+
+    // Xác định tập hợp các ID thành viên hiện tại để loại trừ/gắn nhãn
+    final existingMemberIds = widget.group.members.map((m) => m.user.id).toSet();
+
+    // Xác định tập hợp các ID có lời mời đang chờ (PENDING)
+    final pendingInvitedIds = widget.groupCtrl.groupInvitations
+        .where((inv) => inv['status'] == 'PENDING')
+        .map((inv) => inv['inviteeId']?.toString() ?? '')
+        .toSet();
+
+    List<FriendUser> displayUsers = [];
+    final isSearchingMode = _query.trim().length >= 2;
+
+    if (isSearchingMode) {
+      displayUsers = widget.friendCtrl.searchResults;
+    } else {
+      // Ô tìm kiếm trống -> hiển thị danh sách bạn bè gợi ý
+      displayUsers = widget.friendCtrl.friends.map((f) => f.user).toList();
+    }
+
+    return Container(
+      height: MediaQuery.sizeOf(context).height * 0.75,
+      padding: EdgeInsets.fromLTRB(16, 8, 16, MediaQuery.viewInsetsOf(context).bottom + 16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF161616) : cs.surface,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 36,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white.withValues(alpha: 0.15) : cs.onSurfaceVariant.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Mời thành viên',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : cs.onSurface,
+                ),
+              ),
+              if (widget.friendCtrl.isSearching)
+                const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+            ],
           ),
           const SizedBox(height: 12),
           TextField(
-            controller: _titleCtrl,
-            decoration: const InputDecoration(
-              labelText: 'Tên tài liệu',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.picture_as_pdf_rounded),
+            controller: _searchCtrl,
+            style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+            decoration: InputDecoration(
+              hintText: 'Tìm theo tên hoặc email...',
+              hintStyle: TextStyle(color: isDark ? Colors.white.withValues(alpha: 0.35) : cs.onSurfaceVariant.withValues(alpha: 0.5)),
+              prefixIcon: Icon(Icons.search, color: isDark ? Colors.white.withValues(alpha: 0.4) : cs.onSurfaceVariant.withValues(alpha: 0.6)),
+              suffixIcon: _query.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear_rounded),
+                      onPressed: () {
+                        _searchCtrl.clear();
+                        setState(() => _query = '');
+                        widget.friendCtrl.clearSearch();
+                      },
+                    )
+                  : null,
+              contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(
+                  color: isDark ? Colors.white.withValues(alpha: 0.1) : cs.outlineVariant,
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(
+                  color: isDark ? Colors.white.withValues(alpha: 0.05) : cs.outlineVariant.withValues(alpha: 0.5),
+                ),
+              ),
+            ),
+            onChanged: (val) {
+              setState(() => _query = val);
+              // Kích hoạt tìm kiếm khi gõ >= 2 ký tự
+              widget.friendCtrl.searchUsers(val);
+            },
+          ),
+          const SizedBox(height: 16),
+          Text(
+            isSearchingMode ? 'Kết quả tìm kiếm' : 'Gợi ý từ bạn bè',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: isDark ? Colors.white.withValues(alpha: 0.45) : cs.onSurfaceVariant.withValues(alpha: 0.6),
+              fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: () async {
-                if (_idCtrl.text.trim().isEmpty || _titleCtrl.text.trim().isEmpty) return;
-                await widget.onShare(_idCtrl.text.trim(), _titleCtrl.text.trim());
-              },
-              icon: const Icon(Icons.share_rounded),
-              label: const Text('Chia sẻ vào nhóm'),
-            ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: widget.friendCtrl.isSearching && displayUsers.isEmpty
+                ? const Center(child: CircularProgressIndicator())
+                : displayUsers.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.people_outline_rounded,
+                              size: 48,
+                              color: cs.onSurfaceVariant.withValues(alpha: 0.3),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              isSearchingMode ? 'Không tìm thấy người dùng nào' : 'Danh sách bạn bè trống',
+                              style: TextStyle(color: cs.onSurfaceVariant),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        itemCount: displayUsers.length,
+                        itemBuilder: (ctx, i) {
+                          final user = displayUsers[i];
+                          final isMember = existingMemberIds.contains(user.id);
+                          final hasPendingInvite = pendingInvitedIds.contains(user.id);
+                          final isSending = _sendingMap[user.id] == true;
+
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            decoration: BoxDecoration(
+                              color: isDark ? Colors.white.withValues(alpha: 0.02) : cs.surfaceContainerLowest,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: isDark ? Colors.white.withValues(alpha: 0.03) : cs.outlineVariant.withValues(alpha: 0.2),
+                                width: 0.8,
+                              ),
+                            ),
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                              leading: CircleAvatar(
+                                backgroundImage: user.avatar != null && user.avatar!.isNotEmpty
+                                    ? NetworkImage(user.avatar!)
+                                    : null,
+                                backgroundColor: cs.primaryContainer,
+                                child: user.avatar == null || user.avatar!.isEmpty
+                                    ? Text(
+                                        user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
+                                        style: TextStyle(color: cs.onPrimaryContainer, fontWeight: FontWeight.bold),
+                                      )
+                                    : null,
+                              ),
+                              title: Text(
+                                user.name,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark ? Colors.white : Colors.black87,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              subtitle: user.email != null
+                                  ? Text(
+                                      user.email!,
+                                      style: theme.textTheme.bodySmall?.copyWith(
+                                        fontSize: 11,
+                                        color: isDark ? Colors.white.withValues(alpha: 0.5) : cs.onSurfaceVariant,
+                                      ),
+                                    )
+                                  : null,
+                              trailing: Builder(
+                                builder: (context) {
+                                  if (isMember) {
+                                    return Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade100,
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Text(
+                                        'Thành viên',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: isDark ? Colors.white.withValues(alpha: 0.4) : Colors.grey.shade500,
+                                        ),
+                                      ),
+                                    );
+                                  }
+
+                                  if (isSending) {
+                                    return const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    );
+                                  }
+
+                                  if (hasPendingInvite) {
+                                    return Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: Colors.amber.withValues(alpha: 0.15),
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                                      ),
+                                      child: const Text(
+                                        'Đang chờ...',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.amber,
+                                        ),
+                                      ),
+                                    );
+                                  }
+
+                                  // Nút Mời chưa gửi
+                                  return Container(
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [cs.primary, const Color(0xFFFF5A36)],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                      ),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: ElevatedButton(
+                                      onPressed: () async {
+                                        setState(() => _sendingMap[user.id] = true);
+                                        final ok = await widget.groupCtrl.inviteMember(widget.group.id, user.id);
+                                        setState(() => _sendingMap[user.id] = false);
+
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text(ok
+                                                  ? 'Đã gửi lời mời tới ${user.name} thành công!'
+                                                  : (widget.groupCtrl.error ?? 'Gửi lời mời thất bại.')),
+                                              backgroundColor: ok ? Colors.green.shade700 : cs.error,
+                                            ),
+                                          );
+                                        }
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.transparent,
+                                        shadowColor: Colors.transparent,
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      ),
+                                      child: const Text('Mời', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                      ),
           ),
         ],
       ),

@@ -37,4 +37,16 @@ class GroupRepositoryImpl implements GroupRepository {
 
   @override
   Future<GroupMemberModel> joinGroup(String groupId) => _service.joinGroup(groupId);
+
+  @override
+  Future<void> inviteMember(String groupId, String userId) => _service.inviteMember(groupId, userId);
+
+  @override
+  Future<List<dynamic>> getGroupInvitations(String groupId) => _service.getGroupInvitations(groupId);
+
+  @override
+  Future<List<dynamic>> getReceivedInvitations() => _service.getReceivedInvitations();
+
+  @override
+  Future<void> respondToInvitation(String inviteId, bool accept) => _service.respondToInvitation(inviteId, accept);
 }

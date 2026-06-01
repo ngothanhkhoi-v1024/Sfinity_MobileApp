@@ -467,4 +467,146 @@ export const groupService = {
     }
     return memberData;
   },
+
+  /** Mời thành viên vào nhóm */
+  async inviteMember(groupId: string, inviterId: string, inviteeId: string) {
+    const db = getDb();
+    const groupDoc = await db.collection('groups').doc(groupId).get();
+    if (!groupDoc.exists) throw new HttpError(404, 'Nhóm không tồn tại.', 'Not Found');
+    const groupData = groupDoc.data()!;
+
+    // Kiểm tra người mời phải là thành viên
+    const membersSnap = await db.collection('group_members')
+      .where('groupId', '==', groupId)
+      .get();
+    const membersList = membersSnap.docs.map(d => d.data()!);
+    const isMember = membersList.some(m => m.userId === inviterId);
+    if (!isMember) throw new HttpError(403, 'Bạn không phải thành viên nhóm.', 'Forbidden');
+
+    // Kiểm tra người được mời đã là thành viên chưa
+    const alreadyMember = membersList.some(m => m.userId === inviteeId);
+    if (alreadyMember) throw new HttpError(409, 'Người dùng đã là thành viên nhóm.', 'Conflict');
+
+    // Kiểm tra xem đã có lời mời PENDING nào chưa
+    const inviteId = `${groupId}_${inviteeId}`;
+    const inviteDoc = await db.collection('group_invitations').doc(inviteId).get();
+    if (inviteDoc.exists) {
+      const currentInvite = inviteDoc.data()!;
+      if (currentInvite.status === 'PENDING') {
+        throw new HttpError(409, 'Lời mời đang ở trạng thái chờ phản hồi.', 'Conflict');
+      }
+    }
+
+    // Lấy thông tin người mời
+    const inviterUserDoc = await db.collection('users').doc(inviterId).get();
+    const inviterUserData = inviterUserDoc.exists ? inviterUserDoc.data() : null;
+
+    // Lấy thông tin người được mời
+    const inviteeUserDoc = await db.collection('users').doc(inviteeId).get();
+    if (!inviteeUserDoc.exists) throw new HttpError(404, 'Người dùng được mời không tồn tại.', 'Not Found');
+
+    const invitationData = {
+      id: inviteId,
+      groupId,
+      groupName: groupData.name,
+      groupAvatarUrl: groupData.avatarUrl ?? null,
+      inviterId,
+      inviterName: inviterUserData?.name ?? 'Unknown',
+      inviteeId,
+      status: 'PENDING',
+      createdAt: new Date(),
+    };
+
+    await db.collection('group_invitations').doc(inviteId).set(invitationData);
+    
+    // Gửi thông báo đến người nhận
+    await db.collection('notifications').add({
+      userId: inviteeId,
+      title: 'Lời mời vào nhóm học tập',
+      body: `${inviterUserData?.name ?? 'Một người dùng'} đã mời bạn tham gia nhóm học tập "${groupData.name}".`,
+      read: false,
+      createdAt: new Date(),
+    });
+
+    return invitationData;
+  },
+
+  /** Lấy danh sách lời mời đã nhận của user */
+  async getReceivedInvitations(userId: string) {
+    const db = getDb();
+    const snapshot = await db.collection('group_invitations')
+      .where('inviteeId', '==', userId)
+      .where('status', '==', 'PENDING')
+      .get();
+
+    const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
+    // Sắp xếp theo ngày tạo desc
+    list.sort((a, b) => toDate(b.createdAt).getTime() - toDate(a.createdAt).getTime());
+
+    return list.map(item => ({
+      id: item.id,
+      groupId: item.groupId,
+      groupName: item.groupName,
+      groupAvatarUrl: item.groupAvatarUrl,
+      inviterId: item.inviterId,
+      inviterName: item.inviterName,
+      inviteeId: item.inviteeId,
+      status: item.status,
+      createdAt: toDate(item.createdAt),
+    }));
+  },
+
+  /** Lấy danh sách lời mời đang chờ của một nhóm */
+  async getGroupInvitations(groupId: string) {
+    const db = getDb();
+    const snapshot = await db.collection('group_invitations')
+      .where('groupId', '==', groupId)
+      .where('status', '==', 'PENDING')
+      .get();
+
+    return snapshot.docs.map(doc => doc.data());
+  },
+
+  /** Chấp nhận hoặc từ chối lời mời */
+  async respondToInvitation(invitationId: string, userId: string, accept: boolean) {
+    const db = getDb();
+    const inviteRef = db.collection('group_invitations').doc(invitationId);
+    const inviteDoc = await inviteRef.get();
+    if (!inviteDoc.exists) throw new HttpError(404, 'Lời mời không tồn tại.', 'Not Found');
+    const inviteData = inviteDoc.data()!;
+
+    if (inviteData.inviteeId !== userId) {
+      throw new HttpError(403, 'Bạn không thể phản hồi lời mời của người khác.', 'Forbidden');
+    }
+
+    if (inviteData.status !== 'PENDING') {
+      throw new HttpError(400, 'Lời mời đã được xử lý trước đó.', 'Bad Request');
+    }
+
+    if (accept) {
+      // Cập nhật trạng thái lời mời là ACCEPTED
+      await inviteRef.update({ status: 'ACCEPTED' });
+
+      // Thêm thành viên vào nhóm
+      const groupId = inviteData.groupId;
+      const memberId = `${groupId}_${userId}`;
+      const memberDoc = await db.collection('group_members').doc(memberId).get();
+      if (!memberDoc.exists) {
+        const now = new Date();
+        const memberData = {
+          id: memberId,
+          groupId,
+          userId,
+          role: 'MEMBER',
+          joinedAt: now,
+        };
+        await db.collection('group_members').doc(memberId).set(memberData);
+      }
+    } else {
+      // Từ chối lời mời
+      await inviteRef.update({ status: 'DECLINED' });
+    }
+
+    return { success: true };
+  },
 };

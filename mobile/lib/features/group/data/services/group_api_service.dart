@@ -110,4 +110,36 @@ class GroupApiService {
       throw Exception(_client.errorMessage(e));
     }
   }
+
+  Future<void> inviteMember(String groupId, String userId) async {
+    try {
+      await _client.post('/groups/$groupId/invite', {'userId': userId});
+    } on DioException catch (e) {
+      throw Exception(_client.errorMessage(e));
+    }
+  }
+
+  Future<List<dynamic>> getGroupInvitations(String groupId) async {
+    try {
+      return await _client.getList('/groups/$groupId/invitations');
+    } on DioException catch (e) {
+      throw Exception(_client.errorMessage(e));
+    }
+  }
+
+  Future<List<dynamic>> getReceivedInvitations() async {
+    try {
+      return await _client.getList('/groups/invitations/received');
+    } on DioException catch (e) {
+      throw Exception(_client.errorMessage(e));
+    }
+  }
+
+  Future<void> respondToInvitation(String inviteId, bool accept) async {
+    try {
+      await _client.post('/groups/invitations/$inviteId/respond', {'accept': accept});
+    } on DioException catch (e) {
+      throw Exception(_client.errorMessage(e));
+    }
+  }
 }

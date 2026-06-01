@@ -18,6 +18,17 @@ class GroupChatService {
             .toList());
   }
 
+  /// Stream danh sách tài liệu được chia sẻ trong nhóm (an toàn, lọc ở client để tránh lỗi Index Firestore)
+  Stream<List<GroupMessageModel>> sharedDocumentsStream(String groupId) {
+    return _messages(groupId)
+        .snapshots()
+        .map((snap) => snap.docs
+            .map((doc) => GroupMessageModel.fromFirestore(doc))
+            .where((msg) => msg.type == MessageType.document)
+            .toList()
+          ..sort((a, b) => b.createdAt.compareTo(a.createdAt)));
+  }
+
   /// Gửi tin nhắn văn bản
   Future<void> sendTextMessage({
     required String groupId,

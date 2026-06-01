@@ -8,6 +8,8 @@ class GroupController extends ChangeNotifier {
 
   List<GroupModel> _groups = [];
   List<GroupModel> _discoverGroups = [];
+  List<dynamic> _receivedInvitations = [];
+  List<dynamic> _groupInvitations = [];
   GroupModel? _currentGroup;
   bool _isLoading = false;
   bool _isDiscoverLoading = false;
@@ -16,6 +18,8 @@ class GroupController extends ChangeNotifier {
 
   List<GroupModel> get groups => _groups;
   List<GroupModel> get discoverGroups => _discoverGroups;
+  List<dynamic> get receivedInvitations => _receivedInvitations;
+  List<dynamic> get groupInvitations => _groupInvitations;
   GroupModel? get currentGroup => _currentGroup;
   bool get isLoading => _isLoading;
   bool get isDiscoverLoading => _isDiscoverLoading;
@@ -89,6 +93,9 @@ class GroupController extends ChangeNotifier {
     _isSaving = true;
     notifyListeners();
     try {
+      final existingMembersJson = _currentGroup?.members.map((m) => m.toJson()).toList();
+      final existingRole = _currentGroup?.myRole;
+
       final updated = await _repository.updateGroup(
         groupId,
         name: name,
@@ -96,9 +103,19 @@ class GroupController extends ChangeNotifier {
         isPublic: isPublic,
         avatarUrl: avatarUrl,
       );
-      _currentGroup = updated;
+
+      if (updated.members.isEmpty && existingMembersJson != null) {
+        _currentGroup = GroupModel.fromJson({
+          ...updated.toJson(),
+          'members': existingMembersJson,
+          if (updated.myRole == null && existingRole != null) 'myRole': existingRole,
+        });
+      } else {
+        _currentGroup = updated;
+      }
+
       final idx = _groups.indexWhere((g) => g.id == groupId);
-      if (idx != -1) _groups[idx] = updated;
+      if (idx != -1) _groups[idx] = _currentGroup!;
       notifyListeners();
       return true;
     } catch (e) {
@@ -197,6 +214,63 @@ class GroupController extends ChangeNotifier {
       return false;
     } finally {
       _isSaving = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadReceivedInvitations() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+    try {
+      _receivedInvitations = await _repository.getReceivedInvitations();
+    } catch (e) {
+      _error = e.toString().replaceFirst('Exception: ', '');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadGroupInvitations(String groupId) async {
+    _error = null;
+    try {
+      _groupInvitations = await _repository.getGroupInvitations(groupId);
+      notifyListeners();
+    } catch (e) {
+      _error = e.toString().replaceFirst('Exception: ', '');
+    }
+  }
+
+  Future<bool> inviteMember(String groupId, String userId) async {
+    _error = null;
+    try {
+      await _repository.inviteMember(groupId, userId);
+      await loadGroupInvitations(groupId);
+      return true;
+    } catch (e) {
+      _error = e.toString().replaceFirst('Exception: ', '');
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> respondToInvitation(String inviteId, bool accept) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+    try {
+      await _repository.respondToInvitation(inviteId, accept);
+      _receivedInvitations.removeWhere((inv) => inv['id'] == inviteId);
+      if (accept) {
+        await loadMyGroups();
+      }
+      return true;
+    } catch (e) {
+      _error = e.toString().replaceFirst('Exception: ', '');
+      return false;
+    } finally {
+      _isLoading = false;
       notifyListeners();
     }
   }
