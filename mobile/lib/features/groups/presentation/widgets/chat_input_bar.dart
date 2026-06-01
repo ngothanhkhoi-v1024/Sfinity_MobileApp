@@ -4,11 +4,11 @@ class ChatInputBar extends StatefulWidget {
   const ChatInputBar({
     super.key,
     required this.onSend,
-    this.onShareDocument,
+    this.onAttach,
   });
 
   final ValueChanged<String> onSend;
-  final VoidCallback? onShareDocument;
+  final VoidCallback? onAttach;
 
   @override
   State<ChatInputBar> createState() => _ChatInputBarState();
@@ -63,15 +63,15 @@ class _ChatInputBarState extends State<ChatInputBar> {
       child: Row(
         children: [
           // Share document button (Attachment pin)
-          if (widget.onShareDocument != null)
+          if (widget.onAttach != null)
             IconButton(
-              onPressed: widget.onShareDocument,
+              onPressed: widget.onAttach,
               icon: Icon(
                 Icons.attach_file_rounded,
-                color: isDark ? Colors.white.withValues(alpha: 0.6) : cs.onSurfaceVariant,
-                size: 24,
+                color: isDark ? Colors.white.withValues(alpha: 0.7) : cs.primary.withValues(alpha: 0.7),
+                size: 26,
               ),
-              tooltip: 'Chia sẻ tài liệu',
+              tooltip: 'Đính kèm',
               padding: const EdgeInsets.all(6),
             ),
           // Text input (Capsule with emoji suffix)

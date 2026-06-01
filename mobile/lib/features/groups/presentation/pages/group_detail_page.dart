@@ -6,11 +6,11 @@ import '../../data/models/group_model.dart';
 import '../../data/services/group_chat_service.dart';
 import '../controllers/group_controller.dart';
 import '../../../friendships/presentation/controllers/friendship_controller.dart';
+import '../widgets/attachment_menu.dart';
 import '../widgets/group_chat_tab.dart';
 import '../widgets/group_files_tab.dart';
 import '../widgets/group_members_tab.dart';
 import '../widgets/invite_member_sheet.dart';
-import '../widgets/share_document_sheet.dart';
 
 class GroupDetailPage extends StatefulWidget {
   const GroupDetailPage({super.key, required this.groupId});
@@ -46,27 +46,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
 
   String get _myUid => _userId ?? '';
 
-  Future<void> _showShareDocumentSheet() async {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (ctx) => ShareDocumentSheet(
-        onShare: (docId, docTitle) async {
-          Navigator.pop(ctx);
-          if (_userId == null) return;
-          await _chatService.shareDocument(
-            groupId: widget.groupId,
-            senderId: _userId!,
-            senderName: _userName ?? 'Bạn',
-            senderAvatar: _userAvatar,
-            documentId: docId,
-            documentTitle: docTitle,
-          );
-        },
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -102,11 +81,17 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                     userId: _myUid,
                     userName: _userName ?? 'Bạn',
                     userAvatar: _userAvatar,
-                    onShareDocument: _showShareDocumentSheet,
                   ),
                   GroupFilesTab(
                     groupId: group.id,
-                    onShareDocument: _showShareDocumentSheet,
+                    onShareDocument: () => AttachmentMenu.showShareDocSheet(
+                      context: context,
+                      chatService: _chatService,
+                      groupId: group.id,
+                      senderId: _myUid,
+                      senderName: _userName ?? 'Bạn',
+                      senderAvatar: _userAvatar,
+                    ),
                   ),
                   GroupMembersTab(
                     group: group,

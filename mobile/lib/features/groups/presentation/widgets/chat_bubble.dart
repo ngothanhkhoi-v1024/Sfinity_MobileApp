@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../data/models/group_message_model.dart';
 
 class ChatBubble extends StatelessWidget {
@@ -8,34 +10,159 @@ class ChatBubble extends StatelessWidget {
     required this.message,
     required this.isMe,
     this.showAvatar = true,
+    this.onDelete,
   });
 
   final GroupMessageModel message;
   final bool isMe;
   final bool showAvatar;
+  /// Called when the user confirms deleting this message.
+  /// Only provided for messages sent by [isMe].
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
+    Widget bubble;
     if (message.type == MessageType.document) {
-      return _DocumentBubble(message: message, isMe: isMe);
-    }
-    
-    final text = message.text ?? '';
-    if (message.type == MessageType.text && text.startsWith('[img]')) {
-      final content = text.substring(5);
-      final parts = content.split('|');
-      final imgUrl = parts[0];
-      final caption = parts.length > 1 ? parts[1] : '';
-      return _ImageCardBubble(
-        imgUrl: imgUrl,
-        caption: caption,
+      bubble = _DocumentBubble(message: message, isMe: isMe);
+    } else if (message.type == MessageType.image) {
+      bubble = _ImageBubble(
         message: message,
         isMe: isMe,
         showAvatar: showAvatar,
       );
+    } else if (message.type == MessageType.file) {
+      bubble = _FileBubble(message: message, isMe: isMe, showAvatar: showAvatar);
+    } else {
+      final text = message.text ?? '';
+      if (message.type == MessageType.text && text.startsWith('[img]')) {
+        final content = text.substring(5);
+        final parts = content.split('|');
+        final imgUrl = parts[0];
+        final caption = parts.length > 1 ? parts[1] : '';
+        bubble = _ImageCardBubble(
+          imgUrl: imgUrl,
+          caption: caption,
+          message: message,
+          isMe: isMe,
+          showAvatar: showAvatar,
+        );
+      } else {
+        bubble = _TextBubble(message: message, isMe: isMe, showAvatar: showAvatar);
+      }
     }
 
-    return _TextBubble(message: message, isMe: isMe, showAvatar: showAvatar);
+    // Wrap with long-press delete only for own messages
+    if (isMe && onDelete != null) {
+      return _BubbleWrapper(
+        onDelete: onDelete!,
+        child: bubble,
+      );
+    }
+    return bubble;
+  }
+}
+
+// ─── Bubble Wrapper (long-press delete) ─────────────────────────────────────
+
+class _BubbleWrapper extends StatelessWidget {
+  const _BubbleWrapper({required this.onDelete, required this.child});
+  final VoidCallback onDelete;
+  final Widget child;
+
+  void _showMenu(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isDark = cs.brightness == Brightness.dark;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        padding: const EdgeInsets.fromLTRB(0, 12, 0, 32),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1A1A1A) : cs.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 36,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 8),
+              decoration: BoxDecoration(
+                color: cs.onSurfaceVariant.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: cs.error.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.delete_outline_rounded, color: cs.error, size: 22),
+              ),
+              title: Text(
+                'Xóa tin nhắn',
+                style: TextStyle(
+                  color: cs.error,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              subtitle: Text(
+                'Tin nhắn sẽ bị xóa với tất cả mọi người',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: cs.onSurfaceVariant.withValues(alpha: 0.7),
+                    ),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                // Confirm dialog
+                showDialog(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20)),
+                    title: const Text('Xóa tin nhắn?'),
+                    content: const Text(
+                        'Tin nhắn này sẽ bị xóa vĩnh viễn với tất cả thành viên trong nhóm.'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: const Text('Hủy'),
+                      ),
+                      FilledButton(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: cs.error,
+                          foregroundColor: cs.onError,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          onDelete();
+                        },
+                        child: const Text('Xóa'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onLongPress: () => _showMenu(context),
+      child: child,
+    );
   }
 }
 
@@ -289,7 +416,373 @@ class _SenderAvatar extends StatelessWidget {
   }
 }
 
+// ─── Image Bubble (uploaded image) ──────────────────────────────────────────
+
+class _ImageBubble extends StatelessWidget {
+  const _ImageBubble({
+    required this.message,
+    required this.isMe,
+    required this.showAvatar,
+  });
+
+  final GroupMessageModel message;
+  final bool isMe;
+  final bool showAvatar;
+
+  String _formatTime(DateTime dt) {
+    final h = dt.hour.toString().padLeft(2, '0');
+    final m = dt.minute.toString().padLeft(2, '0');
+    return '$h:$m';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = cs.brightness == Brightness.dark;
+    final fileUrl = message.fileUrl ?? '';
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: Row(
+        mainAxisAlignment:
+            isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (!isMe && showAvatar) ...[
+            _SenderAvatar(name: message.senderName, avatar: message.senderAvatar),
+            const SizedBox(width: 8),
+          ] else if (!isMe) ...[
+            const SizedBox(width: 40),
+          ],
+          Flexible(
+            child: Column(
+              crossAxisAlignment:
+                  isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              children: [
+                if (!isMe && showAvatar)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 4, left: 4),
+                    child: Text(
+                      message.senderName,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: isDark ? const Color(0xFF00D2FF) : cs.secondary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ClipRRect(
+                  borderRadius: BorderRadius.only(
+                    topLeft: const Radius.circular(18),
+                    topRight: const Radius.circular(18),
+                    bottomLeft: isMe
+                        ? const Radius.circular(18)
+                        : const Radius.circular(4),
+                    bottomRight: isMe
+                        ? const Radius.circular(4)
+                        : const Radius.circular(18),
+                  ),
+                  child: GestureDetector(
+                    onTap: () {
+                      if (fileUrl.isNotEmpty) {
+                        showDialog(
+                          context: context,
+                          builder: (_) => Dialog(
+                            backgroundColor: Colors.transparent,
+                            child: InteractiveViewer(
+                              child: fileUrl.startsWith('/')
+                                  ? Image.file(File(fileUrl))
+                                  : Image.network(fileUrl),
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: MediaQuery.sizeOf(context).width * 0.65,
+                        maxHeight: 260,
+                      ),
+                      child: fileUrl.startsWith('/')
+                          ? Image.file(
+                              File(fileUrl),
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                            )
+                          : Image.network(
+                              fileUrl,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              loadingBuilder: (_, child, progress) {
+                                if (progress == null) return child;
+                                return Container(
+                                  width: 200,
+                                  height: 160,
+                                  color: isDark
+                                      ? Colors.white12
+                                      : Colors.black12,
+                                  child: Center(
+                                    child: CircularProgressIndicator(
+                                      value: progress.expectedTotalBytes != null
+                                          ? progress.cumulativeBytesLoaded /
+                                              progress.expectedTotalBytes!
+                                          : null,
+                                    ),
+                                  ),
+                                );
+                              },
+                              errorBuilder: (_, err, stack) => Container(
+                                width: 200,
+                                height: 160,
+                                color: isDark ? Colors.white12 : Colors.black12,
+                                child: const Icon(Icons.broken_image_rounded),
+                              ),
+                            ),
+                    ),
+                  ),
+                ),
+                if (message.text != null && message.text!.isNotEmpty)
+                  Container(
+                    margin: const EdgeInsets.only(top: 4),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isMe
+                          ? cs.primary.withValues(alpha: 0.85)
+                          : (isDark
+                              ? Colors.white.withValues(alpha: 0.08)
+                              : const Color(0xFFF3F4F6)),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Text(
+                      message.text!,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: isMe
+                            ? Colors.white
+                            : (isDark
+                                ? Colors.white.withValues(alpha: 0.9)
+                                : cs.onSurface),
+                        fontSize: 13.5,
+                      ),
+                    ),
+                  ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 4, left: 4, right: 4),
+                  child: Text(
+                    isMe
+                        ? '${_formatTime(message.createdAt)} • Đã xem'
+                        : _formatTime(message.createdAt),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: cs.onSurfaceVariant.withValues(alpha: 0.5),
+                      fontSize: 10,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (isMe) const SizedBox(width: 4),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── File Bubble (uploaded file/PDF/doc) ────────────────────────────────────
+
+class _FileBubble extends StatelessWidget {
+  const _FileBubble({
+    required this.message,
+    required this.isMe,
+    required this.showAvatar,
+  });
+
+  final GroupMessageModel message;
+  final bool isMe;
+  final bool showAvatar;
+
+  String _formatTime(DateTime dt) {
+    final h = dt.hour.toString().padLeft(2, '0');
+    final m = dt.minute.toString().padLeft(2, '0');
+    return '$h:$m';
+  }
+
+  String _formatSize(int? bytes) {
+    if (bytes == null) return '';
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+
+  IconData _iconForFile(String? name) {
+    final ext = name?.split('.').lastOrNull?.toLowerCase() ?? '';
+    return switch (ext) {
+      'pdf' => Icons.picture_as_pdf_rounded,
+      'doc' || 'docx' => Icons.description_rounded,
+      'xls' || 'xlsx' => Icons.table_chart_rounded,
+      'ppt' || 'pptx' => Icons.slideshow_rounded,
+      'zip' || 'rar' => Icons.folder_zip_rounded,
+      _ => Icons.insert_drive_file_rounded,
+    };
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = cs.brightness == Brightness.dark;
+    final fileName = message.fileName ?? 'File';
+    final fileUrl = message.fileUrl ?? '';
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: Row(
+        mainAxisAlignment:
+            isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (!isMe && showAvatar) ...[
+            _SenderAvatar(name: message.senderName, avatar: message.senderAvatar),
+            const SizedBox(width: 8),
+          ] else if (!isMe) ...[
+            const SizedBox(width: 40),
+          ],
+          Flexible(
+            child: Column(
+              crossAxisAlignment:
+                  isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              children: [
+                if (!isMe && showAvatar)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 4, left: 4),
+                    child: Text(
+                      message.senderName,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: isDark ? const Color(0xFF00D2FF) : cs.secondary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: fileUrl.isEmpty
+                      ? null
+                      : () async {
+                          final uri = Uri.parse(fileUrl);
+                          if (await canLaunchUrl(uri)) {
+                            await launchUrl(uri,
+                                mode: LaunchMode.externalApplication);
+                          }
+                        },
+                  child: Container(
+                    constraints: BoxConstraints(
+                        maxWidth: MediaQuery.sizeOf(context).width * 0.72),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isMe
+                          ? cs.primary
+                          : (isDark
+                              ? Colors.white.withValues(alpha: 0.08)
+                              : const Color(0xFFF3F4F6)),
+                      borderRadius: BorderRadius.only(
+                        topLeft: const Radius.circular(18),
+                        topRight: const Radius.circular(18),
+                        bottomLeft: isMe
+                            ? const Radius.circular(18)
+                            : const Radius.circular(4),
+                        bottomRight: isMe
+                            ? const Radius.circular(4)
+                            : const Radius.circular(18),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: isMe ? 0.2 : 0.0),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            _iconForFile(fileName),
+                            color: isMe
+                                ? Colors.white
+                                : cs.primary,
+                            size: 26,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Flexible(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                fileName,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13,
+                                  color: isMe
+                                      ? Colors.white
+                                      : (isDark
+                                          ? Colors.white.withValues(alpha: 0.9)
+                                          : cs.onSurface),
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (message.fileSize != null)
+                                Text(
+                                  _formatSize(message.fileSize),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: (isMe
+                                            ? Colors.white
+                                            : cs.onSurfaceVariant)
+                                        .withValues(alpha: 0.7),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.download_rounded,
+                          size: 18,
+                          color: (isMe ? Colors.white : cs.primary)
+                              .withValues(alpha: 0.8),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 4, left: 4, right: 4),
+                  child: Text(
+                    isMe
+                        ? '${_formatTime(message.createdAt)} • Đã xem'
+                        : _formatTime(message.createdAt),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: cs.onSurfaceVariant.withValues(alpha: 0.5),
+                      fontSize: 10,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (isMe) const SizedBox(width: 4),
+        ],
+      ),
+    );
+  }
+}
+
 class _ImageCardBubble extends StatelessWidget {
+
   const _ImageCardBubble({
     required this.imgUrl,
     required this.caption,
