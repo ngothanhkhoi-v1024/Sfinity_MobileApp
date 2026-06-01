@@ -9,6 +9,7 @@ import '../../../place_reviews/presentation/widgets/place_photo_gallery.dart';
 import '../../../place_reviews/presentation/widgets/place_rating_section.dart';
 import '../controllers/place_detail_controller.dart';
 import '../places_map_focus.dart';
+import '../widgets/place_directions_section.dart';
 import '../widgets/place_tag_chips.dart';
 
 class PlaceDetailPage extends StatefulWidget {
@@ -258,6 +259,11 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
             ),
             if (place.hasPoint) ...[
               const SizedBox(height: 12),
+              PlaceDirectionsSection(
+                destination: place.point!,
+                accentColor: primary,
+              ),
+              const SizedBox(height: 10),
               OutlinedButton.icon(
                 onPressed: _viewOnMap,
                 style: OutlinedButton.styleFrom(
