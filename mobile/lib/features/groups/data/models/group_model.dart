@@ -1,4 +1,4 @@
-import 'friend_model.dart';
+import '../../../friendships/data/models/friend_model.dart';
 
 class GroupModel {
   final String id;

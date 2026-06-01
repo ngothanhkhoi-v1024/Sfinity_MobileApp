@@ -5,6 +5,8 @@ import '../../../../core/constants/route_names.dart';
 import '../controllers/group_controller.dart';
 import '../widgets/group_card.dart';
 import '../widgets/discover_group_card.dart';
+import '../widgets/group_empty_state.dart';
+import '../widgets/group_error_state.dart';
 
 class GroupListPage extends StatefulWidget {
   const GroupListPage({super.key});
@@ -100,7 +102,7 @@ class _GroupListPageState extends State<GroupListPage> {
           return const Center(child: CircularProgressIndicator());
         }
         if (_ctrl.error != null && _ctrl.groups.isEmpty && _ctrl.receivedInvitations.isEmpty) {
-          return _ErrorState(message: _ctrl.error!, onRetry: () {
+          return GroupErrorState(message: _ctrl.error!, onRetry: () {
             _ctrl.loadMyGroups();
             _ctrl.loadReceivedInvitations();
           });
@@ -110,7 +112,7 @@ class _GroupListPageState extends State<GroupListPage> {
         final myGroups = _ctrl.groups;
 
         if (myGroups.isEmpty && invites.isEmpty) {
-          return _EmptyState(onCreateGroup: () => _showCreateDialog(context));
+          return GroupEmptyState(onCreateGroup: () => _showCreateDialog(context));
         }
 
         return RefreshIndicator(
@@ -370,7 +372,7 @@ class _GroupListPageState extends State<GroupListPage> {
                       return const Center(child: CircularProgressIndicator());
                     }
                     if (_ctrl.error != null && filteredGroups.isEmpty) {
-                      return _ErrorState(
+                      return GroupErrorState(
                         message: _ctrl.error!,
                         onRetry: _ctrl.loadDiscoverGroups,
                       );
@@ -499,74 +501,6 @@ class _GroupListPageState extends State<GroupListPage> {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.onCreateGroup});
-  final VoidCallback onCreateGroup;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [cs.primaryContainer, cs.secondaryContainer],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.group_outlined, size: 56, color: cs.primary),
-            ),
-            const SizedBox(height: 20),
-            Text('Chưa có nhóm nào', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Text(
-              'Tạo nhóm học tập hoặc chuyển sang Tab Khám phá để tham gia các nhóm học tập công khai ngay!',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: onCreateGroup,
-              icon: const Icon(Icons.add),
-              label: const Text('Tạo nhóm mới'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ErrorState extends StatelessWidget {
-  const _ErrorState({required this.message, required this.onRetry});
-  final String message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.error_outline, size: 48, color: Colors.red),
-          const SizedBox(height: 12),
-          Text(message, textAlign: TextAlign.center),
-          const SizedBox(height: 16),
-          OutlinedButton.icon(onPressed: onRetry, icon: const Icon(Icons.refresh), label: const Text('Thử lại')),
-        ],
       ),
     );
   }

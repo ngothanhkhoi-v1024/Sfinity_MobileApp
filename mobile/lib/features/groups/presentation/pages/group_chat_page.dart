@@ -6,6 +6,7 @@ import '../../data/models/group_message_model.dart';
 import '../../data/services/group_chat_service.dart';
 import '../widgets/chat_bubble.dart';
 import '../widgets/chat_input_bar.dart';
+import '../widgets/share_document_sheet.dart';
 
 class GroupChatPage extends StatefulWidget {
   const GroupChatPage({super.key, required this.groupId, this.groupName});
@@ -66,7 +67,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (ctx) => _ShareDocumentSheet(
+      builder: (ctx) => ShareDocumentSheet(
         onShare: (docId, docTitle) async {
           Navigator.pop(ctx);
           if (_userId == null) return;
@@ -161,65 +162,6 @@ class _GroupChatPageState extends State<GroupChatPage> {
           ChatInputBar(
             onSend: _sendMessage,
             onShareDocument: _showShareDocumentSheet,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── Share Document Bottom Sheet ────────────────────────────────────────────
-
-class _ShareDocumentSheet extends StatefulWidget {
-  const _ShareDocumentSheet({required this.onShare});
-  final Future<void> Function(String id, String title) onShare;
-
-  @override
-  State<_ShareDocumentSheet> createState() => _ShareDocumentSheetState();
-}
-
-class _ShareDocumentSheetState extends State<_ShareDocumentSheet> {
-  final _idCtrl = TextEditingController();
-  final _titleCtrl = TextEditingController();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(20, 0, 20, MediaQuery.viewInsetsOf(context).bottom + 20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Chia sẻ tài liệu', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _idCtrl,
-            decoration: const InputDecoration(
-              labelText: 'ID tài liệu',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.link),
-            ),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _titleCtrl,
-            decoration: const InputDecoration(
-              labelText: 'Tên tài liệu',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.picture_as_pdf_rounded),
-            ),
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: () async {
-                if (_idCtrl.text.trim().isEmpty || _titleCtrl.text.trim().isEmpty) return;
-                await widget.onShare(_idCtrl.text.trim(), _titleCtrl.text.trim());
-              },
-              icon: const Icon(Icons.share_rounded),
-              label: const Text('Chia sẻ vào nhóm'),
-            ),
           ),
         ],
       ),

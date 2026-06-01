@@ -63,7 +63,7 @@ class _DiscoverGroupCardState extends State<DiscoverGroupCard> {
                       style: theme.textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                    ),
+                     ),
                   ],
                   const SizedBox(height: 8),
                   Row(

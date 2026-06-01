@@ -485,5 +485,3 @@ class _WavePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
-
-int min(int a, int b) => a < b ? a : b;

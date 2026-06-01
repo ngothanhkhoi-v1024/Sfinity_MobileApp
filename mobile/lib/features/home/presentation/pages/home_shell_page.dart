@@ -5,7 +5,7 @@ import '../../../../core/constants/route_names.dart';
 import '../../../../core/i18n/app_text.dart';
 import '../../../../shared/widgets/floating_pill_nav_bar.dart';
 import '../../../document/presentation/pages/document_list_page.dart';
-import '../../../group/presentation/pages/group_list_page.dart';
+import '../../../groups/presentation/pages/group_list_page.dart';
 import '../../../places/presentation/pages/places_map_page.dart';
 import '../../../places/presentation/places_map_focus.dart';
 import '../../../profile/presentation/pages/profile_page.dart';
