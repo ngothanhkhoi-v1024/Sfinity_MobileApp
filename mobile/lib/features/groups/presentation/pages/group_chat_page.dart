@@ -1,12 +1,15 @@
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../../app.dart';
 import '../../../../core/auth/auth_state.dart';
 import '../../data/models/group_message_model.dart';
 import '../../data/services/group_chat_service.dart';
+import '../widgets/attachment_menu.dart';
 import '../widgets/chat_bubble.dart';
 import '../widgets/chat_input_bar.dart';
-import '../widgets/share_document_sheet.dart';
 
 class GroupChatPage extends StatefulWidget {
   const GroupChatPage({super.key, required this.groupId, this.groupName});
@@ -24,6 +27,10 @@ class _GroupChatPageState extends State<GroupChatPage> {
   String? _userName;
   String? _userAvatar;
   String? _userId;
+
+  bool _uploading = false;
+  double _uploadProgress = 0.0;
+  String? _uploadingFileName;
 
   @override
   void initState() {
@@ -62,26 +69,117 @@ class _GroupChatPageState extends State<GroupChatPage> {
     _scrollToBottom();
   }
 
-  Future<void> _showShareDocumentSheet() async {
-    showModalBottomSheet(
+  void _showAttachmentMenu() {
+    AttachmentMenu.show(
       context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (ctx) => ShareDocumentSheet(
-        onShare: (docId, docTitle) async {
-          Navigator.pop(ctx);
-          if (_userId == null) return;
-          await _chatService.shareDocument(
-            groupId: widget.groupId,
-            senderId: _userId!,
-            senderName: _userName ?? 'Bạn',
-            senderAvatar: _userAvatar,
-            documentId: docId,
-            documentTitle: docTitle,
-          );
-          _scrollToBottom();
-        },
-      ),
+      onPickImage: _pickImage,
+      onPickFile: _pickFile,
+      onShareDoc: _showShareDocumentSheet,
+    );
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final picker = ImagePicker();
+      final XFile? picked = await picker.pickImage(
+        source: source,
+        imageQuality: 85,
+        maxWidth: 1920,
+      );
+      if (picked == null || _userId == null) return;
+
+      setState(() {
+        _uploading = true;
+        _uploadProgress = 0.0;
+        _uploadingFileName = picked.name;
+      });
+
+      await _chatService.sendImageMessage(
+        groupId: widget.groupId,
+        senderId: _userId!,
+        senderName: _userName ?? 'Bạn',
+        senderAvatar: _userAvatar,
+        imageFile: File(picked.path),
+        fileName: picked.name,
+        onProgress: (p) => setState(() => _uploadProgress = p),
+      );
+      _scrollToBottom();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gửi ảnh thất bại: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _uploading = false;
+          _uploadProgress = 0.0;
+          _uploadingFileName = null;
+        });
+      }
+    }
+  }
+
+  Future<void> _pickFile() async {
+    try {
+      final result = await FilePicker.pickFiles(
+        type: FileType.any,
+        allowMultiple: false,
+      );
+      if (result == null || result.files.isEmpty || _userId == null) return;
+      final pf = result.files.first;
+      if (pf.path == null) return;
+
+      setState(() {
+        _uploading = true;
+        _uploadProgress = 0.0;
+        _uploadingFileName = pf.name;
+      });
+
+      await _chatService.sendFileMessage(
+        groupId: widget.groupId,
+        senderId: _userId!,
+        senderName: _userName ?? 'Bạn',
+        senderAvatar: _userAvatar,
+        file: File(pf.path!),
+        fileName: pf.name,
+        fileSize: pf.size,
+        onProgress: (p) => setState(() => _uploadProgress = p),
+      );
+      _scrollToBottom();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gửi file thất bại: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _uploading = false;
+          _uploadProgress = 0.0;
+          _uploadingFileName = null;
+        });
+      }
+    }
+  }
+
+  Future<void> _showShareDocumentSheet() async {
+    AttachmentMenu.showShareDocSheet(
+      context: context,
+      chatService: _chatService,
+      groupId: widget.groupId,
+      senderId: _userId ?? '',
+      senderName: _userName ?? 'Bạn',
+      senderAvatar: _userAvatar,
+      onDone: _scrollToBottom,
     );
   }
 
@@ -101,7 +199,8 @@ class _GroupChatPageState extends State<GroupChatPage> {
             ),
             Text(
               'Nhóm học tập',
-              style: TextStyle(fontSize: 11, color: cs.onSurface.withValues(alpha: 0.6)),
+              style: TextStyle(
+                  fontSize: 11, color: cs.onSurface.withValues(alpha: 0.6)),
             ),
           ],
         ),
@@ -130,11 +229,19 @@ class _GroupChatPageState extends State<GroupChatPage> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.chat_bubble_outline_rounded, size: 64, color: cs.onSurfaceVariant.withValues(alpha: 0.3)),
+                        Icon(Icons.chat_bubble_outline_rounded,
+                            size: 64,
+                            color: cs.onSurfaceVariant.withValues(alpha: 0.3)),
                         const SizedBox(height: 12),
-                        Text('Chưa có tin nhắn nào', style: TextStyle(color: cs.onSurfaceVariant)),
+                        Text('Chưa có tin nhắn nào',
+                            style: TextStyle(color: cs.onSurfaceVariant)),
                         const SizedBox(height: 4),
-                        Text('Hãy là người đầu tiên gửi tin!', style: theme.textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant.withValues(alpha: 0.7))),
+                        Text(
+                          'Hãy là người đầu tiên gửi tin!',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                              color: cs.onSurfaceVariant
+                                  .withValues(alpha: 0.7)),
+                        ),
                       ],
                     ),
                   );
@@ -153,15 +260,26 @@ class _GroupChatPageState extends State<GroupChatPage> {
                       message: msg,
                       isMe: isMe,
                       showAvatar: showAvatar,
+                      onDelete: isMe
+                          ? () => _chatService.deleteMessage(
+                                groupId: widget.groupId,
+                                messageId: msg.id,
+                              )
+                          : null,
                     );
                   },
                 );
               },
             ),
           ),
+          if (_uploading)
+            UploadProgressBar(
+              progress: _uploadProgress,
+              fileName: _uploadingFileName,
+            ),
           ChatInputBar(
             onSend: _sendMessage,
-            onShareDocument: _showShareDocumentSheet,
+            onAttach: _showAttachmentMenu,
           ),
         ],
       ),

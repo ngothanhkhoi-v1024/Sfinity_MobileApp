@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-enum MessageType { text, document }
+enum MessageType { text, document, image, file }
 
 class GroupMessageModel {
   final String id;
@@ -11,6 +11,10 @@ class GroupMessageModel {
   final MessageType type;
   final String? sharedDocumentId;
   final String? sharedDocumentTitle;
+  // For image / file messages
+  final String? fileUrl;
+  final String? fileName;
+  final int? fileSize;
   final DateTime createdAt;
 
   const GroupMessageModel({
@@ -22,20 +26,33 @@ class GroupMessageModel {
     required this.type,
     this.sharedDocumentId,
     this.sharedDocumentTitle,
+    this.fileUrl,
+    this.fileName,
+    this.fileSize,
     required this.createdAt,
   });
 
   factory GroupMessageModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
+    final typeStr = data['type']?.toString() ?? 'text';
+    final type = switch (typeStr) {
+      'document' => MessageType.document,
+      'image' => MessageType.image,
+      'file' => MessageType.file,
+      _ => MessageType.text,
+    };
     return GroupMessageModel(
       id: doc.id,
       senderId: data['senderId']?.toString() ?? '',
       senderName: data['senderName']?.toString() ?? 'Ẩn danh',
       senderAvatar: data['senderAvatar']?.toString(),
       text: data['text']?.toString(),
-      type: data['type'] == 'document' ? MessageType.document : MessageType.text,
+      type: type,
       sharedDocumentId: data['sharedDocumentId']?.toString(),
       sharedDocumentTitle: data['sharedDocumentTitle']?.toString(),
+      fileUrl: data['fileUrl']?.toString(),
+      fileName: data['fileName']?.toString(),
+      fileSize: data['fileSize'] as int?,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }
@@ -46,9 +63,17 @@ class GroupMessageModel {
       'senderName': senderName,
       'senderAvatar': senderAvatar,
       'text': text,
-      'type': type == MessageType.document ? 'document' : 'text',
+      'type': switch (type) {
+        MessageType.document => 'document',
+        MessageType.image => 'image',
+        MessageType.file => 'file',
+        _ => 'text',
+      },
       'sharedDocumentId': sharedDocumentId,
       'sharedDocumentTitle': sharedDocumentTitle,
+      'fileUrl': fileUrl,
+      'fileName': fileName,
+      'fileSize': fileSize,
       'createdAt': FieldValue.serverTimestamp(),
     };
   }

@@ -1,6 +1,10 @@
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../data/models/group_message_model.dart';
 import '../../data/services/group_chat_service.dart';
+import 'attachment_menu.dart';
 import 'chat_bubble.dart';
 import 'chat_input_bar.dart';
 
@@ -11,14 +15,12 @@ class GroupChatTab extends StatefulWidget {
     required this.userId,
     required this.userName,
     this.userAvatar,
-    required this.onShareDocument,
   });
 
   final String groupId;
   final String userId;
   final String userName;
   final String? userAvatar;
-  final VoidCallback onShareDocument;
 
   @override
   State<GroupChatTab> createState() => _GroupChatTabState();
@@ -27,6 +29,10 @@ class GroupChatTab extends StatefulWidget {
 class _GroupChatTabState extends State<GroupChatTab> {
   final _chatService = GroupChatService();
   final _scrollCtrl = ScrollController();
+
+  bool _uploading = false;
+  double _uploadProgress = 0.0;
+  String? _uploadingFileName;
 
   @override
   void dispose() {
@@ -55,13 +61,127 @@ class _GroupChatTabState extends State<GroupChatTab> {
     _scrollToBottom();
   }
 
+  void _showAttachmentMenu() {
+    AttachmentMenu.show(
+      context: context,
+      onPickImage: _pickImage,
+      onPickFile: _pickFile,
+      onShareDoc: _showShareDocumentSheet,
+    );
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final picker = ImagePicker();
+      final XFile? picked = await picker.pickImage(
+        source: source,
+        imageQuality: 85,
+        maxWidth: 1920,
+      );
+      if (picked == null) return;
+
+      setState(() {
+        _uploading = true;
+        _uploadProgress = 0.0;
+        _uploadingFileName = picked.name;
+      });
+
+      await _chatService.sendImageMessage(
+        groupId: widget.groupId,
+        senderId: widget.userId,
+        senderName: widget.userName,
+        senderAvatar: widget.userAvatar,
+        imageFile: File(picked.path),
+        fileName: picked.name,
+        onProgress: (p) => setState(() => _uploadProgress = p),
+      );
+      _scrollToBottom();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gửi ảnh thất bại: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _uploading = false;
+          _uploadProgress = 0.0;
+          _uploadingFileName = null;
+        });
+      }
+    }
+  }
+
+  Future<void> _pickFile() async {
+    try {
+      final result = await FilePicker.pickFiles(
+          type: FileType.any, allowMultiple: false);
+      if (result == null || result.files.isEmpty) return;
+      final pf = result.files.first;
+      if (pf.path == null) return;
+
+      setState(() {
+        _uploading = true;
+        _uploadProgress = 0.0;
+        _uploadingFileName = pf.name;
+      });
+
+      await _chatService.sendFileMessage(
+        groupId: widget.groupId,
+        senderId: widget.userId,
+        senderName: widget.userName,
+        senderAvatar: widget.userAvatar,
+        file: File(pf.path!),
+        fileName: pf.name,
+        fileSize: pf.size,
+        onProgress: (p) => setState(() => _uploadProgress = p),
+      );
+      _scrollToBottom();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gửi file thất bại: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _uploading = false;
+          _uploadProgress = 0.0;
+          _uploadingFileName = null;
+        });
+      }
+    }
+  }
+
+  Future<void> _showShareDocumentSheet() async {
+    AttachmentMenu.showShareDocSheet(
+      context: context,
+      chatService: _chatService,
+      groupId: widget.groupId,
+      senderId: widget.userId,
+      senderName: widget.userName,
+      senderAvatar: widget.userAvatar,
+      onDone: _scrollToBottom,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
     return Container(
-      color: cs.brightness == Brightness.dark ? const Color(0xFF0A0A0A) : cs.surface,
+      color: cs.brightness == Brightness.dark
+          ? const Color(0xFF0A0A0A)
+          : cs.surface,
       child: Column(
         children: [
           Expanded(
@@ -86,7 +206,8 @@ class _GroupChatTabState extends State<GroupChatTab> {
                           color: cs.onSurfaceVariant.withValues(alpha: 0.3),
                         ),
                         const SizedBox(height: 12),
-                        Text('Chưa có tin nhắn nào', style: TextStyle(color: cs.onSurfaceVariant)),
+                        Text('Chưa có tin nhắn nào',
+                            style: TextStyle(color: cs.onSurfaceVariant)),
                         const SizedBox(height: 4),
                         Text(
                           'Hãy là người đầu tiên gửi tin!',
@@ -112,15 +233,26 @@ class _GroupChatTabState extends State<GroupChatTab> {
                       message: msg,
                       isMe: isMe,
                       showAvatar: showAvatar,
+                      onDelete: isMe
+                          ? () => _chatService.deleteMessage(
+                                groupId: widget.groupId,
+                                messageId: msg.id,
+                              )
+                          : null,
                     );
                   },
                 );
               },
             ),
           ),
+          if (_uploading)
+            UploadProgressBar(
+              progress: _uploadProgress,
+              fileName: _uploadingFileName,
+            ),
           ChatInputBar(
             onSend: _sendMessage,
-            onShareDocument: widget.onShareDocument,
+            onAttach: _showAttachmentMenu,
           ),
         ],
       ),
