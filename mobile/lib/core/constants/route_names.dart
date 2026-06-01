@@ -48,4 +48,10 @@ abstract final class RouteNames {
   static const feedback = '/feedback';
   static const rateApp = '/feedback/rate';
   static const report = '/report';
+
+  // Group & Friends
+  static const friends = '/friends';
+  static const groups = '/groups';
+  static const groupDetail = '/groups/:id';
+  static const groupChat = '/groups/:id/chat';
 }
