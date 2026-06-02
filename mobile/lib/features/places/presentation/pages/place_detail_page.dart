@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/route_names.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../place_reviews/presentation/controllers/place_engagement_controller.dart';
+import '../../../place_reviews/presentation/widgets/place_checkin_section.dart';
 import '../../../place_reviews/presentation/widgets/place_photo_gallery.dart';
 import '../../../place_reviews/presentation/widgets/place_rating_section.dart';
 import '../controllers/place_detail_controller.dart';
@@ -288,7 +289,17 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
                 padding: EdgeInsets.all(16),
                 child: CircularProgressIndicator(),
               ))
-            else if (_engagementCtrl.reviewSummary != null) ...[
+            else ...[
+              if (place.hasPoint && place.latitude != null && place.longitude != null) ...[
+                PlaceCheckInSection(
+                  controller: _engagementCtrl,
+                  placeId: widget.placeId,
+                  placeLat: place.latitude!,
+                  placeLng: place.longitude!,
+                ),
+                const SizedBox(height: 20),
+              ],
+              if (_engagementCtrl.reviewSummary != null) ...[
               PlaceRatingSection(
                 controller: _engagementCtrl,
                 placeId: widget.placeId,
@@ -300,6 +311,7 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
                 placeId: widget.placeId,
                 photos: _engagementCtrl.photoResult?.photos ?? [],
               ),
+              ],
             ],
             if (isMine) ...[
               const SizedBox(height: 16),

@@ -47,3 +47,45 @@ export async function jwtAuthMiddleware(
     next(new HttpError(401, 'Unauthorized', 'Unauthorized'));
   }
 }
+
+/** Sets [req.user] when Bearer token is valid; continues as guest otherwise. */
+export async function optionalJwtAuthMiddleware(
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+): Promise<void> {
+  const header = req.headers.authorization;
+  if (!header?.startsWith('Bearer ')) {
+    next();
+    return;
+  }
+  try {
+    const token = header.slice(7);
+    const decoded = jwt.verify(token, config.jwtSecret) as {
+      sub: string;
+      email?: string;
+      role?: string;
+    };
+
+    const doc = await getDb().collection('users').doc(decoded.sub).get();
+    if (!doc.exists) {
+      next();
+      return;
+    }
+
+    const user = doc.data() as { status?: string; email?: string; role?: string };
+    if (user.status === UserStatus.BANNED) {
+      next();
+      return;
+    }
+
+    req.user = {
+      sub: doc.id,
+      email: user.email ?? '',
+      role: (user.role ?? 'USER') as import('../types/enums').UserRole,
+    };
+    next();
+  } catch {
+    next();
+  }
+}
