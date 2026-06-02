@@ -1630,6 +1630,7 @@ void _showFullscreenImage(BuildContext context, String url, bool isLocal) {
       barrierColor: Colors.black.withValues(alpha: 0.9),
       pageBuilder: (context, _, __) => GestureDetector(
         onTap: () => Navigator.pop(context),
+        behavior: HitTestBehavior.opaque,
         child: Scaffold(
           backgroundColor: Colors.transparent,
           body: Center(
@@ -1641,6 +1642,13 @@ void _showFullscreenImage(BuildContext context, String url, bool isLocal) {
                       fit: BoxFit.contain,
                       width: double.infinity,
                       height: double.infinity,
+                      errorBuilder: (_, __, ___) => const Center(
+                        child: Icon(
+                          Icons.broken_image_rounded,
+                          color: Colors.white,
+                          size: 48,
+                        ),
+                      ),
                     )
                   : Image.network(
                       url,

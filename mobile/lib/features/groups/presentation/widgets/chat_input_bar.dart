@@ -112,22 +112,6 @@ class _ChatInputBarState extends State<ChatInputBar> {
                       onSubmitted: (_) => _send(),
                     ),
                   ),
-                  // Emoji icon inside text capsule
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: IconButton(
-                      onPressed: () {
-                        // Action for emoji picker (can be integrated later)
-                      },
-                      icon: const Icon(
-                        Icons.sentiment_satisfied_alt_rounded,
-                        color: Color(0xFF0084FF),
-                        size: 23,
-                      ),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  ),
                 ],
               ),
             ),
