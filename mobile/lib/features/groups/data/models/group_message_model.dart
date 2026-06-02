@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-enum MessageType { text, document, image, file }
+enum MessageType { text, document, image, file, location }
 
 class GroupMessageModel {
   final String id;
@@ -43,6 +43,7 @@ class GroupMessageModel {
       'document' => MessageType.document,
       'image' => MessageType.image,
       'file' => MessageType.file,
+      'location' => MessageType.location,
       _ => MessageType.text,
     };
 
@@ -79,6 +80,7 @@ class GroupMessageModel {
         MessageType.document => 'document',
         MessageType.image => 'image',
         MessageType.file => 'file',
+        MessageType.location => 'location',
         _ => 'text',
       },
       'sharedDocumentId': sharedDocumentId,

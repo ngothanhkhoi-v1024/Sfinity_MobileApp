@@ -160,6 +160,47 @@ class GroupChatService {
     await _messages(groupId).add(msg.toFirestore());
   }
 
+  /// Gửi địa điểm vào nhóm
+  Future<void> sendLocationMessage({
+    required String groupId,
+    required String senderId,
+    required String senderName,
+    String? senderAvatar,
+    required double latitude,
+    required double longitude,
+    required String address,
+  }) async {
+    final msg = GroupMessageModel(
+      id: '',
+      senderId: senderId,
+      senderName: senderName,
+      senderAvatar: senderAvatar,
+      text: 'Đã chia sẻ địa điểm: $address',
+      type: MessageType.location,
+      fileUrl: 'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude',
+      fileName: address,
+      fileSize: 0,
+      createdAt: DateTime.now(),
+    );
+    await _messages(groupId).add(msg.toFirestore());
+  }
+
+  /// Stream danh sách tài nguyên (tài liệu, file, ảnh, địa điểm) trong nhóm
+  Stream<List<GroupMessageModel>> groupResourcesStream(String groupId) {
+    return _messages(groupId)
+        .snapshots()
+        .map((snap) => snap.docs
+            .map((doc) => GroupMessageModel.fromFirestore(doc))
+            .where((msg) =>
+                !msg.isDeleted &&
+                (msg.type == MessageType.document ||
+                 msg.type == MessageType.file ||
+                 msg.type == MessageType.image ||
+                 msg.type == MessageType.location))
+            .toList()
+          ..sort((a, b) => b.createdAt.compareTo(a.createdAt)));
+  }
+
   /// Xóa một tin nhắn khỏi cuộc trò chuyện (đánh dấu thu hồi)
   Future<void> deleteMessage({
     required String groupId,

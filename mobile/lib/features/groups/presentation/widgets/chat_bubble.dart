@@ -2,6 +2,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:dio/dio.dart';
+import 'package:sfinity/features/document/presentation/pages/pdf_full_screen_page.dart';
 import '../../data/models/group_message_model.dart';
 import '../../data/services/group_chat_service.dart';
 
@@ -69,6 +72,13 @@ class ChatBubble extends StatelessWidget {
       );
     } else if (message.type == MessageType.file) {
       bubble = _FileBubble(
+        message: message,
+        isMe: isMe,
+        showAvatar: showAvatar,
+        showName: showName,
+      );
+    } else if (message.type == MessageType.location) {
+      bubble = _LocationBubble(
         message: message,
         isMe: isMe,
         showAvatar: showAvatar,
@@ -1185,6 +1195,84 @@ class _FileBubble extends StatefulWidget {
 
 class _FileBubbleState extends State<_FileBubble> {
   bool _showTime = false;
+  bool _isDownloading = false;
+  double _downloadProgress = 0.0;
+  bool _fileExists = false;
+  String? _localPath;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkFileExists();
+  }
+
+  Future<void> _checkFileExists() async {
+    final fileUrl = widget.message.fileUrl;
+    if (fileUrl == null || fileUrl.isEmpty) return;
+    try {
+      final appDir = await getApplicationDocumentsDirectory();
+      final fileName = widget.message.fileName ?? fileUrl.split('/').last;
+      final file = File('${appDir.path}/$fileName');
+      final exists = await file.exists();
+      if (mounted) {
+        setState(() {
+          _fileExists = exists;
+          _localPath = file.path;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error checking file existence: $e');
+    }
+  }
+
+  Future<void> _downloadFile() async {
+    final fileUrl = widget.message.fileUrl;
+    if (fileUrl == null || fileUrl.isEmpty || _localPath == null) return;
+
+    setState(() {
+      _isDownloading = true;
+      _downloadProgress = 0.0;
+    });
+
+    try {
+      final dio = Dio();
+      await dio.download(
+        fileUrl,
+        _localPath!,
+        onReceiveProgress: (received, total) {
+          if (total != -1) {
+            setState(() {
+              _downloadProgress = received / total;
+            });
+          }
+        },
+      );
+      if (mounted) {
+        setState(() {
+          _fileExists = true;
+          _isDownloading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Đã tải xong: ${widget.message.fileName}'),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isDownloading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Tải file thất bại: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   String _formatSize(int? bytes) {
     if (bytes == null) return '';
@@ -1254,15 +1342,49 @@ class _FileBubbleState extends State<_FileBubble> {
                   ),
                   onTap: () async {
                     setState(() => _showTime = !_showTime);
-                    if (fileUrl.isNotEmpty) {
-                      final uri = Uri.parse(fileUrl);
-                      try {
-                        await launchUrl(uri, mode: LaunchMode.externalApplication);
-                      } catch (_) {
+                    if (_isDownloading) return;
+                    if (_fileExists && _localPath != null) {
+                      final ext = widget.message.fileName?.split('.').lastOrNull?.toLowerCase() ?? '';
+                      if (ext == 'pdf') {
                         try {
-                          await launchUrl(uri, mode: LaunchMode.platformDefault);
-                        } catch (_) {}
+                          final file = File(_localPath!);
+                          final bytes = await file.readAsBytes();
+                          if (context.mounted) {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => PdfFullScreenPage(
+                                  pdfBytes: bytes,
+                                  title: widget.message.fileName ?? 'Tài liệu',
+                                ),
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Không thể mở tệp tin PDF: $e'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        }
+                      } else {
+                        // For other extensions, open using local path
+                        final uri = Uri.parse('file://$_localPath');
+                        try {
+                          await launchUrl(uri, mode: LaunchMode.externalApplication);
+                        } catch (_) {
+                          if (fileUrl.isNotEmpty) {
+                            final fallbackUri = Uri.parse(fileUrl);
+                            try {
+                              await launchUrl(fallbackUri, mode: LaunchMode.externalApplication);
+                            } catch (_) {}
+                          }
+                        }
                       }
+                    } else {
+                      await _downloadFile();
                     }
                   },
                   child: Container(
@@ -1343,14 +1465,35 @@ class _FileBubbleState extends State<_FileBubble> {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        Icon(
-                          Icons.download_rounded,
-                          size: 18,
-                          color: (widget.isMe
-                                  ? Colors.white
-                                  : (isDark ? Colors.white.withValues(alpha: 0.7) : cs.primary))
-                              .withValues(alpha: 0.8),
-                        ),
+                        if (_isDownloading)
+                          SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              value: _downloadProgress > 0 ? _downloadProgress : null,
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                widget.isMe ? Colors.white : cs.primary,
+                              ),
+                            ),
+                          )
+                        else if (_fileExists)
+                          Icon(
+                            Icons.check_circle_rounded,
+                            size: 18,
+                            color: widget.isMe
+                                ? Colors.white
+                                : (isDark ? Colors.greenAccent : Colors.green),
+                          )
+                        else
+                          Icon(
+                            Icons.download_rounded,
+                            size: 18,
+                            color: (widget.isMe
+                                    ? Colors.white
+                                    : (isDark ? Colors.white.withValues(alpha: 0.7) : cs.primary))
+                                .withValues(alpha: 0.8),
+                          ),
                       ],
                     ),
                   ),
@@ -1681,4 +1824,229 @@ void _showFullscreenImage(BuildContext context, String url, bool isLocal) {
       ),
     ),
   );
+}
+
+// ─── Location Bubble (shared location) ──────────────────────────────────────
+
+class _LocationBubble extends StatefulWidget {
+  const _LocationBubble({
+    required this.message,
+    required this.isMe,
+    required this.showAvatar,
+    required this.showName,
+  });
+
+  final GroupMessageModel message;
+  final bool isMe;
+  final bool showAvatar;
+  final bool showName;
+
+  @override
+  State<_LocationBubble> createState() => _LocationBubbleState();
+}
+
+class _LocationBubbleState extends State<_LocationBubble> {
+  bool _showTime = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = cs.brightness == Brightness.dark;
+    final address = widget.message.fileName ?? 'Địa điểm';
+    final fileUrl = widget.message.fileUrl ?? '';
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 12,
+        right: 12,
+        top: 2,
+        bottom: widget.showAvatar ? 10 : 2,
+      ),
+      child: Column(
+        crossAxisAlignment: widget.isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        children: [
+          if (!widget.isMe && widget.showName)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 3, left: 44, right: 8),
+              child: Text(
+                widget.message.senderName,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: isDark ? const Color(0xFFB0B3B8) : const Color(0xFF65676B),
+                  fontWeight: FontWeight.w500,
+                  fontSize: 11.5,
+                ),
+              ),
+            ),
+          Row(
+            mainAxisAlignment: widget.isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              if (!widget.isMe && widget.showAvatar) ...[
+                _SenderAvatar(name: widget.message.senderName, avatar: widget.message.senderAvatar),
+                const SizedBox(width: 8),
+              ] else if (!widget.isMe) ...[
+                const SizedBox(width: 36),
+              ],
+              Flexible(
+                child: InkWell(
+                  borderRadius: _getBubbleRadius(
+                    isMe: widget.isMe,
+                    isFirst: widget.showName,
+                    isLast: widget.showAvatar,
+                  ),
+                  onTap: () async {
+                    setState(() => _showTime = !_showTime);
+                    if (fileUrl.isNotEmpty) {
+                      final uri = Uri.parse(fileUrl);
+                      try {
+                        await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      } catch (_) {
+                        try {
+                          await launchUrl(uri, mode: LaunchMode.platformDefault);
+                        } catch (_) {}
+                      }
+                    }
+                  },
+                  child: Container(
+                    constraints: BoxConstraints(
+                        maxWidth: MediaQuery.sizeOf(context).width * 0.72),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      gradient: widget.isMe
+                          ? const LinearGradient(
+                              colors: [
+                                Color(0xFF10B981),
+                                Color(0xFF059669),
+                              ],
+                              begin: Alignment.topRight,
+                              end: Alignment.bottomLeft,
+                            )
+                          : null,
+                      color: widget.isMe
+                          ? null
+                          : (isDark
+                              ? const Color(0xFF1B2C24)
+                              : const Color(0xFFE8F5E9)),
+                      borderRadius: _getBubbleRadius(
+                        isMe: widget.isMe,
+                        isFirst: widget.showName,
+                        isLast: widget.showAvatar,
+                      ),
+                      border: Border.all(
+                        color: widget.isMe
+                            ? Colors.transparent
+                            : (isDark ? Colors.green.withValues(alpha: 0.2) : Colors.green.shade200),
+                        width: 0.8,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: widget.isMe ? 0.2 : 0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            Icons.location_on_rounded,
+                            color: widget.isMe
+                                ? Colors.white
+                                : (isDark ? Colors.greenAccent : Colors.green.shade700),
+                            size: 26,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Flexible(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Địa điểm chia sẻ',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: widget.isMe ? Colors.white70 : Colors.grey,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                address,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13,
+                                  color: widget.isMe
+                                      ? Colors.white
+                                      : (isDark
+                                          ? Colors.white.withValues(alpha: 0.95)
+                                          : const Color(0xFF050505)),
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.map_rounded,
+                                    size: 11,
+                                    color: widget.isMe ? Colors.white70 : Colors.grey,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Nhấn để xem bản đồ',
+                                    style: TextStyle(
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.w600,
+                                      color: widget.isMe
+                                          ? Colors.white70
+                                          : (isDark ? Colors.greenAccent : cs.primary),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              if (widget.isMe) const SizedBox(width: 4),
+            ],
+          ),
+          if (widget.message.reactions.isNotEmpty)
+            Padding(
+              padding: EdgeInsets.only(
+                top: 4,
+                left: widget.isMe ? 8 : 44,
+                right: widget.isMe ? 12 : 8,
+              ),
+              child: _ReactionBadges(reactions: widget.message.reactions, isMe: widget.isMe),
+            ),
+          if (widget.showAvatar || _showTime)
+            Padding(
+              padding: EdgeInsets.only(
+                top: 4,
+                left: widget.isMe ? 8 : 44,
+                right: widget.isMe ? 12 : 8,
+              ),
+              child: Text(
+                widget.isMe
+                    ? '${_formatMessageTime(widget.message.createdAt, _showTime)} • Đã xem'
+                    : _formatMessageTime(widget.message.createdAt, _showTime),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: isDark ? const Color(0xFF65676B) : const Color(0xFF8A8D91),
+                  fontSize: 10,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 }

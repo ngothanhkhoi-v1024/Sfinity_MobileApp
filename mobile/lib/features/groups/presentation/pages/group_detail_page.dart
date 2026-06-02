@@ -84,6 +84,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                   ),
                   GroupFilesTab(
                     groupId: group.id,
+                    members: group.members,
                     onShareDocument: () => AttachmentMenu.showShareDocSheet(
                       context: context,
                       chatService: _chatService,
@@ -211,7 +212,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
             unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13.5),
             tabs: const [
               Tab(text: 'Trò chuyện'),
-              Tab(text: 'Tài liệu'),
+              Tab(text: 'Kho lưu trữ'),
               Tab(text: 'Thành viên'),
             ],
           ),
