@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../data/models/group_model.dart';
+import '../controllers/group_controller.dart';
 import 'member_tile.dart';
 
 class GroupMembersTab extends StatelessWidget {
@@ -8,11 +9,150 @@ class GroupMembersTab extends StatelessWidget {
     required this.group,
     required this.myUid,
     required this.onInviteMember,
+    required this.groupCtrl,
   });
 
   final GroupModel group;
   final String myUid;
   final VoidCallback onInviteMember;
+  final GroupController groupCtrl;
+
+  Future<void> _removeMember(BuildContext context, GroupMemberModel member) async {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = cs.brightness == Brightness.dark;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 340),
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E1E1E) : cs.surface,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.08),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+            border: Border.all(
+              color: isDark ? Colors.white.withValues(alpha: 0.06) : cs.outlineVariant.withValues(alpha: 0.3),
+              width: 1,
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Icon Warning
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50.withValues(alpha: isDark ? 0.1 : 0.9),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.person_remove_rounded,
+                  color: isDark ? Colors.redAccent : Colors.red.shade700,
+                  size: 32,
+                ),
+              ),
+              const SizedBox(height: 20),
+              // Title
+              const Text(
+                'Xóa thành viên',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              // Content description
+              Text(
+                'Bạn có chắc chắn muốn xóa thành viên "${member.user.name}" khỏi nhóm học tập này không?',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: cs.onSurfaceVariant.withValues(alpha: 0.8),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              // Actions
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        side: BorderSide(color: cs.outline),
+                      ),
+                      child: Text(
+                        'Hủy',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: cs.outline,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Xóa',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (confirmed == true) {
+      final success = await groupCtrl.removeMember(group.id, member.user.id);
+      if (context.mounted) {
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Đã xóa thành viên "${member.user.name}" khỏi nhóm.'),
+              backgroundColor: cs.primary,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(groupCtrl.error ?? 'Không thể xóa thành viên.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -95,9 +235,9 @@ class GroupMembersTab extends StatelessWidget {
                 return MemberTile(
                   member: member,
                   myUid: myUid,
-                  isGroupAdmin: false,
+                  isGroupAdmin: isOwnerOrAdmin,
                   isOwner: group.isOwner,
-                  onRemove: null,
+                  onRemove: () => _removeMember(context, member),
                 );
               },
             ),
