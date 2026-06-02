@@ -6,16 +6,30 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../../app.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../places/data/services/place_location_service.dart';
+import '../../../places/data/utils/place_checkin_geo.dart';
+import '../../data/models/place_checkin_model.dart';
 import '../../data/models/place_photo_model.dart';
 import '../../data/models/place_review_model.dart';
 
 class PlaceEngagementController extends ChangeNotifier {
+  PlaceEngagementController({PlaceLocationService? location})
+      : _location = location ?? PlaceLocationService();
+
+  final PlaceLocationService _location;
+
   bool loading = true;
   bool submitting = false;
+  bool checkInSubmitting = false;
+  bool locatingNearby = false;
   String? error;
 
   PlaceReviewSummary? reviewSummary;
   PlacePhotoListResult? photoResult;
+  PlaceCheckInStatus? checkInStatus;
+  double? nearbyDistanceM;
+  double? nearbyAccuracyM;
+  bool? nearbyCanCheckIn;
 
   int draftRating = 5;
   final commentController = TextEditingController();
@@ -65,9 +79,13 @@ class PlaceEngagementController extends ChangeNotifier {
           SfinityApp.placeEngagementRepository.getReviews(placeId);
       final photosFuture =
           SfinityApp.placeEngagementRepository.getPhotos(placeId);
-      final results = await Future.wait([reviewsFuture, photosFuture]);
+      final checkInFuture =
+          SfinityApp.placeEngagementRepository.getCheckInStatus(placeId);
+      final results =
+          await Future.wait([reviewsFuture, photosFuture, checkInFuture]);
       reviewSummary = results[0] as PlaceReviewSummary;
       photoResult = results[1] as PlacePhotoListResult;
+      checkInStatus = results[2] as PlaceCheckInStatus;
       _applyOwnReviewOrdering();
     } on DioException catch (e) {
       error = ApiClient.instance.errorMessage(e);
@@ -112,6 +130,114 @@ class PlaceEngagementController extends ChangeNotifier {
       error = e.toString();
     }
     submitting = false;
+    notifyListeners();
+    return false;
+  }
+
+  Future<void> refreshNearby({
+    required double placeLat,
+    required double placeLng,
+  }) async {
+    locatingNearby = true;
+    notifyListeners();
+
+    final reading = await _location.getCurrentLocationReading();
+    if (reading == null) {
+      nearbyDistanceM = null;
+      nearbyAccuracyM = null;
+      nearbyCanCheckIn = false;
+    } else {
+      final dist = PlaceCheckInGeo.distanceM(
+        userLat: reading.point.latitude,
+        userLng: reading.point.longitude,
+        placeLat: placeLat,
+        placeLng: placeLng,
+      );
+      nearbyDistanceM = dist;
+      nearbyAccuracyM = reading.accuracyM;
+      nearbyCanCheckIn = PlaceCheckInGeo.isWithinRadius(
+        distanceM: dist,
+        accuracyM: reading.accuracyM,
+      );
+    }
+
+    locatingNearby = false;
+    notifyListeners();
+  }
+
+  Future<bool> submitCheckIn({
+    required String placeId,
+    required double placeLat,
+    required double placeLng,
+  }) async {
+    if (!SfinityApp.auth.isAuthenticated) {
+      error = 'Đăng nhập để check-in';
+      notifyListeners();
+      return false;
+    }
+
+    if (checkInStatus?.hasCheckedIn == true) {
+      error = 'Bạn đã check-in tại địa điểm này rồi';
+      notifyListeners();
+      return false;
+    }
+
+    checkInSubmitting = true;
+    error = null;
+    notifyListeners();
+
+    try {
+      final reading = await _location.getCurrentLocationReading();
+      if (reading == null) {
+        error =
+            'Không lấy được vị trí GPS. Bật định vị và thử lại.';
+        checkInSubmitting = false;
+        notifyListeners();
+        return false;
+      }
+
+      final dist = PlaceCheckInGeo.distanceM(
+        userLat: reading.point.latitude,
+        userLng: reading.point.longitude,
+        placeLat: placeLat,
+        placeLng: placeLng,
+      );
+      nearbyDistanceM = dist;
+      nearbyAccuracyM = reading.accuracyM;
+      nearbyCanCheckIn = PlaceCheckInGeo.isWithinRadius(
+        distanceM: dist,
+        accuracyM: reading.accuracyM,
+      );
+
+      if (nearbyCanCheckIn != true) {
+        final allowed = PlaceCheckInGeo.allowedRadiusM(reading.accuracyM);
+        if (reading.accuracyM > PlaceCheckInGeo.maxAccuracyM) {
+          error =
+              'GPS không đủ chính xác (±${reading.accuracyM.round()} m). Di chuyển ra ngoài trời hoặc gần cửa sổ rồi thử lại.';
+        } else {
+          error =
+              'Bạn cách địa điểm ${dist.round()} m (cho phép tối đa ${allowed.round()} m với GPS hiện tại).';
+        }
+        checkInSubmitting = false;
+        notifyListeners();
+        return false;
+      }
+
+      checkInStatus = await SfinityApp.placeEngagementRepository.submitCheckIn(
+        placeId,
+        latitude: reading.point.latitude,
+        longitude: reading.point.longitude,
+        accuracy: reading.accuracyM,
+      );
+      checkInSubmitting = false;
+      notifyListeners();
+      return true;
+    } on DioException catch (e) {
+      error = ApiClient.instance.errorMessage(e);
+    } catch (e) {
+      error = e.toString();
+    }
+    checkInSubmitting = false;
     notifyListeners();
     return false;
   }
