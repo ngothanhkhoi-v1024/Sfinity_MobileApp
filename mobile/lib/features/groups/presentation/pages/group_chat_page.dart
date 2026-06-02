@@ -27,6 +27,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
   String? _userName;
   String? _userAvatar;
   String? _userId;
+  late Stream<List<GroupMessageModel>> _messagesStream;
 
   bool _uploading = false;
   double _uploadProgress = 0.0;
@@ -39,6 +40,17 @@ class _GroupChatPageState extends State<GroupChatPage> {
     _userId = _auth.user?['id']?.toString();
     _userName = _auth.user?['name']?.toString() ?? 'Bạn';
     _userAvatar = _auth.user?['avatar']?.toString();
+    _messagesStream = _chatService.messagesStream(widget.groupId);
+  }
+
+  @override
+  void didUpdateWidget(covariant GroupChatPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.groupId != widget.groupId) {
+      setState(() {
+        _messagesStream = _chatService.messagesStream(widget.groupId);
+      });
+    }
   }
 
   @override
@@ -134,6 +146,20 @@ class _GroupChatPageState extends State<GroupChatPage> {
       final pf = result.files.first;
       if (pf.path == null) return;
 
+      // Giới hạn tệp không lớn hơn 200MB (200 * 1024 * 1024 bytes)
+      const int maxSizeBytes = 200 * 1024 * 1024;
+      if (pf.size > maxSizeBytes) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Kích thước tệp vượt quá giới hạn cho phép (tối đa 200MB).'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
       setState(() {
         _uploading = true;
         _uploadProgress = 0.0;
@@ -215,7 +241,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
         children: [
           Expanded(
             child: StreamBuilder<List<GroupMessageModel>>(
-              stream: _chatService.messagesStream(widget.groupId),
+              stream: _messagesStream,
               builder: (context, snap) {
                 if (snap.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -223,7 +249,22 @@ class _GroupChatPageState extends State<GroupChatPage> {
                 if (snap.hasError) {
                   return Center(child: Text('Lỗi: ${snap.error}'));
                 }
-                final messages = snap.data ?? [];
+                final rawMessages = snap.data ?? [];
+                final messages = rawMessages.where((msg) {
+                  if (msg.type == MessageType.text && msg.text != null) {
+                    final txt = msg.text!.toLowerCase();
+                    if (txt.startsWith('đã gửi file:') || txt.startsWith('đã gửi ảnh:')) {
+                      final isImg = txt.endsWith('.png') ||
+                          txt.endsWith('.jpg') ||
+                          txt.endsWith('.jpeg') ||
+                          txt.endsWith('.gif') ||
+                          txt.endsWith('.webp') ||
+                          txt.endsWith('.bmp');
+                      if (isImg) return false;
+                    }
+                  }
+                  return true;
+                }).toList();
                 if (messages.isEmpty) {
                   return Center(
                     child: Column(
@@ -254,12 +295,20 @@ class _GroupChatPageState extends State<GroupChatPage> {
                   itemBuilder: (_, i) {
                     final msg = messages[i];
                     final isMe = msg.senderId == _userId;
-                    final showAvatar = i == messages.length - 1 ||
+                    
+                    final showName = i == messages.length - 1 ||
                         messages[i + 1].senderId != msg.senderId;
+                        
+                    final showAvatar = i == 0 ||
+                        messages[i - 1].senderId != msg.senderId;
+
                     return ChatBubble(
                       message: msg,
                       isMe: isMe,
                       showAvatar: showAvatar,
+                      showName: showName,
+                      currentUserId: _userId ?? '',
+                      groupId: widget.groupId,
                       onDelete: isMe
                           ? () => _chatService.deleteMessage(
                                 groupId: widget.groupId,

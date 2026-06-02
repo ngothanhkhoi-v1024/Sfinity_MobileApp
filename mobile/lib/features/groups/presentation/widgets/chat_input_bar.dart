@@ -48,46 +48,42 @@ class _ChatInputBarState extends State<ChatInputBar> {
     final isDark = cs.brightness == Brightness.dark;
 
     return Container(
-      padding: EdgeInsets.fromLTRB(8, 12, 12, 12 + bottom),
+      padding: EdgeInsets.fromLTRB(6, 8, 8, 8 + bottom),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0A0A0A) : cs.surface,
+        color: isDark ? const Color(0xFF0F0F0F) : Colors.white,
         border: Border(
           top: BorderSide(
             color: isDark
-                ? Colors.white.withValues(alpha: 0.05)
-                : cs.outlineVariant.withValues(alpha: 0.2),
+                ? Colors.white.withValues(alpha: 0.06)
+                : Colors.black.withValues(alpha: 0.06),
             width: 0.8,
           ),
         ),
       ),
       child: Row(
         children: [
-          // Share document button (Attachment pin)
+          // Attachment plus button (replaces pin)
           if (widget.onAttach != null)
             IconButton(
               onPressed: widget.onAttach,
-              icon: Icon(
-                Icons.attach_file_rounded,
-                color: isDark ? Colors.white.withValues(alpha: 0.7) : cs.primary.withValues(alpha: 0.7),
+              icon: const Icon(
+                Icons.add_circle_rounded,
+                color: Color(0xFF0084FF),
                 size: 26,
               ),
               tooltip: 'Đính kèm',
               padding: const EdgeInsets.all(6),
+              constraints: const BoxConstraints(),
             ),
+          const SizedBox(width: 4),
           // Text input (Capsule with emoji suffix)
           Expanded(
             child: Container(
               decoration: BoxDecoration(
                 color: isDark
-                    ? Colors.white.withValues(alpha: 0.06)
-                    : const Color(0xFFF3F4F6),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.04)
-                      : Colors.black.withValues(alpha: 0.04),
-                  width: 0.8,
-                ),
+                    ? const Color(0xFF242526)
+                    : const Color(0xFFF0F2F5),
+                borderRadius: BorderRadius.circular(20),
               ),
               child: Row(
                 children: [
@@ -98,83 +94,56 @@ class _ChatInputBarState extends State<ChatInputBar> {
                       maxLines: 4,
                       minLines: 1,
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: isDark ? Colors.white : Colors.black87,
-                        fontSize: 14.5,
+                        color: isDark ? Colors.white : const Color(0xFF050505),
+                        fontSize: 15.0,
                       ),
                       decoration: InputDecoration(
                         hintText: 'Nhập tin nhắn...',
                         hintStyle: TextStyle(
                           color: isDark
-                              ? Colors.white.withValues(alpha: 0.35)
-                              : cs.onSurfaceVariant.withValues(alpha: 0.5),
-                          fontSize: 14.5,
+                              ? Colors.white.withValues(alpha: 0.3)
+                              : const Color(0xFF8A8D91),
+                          fontSize: 15.0,
                         ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                         border: InputBorder.none,
                         isDense: true,
                       ),
                       onSubmitted: (_) => _send(),
                     ),
                   ),
-                  // Emoji icon
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: IconButton(
-                      onPressed: () {
-                        // Action for emoji picker
-                      },
-                      icon: Icon(
-                        Icons.sentiment_satisfied_alt_rounded,
-                        color: isDark ? Colors.white.withValues(alpha: 0.45) : cs.onSurfaceVariant.withValues(alpha: 0.5),
-                        size: 22,
-                      ),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  ),
                 ],
               ),
             ),
           ),
-          const SizedBox(width: 10),
-          // Send button (Gradient circle)
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            decoration: BoxDecoration(
-              gradient: _hasText
-                  ? LinearGradient(
-                      colors: [cs.primary, cs.secondary],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    )
-                  : null,
-              color: _hasText
-                  ? null
-                  : (isDark
-                      ? Colors.white.withValues(alpha: 0.06)
-                      : const Color(0xFFE5E7EB)),
-              shape: BoxShape.circle,
-              boxShadow: _hasText
-                  ? [
-                      BoxShadow(
-                        color: cs.primary.withValues(alpha: 0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
-                      )
-                    ]
-                  : null,
-            ),
-            child: IconButton(
-              onPressed: _hasText ? _send : null,
-              icon: Icon(
-                Icons.send_rounded,
-                color: _hasText
-                    ? Colors.white
-                    : (isDark ? Colors.white.withValues(alpha: 0.25) : cs.onSurfaceVariant.withValues(alpha: 0.3)),
-                size: 20,
-              ),
-              padding: const EdgeInsets.all(11),
-            ),
+          const SizedBox(width: 8),
+          // Morphing Send / Thumbs up Like button
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 150),
+            transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
+            child: _hasText
+                ? IconButton(
+                    key: const ValueKey('send'),
+                    onPressed: _send,
+                    icon: const Icon(
+                      Icons.send_rounded,
+                      color: Color(0xFF0084FF),
+                      size: 24,
+                    ),
+                    padding: const EdgeInsets.all(8),
+                    constraints: const BoxConstraints(),
+                  )
+                : IconButton(
+                    key: const ValueKey('like'),
+                    onPressed: () => widget.onSend('👍'),
+                    icon: const Icon(
+                      Icons.thumb_up_rounded,
+                      color: Color(0xFF0084FF),
+                      size: 24,
+                    ),
+                    padding: const EdgeInsets.all(8),
+                    constraints: const BoxConstraints(),
+                  ),
           ),
         ],
       ),

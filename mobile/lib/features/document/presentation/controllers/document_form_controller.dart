@@ -59,6 +59,12 @@ class DocumentFormController extends ChangeNotifier {
       final file = result.files.first;
       if (file.path == null) return;
 
+      // Giới hạn tệp không lớn hơn 200MB (200 * 1024 * 1024 bytes)
+      const int maxSizeBytes = 200 * 1024 * 1024;
+      if (file.size > maxSizeBytes) {
+        throw 'Kích thước tệp vượt quá giới hạn cho phép (tối đa 200MB).';
+      }
+
       localFileToUpload = File(file.path!);
       uploadedFileName = file.name;
       uploadedFileType = 'pdf';

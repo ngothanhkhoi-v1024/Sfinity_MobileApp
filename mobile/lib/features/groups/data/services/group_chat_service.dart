@@ -160,11 +160,33 @@ class GroupChatService {
     await _messages(groupId).add(msg.toFirestore());
   }
 
-  /// Xóa một tin nhắn khỏi cuộc trò chuyện
+  /// Xóa một tin nhắn khỏi cuộc trò chuyện (đánh dấu thu hồi)
   Future<void> deleteMessage({
     required String groupId,
     required String messageId,
   }) async {
-    await _messages(groupId).doc(messageId).delete();
+    await _messages(groupId).doc(messageId).update({
+      'isDeleted': true,
+      'text': 'Tin nhắn đã bị thu hồi',
+    });
+  }
+
+  /// Thả icon cảm xúc cho tin nhắn
+  Future<void> reactToMessage({
+    required String groupId,
+    required String messageId,
+    required String userId,
+    required String? emoji,
+  }) async {
+    final docRef = _messages(groupId).doc(messageId);
+    if (emoji == null) {
+      await docRef.update({
+        'reactions.$userId': FieldValue.delete(),
+      });
+    } else {
+      await docRef.update({
+        'reactions.$userId': emoji,
+      });
+    }
   }
 }

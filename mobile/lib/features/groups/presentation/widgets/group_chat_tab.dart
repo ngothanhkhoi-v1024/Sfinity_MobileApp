@@ -29,13 +29,44 @@ class GroupChatTab extends StatefulWidget {
 class _GroupChatTabState extends State<GroupChatTab> {
   final _chatService = GroupChatService();
   final _scrollCtrl = ScrollController();
+  late Stream<List<GroupMessageModel>> _messagesStream;
 
   bool _uploading = false;
   double _uploadProgress = 0.0;
   String? _uploadingFileName;
+  bool _showScrollToBottomBtn = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollCtrl.addListener(_scrollListener);
+    _messagesStream = _chatService.messagesStream(widget.groupId);
+  }
+
+  @override
+  void didUpdateWidget(covariant GroupChatTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.groupId != widget.groupId) {
+      setState(() {
+        _messagesStream = _chatService.messagesStream(widget.groupId);
+      });
+    }
+  }
+
+  void _scrollListener() {
+    if (_scrollCtrl.hasClients) {
+      final show = _scrollCtrl.offset > 400;
+      if (show != _showScrollToBottomBtn) {
+        setState(() {
+          _showScrollToBottomBtn = show;
+        });
+      }
+    }
+  }
 
   @override
   void dispose() {
+    _scrollCtrl.removeListener(_scrollListener);
     _scrollCtrl.dispose();
     super.dispose();
   }
@@ -124,6 +155,20 @@ class _GroupChatTabState extends State<GroupChatTab> {
       final pf = result.files.first;
       if (pf.path == null) return;
 
+      // Giới hạn tệp không lớn hơn 200MB (200 * 1024 * 1024 bytes)
+      const int maxSizeBytes = 200 * 1024 * 1024;
+      if (pf.size > maxSizeBytes) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Kích thước tệp vượt quá giới hạn cho phép (tối đa 200MB).'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
       setState(() {
         _uploading = true;
         _uploadProgress = 0.0;
@@ -185,64 +230,116 @@ class _GroupChatTabState extends State<GroupChatTab> {
       child: Column(
         children: [
           Expanded(
-            child: StreamBuilder<List<GroupMessageModel>>(
-              stream: _chatService.messagesStream(widget.groupId),
-              builder: (context, snap) {
-                if (snap.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (snap.hasError) {
-                  return Center(child: Text('Lỗi: ${snap.error}'));
-                }
-                final messages = snap.data ?? [];
-                if (messages.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.chat_bubble_outline_rounded,
-                          size: 64,
-                          color: cs.onSurfaceVariant.withValues(alpha: 0.3),
+            child: Stack(
+              children: [
+                StreamBuilder<List<GroupMessageModel>>(
+                  stream: _messagesStream,
+                  builder: (context, snap) {
+                    if (snap.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (snap.hasError) {
+                      return Center(child: Text('Lỗi: ${snap.error}'));
+                    }
+                    final rawMessages = snap.data ?? [];
+                    final messages = rawMessages.where((msg) {
+                      if (msg.type == MessageType.text && msg.text != null) {
+                        final txt = msg.text!.toLowerCase();
+                        if (txt.startsWith('đã gửi file:') || txt.startsWith('đã gửi ảnh:')) {
+                          final isImg = txt.endsWith('.png') ||
+                              txt.endsWith('.jpg') ||
+                              txt.endsWith('.jpeg') ||
+                              txt.endsWith('.gif') ||
+                              txt.endsWith('.webp') ||
+                              txt.endsWith('.bmp');
+                          if (isImg) return false;
+                        }
+                      }
+                      return true;
+                    }).toList();
+                    if (messages.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.chat_bubble_outline_rounded,
+                              size: 64,
+                              color: cs.onSurfaceVariant.withValues(alpha: 0.3),
+                            ),
+                            const SizedBox(height: 12),
+                            Text('Chưa có tin nhắn nào',
+                                style: TextStyle(color: cs.onSurfaceVariant)),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Hãy là người đầu tiên gửi tin!',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: cs.onSurfaceVariant.withValues(alpha: 0.7),
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 12),
-                        Text('Chưa có tin nhắn nào',
-                            style: TextStyle(color: cs.onSurfaceVariant)),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Hãy là người đầu tiên gửi tin!',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: cs.onSurfaceVariant.withValues(alpha: 0.7),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-                return ListView.builder(
-                  controller: _scrollCtrl,
-                  reverse: true,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  itemCount: messages.length,
-                  itemBuilder: (_, i) {
-                    final msg = messages[i];
-                    final isMe = msg.senderId == widget.userId;
-                    final showAvatar = i == messages.length - 1 ||
-                        messages[i + 1].senderId != msg.senderId;
-                    return ChatBubble(
-                      message: msg,
-                      isMe: isMe,
-                      showAvatar: showAvatar,
-                      onDelete: isMe
-                          ? () => _chatService.deleteMessage(
-                                groupId: widget.groupId,
-                                messageId: msg.id,
-                              )
-                          : null,
+                      );
+                    }
+                    return ListView.builder(
+                      controller: _scrollCtrl,
+                      reverse: true,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      itemCount: messages.length,
+                      itemBuilder: (_, i) {
+                        final msg = messages[i];
+                        final isMe = msg.senderId == widget.userId;
+
+                        bool isConsecutive(GroupMessageModel current, GroupMessageModel other) {
+                          if (current.senderId != other.senderId) return false;
+                          final diff = current.createdAt.difference(other.createdAt).abs();
+                          if (diff.inMinutes > 5) return false;
+
+                          final d1 = current.createdAt;
+                          final d2 = other.createdAt;
+                          return d1.year == d2.year && d1.month == d2.month && d1.day == d2.day;
+                        }
+
+                        final showName = i == messages.length - 1 ||
+                            !isConsecutive(msg, messages[i + 1]);
+
+                        final showAvatar = i == 0 ||
+                            !isConsecutive(msg, messages[i - 1]);
+
+                        return ChatBubble(
+                          message: msg,
+                          isMe: isMe,
+                          showAvatar: showAvatar,
+                          showName: showName,
+                          currentUserId: widget.userId,
+                          groupId: widget.groupId,
+                          onDelete: isMe
+                              ? () => _chatService.deleteMessage(
+                                    groupId: widget.groupId,
+                                    messageId: msg.id,
+                                  )
+                              : null,
+                        );
+                      },
                     );
                   },
-                );
-              },
+                ),
+                if (_showScrollToBottomBtn)
+                  Positioned(
+                    bottom: 16,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: FloatingActionButton.small(
+                        onPressed: _scrollToBottom,
+                        backgroundColor: cs.primary,
+                        foregroundColor: cs.onPrimary,
+                        shape: const CircleBorder(),
+                        child: const Icon(Icons.arrow_downward_rounded),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
           if (_uploading)
