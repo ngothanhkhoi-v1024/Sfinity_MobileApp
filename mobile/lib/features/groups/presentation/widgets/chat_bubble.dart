@@ -1256,8 +1256,12 @@ class _FileBubbleState extends State<_FileBubble> {
                     setState(() => _showTime = !_showTime);
                     if (fileUrl.isNotEmpty) {
                       final uri = Uri.parse(fileUrl);
-                      if (await canLaunchUrl(uri)) {
+                      try {
                         await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      } catch (_) {
+                        try {
+                          await launchUrl(uri, mode: LaunchMode.platformDefault);
+                        } catch (_) {}
                       }
                     }
                   },

@@ -146,6 +146,20 @@ class _GroupChatPageState extends State<GroupChatPage> {
       final pf = result.files.first;
       if (pf.path == null) return;
 
+      // Giới hạn tệp không lớn hơn 200MB (200 * 1024 * 1024 bytes)
+      const int maxSizeBytes = 200 * 1024 * 1024;
+      if (pf.size > maxSizeBytes) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Kích thước tệp vượt quá giới hạn cho phép (tối đa 200MB).'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
       setState(() {
         _uploading = true;
         _uploadProgress = 0.0;
