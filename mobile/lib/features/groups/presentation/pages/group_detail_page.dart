@@ -200,12 +200,12 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
             indicator: BoxDecoration(
               color: isDark
                   ? Colors.white.withValues(alpha: 0.08)
-                  : cs.primary.withValues(alpha: 0.1),
+                  : const Color(0xFF0084FF).withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(20),
             ),
             indicatorSize: TabBarIndicatorSize.tab,
             dividerColor: Colors.transparent,
-            labelColor: isDark ? Colors.white : cs.primary,
+            labelColor: isDark ? Colors.white : const Color(0xFF0084FF),
             unselectedLabelColor: isDark ? Colors.white.withValues(alpha: 0.5) : cs.onSurfaceVariant.withValues(alpha: 0.6),
             labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
             unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13.5),

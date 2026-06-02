@@ -167,4 +167,23 @@ class GroupChatService {
   }) async {
     await _messages(groupId).doc(messageId).delete();
   }
+
+  /// Thả icon cảm xúc cho tin nhắn
+  Future<void> reactToMessage({
+    required String groupId,
+    required String messageId,
+    required String userId,
+    required String? emoji,
+  }) async {
+    final docRef = _messages(groupId).doc(messageId);
+    if (emoji == null) {
+      await docRef.update({
+        'reactions.$userId': FieldValue.delete(),
+      });
+    } else {
+      await docRef.update({
+        'reactions.$userId': emoji,
+      });
+    }
+  }
 }

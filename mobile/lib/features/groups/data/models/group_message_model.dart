@@ -16,6 +16,7 @@ class GroupMessageModel {
   final String? fileName;
   final int? fileSize;
   final DateTime createdAt;
+  final Map<String, String> reactions; // userId -> emoji
 
   const GroupMessageModel({
     required this.id,
@@ -30,6 +31,7 @@ class GroupMessageModel {
     this.fileName,
     this.fileSize,
     required this.createdAt,
+    this.reactions = const {},
   });
 
   factory GroupMessageModel.fromFirestore(DocumentSnapshot doc) {
@@ -41,6 +43,12 @@ class GroupMessageModel {
       'file' => MessageType.file,
       _ => MessageType.text,
     };
+
+    final reactionsData = data['reactions'];
+    final reactions = reactionsData is Map
+        ? Map<String, String>.from(reactionsData.map((k, v) => MapEntry(k.toString(), v.toString())))
+        : <String, String>{};
+
     return GroupMessageModel(
       id: doc.id,
       senderId: data['senderId']?.toString() ?? '',
@@ -54,6 +62,7 @@ class GroupMessageModel {
       fileName: data['fileName']?.toString(),
       fileSize: data['fileSize'] as int?,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      reactions: reactions,
     );
   }
 
@@ -75,6 +84,7 @@ class GroupMessageModel {
       'fileName': fileName,
       'fileSize': fileSize,
       'createdAt': FieldValue.serverTimestamp(),
+      'reactions': reactions,
     };
   }
 }
