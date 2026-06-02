@@ -313,13 +313,16 @@ class _GroupChatTabState extends State<GroupChatTab> {
                 if (_showScrollToBottomBtn)
                   Positioned(
                     bottom: 16,
-                    right: 16,
-                    child: FloatingActionButton.small(
-                      onPressed: _scrollToBottom,
-                      backgroundColor: cs.primary,
-                      foregroundColor: cs.onPrimary,
-                      shape: const CircleBorder(),
-                      child: const Icon(Icons.arrow_downward_rounded),
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: FloatingActionButton.small(
+                        onPressed: _scrollToBottom,
+                        backgroundColor: cs.primary,
+                        foregroundColor: cs.onPrimary,
+                        shape: const CircleBorder(),
+                        child: const Icon(Icons.arrow_downward_rounded),
+                      ),
                     ),
                   ),
               ],

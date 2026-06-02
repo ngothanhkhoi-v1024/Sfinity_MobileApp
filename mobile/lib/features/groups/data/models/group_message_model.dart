@@ -17,6 +17,7 @@ class GroupMessageModel {
   final int? fileSize;
   final DateTime createdAt;
   final Map<String, String> reactions; // userId -> emoji
+  final bool isDeleted;
 
   const GroupMessageModel({
     required this.id,
@@ -32,6 +33,7 @@ class GroupMessageModel {
     this.fileSize,
     required this.createdAt,
     this.reactions = const {},
+    this.isDeleted = false,
   });
 
   factory GroupMessageModel.fromFirestore(DocumentSnapshot doc) {
@@ -63,6 +65,7 @@ class GroupMessageModel {
       fileSize: data['fileSize'] as int?,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       reactions: reactions,
+      isDeleted: data['isDeleted'] as bool? ?? false,
     );
   }
 
@@ -85,6 +88,7 @@ class GroupMessageModel {
       'fileSize': fileSize,
       'createdAt': FieldValue.serverTimestamp(),
       'reactions': reactions,
+      'isDeleted': isDeleted,
     };
   }
 }

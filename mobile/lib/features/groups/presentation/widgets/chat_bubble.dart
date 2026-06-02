@@ -40,6 +40,15 @@ class ChatBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (message.isDeleted) {
+      return _DeletedBubble(
+        message: message,
+        isMe: isMe,
+        showAvatar: showAvatar,
+        showName: showName,
+      );
+    }
+
     final isImage = message.type == MessageType.image ||
         (message.type == MessageType.file && _isImageFile(message.fileName));
 
@@ -292,32 +301,119 @@ class _BubbleWrapper extends StatelessWidget {
                   // Confirm dialog
                   showDialog(
                     context: context,
-                    builder: (ctx) => AlertDialog(
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20)),
-                      title: const Text('Xóa tin nhắn?'),
-                      content: const Text(
-                          'Tin nhắn này sẽ bị xóa vĩnh viễn với tất cả thành viên trong nhóm.'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx),
-                          child: const Text('Hủy'),
+                    barrierColor: Colors.black.withValues(alpha: 0.4),
+                    builder: (ctx) {
+                      final dialogTheme = Theme.of(ctx);
+                      final dialogIsDark = dialogTheme.brightness == Brightness.dark;
+
+                      return Dialog(
+                        backgroundColor: dialogIsDark ? const Color(0xFF242526) : Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
                         ),
-                        FilledButton(
-                          style: FilledButton.styleFrom(
-                            backgroundColor: cs.error,
-                            foregroundColor: cs.onError,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
+                        clipBehavior: Clip.antiAlias,
+                        child: Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 56,
+                                height: 56,
+                                decoration: BoxDecoration(
+                                  color: Colors.red.withValues(alpha: 0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Center(
+                                  child: Icon(
+                                    Icons.delete_outline_rounded,
+                                    color: Colors.red,
+                                    size: 28,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Xóa tin nhắn?',
+                                style: dialogTheme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 18,
+                                  color: dialogIsDark ? Colors.white : const Color(0xFF050505),
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Tin nhắn này sẽ bị xóa vĩnh viễn với tất cả thành viên trong nhóm.',
+                                style: dialogTheme.textTheme.bodyMedium?.copyWith(
+                                  color: dialogIsDark ? const Color(0xFFB0B3B8) : const Color(0xFF65676B),
+                                  fontSize: 13,
+                                  height: 1.4,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 24),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: SizedBox(
+                                      height: 46,
+                                      child: OutlinedButton(
+                                        style: OutlinedButton.styleFrom(
+                                          side: BorderSide.none,
+                                          backgroundColor: dialogIsDark
+                                              ? Colors.white.withValues(alpha: 0.08)
+                                              : const Color(0xFFF0F2F5),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(13),
+                                          ),
+                                        ),
+                                        onPressed: () => Navigator.pop(ctx),
+                                        child: Text(
+                                          'Hủy',
+                                          style: TextStyle(
+                                            color: dialogIsDark ? Colors.white70 : const Color(0xFF65676B),
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 14.5,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: SizedBox(
+                                      height: 46,
+                                      child: FilledButton(
+                                        style: FilledButton.styleFrom(
+                                          backgroundColor: Colors.red,
+                                          foregroundColor: Colors.white,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(13),
+                                          ),
+                                          elevation: 0,
+                                        ),
+                                        onPressed: () {
+                                          Navigator.pop(ctx);
+                                          onDelete!();
+                                        },
+                                        child: const Text(
+                                          'Xóa',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 14.5,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
-                          onPressed: () {
-                            Navigator.pop(ctx);
-                            onDelete!();
-                          },
-                          child: const Text('Xóa'),
                         ),
-                      ],
-                    ),
+                      );
+                    },
                   );
                 },
               ),
@@ -333,6 +429,95 @@ class _BubbleWrapper extends StatelessWidget {
     return GestureDetector(
       onLongPress: () => _showMenu(context),
       child: child,
+    );
+  }
+}
+
+class _DeletedBubble extends StatelessWidget {
+  const _DeletedBubble({
+    required this.message,
+    required this.isMe,
+    required this.showAvatar,
+    required this.showName,
+  });
+
+  final GroupMessageModel message;
+  final bool isMe;
+  final bool showAvatar;
+  final bool showName;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 12,
+        right: 12,
+        top: 2,
+        bottom: showAvatar ? 10 : 2,
+      ),
+      child: Column(
+        crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        children: [
+          if (!isMe && showName)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 3, left: 44, right: 8),
+              child: Text(
+                message.senderName,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: isDark ? const Color(0xFFB0B3B8) : const Color(0xFF65676B),
+                  fontWeight: FontWeight.w500,
+                  fontSize: 11.5,
+                ),
+              ),
+            ),
+          Row(
+            mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              if (!isMe && showAvatar) ...[
+                _SenderAvatar(name: message.senderName, avatar: message.senderAvatar),
+                const SizedBox(width: 8),
+              ] else if (!isMe) ...[
+                const SizedBox(width: 36),
+              ],
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  constraints: BoxConstraints(
+                    maxWidth: MediaQuery.sizeOf(context).width * 0.72,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.transparent,
+                    borderRadius: _getBubbleRadius(
+                      isMe: isMe,
+                      isFirst: showName,
+                      isLast: showAvatar,
+                    ),
+                    border: Border.all(
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.15)
+                          : Colors.black.withValues(alpha: 0.12),
+                      width: 1.0,
+                    ),
+                  ),
+                  child: Text(
+                    'Tin nhắn đã bị thu hồi',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: isDark ? Colors.white60 : Colors.black45,
+                      fontStyle: FontStyle.italic,
+                      fontSize: 14.0,
+                    ),
+                  ),
+                ),
+              ),
+              if (isMe) const SizedBox(width: 4),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
