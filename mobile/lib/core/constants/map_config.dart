@@ -5,6 +5,9 @@ abstract final class MapConfig {
   static const tileUrlTemplate = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
   static const userAgentPackageName = 'com.sfinity.sfinity';
 
+  /// OSRM public router (OpenStreetMap).
+  static const osrmBaseUrl = 'https://router.project-osrm.org';
+
   /// Trung tâm mặc định (TP.HCM) khi chưa có GPS.
   static const defaultCenter = LatLng(10.8231, 106.6297);
   static const defaultZoom = 13.0;

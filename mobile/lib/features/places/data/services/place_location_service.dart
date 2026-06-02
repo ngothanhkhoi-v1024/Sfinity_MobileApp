@@ -4,9 +4,25 @@ import 'package:latlong2/latlong.dart';
 import '../../../../core/constants/map_config.dart';
 import '../models/place_model.dart';
 
+/// Vị trí GPS hiện tại kèm độ chính xác (mét).
+class CurrentLocationReading {
+  const CurrentLocationReading({
+    required this.point,
+    required this.accuracyM,
+  });
+
+  final LatLng point;
+  final double accuracyM;
+}
+
 /// GPS / quyền vị trí cho tab địa điểm.
 class PlaceLocationService {
   Future<LatLng?> getCurrentLocation() async {
+    final reading = await getCurrentLocationReading();
+    return reading?.point;
+  }
+
+  Future<CurrentLocationReading?> getCurrentLocationReading() async {
     try {
       if (!await Geolocator.isLocationServiceEnabled()) return null;
       var permission = await Geolocator.checkPermission();
@@ -18,20 +34,35 @@ class PlaceLocationService {
         return null;
       }
 
-      // Try to get fresh current position
       final current = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.medium,
-          timeLimit: Duration(seconds: 10),
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 15),
         ),
       );
-      return MapConfig.latLngFromCoords(current.latitude, current.longitude);
-    } catch (e) {
-      // Fallback: try to get the last known position if getting current position times out or fails
+      final point = MapConfig.latLngFromCoords(
+        current.latitude,
+        current.longitude,
+      );
+      if (point == null) return null;
+      final accuracy = current.accuracy;
+      if (!accuracy.isFinite || accuracy <= 0) return null;
+      return CurrentLocationReading(point: point, accuracyM: accuracy);
+    } catch (_) {
       try {
         final lastKnown = await Geolocator.getLastKnownPosition();
         if (lastKnown != null) {
-          return MapConfig.latLngFromCoords(lastKnown.latitude, lastKnown.longitude);
+          final point = MapConfig.latLngFromCoords(
+            lastKnown.latitude,
+            lastKnown.longitude,
+          );
+          final accuracy = lastKnown.accuracy;
+          if (point != null &&
+              accuracy.isFinite &&
+              accuracy > 0 &&
+              accuracy <= 25) {
+            return CurrentLocationReading(point: point, accuracyM: accuracy);
+          }
         }
       } catch (_) {}
       return null;

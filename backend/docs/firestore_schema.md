@@ -15,6 +15,7 @@ Tài liệu này đóng vai trò là **Source of Truth (Nguồn thông tin chu�
 | `favorites` | Lưu danh sách tài liệu sinh viên đánh dấu yêu thích/lưu lại. | Mã chuỗi tự sinh ngẫu nhiên |
 | `place_reviews` | Điểm số và nhận xét các địa điểm trên bản đồ. | Mã chuỗi tự sinh ngẫu nhiên |
 | `place_photos` | Danh sách hình ảnh thực tế của địa điểm do sinh viên chụp. | Mã chuỗi tự sinh ngẫu nhiên |
+| `place_checkins` | Check-in GPS tại địa điểm (mỗi user tối đa một lần / địa điểm). | `{placeId}_{userId}` |
 | `notifications` | Lịch sử thông báo đẩy gửi tới thiết bị người dùng. | Mã chuỗi tự sinh ngẫu nhiên |
 | `feedbacks` | Phản hồi góp ý của người dùng gửi cho ban quản trị. | Mã chuỗi tự sinh ngẫu nhiên |
 | `reports` | Báo cáo vi phạm các tài liệu/địa điểm chờ duyệt. | Mã chuỗi tự sinh ngẫu nhiên |
