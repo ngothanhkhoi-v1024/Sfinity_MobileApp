@@ -1897,7 +1897,10 @@ class _LocationBubbleState extends State<_LocationBubble> {
                   ),
                   onTap: () async {
                     setState(() => _showTime = !_showTime);
-                    if (fileUrl.isNotEmpty) {
+                    final placeId = widget.message.sharedPlaceId;
+                    if (placeId != null && placeId.isNotEmpty) {
+                      context.push('/places/$placeId');
+                    } else if (fileUrl.isNotEmpty) {
                       final uri = Uri.parse(fileUrl);
                       try {
                         await launchUrl(uri, mode: LaunchMode.externalApplication);

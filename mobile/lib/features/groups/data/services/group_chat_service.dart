@@ -169,6 +169,7 @@ class GroupChatService {
     required double latitude,
     required double longitude,
     required String address,
+    String? placeId,
   }) async {
     final msg = GroupMessageModel(
       id: '',
@@ -181,6 +182,7 @@ class GroupChatService {
       fileName: address,
       fileSize: 0,
       createdAt: DateTime.now(),
+      sharedPlaceId: placeId,
     );
     await _messages(groupId).add(msg.toFirestore());
   }

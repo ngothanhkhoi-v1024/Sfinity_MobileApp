@@ -264,6 +264,7 @@ class _GroupChatTabState extends State<GroupChatTab> {
           latitude: selectedPlace.latitude ?? 0.0,
           longitude: selectedPlace.longitude ?? 0.0,
           address: selectedPlace.title,
+          placeId: selectedPlace.id,
         );
         _scrollToBottom();
       }

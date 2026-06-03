@@ -356,7 +356,10 @@ class _GroupFilesTabState extends State<GroupFilesTab> {
                               child: Icon(Icons.place_rounded, color: Colors.green.shade700),
                             );
                             final onTap = () async {
-                              if (msg.fileUrl != null && msg.fileUrl!.isNotEmpty) {
+                              final placeId = msg.sharedPlaceId;
+                              if (placeId != null && placeId.isNotEmpty) {
+                                context.push('/places/$placeId');
+                              } else if (msg.fileUrl != null && msg.fileUrl!.isNotEmpty) {
                                 final uri = Uri.parse(msg.fileUrl!);
                                 try {
                                   await launchUrl(uri, mode: LaunchMode.externalApplication);
