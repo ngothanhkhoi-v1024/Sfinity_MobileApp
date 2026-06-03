@@ -3,11 +3,11 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../core/constants/map_config.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../../data/models/place_route_model.dart';
 import '../../data/services/place_location_service.dart';
 import '../../data/services/place_routing_service.dart';
 
-/// Bản đồ + hướng dẫn đi từ GPS hiện tại tới địa điểm.
 class PlaceDirectionsSection extends StatefulWidget {
   const PlaceDirectionsSection({
     super.key,
@@ -34,7 +34,6 @@ class _PlaceDirectionsSectionState extends State<PlaceDirectionsSection> {
   RouteTravelMode _mode = RouteTravelMode.motorcycle;
   LatLng? _origin;
 
-  /// Cache theo profile OSRM (`foot` / `driving`).
   final _cacheByProfile = <String, PlaceRouteResult>{};
 
   Color _colorForMode(RouteTravelMode mode) => switch (mode) {
@@ -56,6 +55,7 @@ class _PlaceDirectionsSectionState extends State<PlaceDirectionsSection> {
   }
 
   Future<void> _loadDirections({RouteTravelMode? mode}) async {
+    final l10n = context.l10n;
     final targetMode = mode ?? _mode;
     final profileKey = targetMode.cacheKey;
 
@@ -85,8 +85,7 @@ class _PlaceDirectionsSectionState extends State<PlaceDirectionsSection> {
       if (origin == null) {
         setState(() {
           _loading = false;
-          _error =
-              'Không lấy được vị trí GPS. Bật định vị và cấp quyền cho ứng dụng.';
+          _error = l10n.cannotGetGPSDirections;
         });
         return;
       }
@@ -95,6 +94,9 @@ class _PlaceDirectionsSectionState extends State<PlaceDirectionsSection> {
         origin: origin,
         destination: widget.destination,
         travelMode: targetMode,
+        noPathFound: () => l10n.noPathFound,
+        noSuitableRoute: () => l10n.noSuitableRoute,
+        invalidRouteData: () => l10n.noSuitableRoute,
       );
 
       _cacheByProfile[profileKey] = route;
@@ -116,7 +118,7 @@ class _PlaceDirectionsSectionState extends State<PlaceDirectionsSection> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = 'Không tải được chỉ đường. Kiểm tra mạng và thử lại.';
+        _error = l10n.cannotLoadDirections;
       });
     }
   }
@@ -155,6 +157,7 @@ class _PlaceDirectionsSectionState extends State<PlaceDirectionsSection> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -166,9 +169,9 @@ class _PlaceDirectionsSectionState extends State<PlaceDirectionsSection> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
         icon: const Icon(Icons.directions_rounded),
-        label: const Text(
-          'Chỉ đường đi',
-          style: TextStyle(fontWeight: FontWeight.w600),
+        label: Text(
+          l10n.mapDirections,
+          style: const TextStyle(fontWeight: FontWeight.w600),
         ),
       );
     }
@@ -182,14 +185,14 @@ class _PlaceDirectionsSectionState extends State<PlaceDirectionsSection> {
           children: [
             Expanded(
               child: Text(
-                'Chỉ đường',
+                l10n.mapDirections,
                 style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
               ),
             ),
             IconButton(
-              tooltip: 'Đóng',
+              tooltip: l10n.close,
               onPressed: _collapse,
               icon: const Icon(Icons.close, size: 20),
             ),
@@ -230,7 +233,7 @@ class _PlaceDirectionsSectionState extends State<PlaceDirectionsSection> {
         if (_route != null) ...[
           const SizedBox(height: 12),
           Text(
-            'Các bước đi',
+            l10n.continue_,
             style: theme.textTheme.labelLarge?.copyWith(
               fontWeight: FontWeight.w600,
             ),
@@ -497,7 +500,7 @@ class _RouteSummary extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '$modeLabel · $dist · ~$mins phút',
+                  '$modeLabel · $dist · ~$mins min',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     color: isDark ? Colors.grey.shade200 : Colors.grey.shade900,
@@ -507,7 +510,7 @@ class _RouteSummary extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.only(top: 2),
                     child: Text(
-                      'Tuyến xe máy dùng đường ô tô (ước lượng thời gian)',
+                      context.l10n.noSuitableRoute,
                       style: TextStyle(
                         fontSize: 10,
                         color: isDark ? Colors.grey.shade500 : Colors.grey.shade600,
@@ -546,7 +549,7 @@ class _ErrorBox extends StatelessWidget {
           TextButton.icon(
             onPressed: onRetry,
             icon: const Icon(Icons.refresh, size: 18),
-            label: const Text('Thử lại'),
+            label: Text(context.l10n.pleaseTryAgain),
           ),
         ],
       ),

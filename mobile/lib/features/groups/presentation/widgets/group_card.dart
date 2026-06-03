@@ -1,202 +1,158 @@
 import 'package:flutter/material.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../../data/models/group_model.dart';
 
 class GroupCard extends StatelessWidget {
-  const GroupCard({
-    super.key,
-    required this.group,
-    required this.onTap,
-  });
-
+  const GroupCard({super.key, required this.group, this.onTap});
   final GroupModel group;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = cs.brightness == Brightness.dark;
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1F1F1F) : Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isDark ? const Color(0xFF2D2D2D) : const Color(0xFFE5E7EB),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark ? Colors.white.withValues(alpha: 0.025) : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isDark ? Colors.white.withValues(alpha: 0.05) : cs.outlineVariant.withValues(alpha: 0.35),
+              width: 0.8,
+            ),
+            boxShadow: isDark
+                ? []
+                : [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 12,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
           ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              _GroupAvatar(group: group),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            group.name,
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 15,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                // Avatar nhóm
+                CircleAvatar(
+                  radius: 26,
+                  backgroundColor: cs.primary.withValues(alpha: 0.1),
+                  backgroundImage:
+                      group.avatarUrl != null && group.avatarUrl!.isNotEmpty ? NetworkImage(group.avatarUrl!) : null,
+                  child: group.avatarUrl == null || group.avatarUrl!.isEmpty
+                      ? Text(
+                          group.name.isNotEmpty ? group.name[0].toUpperCase() : '?',
+                          style: TextStyle(
+                            color: cs.primary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
                           ),
-                        ),
-                        if (group.isPublic)
+                        )
+                      : null,
+                ),
+                const SizedBox(width: 14),
+                // Tên & thông tin nhóm
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              group.name,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                                color: isDark ? Colors.white : Colors.black87,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
                             decoration: BoxDecoration(
-                              color: cs.tertiaryContainer,
-                              borderRadius: BorderRadius.circular(6),
+                              color: group.isPublic
+                                  ? const Color(0xFF4CAF50).withValues(alpha: 0.12)
+                                  : const Color(0xFFE53935).withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(5),
                             ),
                             child: Text(
-                              'Công khai',
+                              group.isPublic ? l10n.publicBadge : l10n.privateGroup,
                               style: TextStyle(
-                                fontSize: 10,
-                                color: cs.onTertiaryContainer,
-                                fontWeight: FontWeight.w600,
+                                color: group.isPublic ? const Color(0xFF4CAF50) : const Color(0xFFE53935),
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.4,
                               ),
                             ),
                           ),
-                      ],
-                    ),
-                    if (group.description != null && group.description!.isNotEmpty) ...[
-                      const SizedBox(height: 3),
-                      Text(
-                        group.description!,
-                        style: theme.textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        ],
+                      ),
+                      const SizedBox(height: 5),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.group_outlined,
+                            size: 13.5,
+                            color: isDark ? Colors.white.withValues(alpha: 0.4) : cs.onSurfaceVariant.withValues(alpha: 0.6),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${group.members.length} ${l10n.member.toLowerCase()}',
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              color: isDark ? Colors.white.withValues(alpha: 0.45) : cs.onSurfaceVariant.withValues(alpha: 0.65),
+                            ),
+                          ),
+                          if (group.isAdmin || group.isOwner) ...[
+                            const SizedBox(width: 10),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 5.5, vertical: 1.5),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFF0084FF), Color(0xFFFF5A36)],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(5),
+                              ),
+                              child: Text(
+                                group.isOwner ? l10n.groupOwner : l10n.adminBadge,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.3,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ],
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        Icon(Icons.people_outline, size: 14, color: cs.primary),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${group.memberCount} thành viên',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: cs.primary,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        _RoleBadge(role: group.myRole ?? 'MEMBER', cs: cs),
-                      ],
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-              Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
-            ],
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 22,
+                  color: isDark ? Colors.white.withValues(alpha: 0.2) : cs.onSurfaceVariant.withValues(alpha: 0.4),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
-  }
-}
-
-class _GroupAvatar extends StatelessWidget {
-  const _GroupAvatar({required this.group});
-  final GroupModel group;
-
-  @override
-  Widget build(BuildContext context) {
-    if (group.avatarUrl != null && group.avatarUrl!.isNotEmpty) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(14),
-        child: Image.network(
-          group.avatarUrl!,
-          width: 54,
-          height: 54,
-          fit: BoxFit.cover,
-        ),
-      );
-    }
-
-    // Generate gradient avatar from initials
-    final colors = _gradientForName(group.name);
-    final initials = _initials(group.name);
-
-    return Container(
-      width: 54,
-      height: 54,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        gradient: LinearGradient(
-          colors: colors,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Center(
-        child: Text(
-          initials,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
-
-  String _initials(String name) {
-    final parts = name.trim().split(' ');
-    if (parts.length >= 2) return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    return name.isNotEmpty ? name[0].toUpperCase() : 'G';
-  }
-
-  List<Color> _gradientForName(String name) {
-    final palettes = [
-      [const Color(0xFF6366F1), const Color(0xFF8B5CF6)],
-      [const Color(0xFFEC4899), const Color(0xFFF97316)],
-      [const Color(0xFF0EA5E9), const Color(0xFF06B6D4)],
-      [const Color(0xFF10B981), const Color(0xFF34D399)],
-      [const Color(0xFFEF4444), const Color(0xFFF97316)],
-      [const Color(0xFFF59E0B), const Color(0xFFEAB308)],
-    ];
-    final idx = name.codeUnitAt(0) % palettes.length;
-    return palettes[idx];
-  }
-}
-
-class _RoleBadge extends StatelessWidget {
-  const _RoleBadge({required this.role, required this.cs});
-  final String role;
-  final ColorScheme cs;
-
-  @override
-  Widget build(BuildContext context) {
-    if (role == 'OWNER') {
-      return Row(
-        children: [
-          Icon(Icons.star, size: 12, color: Colors.amber.shade600),
-          const SizedBox(width: 3),
-          Text('Chủ nhóm', style: TextStyle(fontSize: 11, color: Colors.amber.shade700, fontWeight: FontWeight.w600)),
-        ],
-      );
-    }
-    if (role == 'ADMIN') {
-      return Row(
-        children: [
-          Icon(Icons.shield_outlined, size: 12, color: cs.primary),
-          const SizedBox(width: 3),
-          Text('Admin', style: TextStyle(fontSize: 11, color: cs.primary, fontWeight: FontWeight.w600)),
-        ],
-      );
-    }
-    return const SizedBox.shrink();
   }
 }

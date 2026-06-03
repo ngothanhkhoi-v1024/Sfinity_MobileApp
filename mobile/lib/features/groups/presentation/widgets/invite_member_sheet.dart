@@ -3,6 +3,7 @@ import '../../data/models/group_model.dart';
 import '../../../friendships/data/models/friend_model.dart';
 import '../controllers/group_controller.dart';
 import '../../../friendships/presentation/controllers/friendship_controller.dart';
+import '../../../../core/i18n/app_text.dart';
 
 class InviteMemberSheet extends StatefulWidget {
   const InviteMemberSheet({
@@ -52,6 +53,7 @@ class _InviteMemberSheetState extends State<InviteMemberSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final isDark = cs.brightness == Brightness.dark;
@@ -103,7 +105,7 @@ class _InviteMemberSheetState extends State<InviteMemberSheet> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Mời thành viên',
+                l10n.addMembers,
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: isDark ? Colors.white : cs.onSurface,
@@ -122,7 +124,7 @@ class _InviteMemberSheetState extends State<InviteMemberSheet> {
             controller: _searchCtrl,
             style: TextStyle(color: isDark ? Colors.white : Colors.black87),
             decoration: InputDecoration(
-              hintText: 'Tìm theo tên hoặc email...',
+              hintText: l10n.searchByNameEmail,
               hintStyle: TextStyle(color: isDark ? Colors.white.withValues(alpha: 0.35) : cs.onSurfaceVariant.withValues(alpha: 0.5)),
               prefixIcon: Icon(Icons.search, color: isDark ? Colors.white.withValues(alpha: 0.4) : cs.onSurfaceVariant.withValues(alpha: 0.6)),
               suffixIcon: _query.isNotEmpty
@@ -156,7 +158,7 @@ class _InviteMemberSheetState extends State<InviteMemberSheet> {
           ),
           const SizedBox(height: 16),
           Text(
-            isSearchingMode ? 'Kết quả tìm kiếm' : 'Gợi ý từ bạn bè',
+            isSearchingMode ? l10n.searchResults : l10n.suggestedFriends,
             style: theme.textTheme.bodySmall?.copyWith(
               color: isDark ? Colors.white.withValues(alpha: 0.45) : cs.onSurfaceVariant.withValues(alpha: 0.6),
               fontWeight: FontWeight.bold,
@@ -178,7 +180,7 @@ class _InviteMemberSheetState extends State<InviteMemberSheet> {
                             ),
                             const SizedBox(height: 12),
                             Text(
-                              isSearchingMode ? 'Không tìm thấy người dùng nào' : 'Danh sách bạn bè trống',
+                              isSearchingMode ? l10n.noUsersFound : l10n.noFriendsList,
                               style: TextStyle(color: cs.onSurfaceVariant),
                             ),
                           ],
@@ -243,7 +245,7 @@ class _InviteMemberSheetState extends State<InviteMemberSheet> {
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                       child: Text(
-                                        'Thành viên',
+                                        l10n.member,
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w600,
@@ -269,9 +271,9 @@ class _InviteMemberSheetState extends State<InviteMemberSheet> {
                                         borderRadius: BorderRadius.circular(10),
                                         border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
                                       ),
-                                      child: const Text(
-                                        'Đang chờ...',
-                                        style: TextStyle(
+                                      child: Text(
+                                        l10n.pending,
+                                        style: const TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.bold,
                                           color: Colors.amber,
@@ -300,8 +302,8 @@ class _InviteMemberSheetState extends State<InviteMemberSheet> {
                                           ScaffoldMessenger.of(context).showSnackBar(
                                             SnackBar(
                                               content: Text(ok
-                                                  ? 'Đã gửi lời mời tới ${user.name} thành công!'
-                                                  : (widget.groupCtrl.error ?? 'Gửi lời mời thất bại.')),
+                                                  ? l10n.sendInviteSuccess(user.name)
+                                                  : (widget.groupCtrl.error ?? l10n.sendInviteFailed)),
                                               backgroundColor: ok ? Colors.green.shade700 : cs.error,
                                             ),
                                           );
@@ -314,7 +316,7 @@ class _InviteMemberSheetState extends State<InviteMemberSheet> {
                                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                       ),
-                                      child: const Text('Mời', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                      child: Text(l10n.invite, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                                     ),
                                   );
                                 },

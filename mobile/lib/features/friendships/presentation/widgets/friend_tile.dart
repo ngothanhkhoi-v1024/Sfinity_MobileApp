@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../../data/models/friend_model.dart';
 
 class FriendTile extends StatelessWidget {
@@ -17,6 +18,7 @@ class FriendTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
+    final l10n = context.l10n;
     final user = friend.user;
 
     return ListTile(
@@ -38,7 +40,7 @@ class FriendTile extends StatelessWidget {
             icon: Icon(Icons.more_horiz, color: cs.onSurfaceVariant),
             onSelected: (_) {},
             itemBuilder: (_) => [
-              const PopupMenuItem(value: 'unfriend', child: Text('Hủy kết bạn')),
+              PopupMenuItem(value: 'unfriend', child: Text(l10n.unfriend)),
             ],
           ),
     );

@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:sfinity/app.dart';
 import 'package:sfinity/features/places/data/models/place_model.dart';
 import 'place_picker_sheet.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../../data/models/group_message_model.dart';
 import '../../data/services/group_chat_service.dart';
 import 'attachment_menu.dart';
@@ -106,6 +107,7 @@ class _GroupChatTabState extends State<GroupChatTab> {
   }
 
   Future<void> _pickImage(ImageSource source) async {
+    final l10n = context.l10n;
     try {
       final picker = ImagePicker();
       final XFile? picked = await picker.pickImage(
@@ -135,7 +137,7 @@ class _GroupChatTabState extends State<GroupChatTab> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Gửi ảnh thất bại: $e'),
+            content: Text('${l10n.shareDocument} $e'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -152,6 +154,7 @@ class _GroupChatTabState extends State<GroupChatTab> {
   }
 
   Future<void> _pickFile() async {
+    final l10n = context.l10n;
     try {
       final result = await FilePicker.pickFiles(
           type: FileType.any, allowMultiple: false);
@@ -164,8 +167,8 @@ class _GroupChatTabState extends State<GroupChatTab> {
       if (pf.size > maxSizeBytes) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Kích thước tệp vượt quá giới hạn cho phép (tối đa 200MB).'),
+            SnackBar(
+              content: Text(l10n.shareDocument),
               backgroundColor: Colors.red,
             ),
           );
@@ -194,7 +197,7 @@ class _GroupChatTabState extends State<GroupChatTab> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Gửi file thất bại: $e'),
+            content: Text(l10n.shareDocument),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -223,6 +226,7 @@ class _GroupChatTabState extends State<GroupChatTab> {
   }
 
   Future<void> _shareLocation() async {
+    final l10n = context.l10n;
     try {
       // Show loading indicator
       showDialog(
@@ -271,7 +275,7 @@ class _GroupChatTabState extends State<GroupChatTab> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi tải danh sách địa điểm: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text(l10n.groupChatError(e.toString())), backgroundColor: Colors.red),
         );
       }
     }
@@ -281,6 +285,7 @@ class _GroupChatTabState extends State<GroupChatTab> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
+    final l10n = context.l10n;
 
     return Container(
       color: cs.brightness == Brightness.dark
@@ -298,7 +303,7 @@ class _GroupChatTabState extends State<GroupChatTab> {
                       return const Center(child: CircularProgressIndicator());
                     }
                     if (snap.hasError) {
-                      return Center(child: Text('Lỗi: ${snap.error}'));
+                      return Center(child: Text(l10n.groupChatError(snap.error.toString())));
                     }
                     final rawMessages = snap.data ?? [];
                     final messages = rawMessages.where((msg) {
@@ -327,11 +332,11 @@ class _GroupChatTabState extends State<GroupChatTab> {
                               color: cs.onSurfaceVariant.withValues(alpha: 0.3),
                             ),
                             const SizedBox(height: 12),
-                            Text('Chưa có tin nhắn nào',
+                            Text(l10n.noMessages,
                                 style: TextStyle(color: cs.onSurfaceVariant)),
                             const SizedBox(height: 4),
                             Text(
-                              'Hãy là người đầu tiên gửi tin!',
+                              l10n.noMessagesGroup,
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: cs.onSurfaceVariant.withValues(alpha: 0.7),
                               ),

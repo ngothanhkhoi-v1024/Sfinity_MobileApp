@@ -59,7 +59,7 @@ class _HomeShellPageState extends State<HomeShellPage> {
       PillNavItem(label: l10n.explore, icon: Icons.explore_outlined, selectedIcon: Icons.explore),
       PillNavItem(label: l10n.places, icon: Icons.map_outlined, selectedIcon: Icons.map),
       PillNavItem(label: l10n.documents, icon: Icons.menu_book_outlined, selectedIcon: Icons.menu_book),
-      const PillNavItem(label: 'Cộng đồng', icon: Icons.people_alt_outlined, selectedIcon: Icons.people_alt),
+      PillNavItem(label: l10n.community, icon: Icons.people_alt_outlined, selectedIcon: Icons.people_alt),
       PillNavItem(label: l10n.profile, icon: Icons.person_outline, selectedIcon: Icons.person),
     ];
     final bottomInset = MediaQuery.paddingOf(context).bottom;
@@ -160,7 +160,7 @@ class _HomeShellPageState extends State<HomeShellPage> {
     return switch (index) {
       0 => l10n.explore,
       2 => l10n.documents,
-      3 => 'Cộng đồng',
+      3 => l10n.community,
       4 => l10n.profile,
       _ => l10n.appName,
     };

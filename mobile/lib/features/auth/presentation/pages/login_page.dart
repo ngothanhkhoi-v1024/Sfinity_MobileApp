@@ -256,7 +256,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           const SizedBox(height: 12),
                           // SocialLoginButton(
-                          //   label: 'Đăng nhập với Facebook',
+                          //   label: l10n.continueWithFacebook,
                           //   color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF9FAFB),
                           //   borderColor: cardBorderColor,
                           //   textColor: onSurfaceColor,

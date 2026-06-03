@@ -1,6 +1,7 @@
 import 'package:latlong2/latlong.dart';
 
 import '../../../../core/constants/place_tags.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../mappers/place_mapper.dart';
 import '../models/place_model.dart';
 import '../services/place_api_service.dart';
@@ -31,11 +32,11 @@ class PlaceRepositoryImpl implements PlaceRepository {
   }
 
   @override
-  Future<PlaceModel> getPlace(String id) async {
+  Future<PlaceModel> getPlace(String id, {String Function()? placeNotFound}) async {
     final res = await _api.getPlace(id);
     final place = PlaceMapper.fromJson(Map<String, dynamic>.from(res));
     if (place == null) {
-      throw Exception('Địa điểm không có tọa độ hợp lệ');
+      throw Exception(placeNotFound?.call() ?? 'Invalid place coordinates');
     }
     return place;
   }
@@ -48,18 +49,18 @@ class PlaceRepositoryImpl implements PlaceRepository {
   }
 
   @override
-  Future<PlaceModel> createPlace(PlaceUpsertPayload payload) async {
+  Future<PlaceModel> createPlace(PlaceUpsertPayload payload, {String Function()? errorMsg}) async {
     final res = await _api.createPlace(payload.toJson());
     final place = PlaceMapper.fromJson(Map<String, dynamic>.from(res));
-    if (place == null) throw Exception('Không tạo được địa điểm');
+    if (place == null) throw Exception(errorMsg?.call() ?? 'Cannot create place');
     return place;
   }
 
   @override
-  Future<PlaceModel> updatePlace(String id, PlaceUpsertPayload payload) async {
+  Future<PlaceModel> updatePlace(String id, PlaceUpsertPayload payload, {String Function()? errorMsg}) async {
     final res = await _api.updatePlace(id, payload.toJson());
     final place = PlaceMapper.fromJson(Map<String, dynamic>.from(res));
-    if (place == null) throw Exception('Không cập nhật được địa điểm');
+    if (place == null) throw Exception(errorMsg?.call() ?? 'Cannot update place');
     return place;
   }
 

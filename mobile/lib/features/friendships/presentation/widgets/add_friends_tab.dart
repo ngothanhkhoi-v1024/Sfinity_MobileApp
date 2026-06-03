@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../controllers/friendship_controller.dart';
 import 'friend_request_tile.dart';
 import 'user_profile_bottom_sheet.dart';
@@ -28,6 +29,7 @@ class _AddFriendsTabState extends State<AddFriendsTab> {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final ctrl = widget.controller;
+    final l10n = context.l10n;
     final isSearchingActive = _globalSearchCtrl.text.isNotEmpty;
 
     return Column(
@@ -37,7 +39,7 @@ class _AddFriendsTabState extends State<AddFriendsTab> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: SearchBar(
             controller: _globalSearchCtrl,
-            hintText: 'Tìm người dùng bằng tên hoặc email...',
+            hintText: l10n.searchUserByNameEmail,
             leading: const Icon(Icons.person_search_outlined),
             onChanged: (q) => ctrl.searchUsers(q),
             trailing: [
@@ -60,7 +62,7 @@ class _AddFriendsTabState extends State<AddFriendsTab> {
           child: Builder(
             builder: (context) {
               if (isSearchingActive) {
-                return _buildSearchResultsSection(cs);
+                return _buildSearchResultsSection(cs, l10n);
               }
 
               final hasPending = ctrl.pendingRequests.isNotEmpty;
@@ -82,7 +84,7 @@ class _AddFriendsTabState extends State<AddFriendsTab> {
                         child: Row(
                           children: [
                             Text(
-                              'Lời mời kết bạn (${ctrl.pendingRequests.length})',
+                              '${l10n.friendRequests} (${ctrl.pendingRequests.length})',
                               style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                             ),
                           ],
@@ -120,7 +122,7 @@ class _AddFriendsTabState extends State<AddFriendsTab> {
                         child: Row(
                           children: [
                             Text(
-                              'Lời mời đã gửi (${ctrl.sentRequests.length})',
+                              l10n.sentRequests(ctrl.sentRequests.length),
                               style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                             ),
                           ],
@@ -196,11 +198,11 @@ class _AddFriendsTabState extends State<AddFriendsTab> {
                                         await ctrl.unfriend(req.id);
                                         setState(() => _loadingRequests.remove(req.id));
                                         messenger.showSnackBar(
-                                          const SnackBar(content: Text('Đã thu hồi lời mời kết bạn.')),
+                                          SnackBar(content: Text(l10n.cancelRequest)),
                                         );
                                       },
                                       icon: const Icon(Icons.close, size: 14),
-                                      label: const Text('Hủy'),
+                                      label: Text(l10n.cancel),
                                       style: OutlinedButton.styleFrom(
                                         foregroundColor: cs.error,
                                         side: BorderSide(color: cs.error.withValues(alpha: 0.5)),
@@ -224,13 +226,13 @@ class _AddFriendsTabState extends State<AddFriendsTab> {
                       Icon(Icons.person_add_alt_rounded, size: 72, color: cs.primary.withValues(alpha: 0.2)),
                       const SizedBox(height: 16),
                       Text(
-                        'Tìm kiếm & Kết bạn mới',
+                        l10n.noFriendsSearchHint,
                         textAlign: TextAlign.center,
                         style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: cs.onSurfaceVariant),
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'Nhập tên hoặc email vào thanh tìm kiếm ở trên\nđể gửi lời mời kết bạn kết nối với mọi người!',
+                        l10n.noFriendsSearchHint,
                         textAlign: TextAlign.center,
                         style: theme.textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant.withValues(alpha: 0.7)),
                       ),
@@ -245,7 +247,7 @@ class _AddFriendsTabState extends State<AddFriendsTab> {
     );
   }
 
-  Widget _buildSearchResultsSection(ColorScheme cs) {
+  Widget _buildSearchResultsSection(ColorScheme cs, dynamic l10n) {
     final ctrl = widget.controller;
 
     if (ctrl.isSearching) {
@@ -266,7 +268,7 @@ class _AddFriendsTabState extends State<AddFriendsTab> {
               OutlinedButton.icon(
                 onPressed: () => ctrl.searchUsers(_globalSearchCtrl.text),
                 icon: const Icon(Icons.refresh),
-                label: const Text('Thử lại'),
+                label: const Text('Retry'),
               ),
             ],
           ),
@@ -275,10 +277,10 @@ class _AddFriendsTabState extends State<AddFriendsTab> {
     }
 
     if (ctrl.searchResults.isEmpty) {
-      return const FriendshipsEmptyState(
+      return FriendshipsEmptyState(
         icon: Icons.search_off_rounded,
-        title: 'Không tìm thấy người dùng',
-        subtitle: 'Thử kiểm tra lại từ khóa hoặc tìm kiếm bằng email',
+        title: l10n.noUserFound,
+        subtitle: l10n.searchByNameEmail,
       );
     }
 
@@ -299,12 +301,12 @@ class _AddFriendsTabState extends State<AddFriendsTab> {
             if (ok) {
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Đã gửi lời mời kết bạn!')),
+                  SnackBar(content: Text(l10n.friendRequestSent)),
                 );
               }
             } else if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(ctrl.error ?? 'Lỗi'), backgroundColor: Colors.red),
+                SnackBar(content: Text(ctrl.error ?? l10n.friendRequestError), backgroundColor: Colors.red),
               );
             }
           },
@@ -314,11 +316,11 @@ class _AddFriendsTabState extends State<AddFriendsTab> {
             final ok = await ctrl.unfriend(target);
             if (ok) {
               messenger.showSnackBar(
-                const SnackBar(content: Text('Đã thu hồi lời mời kết bạn.')),
+                SnackBar(content: Text(l10n.cancelRequest)),
               );
             } else {
               messenger.showSnackBar(
-                SnackBar(content: Text(ctrl.error ?? 'Lỗi'), backgroundColor: Colors.red),
+                SnackBar(content: Text(ctrl.error ?? l10n.friendRequestError), backgroundColor: Colors.red),
               );
             }
           },

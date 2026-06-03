@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/place_tags.dart';
+import '../../../../core/i18n/app_text.dart';
 
-/// Chọn tag khi tạo/sửa địa điểm.
 class PlaceTagSelector extends StatelessWidget {
   const PlaceTagSelector({
     super.key,
@@ -25,6 +25,7 @@ class PlaceTagSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -32,12 +33,12 @@ class PlaceTagSelector extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Tiện ích học tập',
+          l10n.filterAmenities,
           style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 4),
         Text(
-          'Chọn các tiện ích có tại địa điểm — giúp mọi người lọc theo nhu cầu',
+          l10n.placeDescriptionDetail,
           style: TextStyle(
             fontSize: 12,
             color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
@@ -63,7 +64,6 @@ class PlaceTagSelector extends StatelessWidget {
   }
 }
 
-/// Hiển thị tag đã gán (read-only).
 class PlaceTagDisplay extends StatelessWidget {
   const PlaceTagDisplay({super.key, required this.tagIds});
 
@@ -98,7 +98,6 @@ class PlaceTagDisplay extends StatelessWidget {
   }
 }
 
-/// Thanh lọc tag trên map/danh sách.
 class PlaceTagFilterBar extends StatelessWidget {
   const PlaceTagFilterBar({
     super.key,
@@ -124,6 +123,7 @@ class PlaceTagFilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -137,7 +137,7 @@ class PlaceTagFilterBar extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(right: 8),
               child: ActionChip(
-                label: const Text('Xóa lọc'),
+                label: Text(l10n.removeFilter),
                 avatar: const Icon(Icons.clear, size: 16),
                 onPressed: () {
                   onChanged({});

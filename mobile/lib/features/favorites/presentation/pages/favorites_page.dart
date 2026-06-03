@@ -60,7 +60,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
           return ListTile(
             leading: Icon(isPlace ? Icons.place_outlined : Icons.description_outlined),
             title: Text(document?['title']?.toString() ?? ''),
-            subtitle: isPlace ? const Text('Địa điểm học tập') : null,
+            subtitle: isPlace ? Text(l10n.studyNearMe) : null,
             trailing: const Icon(Icons.chevron_right),
             onTap: docId.isEmpty
                 ? null

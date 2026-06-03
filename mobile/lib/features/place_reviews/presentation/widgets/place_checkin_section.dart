@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app.dart';
 import '../../../../core/constants/route_names.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../../../places/data/utils/place_checkin_geo.dart';
 import '../controllers/place_engagement_controller.dart';
 
@@ -37,6 +38,7 @@ class _PlaceCheckInSectionState extends State<PlaceCheckInSection> {
   }
 
   Future<void> _onCheckIn() async {
+    final l10n = context.l10n;
     final ok = await widget.controller.submitCheckIn(
       placeId: widget.placeId,
       placeLat: widget.placeLat,
@@ -45,7 +47,7 @@ class _PlaceCheckInSectionState extends State<PlaceCheckInSection> {
     if (!mounted) return;
     if (ok) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Đã check-in tại địa điểm này!')),
+        SnackBar(content: Text(l10n.loginToCheckinDesc)),
       );
     } else if (widget.controller.error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -63,6 +65,7 @@ class _PlaceCheckInSectionState extends State<PlaceCheckInSection> {
     final count = status?.checkInCount ?? 0;
     final hasCheckedIn = status?.hasCheckedIn == true;
     final isAuth = SfinityApp.auth.isAuthenticated;
+    final l10n = context.l10n;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -91,8 +94,8 @@ class _PlaceCheckInSectionState extends State<PlaceCheckInSection> {
               Expanded(
                 child: Text(
                   count == 1
-                      ? 'người đã check-in'
-                      : 'người đã check-in tại đây',
+                      ? l10n.loginToCheckin
+                      : l10n.loginToCheckinDesc,
                   style: TextStyle(
                     color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                   ),
@@ -108,7 +111,7 @@ class _PlaceCheckInSectionState extends State<PlaceCheckInSection> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Bạn đã check-in tại địa điểm này',
+                    l10n.loginToCheckin,
                     style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: Colors.green.shade700,
@@ -119,7 +122,7 @@ class _PlaceCheckInSectionState extends State<PlaceCheckInSection> {
             ),
           ] else if (!isAuth) ...[
             Text(
-              'Đăng nhập để check-in khi bạn đến địa điểm này.',
+              l10n.loginToCheckinDesc,
               style: TextStyle(
                 fontSize: 13,
                 color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
@@ -128,7 +131,7 @@ class _PlaceCheckInSectionState extends State<PlaceCheckInSection> {
             const SizedBox(height: 10),
             OutlinedButton(
               onPressed: () => context.push(RouteNames.login),
-              child: const Text('Đăng nhập'),
+              child: Text(l10n.pleaseLogin),
             ),
           ] else ...[
             _NearbyHint(controller: ctrl),
@@ -150,7 +153,7 @@ class _PlaceCheckInSectionState extends State<PlaceCheckInSection> {
                     )
                   : const Icon(Icons.location_on),
               label: Text(
-                ctrl.checkInSubmitting ? 'Đang check-in…' : 'Check-in tại đây',
+                ctrl.checkInSubmitting ? l10n.loading : l10n.loginToCheckin,
               ),
             ),
             TextButton.icon(
@@ -161,7 +164,7 @@ class _PlaceCheckInSectionState extends State<PlaceCheckInSection> {
                         placeLng: widget.placeLng,
                       ),
               icon: const Icon(Icons.refresh, size: 18),
-              label: const Text('Cập nhật vị trí GPS'),
+              label: Text(l10n.updateGPS),
             ),
           ],
         ],
@@ -177,6 +180,7 @@ class _NearbyHint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final muted = isDark ? Colors.grey.shade400 : Colors.grey.shade600;
 
@@ -189,7 +193,7 @@ class _NearbyHint extends StatelessWidget {
             child: CircularProgressIndicator(strokeWidth: 2),
           ),
           const SizedBox(width: 8),
-          Text('Đang xác định vị trí…', style: TextStyle(fontSize: 13, color: muted)),
+          Text(l10n.loading, style: TextStyle(fontSize: 13, color: muted)),
         ],
       );
     }
@@ -198,7 +202,7 @@ class _NearbyHint extends StatelessWidget {
     final accuracy = controller.nearbyAccuracyM;
     if (dist == null || accuracy == null) {
       return Text(
-        'Bật GPS và đứng gần điểm ghim trên bản đồ để check-in.',
+        l10n.enableGPSCheckin,
         style: TextStyle(fontSize: 13, color: muted),
       );
     }
@@ -210,16 +214,16 @@ class _NearbyHint extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Bạn cách địa điểm ${dist.round()} m · GPS ±${accuracy.round()} m',
+          l10n.enableGPSDistance,
           style: TextStyle(fontSize: 13, color: muted),
         ),
         const SizedBox(height: 4),
         Text(
           can
-              ? 'Trong phạm vi check-in (tối đa ${allowed.round()} m).'
+              ? l10n.enableGPSNearMe
               : accuracy > PlaceCheckInGeo.maxAccuracyM
-                  ? 'GPS chưa đủ chính xác (tối đa ${PlaceCheckInGeo.maxAccuracyM.round()} m).'
-                  : 'Cần đến gần hơn (tối đa ${allowed.round()} m với GPS hiện tại).',
+                  ? l10n.enableGPSCheckin
+                  : l10n.enableGPSNearMe,
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w500,
