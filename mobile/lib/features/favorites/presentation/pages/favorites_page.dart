@@ -55,10 +55,16 @@ class _FavoritesPageState extends State<FavoritesPage> {
         itemBuilder: (_, i) {
           final fav = _items[i] as Map<String, dynamic>;
           final document = fav['document'] as Map<String, dynamic>?;
+          final docId = document?['id']?.toString() ?? '';
+          final isPlace = document?['type']?.toString() == 'place';
           return ListTile(
+            leading: Icon(isPlace ? Icons.place_outlined : Icons.description_outlined),
             title: Text(document?['title']?.toString() ?? ''),
+            subtitle: isPlace ? const Text('Địa điểm học tập') : null,
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push('/document/${document?['id']}'),
+            onTap: docId.isEmpty
+                ? null
+                : () => context.push(isPlace ? '/places/$docId' : '/document/$docId'),
           );
         },
       ),
