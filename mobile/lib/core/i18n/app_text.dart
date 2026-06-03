@@ -57,6 +57,12 @@ class AppLocalizations {
       'searchHint': 'Tìm kiếm...',
       'noNotifications': 'Không có thông báo',
       'markAllRead': 'Đọc tất cả',
+      'deleteNotification': 'Xóa thông báo',
+      'deleteAllNotifications': 'Xóa tất cả thông báo',
+      'deleteAllNotificationsConfirm': 'Bạn có chắc muốn xóa tất cả thông báo?',
+      'deleteNotificationConfirm': 'Bạn có chắc muốn xóa thông báo này?',
+      'yesDelete': 'Xóa',
+      'cancel': 'Hủy',
       'noFavoritesYet': 'Chưa có mục yêu thích',
       'sendFeedback': 'Gửi phản hồi',
       'ratingLabel': 'Đánh giá: {rating} sao',
@@ -172,6 +178,12 @@ class AppLocalizations {
       'searchHint': 'Search...',
       'noNotifications': 'No notifications',
       'markAllRead': 'Mark all read',
+      'deleteNotification': 'Delete notification',
+      'deleteAllNotifications': 'Delete all notifications',
+      'deleteAllNotificationsConfirm': 'Are you sure you want to delete all notifications?',
+      'deleteNotificationConfirm': 'Are you sure you want to delete this notification?',
+      'yesDelete': 'Delete',
+      'cancel': 'Cancel',
       'noFavoritesYet': 'No favorites yet',
       'sendFeedback': 'Send feedback',
       'ratingLabel': 'Rating: {rating} stars',
@@ -300,6 +312,12 @@ class AppLocalizations {
   String get searchHint => _text('searchHint');
   String get noNotifications => _text('noNotifications');
   String get markAllRead => _text('markAllRead');
+  String get deleteNotification => _text('deleteNotification');
+  String get deleteAllNotifications => _text('deleteAllNotifications');
+  String get deleteAllNotificationsConfirm => _text('deleteAllNotificationsConfirm');
+  String get deleteNotificationConfirm => _text('deleteNotificationConfirm');
+  String get yesDelete => _text('yesDelete');
+  String get cancel => _text('cancel');
   String get noFavoritesYet => _text('noFavoritesYet');
   String get sendFeedback => _text('sendFeedback');
   String ratingLabel(int rating) => _format('ratingLabel', {'{rating}': '$rating'});

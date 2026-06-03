@@ -54,3 +54,21 @@ notificationsRouter.patch(
     );
   }),
 );
+
+notificationsRouter.delete(
+  '/',
+  jwtAuthMiddleware,
+  asyncHandler(async (req, res) => {
+    res.json(await notificationsService.deleteAll(req.user!.sub));
+  }),
+);
+
+notificationsRouter.delete(
+  '/:id',
+  jwtAuthMiddleware,
+  asyncHandler(async (req, res) => {
+    res.json(
+      await notificationsService.delete(req.user!.sub, req.params.id),
+    );
+  }),
+);
