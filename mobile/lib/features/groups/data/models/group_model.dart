@@ -11,6 +11,8 @@ class GroupModel {
   final List<GroupMemberModel> members;
   final int memberCount;
   final String? myRole;
+  final bool autoApprove;
+  final String? myStatus;
 
   const GroupModel({
     required this.id,
@@ -23,6 +25,8 @@ class GroupModel {
     required this.members,
     required this.memberCount,
     this.myRole,
+    required this.autoApprove,
+    this.myStatus,
   });
 
   factory GroupModel.fromJson(Map<String, dynamic> json) {
@@ -41,6 +45,8 @@ class GroupModel {
       members: membersList,
       memberCount: (json['_count'] as Map<String, dynamic>?)?['members'] as int? ?? membersList.length,
       myRole: json['myRole']?.toString(),
+      autoApprove: json['autoApprove'] == null ? true : (json['autoApprove'] == true),
+      myStatus: json['myStatus']?.toString(),
     );
   }
 
@@ -58,6 +64,8 @@ class GroupModel {
         'members': members.map((m) => m.toJson()).toList(),
         '_count': {'members': memberCount},
         'myRole': myRole,
+        'autoApprove': autoApprove,
+        'myStatus': myStatus,
       };
 }
 
@@ -66,12 +74,14 @@ class GroupMemberModel {
   final String role;
   final DateTime joinedAt;
   final FriendUser user;
+  final String status;
 
   const GroupMemberModel({
     required this.id,
     required this.role,
     required this.joinedAt,
     required this.user,
+    required this.status,
   });
 
   factory GroupMemberModel.fromJson(Map<String, dynamic> json) {
@@ -80,6 +90,7 @@ class GroupMemberModel {
       role: json['role']?.toString() ?? 'MEMBER',
       joinedAt: DateTime.tryParse(json['joinedAt']?.toString() ?? '') ?? DateTime.now(),
       user: FriendUser.fromJson(json['user'] as Map<String, dynamic>? ?? {}),
+      status: json['status']?.toString() ?? 'APPROVED',
     );
   }
 
@@ -88,5 +99,6 @@ class GroupMemberModel {
         'role': role,
         'joinedAt': joinedAt.toIso8601String(),
         'user': {'id': user.id, 'name': user.name, 'avatar': user.avatar, 'email': user.email},
+        'status': status,
       };
 }

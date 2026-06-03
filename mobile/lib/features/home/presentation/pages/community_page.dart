@@ -25,6 +25,9 @@ class _CommunityPageState extends State<CommunityPage>
   late final GroupController _groupCtrl;
   late final FriendshipController _friendCtrl;
   String _discoverSearch = '';
+  bool _isFriendRequestsExpanded = true;
+  bool _isSentRequestsExpanded = true;
+  bool _isGroupInvitesExpanded = true;
 
   static const int _kTabGroups = 0;
 
@@ -75,7 +78,7 @@ class _CommunityPageState extends State<CommunityPage>
                 IconButton(
                   icon: Icon(Icons.add_circle_outline, color: cs.primary),
                   tooltip: 'Tạo nhóm',
-                  onPressed: () => _showCreateGroupDialog(context),
+                  onPressed: () => context.push(RouteNames.groupCreate),
                 ),
             ],
             bottom: TabBar(
@@ -95,7 +98,10 @@ class _CommunityPageState extends State<CommunityPage>
                     children: [
                       Icon(Icons.group_outlined, size: 18),
                       SizedBox(width: 8),
-                      Text('Nhóm học tập', style: TextStyle(fontWeight: FontWeight.bold)),
+                      Text(
+                        'Nhóm học tập',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ],
                   ),
                 ),
@@ -106,7 +112,10 @@ class _CommunityPageState extends State<CommunityPage>
                     children: [
                       Icon(Icons.people_outline, size: 18),
                       SizedBox(width: 8),
-                      Text('Bạn bè', style: TextStyle(fontWeight: FontWeight.bold)),
+                      Text(
+                        'Bạn bè',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ],
                   ),
                 ),
@@ -117,11 +126,17 @@ class _CommunityPageState extends State<CommunityPage>
                     children: [
                       const Icon(Icons.mail_outline_rounded, size: 18),
                       const SizedBox(width: 8),
-                      const Text('Lời mời', style: TextStyle(fontWeight: FontWeight.bold)),
+                      const Text(
+                        'Lời mời',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       if (totalBadge > 0) ...[
                         const SizedBox(width: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: cs.error,
                             borderRadius: BorderRadius.circular(10),
@@ -146,7 +161,10 @@ class _CommunityPageState extends State<CommunityPage>
                     children: [
                       Icon(Icons.explore_outlined, size: 18),
                       SizedBox(width: 8),
-                      Text('Khám phá nhóm', style: TextStyle(fontWeight: FontWeight.bold)),
+                      Text(
+                        'Khám phá nhóm',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ],
                   ),
                 ),
@@ -184,7 +202,9 @@ class _CommunityPageState extends State<CommunityPage>
 
     final myGroups = _groupCtrl.groups;
     if (myGroups.isEmpty) {
-      return GroupEmptyState(onCreateGroup: () => _showCreateGroupDialog(context));
+      return GroupEmptyState(
+        onCreateGroup: () => context.push(RouteNames.groupCreate),
+      );
     }
 
     return RefreshIndicator(
@@ -205,7 +225,10 @@ class _CommunityPageState extends State<CommunityPage>
   // ─── Tab 2: Invitations ─────────────────────────────────────────────────
 
   Widget _buildInvitationsTab(
-      BuildContext context, ColorScheme cs, bool isDark) {
+    BuildContext context,
+    ColorScheme cs,
+    bool isDark,
+  ) {
     final groupInvites = _groupCtrl.receivedInvitations;
     final friendRequests = _friendCtrl.pendingRequests;
     final sentRequests = _friendCtrl.sentRequests;
@@ -227,23 +250,28 @@ class _CommunityPageState extends State<CommunityPage>
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 64),
           children: [
-            Icon(Icons.mark_email_unread_outlined,
-                size: 72, color: cs.primary.withValues(alpha: 0.2)),
+            Icon(
+              Icons.mark_email_unread_outlined,
+              size: 72,
+              color: cs.primary.withValues(alpha: 0.2),
+            ),
             const SizedBox(height: 16),
             Text(
               'Không có lời mời nào',
               textAlign: TextAlign.center,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.bold, color: cs.onSurfaceVariant),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: cs.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 6),
             Text(
               'Các lời mời kết bạn và lời mời tham gia nhóm sẽ hiện ở đây.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: cs.onSurfaceVariant.withValues(alpha: 0.7), height: 1.5),
+                color: cs.onSurfaceVariant.withValues(alpha: 0.7),
+                height: 1.5,
+              ),
             ),
           ],
         ),
@@ -268,8 +296,13 @@ class _CommunityPageState extends State<CommunityPage>
               cs,
               icon: Icons.person_add_alt_rounded,
               label: 'Lời mời kết bạn (${friendRequests.length})',
+              isExpanded: _isFriendRequestsExpanded,
+              onTap: () => setState(
+                () => _isFriendRequestsExpanded = !_isFriendRequestsExpanded,
+              ),
             ),
-            ..._buildFriendRequestCards(context, cs, isDark, friendRequests),
+            if (_isFriendRequestsExpanded)
+              ..._buildFriendRequestCards(context, cs, isDark, friendRequests),
             const SizedBox(height: 8),
           ],
 
@@ -281,10 +314,15 @@ class _CommunityPageState extends State<CommunityPage>
             _sectionHeader(
               context,
               cs,
-              icon: Icons.send_outlined,
+              icon: null,
               label: 'Lời mời kết bạn đã gửi (${sentRequests.length})',
+              isExpanded: _isSentRequestsExpanded,
+              onTap: () => setState(
+                () => _isSentRequestsExpanded = !_isSentRequestsExpanded,
+              ),
             ),
-            ..._buildSentRequestCards(context, cs, isDark, sentRequests),
+            if (_isSentRequestsExpanded)
+              ..._buildSentRequestCards(context, cs, isDark, sentRequests),
             const SizedBox(height: 8),
           ],
 
@@ -298,8 +336,13 @@ class _CommunityPageState extends State<CommunityPage>
               cs,
               icon: Icons.group_add_outlined,
               label: 'Lời mời tham gia nhóm (${groupInvites.length})',
+              isExpanded: _isGroupInvitesExpanded,
+              onTap: () => setState(
+                () => _isGroupInvitesExpanded = !_isGroupInvitesExpanded,
+              ),
             ),
-            ..._buildGroupInviteCards(context, cs, isDark, groupInvites),
+            if (_isGroupInvitesExpanded)
+              ..._buildGroupInviteCards(context, cs, isDark, groupInvites),
           ],
         ],
       ),
@@ -309,23 +352,40 @@ class _CommunityPageState extends State<CommunityPage>
   Widget _sectionHeader(
     BuildContext context,
     ColorScheme cs, {
-    required IconData icon,
+    IconData? icon,
     required String label,
+    required bool isExpanded,
+    required VoidCallback onTap,
   }) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      child: Row(
-        children: [
-          Icon(icon, color: cs.primary, size: 18),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+        child: Row(
+          children: [
+            if (icon != null) ...[
+              Icon(icon, color: cs.primary, size: 18),
+              const SizedBox(width: 8),
+            ],
+            Expanded(
+              child: Text(
+                label,
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w800,
                   letterSpacing: 0.1,
                 ),
-          ),
-        ],
+              ),
+            ),
+            Icon(
+              isExpanded
+                  ? Icons.keyboard_arrow_up_rounded
+                  : Icons.keyboard_arrow_down_rounded,
+              color: cs.onSurfaceVariant.withValues(alpha: 0.7),
+              size: 24,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -358,10 +418,9 @@ class _CommunityPageState extends State<CommunityPage>
             children: [
               CircleAvatar(
                 radius: 22,
-                backgroundImage:
-                    user.avatar != null && user.avatar!.isNotEmpty
-                        ? NetworkImage(user.avatar!)
-                        : null,
+                backgroundImage: user.avatar != null && user.avatar!.isNotEmpty
+                    ? NetworkImage(user.avatar!)
+                    : null,
                 backgroundColor: cs.primaryContainer,
                 child: user.avatar == null || user.avatar!.isEmpty
                     ? Text(
@@ -380,17 +439,17 @@ class _CommunityPageState extends State<CommunityPage>
                   children: [
                     Text(
                       user.name,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleSmall
-                          ?.copyWith(fontWeight: FontWeight.w700),
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     if (user.email != null) ...[
                       const SizedBox(height: 2),
                       Text(
                         user.email!,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: cs.onSurfaceVariant),
+                          color: cs.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ],
@@ -404,21 +463,25 @@ class _CommunityPageState extends State<CommunityPage>
                 },
                 style: OutlinedButton.styleFrom(
                   foregroundColor: isDark ? Colors.white70 : Colors.black54,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   side: BorderSide(
                     color: isDark
                         ? Colors.white.withValues(alpha: 0.15)
                         : cs.outlineVariant,
                   ),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
-                child: const Text('Từ chối',
-                    style:
-                        TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+                child: const Text(
+                  'Từ chối',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+                ),
               ),
               const SizedBox(width: 6),
               // Accept button
@@ -426,25 +489,33 @@ class _CommunityPageState extends State<CommunityPage>
                 onPressed: () async {
                   final ok = await _friendCtrl.respondRequest(req.id, true);
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text(ok
-                          ? 'Đã chấp nhận lời mời kết bạn!'
-                          : (_friendCtrl.error ?? 'Đã xảy ra lỗi')),
-                      backgroundColor: ok ? Colors.green.shade700 : null,
-                    ));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          ok
+                              ? 'Đã chấp nhận lời mời kết bạn!'
+                              : (_friendCtrl.error ?? 'Đã xảy ra lỗi'),
+                        ),
+                        backgroundColor: ok ? Colors.green.shade700 : null,
+                      ),
+                    );
                   }
                 },
                 style: FilledButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
-                child: const Text('Chấp nhận',
-                    style:
-                        TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                child: const Text(
+                  'Chấp nhận',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                ),
               ),
             ],
           ),
@@ -481,10 +552,9 @@ class _CommunityPageState extends State<CommunityPage>
             children: [
               CircleAvatar(
                 radius: 22,
-                backgroundImage:
-                    user.avatar != null && user.avatar!.isNotEmpty
-                        ? NetworkImage(user.avatar!)
-                        : null,
+                backgroundImage: user.avatar != null && user.avatar!.isNotEmpty
+                    ? NetworkImage(user.avatar!)
+                    : null,
                 backgroundColor: cs.primaryContainer,
                 child: user.avatar == null || user.avatar!.isEmpty
                     ? Text(
@@ -503,17 +573,17 @@ class _CommunityPageState extends State<CommunityPage>
                   children: [
                     Text(
                       user.name,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleSmall
-                          ?.copyWith(fontWeight: FontWeight.w700),
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       'Đang chờ xác nhận...',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: cs.onSurfaceVariant.withValues(alpha: 0.7),
-                          fontStyle: FontStyle.italic),
+                        color: cs.onSurfaceVariant.withValues(alpha: 0.7),
+                        fontStyle: FontStyle.italic,
+                      ),
                     ),
                   ],
                 ),
@@ -525,7 +595,8 @@ class _CommunityPageState extends State<CommunityPage>
                   await _friendCtrl.unfriend(req.id);
                   messenger.showSnackBar(
                     const SnackBar(
-                        content: Text('Đã thu hồi lời mời kết bạn.')),
+                      content: Text('Đã thu hồi lời mời kết bạn.'),
+                    ),
                   );
                 },
                 icon: const Icon(Icons.close, size: 14),
@@ -534,9 +605,12 @@ class _CommunityPageState extends State<CommunityPage>
                   foregroundColor: cs.error,
                   side: BorderSide(color: cs.error.withValues(alpha: 0.5)),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
@@ -581,7 +655,7 @@ class _CommunityPageState extends State<CommunityPage>
                     color: Colors.black.withValues(alpha: 0.03),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
-                  )
+                  ),
                 ],
         ),
         child: Column(
@@ -644,32 +718,41 @@ class _CommunityPageState extends State<CommunityPage>
               children: [
                 OutlinedButton(
                   onPressed: () async {
-                    final ok =
-                        await _groupCtrl.respondToInvitation(inviteId, false);
+                    final ok = await _groupCtrl.respondToInvitation(
+                      inviteId,
+                      false,
+                    );
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text(ok
-                            ? 'Đã từ chối lời mời vào nhóm "$groupName"'
-                            : 'Từ chối lời mời thất bại. Vui lòng thử lại.'),
-                      ));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            ok
+                                ? 'Đã từ chối lời mời vào nhóm "$groupName"'
+                                : 'Từ chối lời mời thất bại. Vui lòng thử lại.',
+                          ),
+                        ),
+                      );
                     }
                   },
                   style: OutlinedButton.styleFrom(
-                    foregroundColor:
-                        isDark ? Colors.white70 : Colors.black54,
+                    foregroundColor: isDark ? Colors.white70 : Colors.black54,
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 10),
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
                     side: BorderSide(
                       color: isDark
                           ? Colors.white.withValues(alpha: 0.15)
                           : cs.outlineVariant,
                     ),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                  child: const Text('Từ chối',
-                      style: TextStyle(
-                          fontWeight: FontWeight.w600, fontSize: 12)),
+                  child: const Text(
+                    'Từ chối',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+                  ),
                 ),
                 const SizedBox(width: 8),
                 Container(
@@ -683,16 +766,21 @@ class _CommunityPageState extends State<CommunityPage>
                   ),
                   child: ElevatedButton(
                     onPressed: () async {
-                      final ok = await _groupCtrl
-                          .respondToInvitation(inviteId, true);
+                      final ok = await _groupCtrl.respondToInvitation(
+                        inviteId,
+                        true,
+                      );
                       if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text(ok
-                              ? 'Chúc mừng! Bạn đã gia nhập nhóm "$groupName"'
-                              : 'Gia nhập nhóm thất bại. Vui lòng thử lại.'),
-                          backgroundColor:
-                              ok ? Colors.green.shade700 : null,
-                        ));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              ok
+                                  ? 'Chúc mừng! Bạn đã gia nhập nhóm "$groupName"'
+                                  : 'Gia nhập nhóm thất bại. Vui lòng thử lại.',
+                            ),
+                            backgroundColor: ok ? Colors.green.shade700 : null,
+                          ),
+                        );
                       }
                     },
                     style: ElevatedButton.styleFrom(
@@ -700,13 +788,20 @@ class _CommunityPageState extends State<CommunityPage>
                       shadowColor: Colors.transparent,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 10),
+                        horizontal: 20,
+                        vertical: 10,
+                      ),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
-                    child: const Text('Chấp nhận',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 12)),
+                    child: const Text(
+                      'Chấp nhận',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -723,9 +818,9 @@ class _CommunityPageState extends State<CommunityPage>
     final filteredGroups = _groupCtrl.discoverGroups.where((g) {
       if (_discoverSearch.isEmpty) return true;
       return g.name.toLowerCase().contains(_discoverSearch.toLowerCase()) ||
-          (g.description ?? '')
-              .toLowerCase()
-              .contains(_discoverSearch.toLowerCase());
+          (g.description ?? '').toLowerCase().contains(
+            _discoverSearch.toLowerCase(),
+          );
     }).toList();
 
     return RefreshIndicator(
@@ -733,19 +828,16 @@ class _CommunityPageState extends State<CommunityPage>
       child: Column(
         children: [
           Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: TextField(
-              onChanged: (val) =>
-                  setState(() => _discoverSearch = val.trim()),
+              onChanged: (val) => setState(() => _discoverSearch = val.trim()),
               decoration: InputDecoration(
                 hintText: 'Tìm kiếm nhóm học tập công khai...',
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _discoverSearch.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear),
-                        onPressed: () =>
-                            setState(() => _discoverSearch = ''),
+                        onPressed: () => setState(() => _discoverSearch = ''),
                       )
                     : null,
                 filled: true,
@@ -754,16 +846,14 @@ class _CommunityPageState extends State<CommunityPage>
                   borderRadius: BorderRadius.circular(16),
                   borderSide: BorderSide.none,
                 ),
-                contentPadding:
-                    const EdgeInsets.symmetric(vertical: 12),
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
               ),
             ),
           ),
           Expanded(
             child: Builder(
               builder: (context) {
-                if (_groupCtrl.isDiscoverLoading &&
-                    filteredGroups.isEmpty) {
+                if (_groupCtrl.isDiscoverLoading && filteredGroups.isEmpty) {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (_groupCtrl.error != null && filteredGroups.isEmpty) {
@@ -777,8 +867,11 @@ class _CommunityPageState extends State<CommunityPage>
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.search_off_rounded,
-                            size: 48, color: cs.outline),
+                        Icon(
+                          Icons.search_off_rounded,
+                          size: 48,
+                          color: cs.outline,
+                        ),
                         const SizedBox(height: 12),
                         Text(
                           _discoverSearch.isEmpty
@@ -798,19 +891,36 @@ class _CommunityPageState extends State<CommunityPage>
                     return DiscoverGroupCard(
                       group: group,
                       onJoin: () async {
-                        final success =
-                            await _groupCtrl.joinGroup(group.id);
+                        final success = await _groupCtrl.joinGroup(group.id);
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
                                 success
-                                    ? 'Đã gia nhập "${group.name}" thành công!'
-                                    : (_groupCtrl.error ??
-                                        'Đã có lỗi xảy ra'),
+                                    ? (group.autoApprove
+                                          ? 'Đã gia nhập "${group.name}" thành công!'
+                                          : 'Yêu cầu gia nhập "${group.name}" đã được gửi và đang chờ duyệt!')
+                                    : (_groupCtrl.error ?? 'Đã có lỗi xảy ra'),
                               ),
                               backgroundColor: success
                                   ? Colors.green.shade700
+                                  : cs.error,
+                            ),
+                          );
+                        }
+                      },
+                      onCancel: () async {
+                        final success = await _groupCtrl.leaveGroup(group.id);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                success
+                                    ? 'Đã hủy yêu cầu tham gia "${group.name}"!'
+                                    : (_groupCtrl.error ?? 'Đã có lỗi xảy ra'),
+                              ),
+                              backgroundColor: success
+                                  ? Colors.blue.shade700
                                   : cs.error,
                             ),
                           );
@@ -828,90 +938,4 @@ class _CommunityPageState extends State<CommunityPage>
   }
 
   // ─── Create Group Dialog ─────────────────────────────────────────────────
-
-  Future<void> _showCreateGroupDialog(BuildContext context) async {
-    final nameCtrl = TextEditingController();
-    final descCtrl = TextEditingController();
-    bool isPublic = false;
-
-    await showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSt) => AlertDialog(
-          title: const Text('Tạo nhóm mới',
-              style: TextStyle(fontWeight: FontWeight.bold)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Tên nhóm *',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.group),
-                ),
-                textCapitalization: TextCapitalization.words,
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: descCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Mô tả (tùy chọn)',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.description_outlined),
-                ),
-                maxLines: 2,
-              ),
-              const SizedBox(height: 12),
-              SwitchListTile(
-                title: const Text('Nhóm công khai'),
-                subtitle: const Text('Bất kỳ ai cũng có thể tìm và gia nhập'),
-                value: isPublic,
-                onChanged: (v) => setSt(() => isPublic = v),
-                contentPadding: EdgeInsets.zero,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Hủy'),
-            ),
-            ListenableBuilder(
-              listenable: _groupCtrl,
-              builder: (_, child) => FilledButton(
-                onPressed: _groupCtrl.isSaving
-                    ? null
-                    : () async {
-                        if (nameCtrl.text.trim().isEmpty) return;
-                        final group = await _groupCtrl.createGroup(
-                          name: nameCtrl.text.trim(),
-                          description: descCtrl.text.trim().isEmpty
-                              ? null
-                              : descCtrl.text.trim(),
-                          isPublic: isPublic,
-                        );
-                        if (ctx.mounted) Navigator.pop(ctx);
-                        if (group != null && context.mounted) {
-                          context.push(
-                            RouteNames.groupDetail
-                                .replaceFirst(':id', group.id),
-                          );
-                        }
-                      },
-                child: _groupCtrl.isSaving
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white),
-                      )
-                    : const Text('Tạo nhóm'),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

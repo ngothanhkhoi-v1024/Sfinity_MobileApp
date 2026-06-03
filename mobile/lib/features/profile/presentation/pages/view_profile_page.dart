@@ -6,15 +6,20 @@ import 'package:flutter/material.dart';
 import '../../../../app.dart';
 import '../../../../core/i18n/app_text.dart';
 
+final Map<String, Uint8List> _avatarCache = {};
+
 Future<Uint8List?> _tryFetchAvatar(String url) async {
+  if (_avatarCache.containsKey(url)) {
+    return _avatarCache[url];
+  }
   try {
     final response = await Dio().get<List<int>>(
       url,
       options: Options(responseType: ResponseType.bytes),
     );
-    if (response.data == null) return null;
+    if (response.data == null || response.data!.isEmpty) return null;
     final bytes = Uint8List.fromList(response.data!);
-    if (bytes.isEmpty) return null;
+    _avatarCache[url] = bytes;
     return bytes;
   } catch (_) {
     return null;
@@ -61,10 +66,10 @@ class ViewProfilePage extends StatelessWidget {
             children: [
               // Avatar
               Center(
-                child: _AvatarWithFallback(
+                child: _AvatarWidget(
                   avatarUrl: avatarUrl,
                   displayName: displayName,
-                  theme: theme,
+                  size: 112,
                 ),
               ),
               const SizedBox(height: 16),
@@ -120,23 +125,24 @@ class ViewProfilePage extends StatelessWidget {
   }
 }
 
-class _AvatarWithFallback extends StatefulWidget {
-  const _AvatarWithFallback({
+class _AvatarWidget extends StatefulWidget {
+  const _AvatarWidget({
     required this.avatarUrl,
     required this.displayName,
-    required this.theme,
+    required this.size,
   });
 
   final String? avatarUrl;
   final String displayName;
-  final ThemeData theme;
+  final double size;
 
   @override
-  State<_AvatarWithFallback> createState() => _AvatarWithFallbackState();
+  State<_AvatarWidget> createState() => _AvatarWidgetState();
 }
 
-class _AvatarWithFallbackState extends State<_AvatarWithFallback> {
+class _AvatarWidgetState extends State<_AvatarWidget> {
   Uint8List? _bytes;
+  bool _loading = false;
 
   @override
   void initState() {
@@ -145,7 +151,7 @@ class _AvatarWithFallbackState extends State<_AvatarWithFallback> {
   }
 
   @override
-  void didUpdateWidget(_AvatarWithFallback oldWidget) {
+  void didUpdateWidget(_AvatarWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.avatarUrl != widget.avatarUrl) {
       _load();
@@ -153,40 +159,73 @@ class _AvatarWithFallbackState extends State<_AvatarWithFallback> {
   }
 
   Future<void> _load() async {
-    if (widget.avatarUrl == null || widget.avatarUrl!.isEmpty) return;
+    if (widget.avatarUrl == null || widget.avatarUrl!.isEmpty) {
+      setState(() => _bytes = null);
+      return;
+    }
+    setState(() {
+      _loading = true;
+      _bytes = _avatarCache[widget.avatarUrl];
+    });
+    if (_bytes != null) {
+      setState(() => _loading = false);
+      return;
+    }
     final bytes = await _tryFetchAvatar(widget.avatarUrl!);
-    if (mounted) setState(() => _bytes = bytes);
+    if (mounted) {
+      setState(() {
+        _bytes = bytes;
+        _loading = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    Widget content;
+    if (_loading && _bytes == null) {
+      content = Center(
+        child: SizedBox(
+          width: widget.size * 0.4,
+          height: widget.size * 0.4,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      );
+    } else if (_bytes != null) {
+      content = Image.memory(
+        _bytes!,
+        fit: BoxFit.cover,
+        width: widget.size,
+        height: widget.size,
+        errorBuilder: (_, __, ___) => _buildPlaceholder(theme),
+      );
+    } else {
+      content = _buildPlaceholder(theme);
+    }
+
     return ClipOval(
       child: SizedBox(
-        width: 112,
-        height: 112,
-        child: _bytes != null
-            ? Image.memory(
-                _bytes!,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _buildPlaceholder(),
-              )
-            : _buildPlaceholder(),
+        width: widget.size,
+        height: widget.size,
+        child: content,
       ),
     );
   }
 
-  Widget _buildPlaceholder() {
+  Widget _buildPlaceholder(ThemeData theme) {
     return Container(
-      color: widget.theme.colorScheme.primaryContainer,
+      color: theme.colorScheme.primaryContainer,
       child: Center(
         child: Text(
           widget.displayName.isNotEmpty
               ? widget.displayName[0].toUpperCase()
               : '?',
           style: TextStyle(
-            fontSize: 40,
+            fontSize: widget.size * 0.36,
             fontWeight: FontWeight.bold,
-            color: widget.theme.colorScheme.onPrimaryContainer,
+            color: theme.colorScheme.onPrimaryContainer,
           ),
         ),
       ),
@@ -217,11 +256,7 @@ class _InfoRow extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(
-          icon,
-          size: 20,
-          color: theme.colorScheme.primary,
-        ),
+        Icon(icon, size: 20, color: theme.colorScheme.primary),
         const SizedBox(width: 12),
         Expanded(
           child: Column(

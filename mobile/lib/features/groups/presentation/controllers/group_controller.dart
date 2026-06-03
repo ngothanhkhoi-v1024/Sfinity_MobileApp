@@ -60,6 +60,7 @@ class GroupController extends ChangeNotifier {
     required String name,
     String? description,
     bool isPublic = false,
+    bool autoApprove = true,
   }) async {
     _isSaving = true;
     _error = null;
@@ -69,6 +70,7 @@ class GroupController extends ChangeNotifier {
         name: name,
         description: description,
         isPublic: isPublic,
+        autoApprove: autoApprove,
       );
       _groups.insert(0, group);
       notifyListeners();
@@ -89,6 +91,7 @@ class GroupController extends ChangeNotifier {
     String? description,
     bool? isPublic,
     String? avatarUrl,
+    bool? autoApprove,
   }) async {
     _isSaving = true;
     notifyListeners();
@@ -103,6 +106,7 @@ class GroupController extends ChangeNotifier {
         description: description,
         isPublic: isPublic,
         avatarUrl: avatarUrl,
+        autoApprove: autoApprove,
       );
 
       if (updated.members.isEmpty && existingMembersJson != null) {
@@ -127,6 +131,40 @@ class GroupController extends ChangeNotifier {
     } finally {
       _isSaving = false;
       notifyListeners();
+    }
+  }
+
+  Future<bool> approveMember(String groupId, String userId) async {
+    _error = null;
+    try {
+      await _repository.approveMember(groupId, userId);
+      if (_currentGroup?.id == groupId) {
+        final updatedMembers = _currentGroup!.members.map((m) {
+          if (m.user.id == userId) {
+            return GroupMemberModel(
+              id: m.id,
+              role: m.role,
+              joinedAt: m.joinedAt,
+              user: m.user,
+              status: 'APPROVED',
+            );
+          }
+          return m;
+        }).toList();
+        _currentGroup = GroupModel.fromJson({
+          ..._currentGroup!.toJson(),
+          'members': updatedMembers.map((m) => m.toJson()).toList(),
+        });
+        
+        final idx = _groups.indexWhere((g) => g.id == groupId);
+        if (idx != -1) _groups[idx] = _currentGroup!;
+        notifyListeners();
+      }
+      return true;
+    } catch (e) {
+      _error = e.toString().replaceFirst('Exception: ', '');
+      notifyListeners();
+      return false;
     }
   }
 
@@ -164,10 +202,22 @@ class GroupController extends ChangeNotifier {
     }
   }
 
-  Future<bool> leaveGroup(String groupId) async {
+  Future<bool> leaveGroup(String groupId, {String? newOwnerId}) async {
     try {
-      await _repository.leaveGroup(groupId);
+      await _repository.leaveGroup(groupId, newOwnerId: newOwnerId);
       _groups.removeWhere((g) => g.id == groupId);
+      
+      // Also update discover list if it's there
+      final idx = _discoverGroups.indexWhere((g) => g.id == groupId);
+      if (idx != -1) {
+        final group = _discoverGroups[idx];
+        _discoverGroups[idx] = GroupModel.fromJson({
+          ...group.toJson(),
+          'myRole': null,
+          'myStatus': null,
+        });
+      }
+      
       notifyListeners();
       return true;
     } catch (e) {
@@ -209,9 +259,21 @@ class GroupController extends ChangeNotifier {
     _error = null;
     notifyListeners();
     try {
-      await _repository.joinGroup(groupId);
-      _discoverGroups.removeWhere((g) => g.id == groupId);
-      await loadMyGroups();
+      final member = await _repository.joinGroup(groupId);
+      if (member.status == 'PENDING') {
+        final idx = _discoverGroups.indexWhere((g) => g.id == groupId);
+        if (idx != -1) {
+          final group = _discoverGroups[idx];
+          _discoverGroups[idx] = GroupModel.fromJson({
+            ...group.toJson(),
+            'myRole': member.role,
+            'myStatus': member.status,
+          });
+        }
+      } else {
+        _discoverGroups.removeWhere((g) => g.id == groupId);
+        await loadMyGroups();
+      }
       return true;
     } catch (e) {
       _error = e.toString().replaceFirst('Exception: ', '');
