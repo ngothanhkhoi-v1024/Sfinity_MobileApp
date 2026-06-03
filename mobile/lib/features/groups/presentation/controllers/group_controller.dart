@@ -164,9 +164,9 @@ class GroupController extends ChangeNotifier {
     }
   }
 
-  Future<bool> leaveGroup(String groupId) async {
+  Future<bool> leaveGroup(String groupId, {String? newOwnerId}) async {
     try {
-      await _repository.leaveGroup(groupId);
+      await _repository.leaveGroup(groupId, newOwnerId: newOwnerId);
       _groups.removeWhere((g) => g.id == groupId);
       notifyListeners();
       return true;

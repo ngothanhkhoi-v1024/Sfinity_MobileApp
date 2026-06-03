@@ -63,7 +63,14 @@ GoRouter createAppRouter(AuthState auth) {
       GoRoute(path: RouteNames.register, builder: (_, __) => const RegisterPage()),
       GoRoute(path: RouteNames.forgotPassword, builder: (_, __) => const ForgotPasswordPage()),
       GoRoute(path: RouteNames.otpVerification, builder: (_, __) => const OtpVerificationPage()),
-      GoRoute(path: RouteNames.home, builder: (_, __) => const HomeShellPage()),
+      GoRoute(
+        path: RouteNames.home,
+        builder: (_, state) {
+          final tabStr = state.uri.queryParameters['tab'];
+          final initialTab = tabStr != null ? (int.tryParse(tabStr) ?? 0) : 0;
+          return HomeShellPage(initialTab: initialTab);
+        },
+      ),
       GoRoute(path: RouteNames.search, builder: (_, __) => const SearchPage()),
       GoRoute(path: RouteNames.favorites, builder: (_, __) => const FavoritesPage()),
       // /places/share phải đứng trước /places/:id, nếu không "share" bị match nhầm thành id.

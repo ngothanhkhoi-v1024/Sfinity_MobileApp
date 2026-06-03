@@ -85,9 +85,11 @@ class GroupApiService {
     }
   }
 
-  Future<void> leaveGroup(String groupId) async {
+  Future<void> leaveGroup(String groupId, {String? newOwnerId}) async {
     try {
-      await _client.post('/groups/$groupId/leave', {});
+      await _client.post('/groups/$groupId/leave', {
+        if (newOwnerId != null) 'newOwnerId': newOwnerId,
+      });
     } on DioException catch (e) {
       throw Exception(_client.errorMessage(e));
     }

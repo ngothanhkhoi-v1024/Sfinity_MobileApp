@@ -277,7 +277,7 @@ export const groupService = {
   },
 
   /** Rời nhóm */
-  async leaveGroup(groupId: string, userId: string) {
+  async leaveGroup(groupId: string, userId: string, newOwnerId?: string) {
     const db = getDb();
     const memberId = `${groupId}_${userId}`;
     const memberDoc = await db.collection('group_members').doc(memberId).get();
@@ -286,7 +286,31 @@ export const groupService = {
     const memberData = memberDoc.data()!;
 
     if (memberData.role === 'OWNER') {
-      throw new HttpError(403, 'Chủ nhóm không thể rời nhóm. Hãy xóa nhóm hoặc chuyển quyền chủ nhóm trước.', 'Forbidden');
+      if (!newOwnerId) {
+        throw new HttpError(403, 'Chủ nhóm không thể rời nhóm. Hãy chọn chủ nhóm mới trước.', 'Forbidden');
+      }
+
+      // Verify new owner exists in this group
+      const newOwnerMemberId = `${groupId}_${newOwnerId}`;
+      const newOwnerDoc = await db.collection('group_members').doc(newOwnerMemberId).get();
+      if (!newOwnerDoc.exists) {
+        throw new HttpError(400, 'Chủ nhóm mới phải là thành viên trong nhóm.', 'Bad Request');
+      }
+
+      // Start transaction or write batch to transfer ownership and leave
+      const batch = db.batch();
+      
+      // Update new owner's role to OWNER
+      batch.update(db.collection('group_members').doc(newOwnerMemberId), { role: 'OWNER' });
+      
+      // Also update the creatorId of the group to the new owner's ID
+      batch.update(db.collection('groups').doc(groupId), { creatorId: newOwnerId });
+
+      // Delete the leaving owner's membership
+      batch.delete(db.collection('group_members').doc(memberId));
+
+      await batch.commit();
+      return { success: true };
     }
 
     await db.collection('group_members').doc(memberId).delete();

@@ -99,7 +99,8 @@ groupRouter.delete(
 groupRouter.post(
   '/:id/leave',
   asyncHandler(async (req, res) => {
-    res.json(await groupService.leaveGroup(req.params.id, req.user!.sub));
+    const { newOwnerId } = req.body;
+    res.json(await groupService.leaveGroup(req.params.id, req.user!.sub, newOwnerId));
   }),
 );
 

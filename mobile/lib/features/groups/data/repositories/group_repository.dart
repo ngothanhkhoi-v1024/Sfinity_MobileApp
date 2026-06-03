@@ -8,7 +8,7 @@ abstract class GroupRepository {
   Future<void> deleteGroup(String groupId);
   Future<GroupMemberModel> addMember(String groupId, String userId);
   Future<void> removeMember(String groupId, String userId);
-  Future<void> leaveGroup(String groupId);
+  Future<void> leaveGroup(String groupId, {String? newOwnerId});
   Future<List<GroupModel>> discoverPublicGroups();
   Future<GroupMemberModel> joinGroup(String groupId);
   Future<void> inviteMember(String groupId, String userId);

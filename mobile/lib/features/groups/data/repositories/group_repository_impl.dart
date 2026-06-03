@@ -30,7 +30,7 @@ class GroupRepositoryImpl implements GroupRepository {
   Future<void> removeMember(String groupId, String userId) => _service.removeMember(groupId, userId);
 
   @override
-  Future<void> leaveGroup(String groupId) => _service.leaveGroup(groupId);
+  Future<void> leaveGroup(String groupId, {String? newOwnerId}) => _service.leaveGroup(groupId, newOwnerId: newOwnerId);
 
   @override
   Future<List<GroupModel>> discoverPublicGroups() => _service.discoverPublicGroups();
