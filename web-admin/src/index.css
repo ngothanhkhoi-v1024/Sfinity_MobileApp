@@ -107,7 +107,8 @@ body {
 
 .admin-content {
   padding: 28px 32px 40px;
-  max-width: 1440px;
+  width: 100%;
+  min-width: 0;
 }
 
 .admin-page-card {
@@ -118,6 +119,8 @@ body {
     0 1px 3px rgba(15, 23, 42, 0.04),
     0 4px 12px rgba(15, 23, 42, 0.03);
   border: 1px solid rgba(226, 232, 240, 0.8);
+  overflow-x: auto;      
+  min-width: 0;
 }
 
 /* Login */
@@ -305,4 +308,19 @@ body {
 
 .page-enter {
   animation: fadeInUp 0.35s ease forwards;
+}
+
+/* Responsive table */
+.admin-table .ant-table {
+  min-width: 700px;       
+}
+
+@media (max-width: 1200px) {
+  .admin-content {
+    padding: 20px 20px 32px;
+  }
+
+  .admin-page-card {
+    padding: 20px 20px;
+  }
 }
