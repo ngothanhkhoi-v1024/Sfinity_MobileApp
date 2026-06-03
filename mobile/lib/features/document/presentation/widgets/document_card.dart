@@ -75,9 +75,9 @@ class DocumentCard extends StatelessWidget {
                           ),
                         if (subjectCode.isNotEmpty) const SizedBox(width: 6),
                         _Badge(
-                          text: (item['category'] as Map?)?['name']
-                                  ?.toString() ??
-                              'Tài liệu',
+                          text: l10n.translateCategory(
+                            (item['category'] as Map?)?['name']?.toString() ?? 'Tài liệu',
+                          ),
                           color: AppColors.muted(context),
                           backgroundColor: AppColors.chipBg(context),
                         ),
@@ -85,35 +85,35 @@ class DocumentCard extends StatelessWidget {
                           if (status == 'DRAFT') ...[
                             const SizedBox(width: 6),
                             _Badge(
-                              text: 'Bản nháp',
+                              text: l10n.statusDraft,
                               color: Colors.orange.shade800,
                               backgroundColor: Colors.orange.shade100,
                             ),
                           ] else if (status == 'PENDING') ...[
                             const SizedBox(width: 6),
                             _Badge(
-                              text: 'Chờ duyệt',
+                              text: l10n.statusPending,
                               color: Colors.blue.shade800,
                               backgroundColor: Colors.blue.shade100,
                             ),
                           ] else if (status == 'REJECTED') ...[
                             const SizedBox(width: 6),
                             _Badge(
-                              text: 'Từ chối',
+                              text: l10n.statusRejected,
                               color: Colors.red.shade800,
                               backgroundColor: Colors.red.shade100,
                             ),
                           ] else if (status == 'HIDDEN') ...[
                             const SizedBox(width: 6),
                             _Badge(
-                              text: 'Bị ẩn',
+                              text: l10n.statusHidden,
                               color: Colors.grey.shade800,
                               backgroundColor: Colors.grey.shade200,
                             ),
                           ] else if (status == 'PUBLISHED') ...[
                             const SizedBox(width: 6),
                             _Badge(
-                              text: 'Đã duyệt',
+                              text: l10n.statusPublished,
                               color: Colors.green.shade800,
                               backgroundColor: Colors.green.shade100,
                             ),
@@ -122,7 +122,7 @@ class DocumentCard extends StatelessWidget {
                           if (status == 'DRAFT') ...[
                             const SizedBox(width: 6),
                             _Badge(
-                              text: 'Bản nháp',
+                              text: l10n.statusDraft,
                               color: Colors.orange.shade800,
                               backgroundColor: Colors.orange.shade100,
                             ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/i18n/app_text.dart';
 
 /// Thanh bộ lọc nhanh danh mục tài liệu dạng FilterChip cuộn ngang.
 class DocumentFilterChips extends StatelessWidget {
@@ -28,7 +29,7 @@ class DocumentFilterChips extends StatelessWidget {
           return Padding(
             padding: const EdgeInsets.only(right: 8),
             child: FilterChip(
-              label: Text(category),
+              label: Text(context.l10n.translateCategory(category)),
               selected: isSelected,
               onSelected: (selected) {
                 if (selected) onSelected(category);

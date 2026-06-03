@@ -110,7 +110,7 @@ class DocumentTopPanel extends StatelessWidget {
                       final cat = categories[index];
                       final selected = selectedCategory == cat;
                       return _CategoryChip(
-                        label: cat,
+                        label: l10n.translateCategory(cat),
                         selected: selected,
                         primary: primary,
                         onTap: () => onCategorySelected(cat),

@@ -39,8 +39,8 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
   bool _parentScrollEnabled = true;
 
   // State variables for rating filter and comment pagination
-  String _selectedRatingFilter = 'Tất cả';
-  String _selectedSortOrder = 'Mới nhất';
+  String _selectedRatingFilter = 'ALL';
+  String _selectedSortOrder = 'newest';
   int _visibleReviewsCount = 5;
   
   Uint8List? _pdfBytes;
@@ -341,7 +341,8 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
         final downloads = doc['downloadsCount'] ?? 0;
         final subjectCode = doc['subjectCode']?.toString() ?? l10n.studyDocument;
         final tags = doc['tags'] as List? ?? [];
-        final category = (doc['category'] as Map?)?['name']?.toString() ?? l10n.documents;
+        final catName = (doc['category'] as Map?)?['name']?.toString();
+        final category = catName != null ? l10n.translateCategory(catName) : l10n.documents;
         final fileUrl = doc['fileUrl']?.toString() ?? '';
         final isAuthor = doc['authorId']?.toString() == currentUserId;
 
@@ -376,7 +377,7 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
         ];
 
         final filteredReviews = publicReviews.where((rev) {
-          if (_selectedRatingFilter == 'Tất cả') return true;
+          if (_selectedRatingFilter == 'ALL') return true;
           final rating = (rev['rating'] as num?)?.toInt() ?? 5;
           return '$rating ★' == _selectedRatingFilter;
         }).toList();
@@ -387,7 +388,7 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
           if (isAuthorA && !isAuthorB) return -1;
           if (!isAuthorA && isAuthorB) return 1;
 
-          if (_selectedSortOrder == l10n.newest) {
+          if (_selectedSortOrder == 'newest') {
             final dateA = a['createdAt'] != null
                 ? (a['createdAt'] is DateTime
                     ? a['createdAt'] as DateTime
@@ -399,7 +400,7 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                     : DateTime.tryParse(b['createdAt'].toString()) ?? DateTime.now())
                 : DateTime.now();
             return dateB.compareTo(dateA);
-          } else if (_selectedSortOrder == 'Cũ nhất') {
+          } else if (_selectedSortOrder == 'oldest') {
             final dateA = a['createdAt'] != null
                 ? (a['createdAt'] is DateTime
                     ? a['createdAt'] as DateTime
@@ -411,11 +412,11 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                     : DateTime.tryParse(b['createdAt'].toString()) ?? DateTime.now())
                 : DateTime.now();
             return dateA.compareTo(dateB);
-          } else if (_selectedSortOrder == 'Đánh giá cao nhất') {
+          } else if (_selectedSortOrder == 'highest_rating') {
             final ratingA = (a['rating'] as num?)?.toDouble() ?? 0.0;
             final ratingB = (b['rating'] as num?)?.toDouble() ?? 0.0;
             return ratingB.compareTo(ratingA);
-          } else if (_selectedSortOrder == 'Đánh giá thấp nhất') {
+          } else if (_selectedSortOrder == 'lowest_rating') {
             final ratingA = (a['rating'] as num?)?.toDouble() ?? 0.0;
             final ratingB = (b['rating'] as num?)?.toDouble() ?? 0.0;
             return ratingA.compareTo(ratingB);
@@ -468,23 +469,23 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                     }
                   },
                   itemBuilder: (context) => [
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'edit',
                       child: Row(
                         children: [
-                          Icon(Icons.edit_outlined, size: 20),
-                          SizedBox(width: 8),
-                          Text('Chỉnh sửa'),
+                          const Icon(Icons.edit_outlined, size: 20),
+                          const SizedBox(width: 8),
+                          Text(l10n.edit),
                         ],
                       ),
                     ),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'delete',
                       child: Row(
                         children: [
-                          Icon(Icons.delete_outline, size: 20, color: Colors.red),
-                          SizedBox(width: 8),
-                          Text('Xóa tài liệu', style: TextStyle(color: Colors.red)),
+                          const Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                          const SizedBox(width: 8),
+                          Text(l10n.deleteDocument, style: const TextStyle(color: Colors.red)),
                         ],
                       ),
                     ),
@@ -796,6 +797,7 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
   }
 
   Widget _buildSpecsGrid(BuildContext context, String subjectCode, String fileType, String fileSize, int downloads) {
+    final l10n = context.l10n;
     return GridView.count(
       crossAxisCount: 2,
       shrinkWrap: true,
@@ -806,13 +808,13 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
       children: [
         DocumentInfoTile(
           icon: Icons.code,
-          label: 'MÃ MÔN HỌC',
+          label: l10n.subjectCode.toUpperCase(),
           value: subjectCode.toUpperCase(),
           accentColor: Colors.indigo,
         ),
         DocumentInfoTile(
           icon: Icons.file_download,
-          label: 'LƯỢT TẢI',
+          label: l10n.downloads.toUpperCase(),
           value: '$downloads',
           accentColor: const Color(0xFF059669),
         ),
@@ -826,7 +828,7 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          l10n.placeDescription,
+          l10n.description,
           style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
@@ -1202,14 +1204,14 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                       _visibleReviewsCount = 3;
                     });
                   },
-                  itemBuilder: (context) => [l10n.all, '5 ★', '4 ★', '3 ★', '2 ★', '1 ★'].map((f) {
+                  itemBuilder: (context) => ['ALL', '5 ★', '4 ★', '3 ★', '2 ★', '1 ★'].map((f) {
                     return PopupMenuItem<String>(
                       value: f,
                       child: Row(
                         children: [
-                          Icon(Icons.star, color: f == l10n.all ? Colors.grey : Colors.amber, size: 15),
+                          Icon(Icons.star, color: f == 'ALL' ? Colors.grey : Colors.amber, size: 15),
                           const SizedBox(width: 8),
-                          Text(f, style: const TextStyle(fontSize: 12)),
+                          Text(f == 'ALL' ? l10n.all : f, style: const TextStyle(fontSize: 12)),
                         ],
                       ),
                     );
@@ -1217,12 +1219,12 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                     decoration: BoxDecoration(
-                      color: _selectedRatingFilter == l10n.all 
+                      color: _selectedRatingFilter == 'ALL' 
                           ? theme.cardColor
                           : primaryColor.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: _selectedRatingFilter == l10n.all
+                        color: _selectedRatingFilter == 'ALL'
                             ? theme.dividerColor
                             : primaryColor.withValues(alpha: 0.15),
                       ),
@@ -1233,15 +1235,15 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                         Icon(
                           Icons.star, 
                           size: 13, 
-                          color: _selectedRatingFilter == l10n.all ? Colors.grey : Colors.amber,
+                          color: _selectedRatingFilter == 'ALL' ? Colors.grey : Colors.amber,
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          _selectedRatingFilter,
+                          _selectedRatingFilter == 'ALL' ? l10n.all : _selectedRatingFilter,
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
-                            color: _selectedRatingFilter == l10n.all
+                            color: _selectedRatingFilter == 'ALL'
                                 ? theme.colorScheme.onSurface.withValues(alpha: 0.8)
                                 : primaryColor,
                           ),
@@ -1250,7 +1252,7 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                         Icon(
                           Icons.arrow_drop_down, 
                           size: 13, 
-                          color: _selectedRatingFilter == l10n.all ? Colors.grey : primaryColor,
+                          color: _selectedRatingFilter == 'ALL' ? Colors.grey : primaryColor,
                         ),
                       ],
                     ),
@@ -1268,7 +1270,7 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                   },
                   itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
                     PopupMenuItem<String>(
-                      value: l10n.newest,
+                      value: 'newest',
                       child: Row(
                         children: [
                           const Icon(Icons.access_time, size: 16),
@@ -1277,33 +1279,33 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                         ],
                       ),
                     ),
-                    const PopupMenuItem<String>(
-                      value: 'Cũ nhất',
+                    PopupMenuItem<String>(
+                      value: 'oldest',
                       child: Row(
                         children: [
-                          Icon(Icons.history, size: 16),
-                          SizedBox(width: 8),
-                          Text('Cũ nhất', style: TextStyle(fontSize: 12)),
+                          const Icon(Icons.history, size: 16),
+                          const SizedBox(width: 8),
+                          Text(l10n.oldest, style: const TextStyle(fontSize: 12)),
                         ],
                       ),
                     ),
-                    const PopupMenuItem<String>(
-                      value: 'Đánh giá cao nhất',
+                    PopupMenuItem<String>(
+                      value: 'highest_rating',
                       child: Row(
                         children: [
-                          Icon(Icons.arrow_upward, size: 16, color: Colors.green),
-                          SizedBox(width: 8),
-                          Text('Đánh giá cao nhất', style: TextStyle(fontSize: 12)),
+                          const Icon(Icons.star, size: 16, color: Colors.amber),
+                          const SizedBox(width: 8),
+                          Text(l10n.highestRating, style: const TextStyle(fontSize: 12)),
                         ],
                       ),
                     ),
-                    const PopupMenuItem<String>(
-                      value: 'Đánh giá thấp nhất',
+                    PopupMenuItem<String>(
+                      value: 'lowest_rating',
                       child: Row(
                         children: [
-                          Icon(Icons.arrow_downward, size: 16, color: Colors.red),
-                          SizedBox(width: 8),
-                          Text('Đánh giá thấp nhất', style: TextStyle(fontSize: 12)),
+                          const Icon(Icons.star_border, size: 16, color: Colors.grey),
+                          const SizedBox(width: 8),
+                          Text(l10n.lowestRating, style: const TextStyle(fontSize: 12)),
                         ],
                       ),
                     ),
@@ -1321,7 +1323,13 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                         Icon(Icons.swap_vert, size: 13, color: primaryColor),
                         const SizedBox(width: 4),
                         Text(
-                          _selectedSortOrder,
+                          _selectedSortOrder == 'newest'
+                              ? l10n.newest
+                              : _selectedSortOrder == 'oldest'
+                                  ? l10n.oldest
+                                  : _selectedSortOrder == 'highest_rating'
+                                      ? l10n.highestRating
+                                      : l10n.lowestRating,
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
@@ -1353,7 +1361,7 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                 const Icon(Icons.rate_review_outlined, color: Colors.grey, size: 36),
                 const SizedBox(height: 10),
                 Text(
-                  _selectedRatingFilter == l10n.all
+                  _selectedRatingFilter == 'ALL'
                       ? l10n.noCommentsFound
                       : l10n.noComments,
                   style: const TextStyle(color: Colors.grey, height: 1.4, fontSize: 12),

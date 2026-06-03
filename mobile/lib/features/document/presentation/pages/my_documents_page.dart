@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:dio/dio.dart';
 
 import '../../../../app.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../../../../core/constants/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/error_view.dart';
@@ -141,20 +142,21 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
   }
 
   Future<void> _deleteDocument(String id) async {
+    final l10n = context.l10n;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Xóa tài liệu'),
-        content: const Text('Bạn có chắc chắn muốn xóa tài liệu này không? Hành động này không thể hoàn tác.'),
+        title: Text(l10n.delete),
+        content: Text(l10n.deleteDocumentConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Hủy'),
+            child: Text(l10n.cancelBtn2),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Xóa'),
+            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -165,14 +167,14 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
         await SfinityApp.documentRepository.deleteDocument(id);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Xóa tài liệu thành công')),
+            SnackBar(content: Text(l10n.deleteDocumentSuccess)),
           );
           _loadDocuments();
         }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Xóa tài liệu thất bại: $e')),
+            SnackBar(content: Text('${l10n.deleteDocumentFailed}: $e')),
           );
         }
       }
@@ -182,13 +184,14 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
   @override
   Widget build(BuildContext context) {
     final primary = AppColors.primaryOf(context);
+    final l10n = context.l10n;
 
     return Scaffold(
       backgroundColor: AppColors.scaffold(context),
       appBar: AppBar(
-        title: const Text(
-          'Tài liệu của tôi',
-          style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: -0.3),
+        title: Text(
+          l10n.myPosts,
+          style: const TextStyle(fontWeight: FontWeight.w800, letterSpacing: -0.3),
         ),
         elevation: 0,
         actions: [
@@ -288,6 +291,7 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
   }
 
   Widget _buildEmptyState() {
+    final l10n = context.l10n;
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       child: Container(
@@ -306,12 +310,12 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
             ),
             const SizedBox(height: 12),
             Text(
-              'Không tìm thấy tài liệu',
+              l10n.noDocumentsFound,
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.subtitle(context)),
             ),
             const SizedBox(height: 4),
             Text(
-              'Các tài liệu của bạn sẽ hiển thị ở đây.',
+              l10n.yourDocumentsHere,
               style: TextStyle(fontSize: 13, color: AppColors.muted(context)),
             ),
           ],
@@ -321,13 +325,14 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
   }
 
   Widget _buildStatsDashboard(Color primary) {
+    final l10n = context.l10n;
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       physics: const BouncingScrollPhysics(),
       child: Row(
         children: [
           _buildStatItem(
-            title: 'Tài liệu',
+            title: l10n.documents,
             value: '$_totalCount',
             icon: Icons.article_rounded,
             color: primary,
@@ -336,7 +341,7 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
           ),
           const SizedBox(width: 8),
           _buildStatItem(
-            title: 'Chờ duyệt',
+            title: l10n.statusPending,
             value: '$_pendingCount',
             icon: Icons.hourglass_empty_rounded,
             color: Colors.blue.shade700,
@@ -345,7 +350,7 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
           ),
           const SizedBox(width: 8),
           _buildStatItem(
-            title: 'Đã duyệt',
+            title: l10n.statusPublished,
             value: '$_publishedCount',
             icon: Icons.check_circle_outline_rounded,
             color: Colors.green.shade700,
@@ -354,7 +359,7 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
           ),
           const SizedBox(width: 8),
           _buildStatItem(
-            title: 'Từ chối',
+            title: l10n.statusRejected,
             value: '$_rejectedCount',
             icon: Icons.cancel_outlined,
             color: Colors.red.shade700,
@@ -363,7 +368,7 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
           ),
           const SizedBox(width: 8),
           _buildStatItem(
-            title: 'Bản nháp',
+            title: l10n.statusDraft,
             value: '$_draftCount',
             icon: Icons.edit_note_rounded,
             color: Colors.orange.shade700,
@@ -372,7 +377,7 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
           ),
           const SizedBox(width: 8),
           _buildStatItem(
-            title: 'Bị ẩn',
+            title: l10n.statusHidden,
             value: '$_hiddenCount',
             icon: Icons.visibility_off_outlined,
             color: Colors.grey.shade700,
@@ -476,6 +481,7 @@ class _MyDocumentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final title = doc['title']?.toString() ?? '';
     final body = doc['body']?.toString() ?? '';
     final fileType = (doc['fileType']?.toString() ?? 'pdf').toLowerCase();
@@ -524,7 +530,9 @@ class _MyDocumentCard extends StatelessWidget {
                             const SizedBox(width: 6),
                           ],
                           _Badge(
-                            text: (doc['category'] as Map?)?['name']?.toString() ?? 'Tài liệu',
+                            text: l10n.translateCategory(
+                              (doc['category'] as Map?)?['name']?.toString() ?? 'Tài liệu',
+                            ),
                             color: AppColors.muted(context),
                             backgroundColor: AppColors.chipBg(context),
                           ),
@@ -553,7 +561,7 @@ class _MyDocumentCard extends StatelessWidget {
                             ),
                           ),
                           const Spacer(),
-                          _buildStatusBadge(status),
+                          _buildStatusBadge(context, status),
                         ],
                       ),
                       const SizedBox(height: 8),
@@ -622,35 +630,36 @@ class _MyDocumentCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusBadge(String status) {
+  Widget _buildStatusBadge(BuildContext context, String status) {
+    final l10n = context.l10n;
     switch (status) {
       case 'DRAFT':
-        return const _Badge(
-          text: 'Nháp',
+        return _Badge(
+          text: l10n.statusDraft,
           color: Colors.orange,
           bgOpacity: 0.1,
         );
       case 'PENDING':
-        return const _Badge(
-          text: 'Chờ duyệt',
+        return _Badge(
+          text: l10n.statusPending,
           color: Colors.blue,
           bgOpacity: 0.1,
         );
       case 'REJECTED':
-        return const _Badge(
-          text: 'Từ chối',
+        return _Badge(
+          text: l10n.statusRejected,
           color: Colors.red,
           bgOpacity: 0.1,
         );
       case 'HIDDEN':
-        return const _Badge(
-          text: 'Bị ẩn',
+        return _Badge(
+          text: l10n.statusHidden,
           color: Colors.grey,
           bgOpacity: 0.1,
         );
       case 'PUBLISHED':
-        return const _Badge(
-          text: 'Đã duyệt',
+        return _Badge(
+          text: l10n.statusPublished,
           color: Colors.green,
           bgOpacity: 0.1,
         );

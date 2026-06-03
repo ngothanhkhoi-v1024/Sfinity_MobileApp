@@ -166,6 +166,33 @@ class AppLocalizations {
       'selectCategory': 'Chọn danh mục',
       'publicAllSee': 'Công khai - Mọi người đều thấy',
       'reset_': 'Đặt lại',
+      'displayMode': 'Chế độ hiển thị',
+      'publicApproved': 'Công khai (Mọi người đều thấy)',
+      'publicPending': 'Công khai (Gửi yêu cầu xét duyệt)',
+      'onlyMeDraft': 'Chỉ mình tôi (Bản nháp)',
+      'statusDraft': 'Bản nháp',
+      'statusPending': 'Chờ duyệt',
+      'statusRejected': 'Từ chối',
+      'statusHidden': 'Bị ẩn',
+      'statusPublished': 'Đã duyệt',
+      'yourDocumentsHere': 'Các tài liệu của bạn sẽ hiển thị ở đây.',
+      'deleteDocumentConfirm': 'Bạn có chắc chắn muốn xóa tài liệu này không? Hành động này không thể hoàn tác.',
+      'deleteDocumentSuccess': 'Xóa tài liệu thành công',
+      'deleteDocumentFailed': 'Xóa tài liệu thất bại',
+      'edit': 'Chỉnh sửa',
+      'deleteDocument': 'Xóa tài liệu',
+      'oldest': 'Cũ nhất',
+      'highestRating': 'Đánh giá cao nhất',
+      'lowestRating': 'Đánh giá thấp nhất',
+      'description': 'Mô tả',
+      'documentDescriptionHint': 'Mô tả chi tiết về tài liệu này...',
+      'documentDescriptionMin': 'Mô tả cần ít nhất 2 ký tự',
+      'subjectCode': 'Mã môn học',
+      'downloads': 'Lượt tải',
+      'categoryLecture': 'Bài giảng',
+      'categoryExam': 'Đề thi',
+      'categoryNote': 'Ghi chú',
+      'categoryOther': 'Khác',
       'tags': 'Thẻ',
       'postDocument': 'Đăng tài liệu',
       'documentUpdateSuccess': 'Cập nhật tài liệu thành công',
@@ -636,6 +663,33 @@ class AppLocalizations {
       'selectCategory': 'Select category',
       'publicAllSee': 'Public - Everyone can see',
       'reset_': 'Reset',
+      'displayMode': 'Display Mode',
+      'publicApproved': 'Public (Everyone can see)',
+      'publicPending': 'Public (Submit for approval)',
+      'onlyMeDraft': 'Only me (Draft)',
+      'statusDraft': 'Draft',
+      'statusPending': 'Pending',
+      'statusRejected': 'Rejected',
+      'statusHidden': 'Hidden',
+      'statusPublished': 'Approved',
+      'yourDocumentsHere': 'Your documents will appear here.',
+      'deleteDocumentConfirm': 'Are you sure you want to delete this document? This action cannot be undone.',
+      'deleteDocumentSuccess': 'Document deleted successfully',
+      'deleteDocumentFailed': 'Failed to delete document',
+      'edit': 'Edit',
+      'deleteDocument': 'Delete document',
+      'oldest': 'Oldest',
+      'highestRating': 'Highest rating',
+      'lowestRating': 'Lowest rating',
+      'description': 'Description',
+      'documentDescriptionHint': 'Detailed description of this document...',
+      'documentDescriptionMin': 'Description must be at least 2 characters',
+      'subjectCode': 'Subject code',
+      'downloads': 'Downloads',
+      'categoryLecture': 'Lecture',
+      'categoryExam': 'Exam',
+      'categoryNote': 'Note',
+      'categoryOther': 'Other',
       'tags': 'Tags',
       'postDocument': 'Post document',
       'documentUpdateSuccess': 'Document updated successfully',
@@ -1115,6 +1169,33 @@ class AppLocalizations {
   String get selectCategory => _text('selectCategory');
   String get publicAllSee => _text('publicAllSee');
   String get reset_ => _text('reset_');
+  String get displayMode => _text('displayMode');
+  String get publicApproved => _text('publicApproved');
+  String get publicPending => _text('publicPending');
+  String get onlyMeDraft => _text('onlyMeDraft');
+  String get statusDraft => _text('statusDraft');
+  String get statusPending => _text('statusPending');
+  String get statusRejected => _text('statusRejected');
+  String get statusHidden => _text('statusHidden');
+  String get statusPublished => _text('statusPublished');
+  String get yourDocumentsHere => _text('yourDocumentsHere');
+  String get deleteDocumentConfirm => _text('deleteDocumentConfirm');
+  String get deleteDocumentSuccess => _text('deleteDocumentSuccess');
+  String get deleteDocumentFailed => _text('deleteDocumentFailed');
+  String get edit => _text('edit');
+  String get deleteDocument => _text('deleteDocument');
+  String get oldest => _text('oldest');
+  String get highestRating => _text('highestRating');
+  String get lowestRating => _text('lowestRating');
+  String get description => _text('description');
+  String get documentDescriptionHint => _text('documentDescriptionHint');
+  String get documentDescriptionMin => _text('documentDescriptionMin');
+  String get subjectCode => _text('subjectCode');
+  String get downloads => _text('downloads');
+  String get categoryLecture => _text('categoryLecture');
+  String get categoryExam => _text('categoryExam');
+  String get categoryNote => _text('categoryNote');
+  String get categoryOther => _text('categoryOther');
   String get tags => _text('tags');
   String get updatePlace => _text('updatePlace');
   String get postDocument => _text('postDocument');
@@ -1472,6 +1553,31 @@ class AppLocalizations {
   String get newPasswordRequired => _text('newPasswordRequired');
   // Method for offline profile load
   String offlineProfileLoad(String err) => _format('offlineProfileLoad', {'{name}': err});
+
+  String translateCategory(String categoryName) {
+    switch (categoryName.toLowerCase()) {
+      case 'bài giảng':
+      case 'lecture':
+        return _text('categoryLecture');
+      case 'đề thi':
+      case 'exam':
+        return _text('categoryExam');
+      case 'ghi chú':
+      case 'note':
+        return _text('categoryNote');
+      case 'khác':
+      case 'other':
+        return _text('categoryOther');
+      case 'tất cả':
+      case 'all':
+        return _text('all');
+      case 'tài liệu':
+      case 'document':
+        return _text('documentLabel');
+      default:
+        return categoryName;
+    }
+  }
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
