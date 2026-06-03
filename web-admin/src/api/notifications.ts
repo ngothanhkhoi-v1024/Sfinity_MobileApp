@@ -22,3 +22,11 @@ export async function sendNotification(payload: {
   const { data } = await apiClient.post('/notifications/admin/send', payload);
   return data;
 }
+
+export async function adminDeleteNotification(id: string): Promise<void> {
+  await apiClient.delete(`/notifications/admin/${id}`);
+}
+
+export async function adminDeleteAllNotifications(): Promise<void> {
+  await apiClient.delete('/notifications/admin/all');
+}

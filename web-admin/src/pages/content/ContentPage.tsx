@@ -1,191 +1,22 @@
-import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
-import {
-  Button,
-  Form,
-  Input,
-  Modal,
-  Popconfirm,
-  Select,
-  Space,
-  Table,
-  Tag,
-  message,
-} from 'antd';
-import type { ColumnsType } from 'antd/es/table';
-import { useCallback, useEffect, useState } from 'react';
-
-import { fetchCategories, type CategoryItem } from '@/api/categories';
-import {
-  createContent,
-  deleteContent,
-  fetchContent,
-  publishContent,
-  unpublishContent,
-  updateContent,
-  type ContentItem,
-} from '@/api/content';
 import { PageHeader } from '@/components/common/PageHeader';
 import { PageShell } from '@/components/common/PageShell';
+import { Tabs } from 'antd';
+import { DocumentsPage } from './DocumentsPage';
+import { PlacesPage } from './PlacesPage';
+
+const tabItems = [
+  { key: 'documents', label: 'Tài liệu', children: <DocumentsPage /> },
+  { key: 'places', label: 'Địa điểm', children: <PlacesPage /> },
+];
 
 export function ContentPage() {
-  const [data, setData] = useState<ContentItem[]>([]);
-  const [categories, setCategories] = useState<CategoryItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState<ContentItem | null>(null);
-  const [form] = Form.useForm();
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetchContent();
-      setData(res.items);
-    } catch {
-      message.error('Không tải được nội dung');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    load();
-    fetchCategories().then(setCategories).catch(() => {});
-  }, [load]);
-
-  const openCreate = () => {
-    setEditing(null);
-    form.resetFields();
-    form.setFieldsValue({ status: 'DRAFT' });
-    setModalOpen(true);
-  };
-
-  const openEdit = (item: ContentItem) => {
-    setEditing(item);
-    form.setFieldsValue({
-      title: item.title,
-      body: item.body,
-      status: item.status,
-      categoryId: item.categoryId,
-    });
-    setModalOpen(true);
-  };
-
-  const handleSubmit = async () => {
-    const values = await form.validateFields();
-    try {
-      if (editing) {
-        await updateContent(editing.id, values);
-        message.success('Đã cập nhật');
-      } else {
-        await createContent(values);
-        message.success('Đã tạo nội dung');
-      }
-      setModalOpen(false);
-      load();
-    } catch {
-      message.error('Lưu thất bại');
-    }
-  };
-
-  const togglePublish = async (item: ContentItem) => {
-    try {
-      if (item.status === 'PUBLISHED') {
-        await unpublishContent(item.id);
-      } else {
-        await publishContent(item.id);
-      }
-      message.success('Cập nhật trạng thái');
-      load();
-    } catch {
-      message.error('Thất bại');
-    }
-  };
-
-  const columns: ColumnsType<ContentItem> = [
-    { title: 'Tiêu đề', dataIndex: 'title', ellipsis: true },
-    {
-      title: 'Trạng thái',
-      dataIndex: 'status',
-      render: (s: string) => (
-        <Tag color={s === 'PUBLISHED' ? 'green' : 'default'}>
-          {s === 'PUBLISHED' ? 'Đã xuất bản' : 'Nháp'}
-        </Tag>
-      ),
-    },
-    { title: 'Tác giả', dataIndex: ['author', 'name'] },
-    { title: 'Danh mục', dataIndex: ['category', 'name'] },
-    {
-      title: 'Thao tác',
-      key: 'actions',
-      width: 220,
-      render: (_, record) => (
-        <Space>
-          <Button size="small" onClick={() => openEdit(record)}>
-            Sửa
-          </Button>
-          <Button size="small" onClick={() => togglePublish(record)}>
-            {record.status === 'PUBLISHED' ? 'Ẩn' : 'Xuất bản'}
-          </Button>
-          <Popconfirm title="Xóa?" onConfirm={async () => {
-            await deleteContent(record.id);
-            load();
-          }}>
-            <Button size="small" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
-        </Space>
-      ),
-    },
-  ];
-
   return (
     <PageShell>
       <PageHeader
         title="Quản lý nội dung"
-        description="Tạo, chỉnh sửa và xuất bản bài viết"
-        extra={
-          <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-            Thêm nội dung
-          </Button>
-        }
+        description="Xem, ẩn, bỏ ẩn hoặc xóa tài liệu và địa điểm. Thao tác sẽ gửi thông báo lý do cho tác giả."
       />
-
-      <Table
-        className="admin-table"
-        rowKey="id"
-        loading={loading}
-        columns={columns}
-        dataSource={data}
-        pagination={{ pageSize: 10 }}
-      />
-
-      <Modal
-        title={editing ? 'Sửa nội dung' : 'Thêm nội dung'}
-        open={modalOpen}
-        onCancel={() => setModalOpen(false)}
-        onOk={handleSubmit}
-        okText="Lưu"
-        width={640}
-      >
-        <Form form={form} layout="vertical">
-          <Form.Item name="title" label="Tiêu đề" rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="body" label="Nội dung" rules={[{ required: true }]}>
-            <Input.TextArea rows={6} />
-          </Form.Item>
-          <Form.Item name="status" label="Trạng thái">
-            <Select
-              options={[
-                { value: 'DRAFT', label: 'Nháp' },
-                { value: 'PUBLISHED', label: 'Xuất bản' },
-              ]}
-            />
-          </Form.Item>
-          <Form.Item name="categoryId" label="Danh mục">
-            <Select allowClear options={categories.map((c) => ({ value: c.id, label: c.name }))} />
-          </Form.Item>
-        </Form>
-      </Modal>
+      <Tabs items={tabItems} />
     </PageShell>
   );
 }

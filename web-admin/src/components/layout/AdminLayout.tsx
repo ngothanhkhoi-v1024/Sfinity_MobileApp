@@ -1,8 +1,8 @@
 import {
+  AppstoreOutlined,
   BellOutlined,
   CrownOutlined,
   DashboardOutlined,
-  FileTextOutlined,
   LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -34,7 +34,7 @@ const menuItems = [
     label: 'Quản lý',
     children: [
       { key: '/users', icon: <TeamOutlined />, label: 'Người dùng' },
-      { key: '/content', icon: <FileTextOutlined />, label: 'Nội dung' },
+      { key: '/content', icon: <AppstoreOutlined />, label: 'Nội dung' },
       { key: '/categories', icon: <TagsOutlined />, label: 'Danh mục' },
     ],
   },
