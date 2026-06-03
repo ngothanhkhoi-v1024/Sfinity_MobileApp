@@ -15,10 +15,14 @@ Tài liệu này đóng vai trò là **Source of Truth (Nguồn thông tin chu�
 | `favorites` | Lưu danh sách tài liệu sinh viên đánh dấu yêu thích/lưu lại. | Mã chuỗi tự sinh ngẫu nhiên |
 | `place_reviews` | Điểm số và nhận xét các địa điểm trên bản đồ. | Mã chuỗi tự sinh ngẫu nhiên |
 | `place_photos` | Danh sách hình ảnh thực tế của địa điểm do sinh viên chụp. | Mã chuỗi tự sinh ngẫu nhiên |
+| `place_checkins` | Check-in GPS tại địa điểm (mỗi user tối đa một lần / địa điểm). | `{placeId}_{userId}` |
 | `notifications` | Lịch sử thông báo đẩy gửi tới thiết bị người dùng. | Mã chuỗi tự sinh ngẫu nhiên |
 | `feedbacks` | Phản hồi góp ý của người dùng gửi cho ban quản trị. | Mã chuỗi tự sinh ngẫu nhiên |
 | `reports` | Báo cáo vi phạm các tài liệu/địa điểm chờ duyệt. | Mã chuỗi tự sinh ngẫu nhiên |
 | `password_resets` | OTP và thời gian hết hạn khôi phục mật khẩu tạm thời. | Mã chuỗi tự sinh ngẫu nhiên |
+| `friendships` | Trạng thái quan hệ bạn bè giữa các người dùng. | `requesterId_addresseeId` |
+| `groups` | Thông tin nhóm học tập/thảo luận. | Mã chuỗi tự sinh ngẫu nhiên |
+| `group_members` | Thành viên tham gia nhóm và vai trò tương ứng. | `groupId_userId` |
 
 ---
 
@@ -129,6 +133,55 @@ interface FavoriteDocument {
   userId: string;      // ID sinh viên (Liên kết với users.id)
   contentId: string;   // ID tài liệu yêu thích (Liên kết với documents.id)
   createdAt: Timestamp;// Thời gian đánh dấu yêu thích
+}
+```
+
+---
+
+### 6. Collection `friendships`
+Quản lý mối quan hệ bạn bè, yêu cầu kết bạn và chặn người dùng.
+
+```typescript
+interface FriendshipDocument {
+  id: string;          // Khóa chính (định dạng: requesterId_addresseeId)
+  requesterId: string; // ID người gửi lời mời (users.id)
+  addresseeId: string; // ID người nhận lời mời (users.id)
+  status: 'PENDING' | 'ACCEPTED' | 'BLOCKED'; // Trạng thái quan hệ
+  createdAt: Timestamp; // Thời gian gửi lời mời
+  updatedAt: Timestamp; // Thời gian cập nhật trạng thái mới nhất
+}
+```
+
+---
+
+### 7. Collection `groups`
+Quản lý thông tin các phòng học nhóm/thảo luận.
+
+```typescript
+interface GroupDocument {
+  id: string;          // ID nhóm tự sinh
+  name: string;        // Tên hiển thị của nhóm
+  description: string | null; // Mô tả nhóm học tập
+  avatarUrl: string | null;   // Link ảnh đại diện của nhóm
+  isPublic: boolean;   // Nhóm công khai (true) hoặc nhóm riêng tư (false)
+  creatorId: string;   // ID của chủ sở hữu nhóm (users.id)
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+```
+
+---
+
+### 8. Collection `group_members`
+Quản lý thành viên trong từng nhóm học tập.
+
+```typescript
+interface GroupMemberDocument {
+  id: string;          // Khóa chính (định dạng: groupId_userId)
+  groupId: string;     // ID nhóm (groups.id)
+  userId: string;      // ID người dùng (users.id)
+  role: 'OWNER' | 'ADMIN' | 'MEMBER'; // Vai trò của thành viên trong nhóm
+  joinedAt: Timestamp; // Thời gian gia nhập nhóm
 }
 ```
 

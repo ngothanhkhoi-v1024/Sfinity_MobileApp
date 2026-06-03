@@ -4,40 +4,38 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/route_names.dart';
 import '../../../../core/i18n/app_text.dart';
 import '../../../../shared/widgets/floating_pill_nav_bar.dart';
-import '../../../../shared/widgets/share_action_sheet.dart';
 import '../../../document/presentation/pages/document_list_page.dart';
+import 'community_page.dart';
 import '../../../places/presentation/pages/places_map_page.dart';
 import '../../../places/presentation/places_map_focus.dart';
 import '../../../profile/presentation/pages/profile_page.dart';
 import 'explore_page.dart';
 
-/// Shell chính: pill nav + nút chia sẻ giữa + tab Địa điểm (OSM).
+/// Shell chính: pill nav với 5 tab (Khám phá, Địa điểm, Tài liệu, Cộng đồng, Cá nhân).
 class HomeShellPage extends StatefulWidget {
-  const HomeShellPage({super.key});
+  const HomeShellPage({super.key, this.initialTab = 0});
+  final int initialTab;
 
   @override
   State<HomeShellPage> createState() => _HomeShellPageState();
 }
 
 class _HomeShellPageState extends State<HomeShellPage> {
-  /// Chỉ số thanh nav: 0 Khám phá, 1 Địa điểm, 3 Tài liệu, 4 Cá nhân.
-  int _navIndex = 0;
-
-  int get _pageIndex {
-    if (_navIndex <= 1) return _navIndex;
-    return _navIndex - 1;
-  }
+  /// 0 Khám phá, 1 Địa điểm, 2 Tài liệu, 3 Cộng đồng, 4 Cá nhân.
+  late int _navIndex;
 
   late final List<Widget> _pages = const [
     ExplorePage(),
     PlacesMapPage(),
     DocumentListPage(embedded: true),
+    CommunityPage(),
     ProfilePage(),
   ];
 
   @override
   void initState() {
     super.initState();
+    _navIndex = widget.initialTab;
     PlacesMapFocus.pending.addListener(_onPlacesMapFocus);
   }
 
@@ -61,6 +59,7 @@ class _HomeShellPageState extends State<HomeShellPage> {
       PillNavItem(label: l10n.explore, icon: Icons.explore_outlined, selectedIcon: Icons.explore),
       PillNavItem(label: l10n.places, icon: Icons.map_outlined, selectedIcon: Icons.map),
       PillNavItem(label: l10n.documents, icon: Icons.menu_book_outlined, selectedIcon: Icons.menu_book),
+      const PillNavItem(label: 'Cộng đồng', icon: Icons.people_alt_outlined, selectedIcon: Icons.people_alt),
       PillNavItem(label: l10n.profile, icon: Icons.person_outline, selectedIcon: Icons.person),
     ];
     final bottomInset = MediaQuery.paddingOf(context).bottom;
@@ -117,10 +116,10 @@ class _HomeShellPageState extends State<HomeShellPage> {
           ],
         ),
       ),
-      appBar: _navIndex == 1
-          ? null
+      appBar: (_navIndex == 1 || _navIndex == 3)
+          ? null // Places and Community pages have their own AppBar
           : AppBar(
-                      title: Text(_titleForNavIndex(context, _navIndex)),
+              title: Text(_titleForNavIndex(context, _navIndex)),
               leading: _navIndex == 0
                   ? Builder(
                       builder: (ctx) => IconButton(
@@ -131,7 +130,7 @@ class _HomeShellPageState extends State<HomeShellPage> {
                   : null,
               automaticallyImplyLeading: _navIndex == 0,
               actions: [
-                if (_navIndex == 3)
+                if (_navIndex == 2)
                   IconButton(
                     icon: Icon(Icons.add_circle_outline, color: Theme.of(context).colorScheme.primary, size: 26),
                     onPressed: () => context.push(
@@ -142,19 +141,15 @@ class _HomeShellPageState extends State<HomeShellPage> {
               ],
             ),
       body: IndexedStack(
-        index: _pageIndex,
+        index: _navIndex,
         children: _pages,
       ),
       bottomNavigationBar: Padding(
         padding: EdgeInsets.fromLTRB(20, 0, 20, 12 + bottomInset),
         child: FloatingPillNavBar(
           selectedIndex: _navIndex,
-            items: navItems,
-          onTabSelected: (i) {
-            if (i == FloatingPillNavBar.centerSlotIndex) return;
-            setState(() => _navIndex = i);
-          },
-          onCenterTap: () => showShareActionSheet(context),
+          items: navItems,
+          onTabSelected: (i) => setState(() => _navIndex = i),
         ),
       ),
     );
@@ -164,7 +159,8 @@ class _HomeShellPageState extends State<HomeShellPage> {
     final l10n = context.l10n;
     return switch (index) {
       0 => l10n.explore,
-      3 => l10n.documents,
+      2 => l10n.documents,
+      3 => 'Cộng đồng',
       4 => l10n.profile,
       _ => l10n.appName,
     };

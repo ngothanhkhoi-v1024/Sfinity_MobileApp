@@ -1,47 +1,32 @@
 import 'package:flutter/material.dart';
 
-/// Một Segmented Control / Toggle trượt cực kỳ premium và mượt mà
-/// giúp người dùng chuyển đổi giữa chế độ "Cộng đồng" và "Cá nhân".
+import '../../../../core/theme/app_colors.dart';
+
+/// Chuyển Cộng đồng / Cá nhân — gradient thương hiệu Sfinity.
 class DocumentModeToggle extends StatelessWidget {
   const DocumentModeToggle({
     super.key,
     required this.communityMode,
     required this.onChanged,
+    this.compact = false,
   });
 
   final bool communityMode;
   final ValueChanged<bool> onChanged;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    // Thiết kế bảng màu premium hài hòa với theme chung
-    final backgroundColor = isDark
-        ? const Color(0xFF151515) // Sleek dark HSL tailored
-        : const Color(0xFFF3F4F6); // Soft premium light grey
-    
-    final borderColor = isDark
-        ? Colors.grey.shade900
-        : Colors.grey.shade300;
+    final isDark = AppColors.isDark(context);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: compact ? EdgeInsets.zero : const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Container(
-        height: 50,
+        height: compact ? 44 : 50,
         decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(25),
-          border: Border.all(color: borderColor, width: 1),
-          boxShadow: [
-            if (!isDark)
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-          ],
+          color: AppColors.toggleTrack(context),
+          borderRadius: BorderRadius.circular(compact ? 12 : 25),
+          border: Border.all(color: AppColors.border(context)),
         ),
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -62,18 +47,11 @@ class DocumentModeToggle extends StatelessWidget {
                     height: 42,
                     margin: const EdgeInsets.symmetric(horizontal: 2),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          theme.colorScheme.primary,
-                          theme.colorScheme.secondary,
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(22),
+                      gradient: AppColors.brandPill(context),
+                      borderRadius: BorderRadius.circular(compact ? 10 : 22),
                       boxShadow: [
                         BoxShadow(
-                          color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                          color: AppColors.primaryOf(context).withValues(alpha: 0.28),
                           blurRadius: 8,
                           offset: const Offset(0, 3),
                         ),
@@ -99,7 +77,7 @@ class DocumentModeToggle extends StatelessWidget {
                                 size: 18,
                                 color: communityMode
                                     ? Colors.white
-                                    : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                                    : AppColors.muted(context),
                               ),
                               const SizedBox(width: 8),
                               AnimatedDefaultTextStyle(
@@ -107,7 +85,7 @@ class DocumentModeToggle extends StatelessWidget {
                                 style: TextStyle(
                                   color: communityMode
                                       ? Colors.white
-                                      : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                                      : AppColors.muted(context),
                                   fontWeight: communityMode
                                       ? FontWeight.bold
                                       : FontWeight.w500,
@@ -143,7 +121,7 @@ class DocumentModeToggle extends StatelessWidget {
                                 style: TextStyle(
                                   color: !communityMode
                                       ? Colors.white
-                                      : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                                      : AppColors.muted(context),
                                   fontWeight: !communityMode
                                       ? FontWeight.bold
                                       : FontWeight.w500,

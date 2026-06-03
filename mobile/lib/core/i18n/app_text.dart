@@ -41,6 +41,8 @@ class AppLocalizations {
       'useAppInVietnamese': 'Sử dụng giao diện tiếng Việt',
       'useAppInEnglish': 'Sử dụng giao diện tiếng Anh',
       'editProfile': 'Chỉnh sửa hồ sơ',
+      'viewProfile': 'Xem hồ sơ',
+      'bio': 'Giới thiệu bản thân',
       'myPosts': 'Bài đăng của tôi',
       'feedback': 'Phản hồi',
       'reportViolation': 'Báo cáo vi phạm',
@@ -55,6 +57,12 @@ class AppLocalizations {
       'searchHint': 'Tìm kiếm...',
       'noNotifications': 'Không có thông báo',
       'markAllRead': 'Đọc tất cả',
+      'deleteNotification': 'Xóa thông báo',
+      'deleteAllNotifications': 'Xóa tất cả thông báo',
+      'deleteAllNotificationsConfirm': 'Bạn có chắc muốn xóa tất cả thông báo?',
+      'deleteNotificationConfirm': 'Bạn có chắc muốn xóa thông báo này?',
+      'yesDelete': 'Xóa',
+      'cancel': 'Hủy',
       'noFavoritesYet': 'Chưa có mục yêu thích',
       'sendFeedback': 'Gửi phản hồi',
       'ratingLabel': 'Đánh giá: {rating} sao',
@@ -105,6 +113,32 @@ class AppLocalizations {
       'studyPlacesOrMaterials': 'Địa điểm học tập hoặc tài liệu cho cộng đồng',
       'libraryCafeStudyGroupSpace': 'Thư viện, quán cà phê, không gian học nhóm…',
       'notesSlidesExamPapersSubjectSummaries': 'Ghi chú, slide, đề thi, tóm tắt môn học…',
+      'createGroupTitle': 'Tạo nhóm mới',
+      'editGroupTitle': 'Chỉnh sửa thông tin nhóm',
+      'groupNameLabel': 'Tên nhóm *',
+      'groupNameHint': 'Nhập tên nhóm của bạn',
+      'groupDescLabel': 'Mô tả (tùy chọn)',
+      'groupDescHint': 'Thêm vài lời về nhóm này...',
+      'publicGroupLabel': 'Nhóm công khai',
+      'publicGroupHint': 'Bất kỳ ai cũng có thể tìm và gia nhập nhóm này.',
+      'privateGroupHint': 'Chỉ những thành viên được mời mới có thể tham gia.',
+      'autoApproveLabel': 'Tự động duyệt thành viên',
+      'autoApproveHint': 'Thành viên mới tham gia trực tiếp không cần phê duyệt.',
+      'requireApprovalHint': 'Thành viên mới cần được chủ nhóm phê duyệt trước.',
+      'createGroupBtn': 'Tạo nhóm',
+      'saveChangesBtn': 'Lưu thay đổi',
+      'cancelBtn': 'Hủy',
+      'joinRequestsLabel': 'Yêu cầu duyệt',
+      'approveBtn': 'Duyệt',
+      'declineBtn': 'Từ chối',
+      'welcomeDescription': 'Khám phá hàng nghìn địa điểm học tập và tài liệu được cộng đồng chia sẻ. Lưu lại những gì yêu thích và truy cập mọi lúc.',
+      'smartSearchDescription': 'Bộ lọc thông minh giúp bạn tìm đúng nội dung trong vài giây. Sắp xếp theo chủ đề, khoảng cách hoặc mức độ phù hợp.',
+      'stayConnectedDescription': 'Đăng nhập một lần, dữ liệu tự động đồng bộ trên tất cả thiết bị. Không bao giờ mất đi nội dung yêu thích dù đổi điện thoại.',
+      'welcomeBadge': 'Nền tảng học tập',
+      'smartSearchBadge': 'Nhanh & chính xác',
+      'stayConnectedBadge': 'Đa thiết bị',
+      'skip': 'Bỏ qua',
+      'getStartedNow': 'Bắt đầu ngay',
     },
     'en': {
       'appName': 'Sfinity',
@@ -136,6 +170,8 @@ class AppLocalizations {
       'useAppInVietnamese': 'Use the app in Vietnamese',
       'useAppInEnglish': 'Use the app in English',
       'editProfile': 'Edit profile',
+      'viewProfile': 'View profile',
+      'bio': 'About me',
       'myPosts': 'My posts',
       'feedback': 'Feedback',
       'reportViolation': 'Report violation',
@@ -150,6 +186,12 @@ class AppLocalizations {
       'searchHint': 'Search...',
       'noNotifications': 'No notifications',
       'markAllRead': 'Mark all read',
+      'deleteNotification': 'Delete notification',
+      'deleteAllNotifications': 'Delete all notifications',
+      'deleteAllNotificationsConfirm': 'Are you sure you want to delete all notifications?',
+      'deleteNotificationConfirm': 'Are you sure you want to delete this notification?',
+      'yesDelete': 'Delete',
+      'cancel': 'Cancel',
       'noFavoritesYet': 'No favorites yet',
       'sendFeedback': 'Send feedback',
       'ratingLabel': 'Rating: {rating} stars',
@@ -200,6 +242,32 @@ class AppLocalizations {
       'studyPlacesOrMaterials': 'Study places or materials for the community',
       'libraryCafeStudyGroupSpace': 'Library, café, study group space…',
       'notesSlidesExamPapersSubjectSummaries': 'Notes, slides, exam papers, subject summaries…',
+      'createGroupTitle': 'Create new group',
+      'editGroupTitle': 'Edit group details',
+      'groupNameLabel': 'Group name *',
+      'groupNameHint': 'Enter your group name',
+      'groupDescLabel': 'Description (optional)',
+      'groupDescHint': 'Add a few words about this group...',
+      'publicGroupLabel': 'Public group',
+      'publicGroupHint': 'Anyone can find and join this group.',
+      'privateGroupHint': 'Only invited members can join.',
+      'autoApproveLabel': 'Auto-approve members',
+      'autoApproveHint': 'New members join directly without approval.',
+      'requireApprovalHint': 'New members need owner approval first.',
+      'createGroupBtn': 'Create group',
+      'saveChangesBtn': 'Save changes',
+      'cancelBtn': 'Cancel',
+      'joinRequestsLabel': 'Join requests',
+      'approveBtn': 'Approve',
+      'declineBtn': 'Decline',
+      'welcomeDescription': 'Discover thousands of study spots and community-shared materials. Save your favorites and access them anytime.',
+      'smartSearchDescription': 'Smart filters help you find the right content in seconds. Sort by topic, distance, or relevance.',
+      'stayConnectedDescription': 'Sign in once and your data syncs automatically across all devices. Never lose your favorites when switching phones.',
+      'welcomeBadge': 'Learning platform',
+      'smartSearchBadge': 'Fast & accurate',
+      'stayConnectedBadge': 'Multi-device',
+      'skip': 'Skip',
+      'getStartedNow': 'Get started',
     },
   };
 
@@ -244,6 +312,8 @@ class AppLocalizations {
   String get useAppInVietnamese => _text('useAppInVietnamese');
   String get useAppInEnglish => _text('useAppInEnglish');
   String get editProfile => _text('editProfile');
+  String get viewProfile => _text('viewProfile');
+  String get bio => _text('bio');
   String get myPosts => _text('myPosts');
   String get feedback => _text('feedback');
   String get reportViolation => _text('reportViolation');
@@ -258,6 +328,12 @@ class AppLocalizations {
   String get searchHint => _text('searchHint');
   String get noNotifications => _text('noNotifications');
   String get markAllRead => _text('markAllRead');
+  String get deleteNotification => _text('deleteNotification');
+  String get deleteAllNotifications => _text('deleteAllNotifications');
+  String get deleteAllNotificationsConfirm => _text('deleteAllNotificationsConfirm');
+  String get deleteNotificationConfirm => _text('deleteNotificationConfirm');
+  String get yesDelete => _text('yesDelete');
+  String get cancel => _text('cancel');
   String get noFavoritesYet => _text('noFavoritesYet');
   String get sendFeedback => _text('sendFeedback');
   String ratingLabel(int rating) => _format('ratingLabel', {'{rating}': '$rating'});
@@ -306,6 +382,32 @@ class AppLocalizations {
   String get studyPlacesOrMaterials => _text('studyPlacesOrMaterials');
   String get libraryCafeStudyGroupSpace => _text('libraryCafeStudyGroupSpace');
   String get notesSlidesExamPapersSubjectSummaries => _text('notesSlidesExamPapersSubjectSummaries');
+  String get createGroupTitle => _text('createGroupTitle');
+  String get editGroupTitle => _text('editGroupTitle');
+  String get groupNameLabel => _text('groupNameLabel');
+  String get groupNameHint => _text('groupNameHint');
+  String get groupDescLabel => _text('groupDescLabel');
+  String get groupDescHint => _text('groupDescHint');
+  String get publicGroupLabel => _text('publicGroupLabel');
+  String get publicGroupHint => _text('publicGroupHint');
+  String get privateGroupHint => _text('privateGroupHint');
+  String get autoApproveLabel => _text('autoApproveLabel');
+  String get autoApproveHint => _text('autoApproveHint');
+  String get requireApprovalHint => _text('requireApprovalHint');
+  String get createGroupBtn => _text('createGroupBtn');
+  String get saveChangesBtn => _text('saveChangesBtn');
+  String get cancelBtn => _text('cancelBtn');
+  String get joinRequestsLabel => _text('joinRequestsLabel');
+  String get approveBtn => _text('approveBtn');
+  String get declineBtn => _text('declineBtn');
+  String get welcomeDescription => _text('welcomeDescription');
+  String get smartSearchDescription => _text('smartSearchDescription');
+  String get stayConnectedDescription => _text('stayConnectedDescription');
+  String get welcomeBadge => _text('welcomeBadge');
+  String get smartSearchBadge => _text('smartSearchBadge');
+  String get stayConnectedBadge => _text('stayConnectedBadge');
+  String get skip => _text('skip');
+  String get getStartedNow => _text('getStartedNow');
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

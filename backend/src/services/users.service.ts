@@ -26,11 +26,11 @@ export const usersService = {
   }) {
     return {
       id: user.id,
-      email: user.email,
-      name: user.name,
-      avatar: user.avatar,
-      role: user.role.toLowerCase(),
-      status: user.status,
+      email: user.email ?? '',
+      name: user.name ?? 'Unknown',
+      avatar: user.avatar ?? null,
+      role: (user.role ?? 'USER').toLowerCase(),
+      status: user.status ?? 'ACTIVE',
       notificationsEnabled: user.notificationsEnabled ?? true,
       createdAt: toDate(user.createdAt),
       updatedAt: toDate(user.updatedAt),
@@ -67,7 +67,7 @@ export const usersService = {
   async update(id: string, dto: UpdateUserDto) {
     await usersService.findOne(id); // Throws if not found
     const userRef = getDb().collection('users').doc(id);
-    
+
     await userRef.update({
       ...dto,
       updatedAt: new Date(),
@@ -85,14 +85,14 @@ export const usersService = {
 
   async createAdmin(email: string, password: string, name: string) {
     const emailLower = email.trim().toLowerCase();
-    
+
     // Check if user already exists
     const snapshot = await getDb()
       .collection('users')
       .where('email', '==', emailLower)
       .limit(1)
       .get();
-      
+
     if (!snapshot.empty) {
       throw new HttpError(409, 'Email đã được sử dụng', 'Conflict');
     }

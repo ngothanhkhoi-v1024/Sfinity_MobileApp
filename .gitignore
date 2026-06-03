@@ -43,6 +43,8 @@ web-admin/dist/
 # Backend folder (khi tách riêng)
 backend/node_modules/
 backend/dist/
+backend/.tmp-dist/
+backend/.tmp-cloudrun-dist/
 backend/prisma/*.db
 backend/prisma/*.db-journal
 

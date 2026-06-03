@@ -37,6 +37,7 @@ abstract final class RouteNames {
   static const themeSettings = '/settings/theme';
 
   // Profile & security
+  static const viewProfile = '/profile/view';
   static const editProfile = '/profile/edit';
   static const changePassword = '/security/change-password';
   static const twoFactor = '/security/two-factor';
@@ -48,4 +49,12 @@ abstract final class RouteNames {
   static const feedback = '/feedback';
   static const rateApp = '/feedback/rate';
   static const report = '/report';
+
+  // Group & Friends
+  static const friends = '/friends';
+  static const groups = '/groups';
+  static const groupCreate = '/groups/create';
+  static const groupEdit = '/groups/:id/edit';
+  static const groupDetail = '/groups/:id';
+  static const groupChat = '/groups/:id/chat';
 }

@@ -148,10 +148,49 @@ export const notificationsService = {
     return { sent: eligibleUsers.length };
   },
 
+  async delete(userId: string, id: string) {
+    const userDoc = await getDb().collection('users').doc(userId).get();
+    if (userDoc.exists && !allowsNotifications(userDoc.data())) {
+      throw new HttpError(403, 'Forbidden', 'Notifications are disabled');
+    }
+
+    const docRef = getDb().collection('notifications').doc(id);
+    const doc = await docRef.get();
+
+    if (!doc.exists || doc.data()?.userId !== userId) {
+      throw new HttpError(404, 'Not Found', 'Not Found');
+    }
+
+    await docRef.delete();
+    return { success: true };
+  },
+
+  async deleteAll(userId: string) {
+    const userDoc = await getDb().collection('users').doc(userId).get();
+    if (userDoc.exists && !allowsNotifications(userDoc.data())) {
+      throw new HttpError(403, 'Forbidden', 'Notifications are disabled');
+    }
+
+    const snapshot = await getDb()
+      .collection('notifications')
+      .where('userId', '==', userId)
+      .get();
+
+    if (!snapshot.empty) {
+      const batch = getDb().batch();
+      snapshot.docs.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+      await batch.commit();
+    }
+
+    return { success: true };
+  },
+
   async findAllAdmin() {
     const snapshot = await getDb().collection('notifications').get();
     const list = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as any));
-    
+
     // Sort desc by createdAt in memory
     list.sort((a, b) => toDate(b.createdAt).getTime() - toDate(a.createdAt).getTime());
 
@@ -180,5 +219,20 @@ export const notificationsService = {
     );
 
     return resolved;
+  },
+
+  async adminDelete(id: string) {
+    await getDb().collection('notifications').doc(id).delete();
+    return { success: true };
+  },
+
+  async adminDeleteAll() {
+    const snapshot = await getDb().collection('notifications').get();
+    if (!snapshot.empty) {
+      const batch = getDb().batch();
+      snapshot.docs.forEach((doc) => batch.delete(doc.ref));
+      await batch.commit();
+    }
+    return { success: true };
   },
 };

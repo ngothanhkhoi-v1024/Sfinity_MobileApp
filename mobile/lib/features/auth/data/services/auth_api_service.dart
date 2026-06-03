@@ -35,6 +35,10 @@ class AuthApiService {
     return _api.get('/auth/me');
   }
 
+  Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> data) {
+    return _api.patch('/auth/profile', data);
+  }
+
   Future<Map<String, dynamic>> forgotPassword(String email) {
     return _api.post('/auth/forgot-password', {
       'email': email,

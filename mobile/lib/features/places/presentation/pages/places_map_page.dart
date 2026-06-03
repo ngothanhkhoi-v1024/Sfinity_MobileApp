@@ -12,14 +12,14 @@ import '../../../../core/constants/route_names.dart';
 import '../../../../core/network/api_client.dart';
 import '../../data/models/place_model.dart';
 import '../../../study_near_me/presentation/controllers/study_near_me_controller.dart';
-import '../../../study_near_me/presentation/widgets/study_near_me_button.dart';
 import '../../../study_near_me/presentation/widgets/study_near_me_results_sheet.dart';
 import '../controllers/places_map_controller.dart';
 import '../places_map_focus.dart';
 import '../widgets/place_list_tile.dart';
+import '../widgets/place_map_pin.dart';
 import '../widgets/place_tag_chips.dart';
-import '../widgets/places_header_panel.dart';
 import '../widgets/places_map_loading_skeleton.dart';
+import '../widgets/places_map_toolbar.dart';
 import '../widgets/places_map_zoom_controls.dart';
 
 /// Bản đồ địa điểm — tile OpenStreetMap (open source).
@@ -37,6 +37,9 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
   late final StudyNearMeController _studyNearMeCtrl;
   Timer? _searchDebounce;
   bool _mapReady = false;
+  bool _placeSheetOpen = false;
+  Set<String> _favoritePlaceIds = {};
+  bool _wasLoadingPlaces = true;
 
   @override
   void initState() {
@@ -46,10 +49,51 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
     _ctrl.addListener(_onControllerUpdate);
     _studyNearMeCtrl.addListener(_onControllerUpdate);
     PlacesMapFocus.pending.addListener(_onPendingMapFocus);
+    PlacesMapFocus.highlightedPlaceId.addListener(_onControllerUpdate);
     _ctrl.init();
+    _loadFavoritePlaces();
+  }
+
+  Future<void> _loadFavoritePlaces() async {
+    try {
+      final favs = await ApiClient.instance.getList('/favorites');
+      final ids = <String>{};
+      for (final raw in favs) {
+        final fav = raw as Map<String, dynamic>;
+        final doc = fav['document'] as Map<String, dynamic>?;
+        if (doc == null) continue;
+        final isPlace = doc['type']?.toString() == 'place' ||
+            (doc['body']?.toString() ?? '').contains('type:place');
+        if (!isPlace) continue;
+        final id = doc['id']?.toString();
+        if (id != null && id.isNotEmpty) ids.add(id);
+      }
+      if (mounted) setState(() => _favoritePlaceIds = ids);
+    } catch (_) {
+      // Không chặn bản đồ nếu chưa đăng nhập hoặc lỗi mạng.
+    }
+  }
+
+  bool _isSavedPlace(PlaceModel place) =>
+      !_ctrl.communityMode || _favoritePlaceIds.contains(place.id);
+
+  PlaceMapPinVariant _pinVariant(PlaceModel place, {required bool isHighlighted}) {
+    final savedStyle = _isSavedPlace(place);
+    if (isHighlighted) {
+      return savedStyle
+          ? PlaceMapPinVariant.highlightedSaved
+          : PlaceMapPinVariant.highlightedCommunity;
+    }
+    return savedStyle ? PlaceMapPinVariant.saved : PlaceMapPinVariant.community;
   }
 
   void _onControllerUpdate() {
+    if (!_ctrl.loadingPlaces && _wasLoadingPlaces) {
+      _wasLoadingPlaces = false;
+      _loadFavoritePlaces();
+    } else if (_ctrl.loadingPlaces) {
+      _wasLoadingPlaces = true;
+    }
     if (mounted) setState(() {});
   }
 
@@ -61,6 +105,8 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
   }
 
   void _applyMapFocus(PlacesMapFocusRequest req) {
+    PlacesMapFocus.highlight(req.placeId);
+
     PlaceModel? matched;
     for (final place in [..._ctrl.publicPlaces, ..._ctrl.myPlaces]) {
       if (place.id == req.placeId) {
@@ -88,6 +134,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
     _ctrl.removeListener(_onControllerUpdate);
     _studyNearMeCtrl.removeListener(_onControllerUpdate);
     PlacesMapFocus.pending.removeListener(_onPendingMapFocus);
+    PlacesMapFocus.highlightedPlaceId.removeListener(_onControllerUpdate);
     _ctrl.dispose();
     _studyNearMeCtrl.dispose();
     _searchController.dispose();
@@ -123,20 +170,35 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
   }
 
   List<Marker> _buildPlaceMarkers(List<PlaceModel> places) {
-    final pinColor = _ctrl.communityMode ? const Color(0xFFE53935) : const Color(0xFF1565C0);
+    final highlightedId = PlacesMapFocus.highlightedPlaceId.value;
 
-    return [
-      for (final p in places)
-        if (p.point != null)
-          Marker(
-            key: ValueKey(p.id),
-            point: p.point!,
-            width: 40,
-            height: 40,
-            alignment: Alignment.bottomCenter,
-            child: Icon(Icons.place_rounded, color: pinColor, size: 36),
-          ),
-    ];
+    final normal = <Marker>[];
+    Marker? highlighted;
+
+    for (final p in places) {
+      if (p.point == null) continue;
+      final isHighlighted = p.id == highlightedId;
+      final pinSize = isHighlighted ? 52.0 : 40.0;
+      final marker = Marker(
+        key: ValueKey(p.id),
+        point: p.point!,
+        width: pinSize,
+        height: pinSize,
+        alignment: Alignment.bottomCenter,
+        child: PlaceMapPin(
+          variant: _pinVariant(p, isHighlighted: isHighlighted),
+          size: pinSize,
+        ),
+      );
+      if (isHighlighted) {
+        highlighted = marker;
+      } else {
+        normal.add(marker);
+      }
+    }
+
+    if (highlighted != null) return [...normal, highlighted];
+    return normal;
   }
 
   void _safeMove(LatLng target, double zoom) {
@@ -146,9 +208,25 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
     } catch (_) {}
   }
 
+  PlaceModel? _findPlaceById(String? id) {
+    if (id == null || id.isEmpty) return null;
+    for (final place in [..._ctrl.publicPlaces, ..._ctrl.myPlaces]) {
+      if (place.id == id) return place;
+    }
+    return null;
+  }
+
+  void _clearPlaceSelection({bool closeSheet = true}) {
+    PlacesMapFocus.clearHighlight();
+    if (closeSheet && _placeSheetOpen && mounted) {
+      Navigator.pop(context);
+    }
+  }
+
   void _focusPlaceOnMap(PlaceModel place) {
     final point = place.point;
     if (point == null) return;
+    PlacesMapFocus.highlight(place.id);
     _ctrl.setListView(false);
     _safeMove(point, 15);
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -193,178 +271,342 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
   void _showPickLocationSheet(LatLng point) {
     showModalBottomSheet<void>(
       context: context,
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Lưu địa điểm mới', style: Theme.of(ctx).textTheme.titleLarge),
-              const SizedBox(height: 8),
-              Text(
-                'Tọa độ đã chọn: ${point.latitude.toStringAsFixed(5)}, ${point.longitude.toStringAsFixed(5)}',
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Mẹo: nhấn giữ bản đồ để chọn vị trí, hoặc dùng nút +',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-              ),
-              const SizedBox(height: 16),
-              FilledButton.icon(
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  context
-                      .push(RouteNames.placeShare, extra: {
-                        'lat': point.latitude,
-                        'lng': point.longitude,
-                      })
-                      .then((_) => _ctrl.loadPlaces());
-                },
-                icon: const Icon(Icons.add_location_alt_outlined),
-                label: const Text('Lưu địa điểm này'),
-              ),
-            ],
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
+        return Container(
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
-        ),
-      ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 36,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  Text('Lưu địa điểm mới', style: Theme.of(ctx).textTheme.titleLarge),
+                  const SizedBox(height: 8),
+                  Text(
+                    '${point.latitude.toStringAsFixed(5)}, ${point.longitude.toStringAsFixed(5)}',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isDark ? Colors.grey.shade400 : const Color(0xFF6B7280),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Nhấn giữ bản đồ hoặc dùng nút + để chọn vị trí',
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton.icon(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      context
+                          .push(RouteNames.placeShare, extra: {
+                            'lat': point.latitude,
+                            'lng': point.longitude,
+                          })
+                          .then((_) => _ctrl.loadPlaces());
+                    },
+                    icon: const Icon(Icons.add_location_alt_rounded),
+                    label: const Text('Lưu địa điểm này'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
   void _showPlaceSheet(PlaceModel place, LatLng point) {
-    final distanceText = place.distanceMeters != null
-        ? _ctrl.distanceLabelFor(place)
-        : _ctrl.distanceLabelFor(place);
+    PlacesMapFocus.highlight(place.id);
+    final distanceText = _ctrl.distanceLabelFor(place);
 
+    _placeSheetOpen = true;
     showModalBottomSheet<void>(
       context: context,
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(place.title, style: Theme.of(ctx).textTheme.titleLarge),
-              const SizedBox(height: 8),
-              if (place.address != null && place.address!.isNotEmpty)
-                Text(place.address!, style: TextStyle(color: Colors.grey.shade700)),
-              const SizedBox(height: 8),
-              PlaceTagDisplay(tagIds: place.tags),
-              if (place.body.isNotEmpty) ...[
-                const SizedBox(height: 6),
-                Text(place.body, maxLines: 3, overflow: TextOverflow.ellipsis),
-              ],
-              const SizedBox(height: 8),
-              Text(
-                'Khoảng cách: $distanceText',
-                style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-              ),
-              const SizedBox(height: 16),
-              FilledButton.icon(
-                onPressed: place.id.isEmpty
-                    ? null
-                    : () {
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final bottomInset = MediaQuery.paddingOf(ctx).bottom;
+        final theme = Theme.of(ctx);
+        final isDark = theme.brightness == Brightness.dark;
+        final primary = theme.colorScheme.primary;
+        final saved = _isSavedPlace(place);
+        final surface = isDark ? const Color(0xFF1A1A1A) : Colors.white;
+
+        return Padding(
+          padding: EdgeInsets.only(bottom: bottomInset),
+          child: Container(
+            decoration: BoxDecoration(
+              color: surface,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: SafeArea(
+              top: false,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 36,
+                        height: 4,
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        PlaceMapPin(
+                          variant: saved
+                              ? PlaceMapPinVariant.highlightedSaved
+                              : PlaceMapPinVariant.highlightedCommunity,
+                          size: 44,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                place.title,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: primary.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  distanceText,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: primary,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            _clearPlaceSelection(closeSheet: false);
+                          },
+                          icon: const Icon(Icons.close_rounded),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ],
+                    ),
+                    if (place.address != null && place.address!.isNotEmpty) ...[
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.location_on_outlined,
+                            size: 16,
+                            color: isDark ? Colors.grey.shade500 : Colors.grey.shade600,
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              place.address!,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: isDark ? Colors.grey.shade400 : const Color(0xFF6B7280),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    if (place.tags.isNotEmpty) ...[
+                      const SizedBox(height: 10),
+                      PlaceTagDisplay(tagIds: place.tags),
+                    ],
+                    if (place.body.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        place.body,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 13,
+                          height: 1.35,
+                          color: isDark ? Colors.grey.shade300 : const Color(0xFF4B5563),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+                    _PlaceSheetAction(
+                      icon: Icons.visibility_rounded,
+                      label: 'Xem chi tiết địa điểm',
+                      primary: true,
+                      onTap: place.id.isEmpty
+                          ? null
+                          : () {
+                              Navigator.pop(ctx);
+                              context.push('/places/${place.id}');
+                            },
+                    ),
+                    _PlaceSheetAction(
+                      icon: Icons.deselect_rounded,
+                      label: 'Bỏ chọn địa điểm',
+                      onTap: () {
                         Navigator.pop(ctx);
-                        context.push('/places/${place.id}');
+                        _clearPlaceSelection(closeSheet: false);
                       },
-                icon: const Icon(Icons.visibility_outlined),
-                label: const Text('Xem chi tiết địa điểm'),
+                    ),
+                    if (_ctrl.isOwnedByCurrentUser(place) && place.id.isNotEmpty) ...[
+                      _PlaceSheetAction(
+                        icon: Icons.upload_file_rounded,
+                        label: 'Tải tài liệu',
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          context.push(
+                            RouteNames.documentCreate,
+                            extra: {
+                              'contentType': 'document',
+                              'placeId': place.id,
+                              'placeTitle': place.title,
+                            },
+                          );
+                        },
+                      ),
+                      _PlaceSheetAction(
+                        icon: Icons.edit_rounded,
+                        label: 'Sửa địa điểm',
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          context.push('/places/${place.id}/edit').then((_) => _ctrl.loadPlaces());
+                        },
+                      ),
+                      _PlaceSheetAction(
+                        icon: Icons.delete_outline_rounded,
+                        label: 'Xóa địa điểm',
+                        destructive: true,
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          _deletePlace(place.id);
+                        },
+                      ),
+                    ],
+                  ],
+                ),
               ),
-              if (_ctrl.isOwnedByCurrentUser(place) && place.id.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    context.push(
-                      RouteNames.documentCreate,
-                      extra: {
-                        'contentType': 'document',
-                        'placeId': place.id,
-                        'placeTitle': place.title,
-                      },
-                    );
-                  },
-                  icon: const Icon(Icons.upload_file_outlined),
-                  label: const Text('Tải tài liệu'),
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    context.push('/places/${place.id}/edit').then((_) => _ctrl.loadPlaces());
-                  },
-                  icon: const Icon(Icons.edit_outlined),
-                  label: const Text('Sửa địa điểm'),
-                ),
-                const SizedBox(height: 8),
-                TextButton.icon(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    _deletePlace(place.id);
-                  },
-                  icon: const Icon(Icons.delete_outline, color: Colors.red),
-                  label: const Text('Xóa địa điểm', style: TextStyle(color: Colors.red)),
-                ),
-              ],
-            ],
+            ),
           ),
+        );
+      },
+    ).whenComplete(() {
+      _placeSheetOpen = false;
+    });
+  }
+
+  Widget _buildHighlightBanner() {
+    final highlightedId = PlacesMapFocus.highlightedPlaceId.value;
+    if (highlightedId == null) return const SizedBox.shrink();
+
+    final place = _findPlaceById(highlightedId);
+    final theme = Theme.of(context);
+    final primary = theme.colorScheme.primary;
+    final saved = place != null && _isSavedPlace(place);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(10, 0, 10, 8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFF6F00).withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: const Color(0xFFFF6F00).withValues(alpha: 0.35)),
+        ),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 32,
+              height: 36,
+              child: PlaceMapPin(
+                variant: saved
+                    ? PlaceMapPinVariant.highlightedSaved
+                    : PlaceMapPinVariant.highlightedCommunity,
+                size: 32,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                place?.title ?? 'Địa điểm đang chọn',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+              ),
+            ),
+            IconButton(
+              onPressed: _clearPlaceSelection,
+              icon: const Icon(Icons.close_rounded, size: 18),
+              color: primary,
+              visualDensity: VisualDensity.compact,
+              tooltip: 'Bỏ chọn',
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildSearchBar() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-      child: TextField(
-        controller: _searchController,
-        decoration: InputDecoration(
-          hintText: 'Tìm địa điểm theo tên hoặc địa chỉ…',
-          prefixIcon: const Icon(Icons.search, size: 20),
-          suffixIcon: _searchController.text.isNotEmpty
-              ? IconButton(
-                  icon: const Icon(Icons.close, size: 18),
-                  onPressed: () {
-                    _searchController.clear();
-                    _onSearchChanged('');
-                    setState(() {});
-                  },
-                )
-              : null,
-          filled: true,
-          fillColor: Theme.of(context).brightness == Brightness.dark
-              ? const Color(0xFF2A2A2A)
-              : Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
-          isDense: true,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        ),
-        onChanged: (value) {
-          setState(() {});
-          _onSearchChanged(value);
-        },
-        onSubmitted: _onSearchChanged,
-      ),
-    );
-  }
-
-  Widget _buildTagFilterBar() {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: PlaceTagFilterBar(
-        selected: _ctrl.filterTags,
-        onChanged: (v) {
-          _ctrl.setFilterTags(v);
-        },
-        onApply: () {
-          _ctrl.setSearchQuery(_searchController.text);
-          _ctrl.loadPlaces();
-        },
-      ),
+  Widget _buildToolbar({required bool mapOverlay}) {
+    return PlacesMapToolbar(
+      mapOverlay: mapOverlay,
+      communityMode: _ctrl.communityMode,
+      listView: _ctrl.listView,
+      onCommunityChanged: _ctrl.setCommunityMode,
+      onViewChanged: _ctrl.setListView,
+      searchController: _searchController,
+      onSearchChanged: (value) {
+        setState(() {});
+        _onSearchChanged(value);
+      },
+      filterTags: _ctrl.filterTags,
+      onFilterChanged: _ctrl.setFilterTags,
+      onFilterApply: () {
+        _ctrl.setSearchQuery(_searchController.text);
+        _ctrl.loadPlaces();
+      },
+      studyNearMeLoading: _studyNearMeCtrl.loading,
+      onStudyNearMe: _onStudyNearMe,
+      highlightBanner: mapOverlay && PlacesMapFocus.highlightedPlaceId.value != null
+          ? _buildHighlightBanner()
+          : null,
+      locationHint: _ctrl.locationHint != null && !_ctrl.locating ? _ctrl.locationHint : null,
     );
   }
 
@@ -387,21 +629,12 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
     }
   }
 
-  Widget _buildHeader() {
-    return PlacesHeaderPanel(
-      communityMode: _ctrl.communityMode,
-      listView: _ctrl.listView,
-      onCommunityChanged: _ctrl.setCommunityMode,
-      onViewChanged: _ctrl.setListView,
-    );
-  }
-
   Widget _buildListSectionHeader(int count) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
       child: Row(
         children: [
           Expanded(
@@ -507,6 +740,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
           subtitle: _ctrl.subtitleFor(place),
           distanceLabel: _ctrl.distanceLabelFor(place),
           isCommunity: _ctrl.communityMode,
+          isSaved: _isSavedPlace(place),
           onTap: () => context.push('/places/${place.id}'),
           showMapAction: listMode,
           onMapTap: listMode ? () => _focusPlaceOnMap(place) : null,
@@ -530,31 +764,8 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
         children: [
           SafeArea(
             bottom: false,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildHeader(),
-                _buildSearchBar(),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: StudyNearMeButton(
-                      compact: true,
-                      loading: _studyNearMeCtrl.loading,
-                      onPressed: _onStudyNearMe,
-                    ),
-                  ),
-                ),
-                _buildTagFilterBar(),
-              ],
-            ),
+            child: _buildToolbar(mapOverlay: false),
           ),
-          if (_ctrl.locationHint != null && !_ctrl.locating)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: _HintBanner(message: _ctrl.locationHint!),
-            ),
           Expanded(
             child: Container(
               margin: const EdgeInsets.only(top: 8),
@@ -595,26 +806,65 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
   }
 
   Widget _buildFabColumn() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? const Color(0xFF1F1F1F) : Colors.white;
+    final border = isDark ? const Color(0xFF2D2D2D) : const Color(0xFFE5E7EB);
+    final primary = Theme.of(context).colorScheme.primary;
+
+    Widget fab({
+      required String heroTag,
+      required IconData icon,
+      required VoidCallback? onPressed,
+      bool primaryStyle = false,
+    }) {
+      return Material(
+        color: primaryStyle ? primary : bg,
+        elevation: isDark ? 0 : 2,
+        shadowColor: Colors.black26,
+        shape: const CircleBorder(),
+        child: InkWell(
+          onTap: onPressed,
+          customBorder: const CircleBorder(),
+          child: Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: primaryStyle ? null : Border.all(color: border),
+            ),
+            child: Icon(
+              icon,
+              size: 22,
+              color: primaryStyle ? Colors.white : (isDark ? Colors.white : primary),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        FloatingActionButton.small(
+        fab(
           heroTag: 'refresh_places',
-          onPressed: () {
+          icon: Icons.refresh_rounded,
+          onPressed: () async {
             _ctrl.setSearchQuery(_searchController.text);
-            _ctrl.loadPlaces();
+            await _ctrl.loadPlaces();
+            await _loadFavoritePlaces();
           },
-          child: const Icon(Icons.refresh),
         ),
         const SizedBox(height: 8),
-        FloatingActionButton.small(
+        fab(
           heroTag: 'add_place',
+          icon: Icons.add_location_alt_rounded,
           onPressed: () => context.push(RouteNames.placeShare).then((_) => _ctrl.loadPlaces()),
-          child: const Icon(Icons.add_location_alt_outlined),
+          primaryStyle: true,
         ),
         const SizedBox(height: 8),
-        FloatingActionButton.small(
+        fab(
           heroTag: 'my_location',
+          icon: Icons.my_location_rounded,
           onPressed: _ctrl.locating
               ? null
               : () async {
@@ -622,7 +872,6 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
                   final here = _ctrl.myLocation;
                   if (here != null) _safeMove(here, 14);
                 },
-          child: const Icon(Icons.my_location),
         ),
       ],
     );
@@ -644,6 +893,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
             initialCenter: mapCenter,
             initialZoom: MapConfig.defaultZoom,
             onMapReady: () => _mapReady = true,
+            onTap: (_, __) => _clearPlaceSelection(),
             onLongPress: (_, point) {
               if (!MapConfig.isValidLatLng(point)) return;
               _showPickLocationSheet(point);
@@ -691,9 +941,14 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
                   markers: placeMarkers,
                   onMarkerTap: (marker) {
                     final place = _placeFromMarker(marker);
-                    if (place?.point != null) {
-                      _showPlaceSheet(place!, place.point!);
+                    if (place?.point == null) return;
+                    if (PlacesMapFocus.highlightedPlaceId.value == place!.id) {
+                      _clearPlaceSelection();
+                      return;
                     }
+                    PlacesMapFocus.highlight(place.id);
+                    _safeMove(place.point!, 15);
+                    _showPlaceSheet(place, place.point!);
                   },
                   builder: (context, markers) {
                     return Container(
@@ -730,30 +985,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
           right: 0,
           child: SafeArea(
             bottom: false,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildHeader(),
-                _buildSearchBar(),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: StudyNearMeButton(
-                      compact: true,
-                      loading: _studyNearMeCtrl.loading,
-                      onPressed: _onStudyNearMe,
-                    ),
-                  ),
-                ),
-                _buildTagFilterBar(),
-                if (_ctrl.locationHint != null && !_ctrl.locating)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                    child: _HintBanner(message: _ctrl.locationHint!),
-                  ),
-              ],
-            ),
+            child: _buildToolbar(mapOverlay: true),
           ),
         ),
         if (_ctrl.loadingPlaces)
@@ -830,29 +1062,68 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
   }
 }
 
-class _HintBanner extends StatelessWidget {
-  const _HintBanner({required this.message});
+class _PlaceSheetAction extends StatelessWidget {
+  const _PlaceSheetAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.primary = false,
+    this.destructive = false,
+  });
 
-  final String message;
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+  final bool primary;
+  final bool destructive;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.amber.shade50,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
-          children: [
-            Icon(Icons.info_outline, size: 18, color: Colors.amber.shade900),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                message,
-                style: TextStyle(fontSize: 12, color: Colors.amber.shade900),
-              ),
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    if (primary) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: FilledButton.icon(
+          onPressed: onTap,
+          icon: Icon(icon, size: 20),
+          label: Text(label),
+          style: FilledButton.styleFrom(
+            minimumSize: const Size.fromHeight(48),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+      );
+    }
+
+    final fg = destructive ? Colors.red.shade600 : theme.colorScheme.onSurface;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Material(
+        color: theme.brightness == Brightness.dark
+            ? const Color(0xFF252525)
+            : const Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            child: Row(
+              children: [
+                Icon(icon, size: 20, color: destructive ? Colors.red.shade600 : colorScheme.primary),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: TextStyle(fontWeight: FontWeight.w600, color: fg),
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded, size: 20, color: Colors.grey.shade500),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

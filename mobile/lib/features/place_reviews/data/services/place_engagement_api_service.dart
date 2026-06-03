@@ -38,4 +38,21 @@ class PlaceEngagementApiService {
   Future<void> deletePhoto(String placeId, String photoId) {
     return _api.delete('/places/$placeId/photos/$photoId');
   }
+
+  Future<Map<String, dynamic>> getCheckInStatus(String placeId) {
+    return _api.get('/places/$placeId/check-ins/status');
+  }
+
+  Future<Map<String, dynamic>> submitCheckIn(
+    String placeId, {
+    required double latitude,
+    required double longitude,
+    required double accuracy,
+  }) {
+    return _api.post('/places/$placeId/check-ins', {
+      'latitude': latitude,
+      'longitude': longitude,
+      'accuracy': accuracy,
+    });
+  }
 }

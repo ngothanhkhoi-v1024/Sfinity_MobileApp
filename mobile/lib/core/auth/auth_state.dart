@@ -85,4 +85,9 @@ class AuthState extends ChangeNotifier {
       newPassword: newPassword,
     );
   }
+
+  Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> data) async {
+    final result = await _repo.updateProfile(data);
+    return result;
+  }
 }

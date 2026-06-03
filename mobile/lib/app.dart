@@ -19,6 +19,12 @@ import 'features/auth/data/services/social_auth_service.dart';
 import 'features/document/data/repositories/document_repository.dart';
 import 'features/document/data/repositories/document_repository_impl.dart';
 import 'features/document/data/services/document_api_service.dart';
+import 'features/friendships/data/repositories/friendship_repository_impl.dart';
+import 'features/groups/data/repositories/group_repository_impl.dart';
+import 'features/friendships/data/services/friendship_api_service.dart';
+import 'features/groups/data/services/group_api_service.dart';
+import 'features/friendships/presentation/controllers/friendship_controller.dart';
+import 'features/groups/presentation/controllers/group_controller.dart';
 import 'features/place_reviews/data/repositories/place_engagement_repository.dart';
 import 'features/place_reviews/data/repositories/place_engagement_repository_impl.dart';
 import 'features/place_reviews/data/services/place_engagement_api_service.dart';
@@ -38,6 +44,8 @@ class SfinityApp extends StatefulWidget {
   static late final PlaceRepository placeRepository;
   static late final StudyNearMeRepository studyNearMeRepository;
   static late final PlaceEngagementRepository placeEngagementRepository;
+  static late final FriendshipController friendshipController;
+  static late final GroupController groupController;
   static LocaleManager get localeManager => _SfinityAppState.localeManager;
   static NotificationManager get notificationManager => _SfinityAppState.notificationManager;
   static ThemeManager get themeManager => _SfinityAppState.themeManager;
@@ -70,6 +78,17 @@ class _SfinityAppState extends State<SfinityApp> {
     SfinityApp.placeEngagementRepository = PlaceEngagementRepositoryImpl(
       PlaceEngagementApiService(ApiClient.instance),
     );
+
+    // Group feature
+    final friendshipApiService = FriendshipApiService(ApiClient.instance);
+    final groupApiService = GroupApiService(ApiClient.instance);
+    SfinityApp.friendshipController = FriendshipController(
+      FriendshipRepositoryImpl(friendshipApiService),
+    );
+    SfinityApp.groupController = GroupController(
+      GroupRepositoryImpl(groupApiService),
+    );
+
     final localDatabase = AuthLocalDatabase();
     final firebaseAuthService = FirebaseAuthService();
     final socialAuthService = SocialAuthService();
@@ -99,7 +118,7 @@ class _SfinityAppState extends State<SfinityApp> {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: Listenable.merge([themeManager, localeManager, notificationManager]),
+      animation: Listenable.merge([auth, themeManager, localeManager, notificationManager]),
       builder: (context, child) {
         return MaterialApp.router(
           title: 'Sfinity',

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:firebase_storage/firebase_storage.dart';
 
+import '../models/place_checkin_model.dart';
 import '../models/place_photo_model.dart';
 import '../models/place_review_model.dart';
 import '../services/place_engagement_api_service.dart';
@@ -70,5 +71,27 @@ class PlaceEngagementRepositoryImpl implements PlaceEngagementRepository {
   @override
   Future<void> deletePhoto(String placeId, String photoId) {
     return _api.deletePhoto(placeId, photoId);
+  }
+
+  @override
+  Future<PlaceCheckInStatus> getCheckInStatus(String placeId) async {
+    final res = await _api.getCheckInStatus(placeId);
+    return PlaceCheckInStatus.fromJson(Map<String, dynamic>.from(res));
+  }
+
+  @override
+  Future<PlaceCheckInStatus> submitCheckIn(
+    String placeId, {
+    required double latitude,
+    required double longitude,
+    required double accuracy,
+  }) async {
+    final res = await _api.submitCheckIn(
+      placeId,
+      latitude: latitude,
+      longitude: longitude,
+      accuracy: accuracy,
+    );
+    return PlaceCheckInStatus.fromJson(Map<String, dynamic>.from(res));
   }
 }
