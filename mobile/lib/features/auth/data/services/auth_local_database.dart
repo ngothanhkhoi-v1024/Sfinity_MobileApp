@@ -125,6 +125,16 @@ class AuthLocalDatabase {
     await db.delete('user_session');
   }
 
+  Future<void> updateAvatar(String avatarUrl) async {
+    final db = await database;
+    await db.update(
+      'user_session',
+      {'avatar': avatarUrl},
+      where: 'isLoggedIn = ?',
+      whereArgs: [1],
+    );
+  }
+
   Future<void> saveSetting(String key, String value) async {
     final db = await database;
     await db.insert(

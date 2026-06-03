@@ -11,6 +11,7 @@ import {
   SettingOutlined,
   TagsOutlined,
   TeamOutlined,
+  ToolOutlined,
   UserOutlined,
   WarningOutlined,
 } from '@ant-design/icons';
@@ -35,7 +36,8 @@ const menuItems = [
     children: [
       { key: '/users', icon: <TeamOutlined />, label: 'Người dùng' },
       { key: '/content', icon: <AppstoreOutlined />, label: 'Nội dung' },
-      { key: '/categories', icon: <TagsOutlined />, label: 'Danh mục' },
+      { key: '/categories', icon: <TagsOutlined />, label: 'Danh mục tài liệu' },
+      { key: '/amenities', icon: <ToolOutlined />, label: 'Tiện ích địa điểm' },
     ],
   },
   {
