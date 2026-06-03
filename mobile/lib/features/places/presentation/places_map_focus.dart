@@ -16,15 +16,27 @@ class PlacesMapFocusRequest {
 abstract final class PlacesMapFocus {
   static final pending = ValueNotifier<PlacesMapFocusRequest?>(null);
 
+  /// Địa điểm đang được làm nổi bật trên bản đồ (icon khác biệt).
+  static final highlightedPlaceId = ValueNotifier<String?>(null);
+
   static void request({
     required String placeId,
     required double lat,
     required double lng,
   }) {
+    highlightedPlaceId.value = placeId;
     pending.value = PlacesMapFocusRequest(
       placeId: placeId,
       lat: lat,
       lng: lng,
     );
+  }
+
+  static void highlight(String placeId) {
+    highlightedPlaceId.value = placeId;
+  }
+
+  static void clearHighlight() {
+    highlightedPlaceId.value = null;
   }
 }

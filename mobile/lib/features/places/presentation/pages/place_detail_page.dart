@@ -2,12 +2,14 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../app.dart';
 import '../../../../core/constants/route_names.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../place_reviews/presentation/controllers/place_engagement_controller.dart';
 import '../../../place_reviews/presentation/widgets/place_checkin_section.dart';
 import '../../../place_reviews/presentation/widgets/place_photo_gallery.dart';
 import '../../../place_reviews/presentation/widgets/place_rating_section.dart';
+import '../../data/models/place_model.dart';
 import '../controllers/place_detail_controller.dart';
 import '../places_map_focus.dart';
 import '../widgets/place_directions_section.dart';
@@ -25,6 +27,9 @@ class PlaceDetailPage extends StatefulWidget {
 class _PlaceDetailPageState extends State<PlaceDetailPage> {
   late final PlaceDetailController _ctrl;
   late final PlaceEngagementController _engagementCtrl;
+
+  bool _isFavorite = false;
+  bool _loadingFavorite = true;
 
   @override
   void initState() {
@@ -44,7 +49,57 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
     await Future.wait([
       _ctrl.load(widget.placeId),
       _engagementCtrl.load(widget.placeId),
+      _checkFavorite(),
     ]);
+  }
+
+  Future<void> _checkFavorite() async {
+    if (!SfinityApp.auth.isAuthenticated) {
+      if (mounted) setState(() => _loadingFavorite = false);
+      return;
+    }
+    try {
+      final favs = await ApiClient.instance.getList('/favorites');
+      _isFavorite = favs.any(
+        (e) => (e as Map)['documentId']?.toString() == widget.placeId,
+      );
+    } catch (_) {}
+    if (mounted) setState(() => _loadingFavorite = false);
+  }
+
+  Future<void> _toggleFavorite() async {
+    if (!SfinityApp.auth.isAuthenticated) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đăng nhập để lưu địa điểm')),
+        );
+      }
+      return;
+    }
+    try {
+      if (_isFavorite) {
+        await ApiClient.instance.delete('/favorites/${widget.placeId}');
+      } else {
+        await ApiClient.instance.post('/favorites/${widget.placeId}', {});
+      }
+      if (!mounted) return;
+      setState(() => _isFavorite = !_isFavorite);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _isFavorite
+                ? 'Đã lưu địa điểm vào danh sách của bạn'
+                : 'Đã bỏ lưu địa điểm',
+          ),
+        ),
+      );
+    } on DioException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(ApiClient.instance.errorMessage(e))),
+        );
+      }
+    }
   }
 
   @override
@@ -55,14 +110,16 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
   }
 
   void _openUploadDocument(String placeTitle) {
-    context.push(
-      RouteNames.documentCreate,
-      extra: {
-        'contentType': 'document',
-        'placeId': widget.placeId,
-        'placeTitle': placeTitle,
-      },
-    ).then((_) => _loadAll());
+    context
+        .push(
+          RouteNames.documentCreate,
+          extra: {
+            'contentType': 'document',
+            'placeId': widget.placeId,
+            'placeTitle': placeTitle,
+          },
+        )
+        .then((_) => _loadAll());
   }
 
   Future<void> _editPlace() async {
@@ -154,11 +211,21 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
     final isDark = theme.brightness == Brightness.dark;
     final isMine = _ctrl.isMine();
     final primary = theme.colorScheme.primary;
+    final showCommunitySave = !isMine;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Chi tiết địa điểm'),
         actions: [
+          if (!_loadingFavorite)
+            IconButton(
+              icon: Icon(
+                _isFavorite ? Icons.bookmark : Icons.bookmark_border,
+                color: _isFavorite ? primary : null,
+              ),
+              tooltip: _isFavorite ? 'Bỏ lưu địa điểm' : 'Lưu địa điểm',
+              onPressed: _toggleFavorite,
+            ),
           if (isMine) ...[
             IconButton(
               icon: const Icon(Icons.edit_outlined),
@@ -178,88 +245,28 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    primary.withValues(alpha: isDark ? 0.35 : 0.12),
-                    theme.colorScheme.secondary.withValues(alpha: isDark ? 0.2 : 0.08),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: isDark ? Colors.white12 : primary.withValues(alpha: 0.15),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: primary.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(Icons.place_rounded, color: primary, size: 28),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          place.title,
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  _InfoRow(
-                    icon: Icons.person_outline,
-                    label: 'Chủ địa điểm',
-                    value: place.authorName ?? 'Người dùng',
-                    isDark: isDark,
-                  ),
-                  if (place.address != null && place.address!.isNotEmpty) ...[
-                    const SizedBox(height: 10),
-                    _InfoRow(
-                      icon: Icons.location_on_outlined,
-                      label: 'Địa chỉ',
-                      value: place.address!,
-                      isDark: isDark,
-                    ),
-                  ],
-                  if (place.tags.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    Text(
-                      'Tiện ích học tập',
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.grey.shade300 : Colors.grey.shade800,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    PlaceTagDisplay(tagIds: place.tags),
-                  ],
-                  if (place.body.isNotEmpty) ...[
-                    const SizedBox(height: 10),
-                    _InfoRow(
-                      icon: Icons.notes_outlined,
-                      label: 'Mô tả',
-                      value: place.body,
-                      isDark: isDark,
-                    ),
-                  ],
-                ],
-              ),
+            _PlaceInfoCard(
+              place: place,
+              theme: theme,
+              isDark: isDark,
+              primary: primary,
             ),
-            if (place.hasPoint) ...[
+            const SizedBox(height: 16),
+            if (showCommunitySave) ...[
+              _SaveCommunityPlaceButton(
+                isSaved: _isFavorite,
+                loading: _loadingFavorite,
+                onPressed: _toggleFavorite,
+                primary: primary,
+              ),
               const SizedBox(height: 12),
+            ],
+            if (place.hasPoint) ...[
+              const _SectionTitle(
+                icon: Icons.navigation_outlined,
+                title: 'Di chuyển',
+              ),
+              const SizedBox(height: 8),
               PlaceDirectionsSection(
                 destination: place.point!,
                 accentColor: primary,
@@ -275,22 +282,31 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
                 ),
                 icon: Icon(Icons.map_outlined, color: primary),
                 label: Text(
-                  'Xem địa điểm này trên bản đồ',
+                  'Xem trên bản đồ',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     color: primary,
                   ),
                 ),
               ),
+              const SizedBox(height: 20),
             ],
-            const SizedBox(height: 24),
             if (_engagementCtrl.loading)
-              const Center(child: Padding(
-                padding: EdgeInsets.all(16),
-                child: CircularProgressIndicator(),
-              ))
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: CircularProgressIndicator(),
+                ),
+              )
             else ...[
-              if (place.hasPoint && place.latitude != null && place.longitude != null) ...[
+              if (place.hasPoint &&
+                  place.latitude != null &&
+                  place.longitude != null) ...[
+                const _SectionTitle(
+                  icon: Icons.how_to_reg_outlined,
+                  title: 'Check-in',
+                ),
+                const SizedBox(height: 8),
                 PlaceCheckInSection(
                   controller: _engagementCtrl,
                   placeId: widget.placeId,
@@ -300,21 +316,31 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
                 const SizedBox(height: 20),
               ],
               if (_engagementCtrl.reviewSummary != null) ...[
-              PlaceRatingSection(
-                controller: _engagementCtrl,
-                placeId: widget.placeId,
-                summary: _engagementCtrl.reviewSummary!,
-              ),
-              const SizedBox(height: 20),
-              PlacePhotoGallery(
-                controller: _engagementCtrl,
-                placeId: widget.placeId,
-                photos: _engagementCtrl.photoResult?.photos ?? [],
-              ),
+                const _SectionTitle(
+                  icon: Icons.groups_outlined,
+                  title: 'Cộng đồng',
+                ),
+                const SizedBox(height: 8),
+                PlaceRatingSection(
+                  controller: _engagementCtrl,
+                  placeId: widget.placeId,
+                  summary: _engagementCtrl.reviewSummary!,
+                ),
+                const SizedBox(height: 16),
+                PlacePhotoGallery(
+                  controller: _engagementCtrl,
+                  placeId: widget.placeId,
+                  photos: _engagementCtrl.photoResult?.photos ?? [],
+                ),
+                const SizedBox(height: 20),
               ],
             ],
             if (isMine) ...[
-              const SizedBox(height: 16),
+              const _SectionTitle(
+                icon: Icons.upload_file_outlined,
+                title: 'Quản lý địa điểm',
+              ),
+              const SizedBox(height: 8),
               Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
@@ -351,11 +377,11 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
                   color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                 ),
               ),
+              const SizedBox(height: 20),
             ],
-            const SizedBox(height: 24),
-            Text(
-              'Tài liệu tại địa điểm',
-              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+            const _SectionTitle(
+              icon: Icons.menu_book_outlined,
+              title: 'Tài liệu tại địa điểm',
             ),
             const SizedBox(height: 10),
             if (_ctrl.documents.isEmpty)
@@ -438,6 +464,169 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
               }),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _SaveCommunityPlaceButton extends StatelessWidget {
+  const _SaveCommunityPlaceButton({
+    required this.isSaved,
+    required this.loading,
+    required this.onPressed,
+    required this.primary,
+  });
+
+  final bool isSaved;
+  final bool loading;
+  final VoidCallback onPressed;
+  final Color primary;
+
+  @override
+  Widget build(BuildContext context) {
+    if (loading) {
+      return const SizedBox(
+        height: 48,
+        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      );
+    }
+
+    return FilledButton.icon(
+      onPressed: onPressed,
+      style: FilledButton.styleFrom(
+        minimumSize: const Size.fromHeight(48),
+        backgroundColor: isSaved ? Colors.transparent : primary,
+        foregroundColor: isSaved ? primary : Colors.white,
+        side: isSaved ? BorderSide(color: primary, width: 1.5) : null,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      ),
+      icon: Icon(
+        isSaved ? Icons.bookmark : Icons.bookmark_add_outlined,
+        size: 22,
+      ),
+      label: Text(
+        isSaved ? 'Đã lưu địa điểm cộng đồng' : 'Lưu địa điểm cộng đồng',
+        style: const TextStyle(fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle({required this.icon, required this.title});
+
+  final IconData icon;
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: theme.colorScheme.primary),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+        ),
+      ],
+    );
+  }
+}
+
+class _PlaceInfoCard extends StatelessWidget {
+  const _PlaceInfoCard({
+    required this.place,
+    required this.theme,
+    required this.isDark,
+    required this.primary,
+  });
+
+  final PlaceModel place;
+  final ThemeData theme;
+  final bool isDark;
+  final Color primary;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            primary.withValues(alpha: isDark ? 0.35 : 0.12),
+            theme.colorScheme.secondary.withValues(alpha: isDark ? 0.2 : 0.08),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark ? Colors.white12 : primary.withValues(alpha: 0.15),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: primary.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(Icons.place_rounded, color: primary, size: 28),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  place.title,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          _InfoRow(
+            icon: Icons.person_outline,
+            label: 'Chủ địa điểm',
+            value: place.authorName ?? 'Người dùng',
+            isDark: isDark,
+          ),
+          if (place.address != null && place.address!.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            _InfoRow(
+              icon: Icons.location_on_outlined,
+              label: 'Địa chỉ',
+              value: place.address!,
+              isDark: isDark,
+            ),
+          ],
+          if (place.tags.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              'Tiện ích học tập',
+              style: theme.textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.grey.shade300 : Colors.grey.shade800,
+              ),
+            ),
+            const SizedBox(height: 8),
+            PlaceTagDisplay(tagIds: place.tags),
+          ],
+          if (place.body.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            _InfoRow(
+              icon: Icons.notes_outlined,
+              label: 'Mô tả',
+              value: place.body,
+              isDark: isDark,
+            ),
+          ],
+        ],
       ),
     );
   }
