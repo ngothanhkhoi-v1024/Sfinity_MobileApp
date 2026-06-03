@@ -1,5 +1,6 @@
 import { Router } from 'express';
 
+import { amenitiesRouter } from './amenities.routes';
 import { authRouter } from './auth.routes';
 import { categoriesRouter } from './categories.routes';
 import { documentRouter } from './document.routes';
@@ -12,6 +13,7 @@ import { notificationsRouter } from './notifications.routes';
 import { placesRouter } from './places.routes';
 import { reportsRouter } from './reports.routes';
 import { studyNearMeRouter } from './study-near-me.routes';
+import { uploadRouter } from './upload.routes';
 import { usersRouter } from './users.routes';
 
 export const apiRouter = Router();
@@ -29,4 +31,5 @@ apiRouter.use('/notifications', notificationsRouter);
 apiRouter.use('/admin/dashboard', dashboardRouter);
 apiRouter.use('/friends', friendshipRouter);
 apiRouter.use('/groups', groupRouter);
-
+apiRouter.use('/amenities', amenitiesRouter);
+apiRouter.use('/upload', uploadRouter);
