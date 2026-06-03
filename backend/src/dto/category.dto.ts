@@ -1,4 +1,9 @@
-import { IsOptional, IsString, MinLength } from 'class-validator';
+import { IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
+
+export enum CategoryType {
+  DOCUMENT = 'DOCUMENT',
+  PLACE = 'PLACE',
+}
 
 export class CreateCategoryDto {
   @IsString()
@@ -12,6 +17,9 @@ export class CreateCategoryDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @IsEnum(CategoryType)
+  type!: CategoryType;
 }
 
 export class UpdateCategoryDto {

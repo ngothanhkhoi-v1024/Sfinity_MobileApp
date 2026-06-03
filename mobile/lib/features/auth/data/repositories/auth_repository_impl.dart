@@ -127,6 +127,30 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<void> updateCachedProfile({
+    String? name,
+    String? avatar,
+    String? birthDate,
+    String? gender,
+    String? address,
+  }) async {
+    final db = await _localDatabase.database;
+    final fields = <String, dynamic>{};
+    if (name != null) fields['name'] = name;
+    if (avatar != null) fields['avatar'] = avatar;
+    if (birthDate != null) fields['birthDate'] = birthDate;
+    if (gender != null) fields['gender'] = gender;
+    if (address != null) fields['address'] = address;
+    if (fields.isEmpty) return;
+    await db.update(
+      'user_session',
+      fields,
+      where: 'isLoggedIn = ?',
+      whereArgs: [1],
+    );
+  }
+
+  @override
   Future<String?> getToken() {
     return _localDatabase.getToken();
   }

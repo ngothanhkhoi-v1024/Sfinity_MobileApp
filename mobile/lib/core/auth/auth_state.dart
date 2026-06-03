@@ -91,4 +91,20 @@ class AuthState extends ChangeNotifier {
     final result = await _repo.updateProfile(data);
     return result;
   }
+
+  Future<void> updateCachedProfile({
+    String? name,
+    String? avatar,
+    String? birthDate,
+    String? gender,
+    String? address,
+  }) async {
+    await _repo.updateCachedProfile(
+      name: name,
+      avatar: avatar,
+      birthDate: birthDate,
+      gender: gender,
+      address: address,
+    );
+  }
 }
