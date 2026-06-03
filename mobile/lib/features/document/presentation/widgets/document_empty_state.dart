@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_colors.dart';
+
 /// Premium empty state hiển thị khi không có tài liệu hoặc không tìm thấy kết quả.
 class DocumentEmptyState extends StatelessWidget {
   const DocumentEmptyState({
@@ -24,22 +26,7 @@ class DocumentEmptyState extends StatelessWidget {
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 28),
           padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 24),
-          decoration: BoxDecoration(
-            color: theme.cardColor,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              ),
-            ],
-            border: Border.all(
-              color: theme.brightness == Brightness.light
-                  ? Colors.grey.shade100
-                  : Colors.grey.shade900,
-            ),
-          ),
+          decoration: AppColors.panel(context, radius: 20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -56,7 +43,7 @@ class DocumentEmptyState extends StatelessWidget {
                     width: 56,
                     height: 56,
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withValues(alpha: 0.12),
+                      color: AppColors.primaryTint(context),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
@@ -64,7 +51,7 @@ class DocumentEmptyState extends StatelessWidget {
                           ? Icons.search_off_rounded
                           : Icons.menu_book_rounded,
                       size: 32,
-                      color: theme.colorScheme.primary,
+                      color: AppColors.primaryOf(context),
                     ),
                   ),
                 ),
@@ -88,7 +75,7 @@ class DocumentEmptyState extends StatelessWidget {
                     : 'Hãy là người đầu tiên chia sẻ tài liệu ôn thi hữu ích cho cộng đồng Sfinity ngay hôm nay!',
                 style: TextStyle(
                   fontSize: 13,
-                  color: Colors.grey.shade600,
+                  color: AppColors.muted(context),
                   height: 1.4,
                 ),
                 textAlign: TextAlign.center,
@@ -100,7 +87,7 @@ class DocumentEmptyState extends StatelessWidget {
                   icon: const Icon(Icons.refresh_rounded, size: 18),
                   label: const Text('Xóa bộ lọc tìm kiếm'),
                   style: TextButton.styleFrom(
-                    foregroundColor: theme.colorScheme.primary,
+                    foregroundColor: AppColors.primaryOf(context),
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 10),
                     shape: RoundedRectangleBorder(

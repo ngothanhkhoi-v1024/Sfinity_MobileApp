@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_colors.dart';
 import '../../../study_near_me/presentation/widgets/study_near_me_button.dart';
 import 'place_tag_chips.dart';
 import 'places_header_panel.dart';
@@ -43,10 +44,8 @@ class PlacesMapToolbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final surface = isDark
-        ? const Color(0xFF1A1A1A).withValues(alpha: mapOverlay ? 0.94 : 1)
-        : Colors.white.withValues(alpha: mapOverlay ? 0.96 : 1);
+    final isDark = AppColors.isDark(context);
+    final surface = AppColors.card(context).withValues(alpha: mapOverlay ? (isDark ? 0.94 : 0.96) : 1);
 
     return Padding(
       padding: EdgeInsets.fromLTRB(12, mapOverlay ? 4 : 0, 12, mapOverlay ? 6 : 0),
@@ -59,7 +58,7 @@ class PlacesMapToolbar extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(mapOverlay ? 18 : 0),
             border: Border.all(
-              color: isDark ? const Color(0xFF2D2D2D) : const Color(0xFFE8EAED),
+              color: AppColors.border(context),
             ),
           ),
           child: Column(

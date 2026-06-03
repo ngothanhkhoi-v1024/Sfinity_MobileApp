@@ -10,6 +10,9 @@ import '../../../groups/presentation/widgets/discover_group_card.dart';
 import '../../../groups/presentation/widgets/group_card.dart';
 import '../../../groups/presentation/widgets/group_empty_state.dart';
 import '../../../groups/presentation/widgets/group_error_state.dart';
+import '../../../places/presentation/widgets/places_search_field.dart';
+import '../widgets/community_invite_card.dart';
+import '../widgets/community_segmented_tabs.dart';
 
 /// Tab "Cộng đồng" tổng hợp: Nhóm học tập | Bạn bè | Lời mời | Khám phá nhóm.
 class CommunityPage extends StatefulWidget {
@@ -25,6 +28,7 @@ class _CommunityPageState extends State<CommunityPage>
   late final GroupController _groupCtrl;
   late final FriendshipController _friendCtrl;
   String _discoverSearch = '';
+  late final TextEditingController _discoverSearchCtrl;
   bool _isFriendRequestsExpanded = true;
   bool _isSentRequestsExpanded = true;
   bool _isGroupInvitesExpanded = true;
@@ -36,6 +40,10 @@ class _CommunityPageState extends State<CommunityPage>
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
     _tabController.addListener(() => setState(() {}));
+    _discoverSearchCtrl = TextEditingController();
+    _discoverSearchCtrl.addListener(() {
+      setState(() => _discoverSearch = _discoverSearchCtrl.text.trim());
+    });
 
     _groupCtrl = SfinityApp.groupController;
     _friendCtrl = SfinityApp.friendshipController;
@@ -52,6 +60,7 @@ class _CommunityPageState extends State<CommunityPage>
   @override
   void dispose() {
     _tabController.dispose();
+    _discoverSearchCtrl.dispose();
     super.dispose();
   }
 
@@ -68,107 +77,51 @@ class _CommunityPageState extends State<CommunityPage>
         final totalBadge = inviteCount + pendingFriendCount;
 
         return Scaffold(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: AppBar(
-            title: const Text(
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            title: Text(
               'Cộng đồng',
-              style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.2),
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.3,
+                  ),
             ),
             actions: [
               if (_tabController.index == _kTabGroups)
-                IconButton(
-                  icon: Icon(Icons.add_circle_outline, color: cs.primary),
+                IconButton.filledTonal(
+                  icon: const Icon(Icons.add_rounded, size: 22),
                   tooltip: 'Tạo nhóm',
                   onPressed: () => context.push(RouteNames.groupCreate),
                 ),
+              const SizedBox(width: 4),
             ],
-            bottom: TabBar(
-              controller: _tabController,
-              isScrollable: true,
-              tabAlignment: TabAlignment.start,
-              indicatorWeight: 3.5,
-              labelColor: cs.primary,
-              unselectedLabelColor: cs.onSurfaceVariant,
-              indicatorColor: cs.primary,
-              indicatorSize: TabBarIndicatorSize.tab,
-              tabs: [
-                // Tab 0: Nhóm học tập
-                const Tab(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.group_outlined, size: 18),
-                      SizedBox(width: 8),
-                      Text(
-                        'Nhóm học tập',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ],
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(52),
+              child: CommunitySegmentedTabs(
+                controller: _tabController,
+                onTap: (i) => _tabController.animateTo(i),
+                tabs: [
+                  const CommunityTabItem(
+                    label: 'Nhóm',
+                    icon: Icons.groups_rounded,
                   ),
-                ),
-                // Tab 1: Bạn bè
-                const Tab(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.people_outline, size: 18),
-                      SizedBox(width: 8),
-                      Text(
-                        'Bạn bè',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ],
+                  const CommunityTabItem(
+                    label: 'Bạn bè',
+                    icon: Icons.people_rounded,
                   ),
-                ),
-                // Tab 2: Lời mời (with combined badge)
-                Tab(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.mail_outline_rounded, size: 18),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'Lời mời',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      if (totalBadge > 0) ...[
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: cs.error,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            '$totalBadge',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
+                  CommunityTabItem(
+                    label: 'Lời mời',
+                    icon: Icons.mail_rounded,
+                    badgeCount: totalBadge,
                   ),
-                ),
-                // Tab 3: Khám phá nhóm
-                const Tab(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.explore_outlined, size: 18),
-                      SizedBox(width: 8),
-                      Text(
-                        'Khám phá nhóm',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ],
+                  const CommunityTabItem(
+                    label: 'Khám phá',
+                    icon: Icons.explore_rounded,
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           body: TabBarView(
@@ -208,9 +161,10 @@ class _CommunityPageState extends State<CommunityPage>
     }
 
     return RefreshIndicator(
+      color: cs.primary,
       onRefresh: _groupCtrl.loadMyGroups,
       child: ListView.builder(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.fromLTRB(0, 8, 0, 100),
         itemCount: myGroups.length,
         itemBuilder: (_, i) => GroupCard(
           group: myGroups[i],
@@ -248,12 +202,20 @@ class _CommunityPageState extends State<CommunityPage>
         },
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 64),
+          padding: const EdgeInsets.fromLTRB(32, 64, 32, 100),
           children: [
-            Icon(
-              Icons.mark_email_unread_outlined,
-              size: 72,
-              color: cs.primary.withValues(alpha: 0.2),
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: cs.primary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.mark_email_unread_outlined,
+                size: 36,
+                color: cs.primary.withValues(alpha: 0.6),
+              ),
             ),
             const SizedBox(height: 16),
             Text(
@@ -287,13 +249,11 @@ class _CommunityPageState extends State<CommunityPage>
         ]);
       },
       child: ListView(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.fromLTRB(0, 4, 0, 100),
         children: [
           // ── Friend Requests ─────────────────────────────────────────────
           if (hasFriendRequests) ...[
-            _sectionHeader(
-              context,
-              cs,
+            CommunitySectionHeader(
               icon: Icons.person_add_alt_rounded,
               label: 'Lời mời kết bạn (${friendRequests.length})',
               isExpanded: _isFriendRequestsExpanded,
@@ -307,15 +267,19 @@ class _CommunityPageState extends State<CommunityPage>
           ],
 
           if (hasFriendRequests && hasSent)
-            const Divider(height: 1, thickness: 0.5, indent: 16, endIndent: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Divider(
+                height: 1,
+                color: isDark ? const Color(0xFF2D2D2D) : const Color(0xFFE5E7EB),
+              ),
+            ),
 
           // ── Sent Friend Requests ─────────────────────────────────────────
           if (hasSent) ...[
-            _sectionHeader(
-              context,
-              cs,
-              icon: null,
-              label: 'Lời mời kết bạn đã gửi (${sentRequests.length})',
+            CommunitySectionHeader(
+              icon: Icons.schedule_send_rounded,
+              label: 'Đã gửi (${sentRequests.length})',
               isExpanded: _isSentRequestsExpanded,
               onTap: () => setState(
                 () => _isSentRequestsExpanded = !_isSentRequestsExpanded,
@@ -327,15 +291,19 @@ class _CommunityPageState extends State<CommunityPage>
           ],
 
           if ((hasFriendRequests || hasSent) && hasGroupInvites)
-            const Divider(height: 1, thickness: 0.5, indent: 16, endIndent: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Divider(
+                height: 1,
+                color: isDark ? const Color(0xFF2D2D2D) : const Color(0xFFE5E7EB),
+              ),
+            ),
 
           // ── Group Invitations ────────────────────────────────────────────
           if (hasGroupInvites) ...[
-            _sectionHeader(
-              context,
-              cs,
-              icon: Icons.group_add_outlined,
-              label: 'Lời mời tham gia nhóm (${groupInvites.length})',
+            CommunitySectionHeader(
+              icon: Icons.group_add_rounded,
+              label: 'Lời mời nhóm (${groupInvites.length})',
               isExpanded: _isGroupInvitesExpanded,
               onTap: () => setState(
                 () => _isGroupInvitesExpanded = !_isGroupInvitesExpanded,
@@ -349,47 +317,6 @@ class _CommunityPageState extends State<CommunityPage>
     );
   }
 
-  Widget _sectionHeader(
-    BuildContext context,
-    ColorScheme cs, {
-    IconData? icon,
-    required String label,
-    required bool isExpanded,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-        child: Row(
-          children: [
-            if (icon != null) ...[
-              Icon(icon, color: cs.primary, size: 18),
-              const SizedBox(width: 8),
-            ],
-            Expanded(
-              child: Text(
-                label,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.1,
-                ),
-              ),
-            ),
-            Icon(
-              isExpanded
-                  ? Icons.keyboard_arrow_up_rounded
-                  : Icons.keyboard_arrow_down_rounded,
-              color: cs.onSurfaceVariant.withValues(alpha: 0.7),
-              size: 24,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   List<Widget> _buildFriendRequestCards(
     BuildContext context,
     ColorScheme cs,
@@ -398,22 +325,9 @@ class _CommunityPageState extends State<CommunityPage>
   ) {
     return requests.map((req) {
       final user = req.requester;
-      return Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-        decoration: BoxDecoration(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.04)
-              : cs.surfaceContainerLowest,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.07)
-                : cs.outlineVariant.withValues(alpha: 0.4),
-            width: 0.8,
-          ),
-        ),
+      return CommunityInviteCard(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           child: Row(
             children: [
               CircleAvatar(
@@ -532,22 +446,9 @@ class _CommunityPageState extends State<CommunityPage>
   ) {
     return requests.map((req) {
       final user = req.addressee;
-      return Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-        decoration: BoxDecoration(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.04)
-              : cs.surfaceContainerLowest,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.07)
-                : cs.outlineVariant.withValues(alpha: 0.4),
-            width: 0.8,
-          ),
-        ),
+      return CommunityInviteCard(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           child: Row(
             children: [
               CircleAvatar(
@@ -634,31 +535,10 @@ class _CommunityPageState extends State<CommunityPage>
       final inviterName = inv['inviterName']?.toString() ?? 'Ai đó';
       final avatarUrl = inv['groupAvatarUrl']?.toString();
 
-      return Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.03)
-              : cs.surfaceContainerLowest,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.05)
-                : cs.outlineVariant.withValues(alpha: 0.4),
-            width: 0.8,
-          ),
-          boxShadow: isDark
-              ? []
-              : [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-        ),
-        child: Column(
+      return CommunityInviteCard(
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
@@ -807,6 +687,7 @@ class _CommunityPageState extends State<CommunityPage>
               ],
             ),
           ],
+          ),
         ),
       );
     }).toList();
@@ -828,26 +709,11 @@ class _CommunityPageState extends State<CommunityPage>
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: TextField(
-              onChanged: (val) => setState(() => _discoverSearch = val.trim()),
-              decoration: InputDecoration(
-                hintText: 'Tìm kiếm nhóm học tập công khai...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _discoverSearch.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () => setState(() => _discoverSearch = ''),
-                      )
-                    : null,
-                filled: true,
-                fillColor: cs.surfaceContainerHighest.withValues(alpha: 0.3),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 12),
-              ),
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+            child: PlacesSearchField(
+              controller: _discoverSearchCtrl,
+              hint: 'Tìm nhóm học tập công khai...',
+              onChanged: (_) {},
             ),
           ),
           Expanded(
@@ -884,7 +750,7 @@ class _CommunityPageState extends State<CommunityPage>
                   );
                 }
                 return ListView.builder(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  padding: const EdgeInsets.fromLTRB(0, 4, 0, 100),
                   itemCount: filteredGroups.length,
                   itemBuilder: (_, i) {
                     final group = filteredGroups[i];
