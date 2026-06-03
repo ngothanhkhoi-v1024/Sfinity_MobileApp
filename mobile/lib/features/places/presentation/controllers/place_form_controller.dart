@@ -4,6 +4,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../../app.dart';
 import '../../../../core/constants/map_config.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/services/geocoding_service.dart';
 import '../../data/models/place_model.dart';
@@ -33,7 +34,10 @@ class PlaceFormController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final place = await SfinityApp.placeRepository.getPlace(placeId);
+      final place = await SfinityApp.placeRepository.getPlace(
+        placeId,
+        placeNotFound: () => 'Place not found',
+      );
       if (place.point != null) picked = place.point!;
       nameController.text = place.title;
       descriptionController.text = place.body;
@@ -93,12 +97,16 @@ class PlaceFormController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> submit({String? editPlaceId}) async {
+  Future<void> submit({
+    String? editPlaceId,
+    required String Function() nameRequired,
+    required String Function() invalidCoordinates,
+  }) async {
     if (nameController.text.trim().isEmpty) {
-      throw 'Nhập tên địa điểm';
+      throw nameRequired();
     }
     if (!MapConfig.isValidLatLng(picked)) {
-      throw 'Chọn vị trí hợp lệ trên bản đồ';
+      throw invalidCoordinates();
     }
 
     loading = true;
@@ -108,7 +116,7 @@ class PlaceFormController extends ChangeNotifier {
       final payload = PlaceUpsertPayload(
         title: nameController.text.trim(),
         body: descriptionController.text.trim().isEmpty
-            ? 'Địa điểm học tập do người dùng chia sẻ.'
+            ? 'Study place shared by user.'
             : descriptionController.text.trim(),
         latitude: picked.latitude,
         longitude: picked.longitude,
@@ -119,9 +127,16 @@ class PlaceFormController extends ChangeNotifier {
       );
 
       if (editPlaceId != null && editPlaceId.isNotEmpty) {
-        await SfinityApp.placeRepository.updatePlace(editPlaceId, payload);
+        await SfinityApp.placeRepository.updatePlace(
+          editPlaceId,
+          payload,
+          errorMsg: () => 'Cannot update place',
+        );
       } else {
-        await SfinityApp.placeRepository.createPlace(payload);
+        await SfinityApp.placeRepository.createPlace(
+          payload,
+          errorMsg: () => 'Cannot create place',
+        );
       }
     } on DioException catch (e) {
       throw ApiClient.instance.errorMessage(e);

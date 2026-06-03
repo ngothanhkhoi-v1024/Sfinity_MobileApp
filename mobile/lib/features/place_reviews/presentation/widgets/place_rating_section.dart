@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../app.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../../data/models/place_review_model.dart';
 import '../controllers/place_engagement_controller.dart';
 
@@ -21,6 +22,7 @@ class PlaceRatingSection extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final avg = summary.avgRating;
+    final l10n = context.l10n;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -46,7 +48,7 @@ class PlaceRatingSection extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                '(${summary.reviewCount} đánh giá)',
+                l10n.noRating,
                 style: TextStyle(
                   color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                 ),
@@ -55,7 +57,7 @@ class PlaceRatingSection extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'Đánh giá của bạn',
+            l10n.yourRating,
             style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 6),
@@ -78,9 +80,9 @@ class PlaceRatingSection extends StatelessWidget {
           TextField(
             controller: controller.commentController,
             maxLines: 2,
-            decoration: const InputDecoration(
-              hintText: 'Nhận xét (tuỳ chọn)',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              hintText: l10n.ratingHint,
+              border: const OutlineInputBorder(),
               isDense: true,
             ),
           ),
@@ -97,13 +99,13 @@ class PlaceRatingSection extends StatelessWidget {
                       height: 22,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('Gửi đánh giá'),
+                  : Text(l10n.sendRating),
             ),
           ),
           if (summary.reviews.isNotEmpty) ...[
             const SizedBox(height: 16),
             Text(
-              'Đánh giá gần đây',
+              l10n.yourRating,
               style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
@@ -156,7 +158,7 @@ class PlaceRatingSection extends StatelessWidget {
                                         borderRadius: BorderRadius.circular(6),
                                       ),
                                       child: Text(
-                                        'Bạn',
+                                        l10n.yourRating,
                                         style: TextStyle(
                                           fontSize: 10,
                                           fontWeight: FontWeight.w700,

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import '../config/app_config.dart';
+import '../i18n/app_text.dart';
 
 class ApiClient {
   ApiClient._();
@@ -57,13 +58,13 @@ class ApiClient {
     return {};
   }
 
-  String errorMessage(DioException e) {
+  String errorMessage(DioException e, {AppLocalizations? l10n}) {
     final data = e.response?.data;
     if (data is Map) {
       final msg = data['message'];
       if (msg is List && msg.isNotEmpty) return msg.first.toString();
       if (msg is String) return msg;
     }
-    return 'Đã xảy ra lỗi. Vui lòng thử lại.';
+    return l10n?.apiError ?? 'Đã xảy ra lỗi. Vui lòng thử lại.';
   }
 }

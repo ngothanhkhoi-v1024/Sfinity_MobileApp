@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../i18n/app_text.dart';
 import '../network/api_client.dart';
 import 'auth_repository.dart';
 
@@ -11,7 +12,7 @@ class AuthState extends ChangeNotifier {
 
   bool get isAuthenticated => user != null;
 
-  Future<void> init() async {
+  Future<void> init({AppLocalizations? l10n}) async {
     isLoading = true;
     notifyListeners();
 
@@ -23,7 +24,7 @@ class AuthState extends ChangeNotifier {
           // Thử tải thông tin trực tiếp từ Server qua Internet
           user = await _repo.getProfile();
         } catch (e) {
-          print('Mất kết nối mạng, tải thông tin profile từ SQLite local: $e');
+          print(l10n?.offlineProfileLoad(e.toString()) ?? 'Mất kết nối mạng, tải thông tin profile từ SQLite local: $e');
           // Offline -> Sử dụng thông tin người dùng được lưu trữ cục bộ trong SQLite
           user = await _repo.getCachedProfile();
         }

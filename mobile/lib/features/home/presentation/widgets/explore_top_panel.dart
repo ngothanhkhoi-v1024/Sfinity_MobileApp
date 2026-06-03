@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/i18n/app_text.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../places/presentation/widgets/places_search_field.dart';
 
 enum ExploreFilter { all, place, document }
 
-/// Khối tìm kiếm + lọc gọn cho tab Khám phá.
 class ExploreTopPanel extends StatelessWidget {
   const ExploreTopPanel({
     super.key,
@@ -32,6 +32,7 @@ class ExploreTopPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -66,6 +67,7 @@ class ExploreTopPanel extends StatelessWidget {
                 filter: filter,
                 primary: primary,
                 onChanged: onFilterChanged,
+                l10n: l10n,
               ),
             ],
           ),
@@ -80,18 +82,20 @@ class _FilterRow extends StatelessWidget {
     required this.filter,
     required this.primary,
     required this.onChanged,
+    required this.l10n,
   });
 
   final ExploreFilter filter;
   final Color primary;
   final ValueChanged<ExploreFilter> onChanged;
+  final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context) {
-    const options = [
-      (ExploreFilter.all, 'Tất cả', Icons.grid_view_rounded),
-      (ExploreFilter.place, 'Địa điểm', Icons.place_rounded),
-      (ExploreFilter.document, 'Tài liệu', Icons.menu_book_rounded),
+    final options = [
+      (ExploreFilter.all, l10n.all, Icons.grid_view_rounded),
+      (ExploreFilter.place, l10n.places, Icons.place_rounded),
+      (ExploreFilter.document, l10n.documents, Icons.menu_book_rounded),
     ];
 
     return Row(

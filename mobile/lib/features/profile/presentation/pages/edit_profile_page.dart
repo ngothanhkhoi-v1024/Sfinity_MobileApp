@@ -6,6 +6,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../../app.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../features/auth/data/services/firestore_user_service.dart';
 
@@ -108,6 +109,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Future<void> _submit() async {
     if (_uploading) return;
 
+    final l10n = context.l10n;
+
     try {
       setState(() => _uploading = true);
 
@@ -159,14 +162,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Cập nhật hồ sơ thành công')),
+          SnackBar(content: Text(l10n.profileUpdatedSuccess)),
         );
         Navigator.pop(context);
       }
     } on DioException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(ApiClient.instance.errorMessage(e))),
+          SnackBar(content: Text(ApiClient.instance.errorMessage(e, l10n: l10n))),
         );
       }
     } finally {
@@ -267,8 +270,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: const Text('Chỉnh sửa hồ sơ')),
+      appBar: AppBar(title: Text(l10n.editProfile)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -279,29 +283,29 @@ class _EditProfilePageState extends State<EditProfilePage> {
             const SizedBox(height: 8),
             TextButton(
               onPressed: _uploading ? null : _pickAvatar,
-              child: const Text('Chọn ảnh từ bộ nhớ'),
+              child: Text(l10n.selectPhoto),
             ),
             const SizedBox(height: 20),
             TextField(
               controller: _name,
-              decoration: const InputDecoration(
-                labelText: 'Họ tên',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.person_outline),
+              decoration: InputDecoration(
+                labelText: l10n.fullName,
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.person_outline),
               ),
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               value: _gender,
-              decoration: const InputDecoration(
-                labelText: 'Giới tính',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.wc_outlined),
+              decoration: InputDecoration(
+                labelText: l10n.gender,
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.wc_outlined),
               ),
-              items: const [
-                DropdownMenuItem(value: 'Nam', child: Text('Nam')),
-                DropdownMenuItem(value: 'Nữ', child: Text('Nữ')),
-                DropdownMenuItem(value: 'Khác', child: Text('Khác')),
+              items: [
+                DropdownMenuItem(value: 'Nam', child: Text(l10n.male)),
+                DropdownMenuItem(value: 'Nữ', child: Text(l10n.female)),
+                DropdownMenuItem(value: 'Khác', child: Text(l10n.other)),
               ],
               onChanged: (v) => setState(() => _gender = v ?? 'Khác'),
             ),
@@ -309,10 +313,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
             InkWell(
               onTap: _selectBirthDate,
               child: InputDecorator(
-                decoration: const InputDecoration(
-                  labelText: 'Ngày sinh',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.cake_outlined),
+                decoration: InputDecoration(
+                  labelText: l10n.dateOfBirth,
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.cake_outlined),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -320,7 +324,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     Text(
                       _birthDate != null
                           ? '${_birthDate!.day}/${_birthDate!.month}/${_birthDate!.year}'
-                          : 'Chọn ngày sinh',
+                          : l10n.selectDateOfBirth,
                       style: TextStyle(
                         color: _birthDate != null
                             ? Theme.of(context).textTheme.bodyLarge?.color
@@ -336,10 +340,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
             TextField(
               controller: _address,
               maxLines: 2,
-              decoration: const InputDecoration(
-                labelText: 'Địa chỉ',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.location_on_outlined),
+              decoration: InputDecoration(
+                labelText: l10n.address,
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.location_on_outlined),
                 alignLabelWithHint: true,
               ),
             ),
@@ -352,7 +356,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       height: 18,
                       child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                     )
-                  : const Text('Lưu'),
+                  : Text(l10n.save),
             ),
           ],
         ),

@@ -50,7 +50,7 @@ class DocumentDetailController extends ChangeNotifier {
     try {
       await ApiClient.instance.post('/document/$id/reviews', {
         'rating': rating,
-        'comment': comment.trim(), // Send empty string if it's cleared/empty
+        'comment': comment.trim(),
       });
       await loadReviews(id);
       return true;
@@ -94,19 +94,15 @@ class DocumentDetailController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // 1. Try to increment download count in backend (optional tracking)
       try {
         await ApiClient.instance.patch('/document/${document!['id']}/download', {});
-        // Update local downloadsCount representation
         if (document!['downloadsCount'] != null) {
           document!['downloadsCount'] = (document!['downloadsCount'] as int) + 1;
         }
       } catch (e) {
-        // Ignore backend tracking failures so the user can still download the file!
         debugPrint('Failed to increment download count: $e');
       }
       
-      // 2. Launch the file URL in browser
       final uri = Uri.parse(fileUrl);
       bool launched = false;
       try {

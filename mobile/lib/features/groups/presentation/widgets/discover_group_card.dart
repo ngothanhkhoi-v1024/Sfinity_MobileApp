@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../../data/models/group_model.dart';
 
 class DiscoverGroupCard extends StatefulWidget {
@@ -24,6 +25,7 @@ class _DiscoverGroupCardState extends State<DiscoverGroupCard> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
+    final l10n = context.l10n;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
@@ -73,7 +75,7 @@ class _DiscoverGroupCardState extends State<DiscoverGroupCard> {
                       Icon(Icons.people_outline, size: 14, color: cs.primary),
                       const SizedBox(width: 4),
                       Text(
-                        '${widget.group.memberCount} thành viên',
+                        '${widget.group.memberCount} ${l10n.members}',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: cs.primary,
                           fontWeight: FontWeight.w600,
@@ -112,7 +114,7 @@ class _DiscoverGroupCardState extends State<DiscoverGroupCard> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: const Text('Hủy yêu cầu', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        child: Text(l10n.cancel, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                       )
                     : FilledButton(
                         onPressed: () async {
@@ -131,7 +133,7 @@ class _DiscoverGroupCardState extends State<DiscoverGroupCard> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: const Text('Gia nhập', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        child: Text(l10n.groupsTab, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                       ),
           ],
         ),

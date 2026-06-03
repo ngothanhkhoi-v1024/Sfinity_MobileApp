@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../../data/models/friend_model.dart';
 
 class FriendRequestTile extends StatelessWidget {
@@ -19,6 +20,7 @@ class FriendRequestTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
+    final l10n = context.l10n;
     final user = request.requester;
 
     return Container(
@@ -58,7 +60,7 @@ class FriendRequestTile extends StatelessWidget {
                   ],
                   const SizedBox(height: 4),
                   Text(
-                    'Đã gửi lời mời kết bạn',
+                    l10n.requestSent,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: cs.primary,
                       fontStyle: FontStyle.italic,

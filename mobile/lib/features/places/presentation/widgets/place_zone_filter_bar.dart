@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/place_zones.dart';
+import '../../../../core/i18n/app_text.dart';
 
-/// Lọc địa điểm theo khu vực campus.
 class PlaceZoneFilterBar extends StatelessWidget {
   const PlaceZoneFilterBar({
     super.key,
@@ -17,6 +17,7 @@ class PlaceZoneFilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -26,7 +27,7 @@ class PlaceZoneFilterBar extends StatelessWidget {
       child: Row(
         children: [
           _ZoneChip(
-            label: 'Tất cả khu',
+            label: l10n.allZones,
             selected: selectedZone == null,
             onTap: () {
               onChanged(null);

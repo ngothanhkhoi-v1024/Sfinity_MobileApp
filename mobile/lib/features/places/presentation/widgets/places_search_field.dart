@@ -1,27 +1,29 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/i18n/app_text.dart';
 import '../../../../core/theme/app_colors.dart';
 
-/// Ô tìm kiếm — style đồng bộ các tab chính.
 class PlacesSearchField extends StatelessWidget {
   const PlacesSearchField({
     super.key,
     required this.controller,
     required this.onChanged,
     this.onSubmitted,
-    this.hint = 'Tìm địa điểm theo tên hoặc địa chỉ…',
+    this.hint,
   });
 
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
   final ValueChanged<String>? onSubmitted;
-  final String hint;
+  final String? hint;
 
   static const _height = 48.0;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final primary = AppColors.primaryOf(context);
+    final effectiveHint = hint ?? l10n.searchPlace;
 
     return ListenableBuilder(
       listenable: controller,
@@ -36,7 +38,7 @@ class PlacesSearchField extends StatelessWidget {
             cursorColor: primary,
             textInputAction: TextInputAction.search,
             decoration: InputDecoration(
-              hintText: hint,
+              hintText: effectiveHint,
               hintStyle: TextStyle(fontSize: 14, color: AppColors.muted(context)),
               filled: true,
               fillColor: AppColors.searchFill(context),

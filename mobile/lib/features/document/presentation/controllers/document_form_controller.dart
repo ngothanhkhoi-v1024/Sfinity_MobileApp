@@ -59,7 +59,6 @@ class DocumentFormController extends ChangeNotifier {
       final file = result.files.first;
       if (file.path == null) return;
 
-      // Giới hạn tệp không lớn hơn 200MB (200 * 1024 * 1024 bytes)
       const int maxSizeBytes = 200 * 1024 * 1024;
       if (file.size > maxSizeBytes) {
         throw 'Kích thước tệp vượt quá giới hạn cho phép (tối đa 200MB).';
@@ -69,7 +68,7 @@ class DocumentFormController extends ChangeNotifier {
       uploadedFileName = file.name;
       uploadedFileType = 'pdf';
       uploadedFileSize = file.size;
-      uploadedFileUrl = null; // Clear previous url since new local file is picked
+      uploadedFileUrl = null;
       uploadProgress = 0.0;
       notifyListeners();
     } catch (e) {
@@ -80,8 +79,8 @@ class DocumentFormController extends ChangeNotifier {
   Future<String> _uploadToStorage(File localFile, String remoteName) async {
     final path = 'documents/$remoteName';
     final buckets = [
-      null, // Use default bucket in firebase_options.dart
-      'mobile-e1ac5.appspot.com', // Fallback
+      null,
+      'mobile-e1ac5.appspot.com',
     ];
 
     dynamic lastError;
@@ -134,7 +133,6 @@ class DocumentFormController extends ChangeNotifier {
     required String externalUrl,
     String? placeId,
   }) async {
-    // Validation
     if (isDocument) {
       if (localFileToUpload == null && uploadedFileUrl == null) {
         throw 'Vui lòng chọn tệp PDF tài liệu để tải lên!';
@@ -147,7 +145,6 @@ class DocumentFormController extends ChangeNotifier {
     try {
       String? finalFileUrl = uploadedFileUrl;
 
-      // 1. Upload local file to Firebase Storage if selected
       if (isDocument && localFileToUpload != null) {
         uploading = true;
         uploadProgress = 0.0;
@@ -159,7 +156,7 @@ class DocumentFormController extends ChangeNotifier {
           finalFileUrl = downloadUrl;
 
           uploadedFileUrl = downloadUrl;
-          localFileToUpload = null; // Clear local file after upload succeeds
+          localFileToUpload = null;
           uploading = false;
           uploadProgress = 1.0;
           notifyListeners();
