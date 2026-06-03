@@ -1,6 +1,7 @@
 import { ContentStatus, UserRole } from '../types/enums';
 import { Router } from 'express';
 
+import { AdminDeleteDto, AdminHideDto, AdminUnhideDto } from '../dto/admin-document.dto';
 import { CreateDocumentDto, UpdateDocumentDto } from '../dto/document.dto';
 import { CreateDocumentReviewDto } from '../dto/document-review.dto';
 import { asyncHandler } from '../lib/async-handler';
@@ -87,6 +88,48 @@ documentRouter.patch(
         { status: ContentStatus.DRAFT },
         '',
         UserRole.ADMIN,
+      ),
+    );
+  }),
+);
+
+documentRouter.patch(
+  '/:id/admin-hide',
+  ...adminOnly,
+  asyncHandler(async (req, res) => {
+    const dto = await validateBody(AdminHideDto, req.body);
+    res.json(
+      await documentService.adminHide(
+        req.params.id,
+        dto.reason,
+      ),
+    );
+  }),
+);
+
+documentRouter.delete(
+  '/:id/admin-delete',
+  ...adminOnly,
+  asyncHandler(async (req, res) => {
+    const dto = await validateBody(AdminDeleteDto, req.body);
+    res.json(
+      await documentService.adminDelete(
+        req.params.id,
+        dto.reason,
+      ),
+    );
+  }),
+);
+
+documentRouter.patch(
+  '/:id/admin-unhide',
+  ...adminOnly,
+  asyncHandler(async (req, res) => {
+    const dto = await validateBody(AdminUnhideDto, req.body);
+    res.json(
+      await documentService.adminUnhide(
+        req.params.id,
+        dto.note,
       ),
     );
   }),

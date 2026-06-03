@@ -3,6 +3,7 @@ import { isValidPlaceZone } from '../constants/place-zones';
 import { getDb } from '../lib/firebase';
 import { distanceMeters } from '../lib/geo';
 import { HttpError } from '../lib/http-error';
+import { notificationsService } from './notifications.service';
 import { ContentStatus, UserRole } from '../types/enums';
 import type { CreateDocumentDto, UpdateDocumentDto } from '../dto/document.dto';
 
@@ -319,6 +320,69 @@ export const documentService = {
       downloadsCount: currentCount + 1,
       updatedAt: new Date(),
     });
+    return documentService.findOne(id);
+  },
+
+  async adminHide(id: string, reason: string) {
+    const item = await documentService.findOne(id);
+    if (!item.authorId) {
+      throw new HttpError(400, 'Không tìm thấy tác giả để gửi thông báo', 'Bad Request');
+    }
+
+    const docRef = getDb().collection('documents').doc(id);
+    await docRef.update({
+      status: ContentStatus.DRAFT,
+      updatedAt: new Date(),
+    });
+
+    const typeLabel = (item.type ?? 'document') === 'place' ? 'địa điểm' : 'tài liệu';
+    await notificationsService.create({
+      userId: item.authorId,
+      title: `Nội dung "${item.title}" đã bị ẩn`,
+      body: `Admin đã ẩn ${typeLabel} của bạn. Lý do: ${reason}`,
+    });
+
+    return documentService.findOne(id);
+  },
+
+  async adminDelete(id: string, reason: string) {
+    const item = await documentService.findOne(id);
+    if (!item.authorId) {
+      throw new HttpError(400, 'Không tìm thấy tác giả để gửi thông báo', 'Bad Request');
+    }
+
+    const typeLabel = (item.type ?? 'document') === 'place' ? 'địa điểm' : 'tài liệu';
+    await notificationsService.create({
+      userId: item.authorId,
+      title: `Nội dung "${item.title}" đã bị xóa`,
+      body: `Admin đã xóa ${typeLabel} của bạn. Lý do: ${reason}`,
+    });
+
+    await getDb().collection('documents').doc(id).delete();
+    return { success: true };
+  },
+
+  async adminUnhide(id: string, note?: string) {
+    const item = await documentService.findOne(id);
+    if (!item.authorId) {
+      throw new HttpError(400, 'Không tìm thấy tác giả để gửi thông báo', 'Bad Request');
+    }
+
+    const docRef = getDb().collection('documents').doc(id);
+    await docRef.update({
+      status: ContentStatus.PUBLISHED,
+      updatedAt: new Date(),
+    });
+
+    const typeLabel = (item.type ?? 'document') === 'place' ? 'địa điểm' : 'tài liệu';
+    await notificationsService.create({
+      userId: item.authorId,
+      title: `Nội dung "${item.title}" đã được hiển thị lại`,
+      body: note
+        ? `Admin đã bỏ ẩn ${typeLabel} của bạn. Ghi chú: ${note}`
+        : `Admin đã bỏ ẩn và khôi phục ${typeLabel} của bạn.`,
+    });
+
     return documentService.findOne(id);
   },
 };

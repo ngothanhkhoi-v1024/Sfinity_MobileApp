@@ -3,6 +3,8 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { CategoriesPage } from '@/pages/categories/CategoriesPage';
 import { ContentPage } from '@/pages/content/ContentPage';
+import { DocumentsPage } from '@/pages/content/DocumentsPage';
+import { PlacesPage } from '@/pages/content/PlacesPage';
 import { DashboardPage } from '@/pages/dashboard/DashboardPage';
 import { AdminsPage } from '@/pages/admins/AdminsPage';
 import { FeedbackPage } from '@/pages/feedback/FeedbackPage';
@@ -25,6 +27,8 @@ export function AppRoutes() {
             <Route index element={<DashboardPage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="content" element={<ContentPage />} />
+            <Route path="documents" element={<DocumentsPage />} />
+            <Route path="places" element={<PlacesPage />} />
             <Route path="categories" element={<CategoriesPage />} />
             <Route path="feedback" element={<FeedbackPage />} />
             <Route path="reports" element={<ReportsPage />} />

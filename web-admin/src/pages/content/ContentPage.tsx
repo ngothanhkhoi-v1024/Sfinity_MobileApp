@@ -9,6 +9,7 @@ import {
   Space,
   Table,
   Tag,
+  Tabs,
   message,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
@@ -26,8 +27,10 @@ import {
 } from '@/api/content';
 import { PageHeader } from '@/components/common/PageHeader';
 import { PageShell } from '@/components/common/PageShell';
+import { DocumentsPage } from './DocumentsPage';
+import { PlacesPage } from './PlacesPage';
 
-export function ContentPage() {
+function PostsTab() {
   const [data, setData] = useState<ContentItem[]>([]);
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -126,10 +129,13 @@ export function ContentPage() {
           <Button size="small" onClick={() => togglePublish(record)}>
             {record.status === 'PUBLISHED' ? 'Ẩn' : 'Xuất bản'}
           </Button>
-          <Popconfirm title="Xóa?" onConfirm={async () => {
-            await deleteContent(record.id);
-            load();
-          }}>
+          <Popconfirm
+            title="Xóa?"
+            onConfirm={async () => {
+              await deleteContent(record.id);
+              load();
+            }}
+          >
             <Button size="small" danger icon={<DeleteOutlined />} />
           </Popconfirm>
         </Space>
@@ -138,13 +144,13 @@ export function ContentPage() {
   ];
 
   return (
-    <PageShell>
+    <>
       <PageHeader
-        title="Quản lý nội dung"
+        title="Quản lý bài viết"
         description="Tạo, chỉnh sửa và xuất bản bài viết"
         extra={
           <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-            Thêm nội dung
+            Thêm bài viết
           </Button>
         }
       />
@@ -159,7 +165,7 @@ export function ContentPage() {
       />
 
       <Modal
-        title={editing ? 'Sửa nội dung' : 'Thêm nội dung'}
+        title={editing ? 'Sửa bài viết' : 'Thêm bài viết'}
         open={modalOpen}
         onCancel={() => setModalOpen(false)}
         onOk={handleSubmit}
@@ -182,10 +188,31 @@ export function ContentPage() {
             />
           </Form.Item>
           <Form.Item name="categoryId" label="Danh mục">
-            <Select allowClear options={categories.map((c) => ({ value: c.id, label: c.name }))} />
+            <Select
+              allowClear
+              options={categories.map((c: CategoryItem) => ({ value: c.id, label: c.name }))}
+            />
           </Form.Item>
         </Form>
       </Modal>
+    </>
+  );
+}
+
+const tabItems = [
+  { key: 'posts', label: 'Bài viết', children: <PostsTab /> },
+  { key: 'documents', label: 'Tài liệu', children: <DocumentsPage /> },
+  { key: 'places', label: 'Địa điểm', children: <PlacesPage /> },
+];
+
+export function ContentPage() {
+  return (
+    <PageShell>
+      <PageHeader
+        title="Quản lý nội dung"
+        description="Quản lý bài viết, tài liệu và địa điểm trong ứng dụng"
+      />
+      <Tabs items={tabItems} />
     </PageShell>
   );
 }

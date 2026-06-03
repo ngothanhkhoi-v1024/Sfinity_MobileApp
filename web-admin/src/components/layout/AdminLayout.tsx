@@ -1,8 +1,10 @@
 import {
+  AppstoreOutlined,
   BellOutlined,
+  BookOutlined,
   CrownOutlined,
   DashboardOutlined,
-  FileTextOutlined,
+  EnvironmentOutlined,
   LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -34,7 +36,9 @@ const menuItems = [
     label: 'Quản lý',
     children: [
       { key: '/users', icon: <TeamOutlined />, label: 'Người dùng' },
-      { key: '/content', icon: <FileTextOutlined />, label: 'Nội dung' },
+      { key: '/content', icon: <AppstoreOutlined />, label: 'Nội dung' },
+      { key: '/documents', icon: <BookOutlined />, label: 'Tài liệu' },
+      { key: '/places', icon: <EnvironmentOutlined />, label: 'Địa điểm' },
       { key: '/categories', icon: <TagsOutlined />, label: 'Danh mục' },
     ],
   },
