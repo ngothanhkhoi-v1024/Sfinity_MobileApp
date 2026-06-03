@@ -59,11 +59,23 @@ GoRouter createAppRouter(AuthState auth) {
     },
     routes: [
       GoRoute(path: RouteNames.splash, builder: (_, __) => const SplashPage()),
-      GoRoute(path: RouteNames.onboarding, builder: (_, __) => const OnboardingPage()),
+      GoRoute(
+        path: RouteNames.onboarding,
+        builder: (_, __) => const OnboardingPage(),
+      ),
       GoRoute(path: RouteNames.login, builder: (_, __) => const LoginPage()),
-      GoRoute(path: RouteNames.register, builder: (_, __) => const RegisterPage()),
-      GoRoute(path: RouteNames.forgotPassword, builder: (_, __) => const ForgotPasswordPage()),
-      GoRoute(path: RouteNames.otpVerification, builder: (_, __) => const OtpVerificationPage()),
+      GoRoute(
+        path: RouteNames.register,
+        builder: (_, __) => const RegisterPage(),
+      ),
+      GoRoute(
+        path: RouteNames.forgotPassword,
+        builder: (_, __) => const ForgotPasswordPage(),
+      ),
+      GoRoute(
+        path: RouteNames.otpVerification,
+        builder: (_, __) => const OtpVerificationPage(),
+      ),
       GoRoute(
         path: RouteNames.home,
         builder: (_, state) {
@@ -73,16 +85,24 @@ GoRouter createAppRouter(AuthState auth) {
         },
       ),
       GoRoute(path: RouteNames.search, builder: (_, __) => const SearchPage()),
-      GoRoute(path: RouteNames.favorites, builder: (_, __) => const FavoritesPage()),
+      GoRoute(
+        path: RouteNames.favorites,
+        builder: (_, __) => const FavoritesPage(),
+      ),
       // /places/share phải đứng trước /places/:id, nếu không "share" bị match nhầm thành id.
-      GoRoute(path: RouteNames.placeShare, builder: (_, __) => const PlaceSharePage()),
+      GoRoute(
+        path: RouteNames.placeShare,
+        builder: (_, __) => const PlaceSharePage(),
+      ),
       GoRoute(
         path: RouteNames.placeEdit,
-        builder: (_, state) => PlaceSharePage(editPlaceId: state.pathParameters['id']!),
+        builder: (_, state) =>
+            PlaceSharePage(editPlaceId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: RouteNames.placeDetail,
-        builder: (_, state) => PlaceDetailPage(placeId: state.pathParameters['id']!),
+        builder: (_, state) =>
+            PlaceDetailPage(placeId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: RouteNames.documentList,
@@ -103,35 +123,69 @@ GoRouter createAppRouter(AuthState auth) {
           ),
           GoRoute(
             path: ':id',
-            builder: (_, state) => DocumentDetailPage(documentId: state.pathParameters['id']!),
+            builder: (_, state) =>
+                DocumentDetailPage(documentId: state.pathParameters['id']!),
             routes: [
               GoRoute(
                 path: 'edit',
-                builder: (_, state) => DocumentFormPage(documentId: state.pathParameters['id']!),
+                builder: (_, state) =>
+                    DocumentFormPage(documentId: state.pathParameters['id']!),
               ),
             ],
           ),
         ],
       ),
-      GoRoute(path: RouteNames.settings, builder: (_, __) => const SettingsPage()),
-      GoRoute(path: RouteNames.languageSettings, builder: (_, __) => const LanguageSettingsPage()),
-      GoRoute(path: RouteNames.notificationSettings, builder: (_, __) => const NotificationSettingsPage()),
-      GoRoute(path: RouteNames.feedback, builder: (_, __) => const FeedbackPage()),
+      GoRoute(
+        path: RouteNames.settings,
+        builder: (_, __) => const SettingsPage(),
+      ),
+      GoRoute(
+        path: RouteNames.languageSettings,
+        builder: (_, __) => const LanguageSettingsPage(),
+      ),
+      GoRoute(
+        path: RouteNames.notificationSettings,
+        builder: (_, __) => const NotificationSettingsPage(),
+      ),
+      GoRoute(
+        path: RouteNames.feedback,
+        builder: (_, __) => const FeedbackPage(),
+      ),
       GoRoute(path: RouteNames.report, builder: (_, __) => const ReportPage()),
-      GoRoute(path: RouteNames.notifications, builder: (_, __) => const NotificationsPage()),
-      GoRoute(path: RouteNames.editProfile, builder: (_, __) => const EditProfilePage()),
-      GoRoute(path: RouteNames.changePassword, builder: (_, __) => const ChangePasswordPage()),
+      GoRoute(
+        path: RouteNames.notifications,
+        builder: (_, __) => const NotificationsPage(),
+      ),
+      GoRoute(
+        path: RouteNames.editProfile,
+        builder: (_, __) => const EditProfilePage(),
+      ),
+      GoRoute(
+        path: RouteNames.changePassword,
+        builder: (_, __) => const ChangePasswordPage(),
+      ),
       // Group & Friends routes
-      GoRoute(path: RouteNames.friends, builder: (_, __) => const FriendsPage()),
-      GoRoute(path: RouteNames.groups, builder: (_, __) => const GroupListPage()),
-      GoRoute(path: RouteNames.groupCreate, builder: (_, __) => const GroupFormPage()),
+      GoRoute(
+        path: RouteNames.friends,
+        builder: (_, __) => const FriendsPage(),
+      ),
+      GoRoute(
+        path: RouteNames.groups,
+        builder: (_, __) => const GroupListPage(),
+      ),
+      GoRoute(
+        path: RouteNames.groupCreate,
+        builder: (_, __) => const GroupFormPage(),
+      ),
       GoRoute(
         path: RouteNames.groupEdit,
-        builder: (_, state) => GroupFormPage(groupId: state.pathParameters['id']),
+        builder: (_, state) =>
+            GroupFormPage(groupId: state.pathParameters['id']),
       ),
       GoRoute(
         path: '/groups/:id',
-        builder: (_, state) => GroupDetailPage(groupId: state.pathParameters['id']!),
+        builder: (_, state) =>
+            GroupDetailPage(groupId: state.pathParameters['id']!),
         routes: [
           GoRoute(
             path: 'chat',

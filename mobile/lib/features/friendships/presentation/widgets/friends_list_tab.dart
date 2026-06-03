@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/constants/route_names.dart';
 import '../controllers/friendship_controller.dart';
 import 'friend_tile.dart';
 import 'user_profile_bottom_sheet.dart';
@@ -51,34 +53,50 @@ class _FriendsListTabState extends State<FriendsListTab> {
     }).toList();
 
     if (friends.isEmpty) {
-      return const FriendshipsEmptyState(
+      return FriendshipsEmptyState(
         icon: Icons.people_outline_rounded,
         title: 'Chưa có bạn bè',
-        subtitle: 'Chuyển qua tab "Thêm bạn" để tìm kiếm và kết nối nhé!',
+        subtitle: 'Tìm kiếm và gửi lời mời kết bạn để kết nối nhé!',
+        actionLabel: 'Thêm bạn bè',
+        onAction: () => context.push(RouteNames.friends),
       );
     }
 
     return Column(
       children: [
-        // Local Filter Search Bar
+        // Local Filter Search Bar with Add Friend shortcut button next to it
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: SearchBar(
-            controller: _localSearchCtrl,
-            hintText: 'Tìm kiếm trong danh sách bạn bè...',
-            leading: const Icon(Icons.search),
-            trailing: [
-              if (_localSearchCtrl.text.isNotEmpty)
-                IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: () {
-                    _localSearchCtrl.clear();
-                    FocusScope.of(context).unfocus();
-                  },
+          child: Row(
+            children: [
+              Expanded(
+                child: SearchBar(
+                  controller: _localSearchCtrl,
+                  hintText: 'Tìm kiếm trong danh sách bạn bè...',
+                  leading: const Icon(Icons.search),
+                  trailing: [
+                    if (_localSearchCtrl.text.isNotEmpty)
+                      IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _localSearchCtrl.clear();
+                          FocusScope.of(context).unfocus();
+                        },
+                      ),
+                  ],
+                  elevation: const WidgetStatePropertyAll(0),
+                  backgroundColor: WidgetStatePropertyAll(
+                    cs.surfaceContainerHighest.withValues(alpha: 0.3),
+                  ),
                 ),
+              ),
+              const SizedBox(width: 8),
+              IconButton.filledTonal(
+                icon: const Icon(Icons.person_add_alt_1_rounded),
+                onPressed: () => context.push(RouteNames.friends),
+                tooltip: 'Thêm bạn bè',
+              ),
             ],
-            elevation: const WidgetStatePropertyAll(0),
-            backgroundColor: WidgetStatePropertyAll(cs.surfaceContainerHighest.withValues(alpha: 0.3)),
           ),
         ),
 
@@ -105,25 +123,49 @@ class _FriendsListTabState extends State<FriendsListTab> {
                       final friend = filteredFriends[i];
                       return FriendTile(
                         friend: friend,
-                        onTap: () => UserProfileBottomSheet.show(context, friend.user, ctrl),
+                        onTap: () => UserProfileBottomSheet.show(
+                          context,
+                          friend.user,
+                          ctrl,
+                        ),
                         trailing: PopupMenuButton<String>(
-                          icon: Icon(Icons.more_horiz, color: cs.onSurfaceVariant),
+                          icon: Icon(
+                            Icons.more_horiz,
+                            color: cs.onSurfaceVariant,
+                          ),
                           onSelected: (val) async {
                             if (val == 'view_profile') {
-                              UserProfileBottomSheet.show(context, friend.user, ctrl);
+                              UserProfileBottomSheet.show(
+                                context,
+                                friend.user,
+                                ctrl,
+                              );
                             } else if (val == 'unfriend') {
                               final messenger = ScaffoldMessenger.of(context);
-                              final ok = await ctrl.unfriend(friend.friendshipId);
+                              final ok = await ctrl.unfriend(
+                                friend.friendshipId,
+                              );
                               if (!ok) {
                                 messenger.showSnackBar(
-                                  SnackBar(content: Text(ctrl.error ?? 'Đã xảy ra lỗi'), backgroundColor: Colors.red),
+                                  SnackBar(
+                                    content: Text(
+                                      ctrl.error ?? 'Đã xảy ra lỗi',
+                                    ),
+                                    backgroundColor: Colors.red,
+                                  ),
                                 );
                               }
                             }
                           },
                           itemBuilder: (_) => [
-                            const PopupMenuItem(value: 'view_profile', child: Text('Xem hồ sơ')),
-                            const PopupMenuItem(value: 'unfriend', child: Text('Hủy kết bạn')),
+                            const PopupMenuItem(
+                              value: 'view_profile',
+                              child: Text('Xem hồ sơ'),
+                            ),
+                            const PopupMenuItem(
+                              value: 'unfriend',
+                              child: Text('Hủy kết bạn'),
+                            ),
                           ],
                         ),
                       );
