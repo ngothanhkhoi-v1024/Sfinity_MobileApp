@@ -103,14 +103,29 @@ class _NotificationsPageState extends State<NotificationsPage> {
       builder: (ctx) => AlertDialog(
         title: Text(deleteAllText),
         content: Text(confirmText),
+        actionsAlignment: MainAxisAlignment.center,
+        actionsPadding: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(cancelText)),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              _deleteAllNotifications();
-            },
-            child: Text(deleteText),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(cancelText),
+            ),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                _deleteAllNotifications();
+              },
+              style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(ctx).colorScheme.error,
+              ),
+              child: Text(deleteText),
+            ),
           ),
         ],
       ),
@@ -214,9 +229,17 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                 direction: DismissDirection.endToStart,
                                 background: Container(
                                   alignment: Alignment.centerRight,
-                                  padding: const EdgeInsets.only(right: 16),
-                                  color: Theme.of(context).colorScheme.error,
-                                  child: const Icon(Icons.delete, color: Colors.white),
+                                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                                  margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).colorScheme.errorContainer,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(
+                                    Icons.delete_outline,
+                                    color: Theme.of(context).colorScheme.onErrorContainer,
+                                    size: 26,
+                                  ),
                                 ),
                                 confirmDismiss: (_) async {
                                   return await showDialog<bool>(
@@ -224,25 +247,43 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                     builder: (ctx) => AlertDialog(
                                       title: Text(l10n.deleteNotification),
                                       content: Text(l10n.deleteNotificationConfirm),
+                                      actionsAlignment: MainAxisAlignment.center,
+                                      actionsPadding: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
                                       actions: [
-                                        TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
-                                        FilledButton(
-                                          onPressed: () => Navigator.pop(ctx, true),
-                                          child: Text(l10n.yesDelete),
+                                        SizedBox(
+                                          width: double.infinity,
+                                          child: OutlinedButton(
+                                            onPressed: () => Navigator.pop(ctx, false),
+                                            child: Text(l10n.cancel),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        SizedBox(
+                                          width: double.infinity,
+                                          child: FilledButton(
+                                            onPressed: () => Navigator.pop(ctx, true),
+                                            style: FilledButton.styleFrom(
+                                              backgroundColor: Theme.of(context).colorScheme.error,
+                                            ),
+                                            child: Text(l10n.yesDelete),
+                                          ),
                                         ),
                                       ],
                                     ),
                                   ) ?? false;
                                 },
                                 onDismissed: (_) => _deleteNotification(id),
-                                child: ListTile(
-                                  leading: Icon(
-                                    read ? Icons.mark_email_read : Icons.mark_email_unread,
-                                    color: read ? Colors.grey : Theme.of(context).colorScheme.primary,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 2),
+                                  child: ListTile(
+                                    leading: Icon(
+                                      read ? Icons.mark_email_read : Icons.mark_email_unread,
+                                      color: read ? Colors.grey : Theme.of(context).colorScheme.primary,
+                                    ),
+                                    title: Text(n['title']?.toString() ?? '', style: TextStyle(fontWeight: read ? FontWeight.normal : FontWeight.bold)),
+                                    subtitle: Text(n['body']?.toString() ?? ''),
+                                    onTap: () => _markRead(id),
                                   ),
-                                  title: Text(n['title']?.toString() ?? '', style: TextStyle(fontWeight: read ? FontWeight.normal : FontWeight.bold)),
-                                  subtitle: Text(n['body']?.toString() ?? ''),
-                                  onTap: () => _markRead(id),
                                 ),
                               );
                             },
