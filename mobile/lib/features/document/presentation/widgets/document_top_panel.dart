@@ -15,7 +15,8 @@ class DocumentTopPanel extends StatelessWidget {
     required this.categories,
     required this.selectedCategory,
     required this.onCategorySelected,
-    this.resultCount,
+    required this.showFilters,
+    required this.onToggleFilters,
     this.embedded = false,
   });
 
@@ -26,7 +27,8 @@ class DocumentTopPanel extends StatelessWidget {
   final List<String> categories;
   final String selectedCategory;
   final ValueChanged<String> onCategorySelected;
-  final int? resultCount;
+  final bool showFilters;
+  final VoidCallback onToggleFilters;
   final bool embedded;
 
   @override
@@ -67,37 +69,59 @@ class DocumentTopPanel extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              PlacesSearchField(
-                controller: searchController,
-                hint: l10n.searchDocumentHint,
-                onChanged: onSearchChanged,
+              Row(
+                children: [
+                  Expanded(
+                    child: PlacesSearchField(
+                      controller: searchController,
+                      hint: l10n.searchDocumentHint,
+                      onChanged: onSearchChanged,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Nút Lọc bên phải thanh tìm kiếm
+                  Material(
+                    color: showFilters ? primary.withValues(alpha: 0.1) : AppColors.chipBg(context),
+                    borderRadius: BorderRadius.circular(10),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(10),
+                      onTap: onToggleFilters,
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Icon(
+                          Icons.filter_list_rounded,
+                          color: showFilters ? primary : AppColors.muted(context),
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
-              SizedBox(
-                height: 36,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: categories.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 6),
-                  itemBuilder: (context, index) {
-                    final cat = categories[index];
-                    final selected = selectedCategory == cat;
-                    return _CategoryChip(
-                      label: cat,
-                      selected: selected,
-                      primary: primary,
-                      onTap: () => onCategorySelected(cat),
-                    );
-                  },
+              if (showFilters) ...[
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 36,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: categories.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 6),
+                    itemBuilder: (context, index) {
+                      final cat = categories[index];
+                      final selected = selectedCategory == cat;
+                      return _CategoryChip(
+                        label: l10n.translateCategory(cat),
+                        selected: selected,
+                        primary: primary,
+                        onTap: () => onCategorySelected(cat),
+                      );
+                    },
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),
-        if (resultCount != null) ...[
-          const SizedBox(height: 10),
-          _DocumentCountStrip(count: resultCount!, communityMode: communityMode),
-        ],
       ],
     );
   }
@@ -139,47 +163,6 @@ class _CategoryChip extends StatelessWidget {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _DocumentCountStrip extends StatelessWidget {
-  const _DocumentCountStrip({
-    required this.count,
-    required this.communityMode,
-  });
-
-  final int count;
-  final bool communityMode;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final primary = AppColors.primaryOf(context);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppColors.primaryTint(context),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: primary.withValues(alpha: 0.15)),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            communityMode ? Icons.public_rounded : Icons.person_rounded,
-            size: 18,
-            color: primary,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            l10n.documents,
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: primary),
-          ),
-          const Spacer(),
-          Icon(Icons.menu_book_rounded, size: 16, color: primary.withValues(alpha: 0.7)),
-        ],
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../app.dart';
 import '../../../../core/i18n/app_text.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/utils/validators.dart';
@@ -228,9 +229,10 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
                         prefixIcon: const Icon(Icons.category_outlined),
                       ),
                       items: _controller.categories.map<DropdownMenuItem<String>>((cat) {
+                        final name = cat['name']?.toString() ?? '';
                         return DropdownMenuItem<String>(
                           value: cat['id']?.toString(),
-                          child: Text(cat['name']?.toString() ?? ''),
+                          child: Text(l10n.translateCategory(name)),
                         );
                       }).toList(),
                       onChanged: _controller.selectCategory,
@@ -241,19 +243,30 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
                     DropdownButtonFormField<String>(
                       value: _controller.selectedStatus,
                       decoration: InputDecoration(
-                        labelText: l10n.publicAllSee,
+                        labelText: l10n.displayMode,
                         prefixIcon: const Icon(Icons.visibility_outlined),
                       ),
-                      items: [
-                        DropdownMenuItem<String>(
-                          value: 'PUBLISHED',
-                          child: Text(l10n.all),
-                        ),
-                        DropdownMenuItem<String>(
-                          value: 'DRAFT',
-                          child: Text(l10n.reset_),
-                        ),
-                      ],
+                      items: SfinityApp.auth.user?['role']?.toString() == 'admin'
+                          ? [
+                              DropdownMenuItem<String>(
+                                value: 'PUBLISHED',
+                                child: Text(l10n.publicApproved),
+                              ),
+                              DropdownMenuItem<String>(
+                                value: 'DRAFT',
+                                child: Text(l10n.onlyMeDraft),
+                              ),
+                            ]
+                          : [
+                              DropdownMenuItem<String>(
+                                value: 'PENDING',
+                                child: Text(l10n.publicPending),
+                              ),
+                              DropdownMenuItem<String>(
+                                value: 'DRAFT',
+                                child: Text(l10n.onlyMeDraft),
+                              ),
+                            ],
                       onChanged: _controller.selectStatus,
                     ),
                     const SizedBox(height: 16),
@@ -272,14 +285,12 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
                     controller: _body,
                     autovalidateMode: AutovalidateMode.onUserInteraction,
                     decoration: InputDecoration(
-                      labelText: widget.isDocument ? l10n.placeDescriptionHint : l10n.placeDescriptionDetail,
-                      hintText: widget.isDocument
-                          ? l10n.placeDescriptionDetail
-                          : l10n.placeDescription,
+                      labelText: l10n.description,
+                      hintText: l10n.documentDescriptionHint,
                       alignLabelWithHint: true,
                     ),
                     maxLines: 5,
-                    validator: (v) => v != null && v.trim().length >= 2 ? null : l10n.placeDescriptionMin,
+                    validator: (v) => v != null && v.trim().length >= 2 ? null : l10n.documentDescriptionMin,
                   ),
                   const SizedBox(height: 24),
 

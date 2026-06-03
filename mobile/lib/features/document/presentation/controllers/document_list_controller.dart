@@ -10,13 +10,17 @@ class DocumentListController extends ChangeNotifier {
   String? error;
   String searchQuery = '';
   String selectedCategory = 'Tất cả';
+  String selectedStatusFilter = 'Tất cả';
   bool communityMode = true;
 
   final List<String> categories = ['Tất cả', 'Bài giảng', 'Đề thi', 'Ghi chú', 'Khác'];
+  final List<String> statusFilters = ['Tất cả', 'Chờ duyệt', 'Đã duyệt', 'Từ chối', 'Bản nháp', 'Bị ẩn'];
   final TextEditingController searchController = TextEditingController();
 
   void setCommunityMode(bool val) {
     communityMode = val;
+    selectedStatusFilter = 'Tất cả';
+    selectedCategory = 'Tất cả';
     load();
   }
 
@@ -28,7 +32,7 @@ class DocumentListController extends ChangeNotifier {
     try {
       final currentUserId = SfinityApp.auth.user?['id']?.toString();
       final res = await SfinityApp.documentRepository.getDocuments(
-        publishedOnly: communityMode ? true : null,
+        publishedOnly: true,
         authorId: communityMode ? null : currentUserId,
         limit: 50,
       );
@@ -65,22 +69,39 @@ class DocumentListController extends ChangeNotifier {
           subjectCode.contains(searchQuery) ||
           tags.any((tag) => tag.contains(searchQuery));
 
-      if (selectedCategory == 'Tất cả') {
-        return matchesSearch;
+      if (selectedCategory != 'Tất cả') {
+        final categoryName = (item['category'] as Map?)?['name']?.toString() ?? 'Khác';
+        final matchesCategory = categoryName.toLowerCase() == selectedCategory.toLowerCase() ||
+            (selectedCategory == 'Khác' &&
+                !categories.sublist(1, 4).contains(categoryName));
+        if (!matchesCategory) return false;
       }
 
-      final categoryName = (item['category'] as Map?)?['name']?.toString() ?? 'Khác';
-      final matchesCategory = categoryName.toLowerCase() == selectedCategory.toLowerCase() ||
-          (selectedCategory == 'Khác' &&
-              !categories.sublist(1, 4).contains(categoryName));
+      if (!communityMode && selectedStatusFilter != 'Tất cả') {
+        final status = item['status']?.toString();
+        final matchesStatus = switch (selectedStatusFilter) {
+          'Chờ duyệt' => status == 'PENDING',
+          'Đã duyệt' => status == 'PUBLISHED',
+          'Từ chối' => status == 'REJECTED',
+          'Bản nháp' => status == 'DRAFT',
+          'Bị ẩn' => status == 'HIDDEN',
+          _ => true,
+        };
+        if (!matchesStatus) return false;
+      }
 
-      return matchesSearch && matchesCategory;
+      return matchesSearch;
     }).toList();
     notifyListeners();
   }
 
   void changeCategory(String category) {
     selectedCategory = category;
+    filterItems();
+  }
+
+  void changeStatusFilter(String status) {
+    selectedStatusFilter = status;
     filterItems();
   }
 
