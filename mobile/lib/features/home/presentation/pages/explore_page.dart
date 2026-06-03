@@ -10,8 +10,8 @@ import '../../../../core/network/api_client.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../study_near_me/presentation/controllers/study_near_me_controller.dart';
 import '../../../study_near_me/presentation/widgets/study_near_me_results_sheet.dart';
-
-enum _ExploreFilter { all, place, document }
+import '../../../../core/theme/app_colors.dart';
+import '../widgets/explore_top_panel.dart';
 
 /// Tab Khám phá — feed địa điểm & tài liệu.
 class ExplorePage extends StatefulWidget {
@@ -27,8 +27,7 @@ class _ExplorePageState extends State<ExplorePage> {
   String? _error;
   late final StudyNearMeController _studyNearMeCtrl;
   final _searchController = TextEditingController();
-  final _searchFocus = FocusNode();
-  _ExploreFilter _filter = _ExploreFilter.all;
+  ExploreFilter _filter = ExploreFilter.all;
   bool _searchingApi = false;
   List<dynamic>? _apiSearchResults;
   Timer? _debounce;
@@ -53,7 +52,6 @@ class _ExplorePageState extends State<ExplorePage> {
     _debounce?.cancel();
     _searchController.removeListener(_onSearchTextChanged);
     _searchController.dispose();
-    _searchFocus.dispose();
     _studyNearMeCtrl.dispose();
     super.dispose();
   }
@@ -94,7 +92,7 @@ class _ExplorePageState extends State<ExplorePage> {
   void _clearSearch() {
     _searchController.clear();
     _apiSearchResults = null;
-    _searchFocus.unfocus();
+    FocusManager.instance.primaryFocus?.unfocus();
     setState(() {});
   }
 
@@ -153,8 +151,8 @@ class _ExplorePageState extends State<ExplorePage> {
   List<Map<String, dynamic>> get _visibleItems {
     final q = _searchController.text.trim().toLowerCase();
     return _sourceItems.where((item) {
-      if (_filter == _ExploreFilter.place && !_isPlace(item)) return false;
-      if (_filter == _ExploreFilter.document && _isPlace(item)) return false;
+      if (_filter == ExploreFilter.place && !_isPlace(item)) return false;
+      if (_filter == ExploreFilter.document && _isPlace(item)) return false;
       if (q.isEmpty) return true;
       if (!_showingSaved && _apiSearchResults != null) return true;
       final title = item['title']?.toString().toLowerCase() ?? '';
@@ -248,53 +246,48 @@ class _ExplorePageState extends State<ExplorePage> {
           SliverSafeArea(
             bottom: false,
             sliver: SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  Text(
-                    l10n.explore,
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.5,
-                      height: 1.1,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Địa điểm học tập và tài liệu từ cộng đồng',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
-                      height: 1.4,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  _ExploreSearchBar(
-                    controller: _searchController,
-                    focusNode: _searchFocus,
-                    hint: l10n.searchHint,
-                    isDark: isDark,
+                  ExploreTopPanel(
+                    title: l10n.explore,
+                    subtitle: 'Địa điểm học tập và tài liệu từ cộng đồng',
+                    searchController: _searchController,
+                    searchHint: l10n.searchHint,
+                    filter: _filter,
                     primary: primary,
-                    loading: _searchingApi,
-                    onClear: _clearSearch,
-                    onSubmitted: (q) {
+                    onFilterChanged: (f) => setState(() => _filter = f),
+                    onSearchChanged: (_) => setState(() {}),
+                    onSearchSubmitted: (q) {
                       if (q.trim().isNotEmpty) _runApiSearch(q.trim());
                     },
                   ),
-                  const SizedBox(height: 10),
-                  _ExploreFilterChips(
-                    filter: _filter,
-                    isDark: isDark,
-                    primary: primary,
-                    onChanged: (f) => setState(() => _filter = f),
-                  ),
-                  const SizedBox(height: 16),
+                  if (_searchingApi)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: primary),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Đang tìm…',
+                            style: TextStyle(fontSize: 12, color: primary),
+                          ),
+                        ],
+                      ),
+                    ),
+                  const SizedBox(height: 12),
                   _StudyNearMeBanner(
                     loading: _studyNearMeCtrl.loading,
                     onPressed: _onStudyNearMe,
                     primary: primary,
                     secondary: secondary,
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 12),
                   _ExploreStatsStrip(
                     placeCount: displayPlaceCount,
                     docCount: displayDocCount,
@@ -302,7 +295,7 @@ class _ExplorePageState extends State<ExplorePage> {
                     primary: primary,
                     showingSaved: _showingSaved,
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 10),
                   _ExploreActionRow(
                     savedLabel: l10n.saved,
                     savedSelected: _showingSaved,
@@ -313,22 +306,15 @@ class _ExplorePageState extends State<ExplorePage> {
                     ),
                   ),
                   if (spotlight.isNotEmpty && !isSearching && !_showingSaved) ...[
-                    const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Icon(Icons.auto_awesome, size: 18, color: primary),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Gợi ý cho bạn',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
+                    const SizedBox(height: 14),
+                    _ExploreSectionLabel(
+                      icon: Icons.auto_awesome_rounded,
+                      title: 'Gợi ý cho bạn',
+                      primary: primary,
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 8),
                     SizedBox(
-                      height: 118,
+                      height: 108,
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
                         itemCount: spotlight.length,
@@ -345,38 +331,13 @@ class _ExplorePageState extends State<ExplorePage> {
                       ),
                     ),
                   ],
-                  const SizedBox(height: 24),
-                  Row(
-                    children: [
-                      Text(
-                        sectionTitle,
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: -0.3,
-                        ),
-                      ),
-                      if (_showingSaved) ...[
-                        const SizedBox(width: 8),
-                        Icon(Icons.bookmark_rounded, size: 20, color: const Color(0xFFF59E0B)),
-                      ],
-                      const Spacer(),
-                      if (visible.isNotEmpty)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: primary.withValues(alpha: isDark ? 0.18 : 0.1),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            '${visible.length}',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: primary,
-                            ),
-                          ),
-                        ),
-                    ],
+                  const SizedBox(height: 16),
+                  _ExploreFeedSectionHeader(
+                    title: sectionTitle,
+                    count: visible.length,
+                    showingSaved: _showingSaved,
+                    primary: primary,
+                    isDark: isDark,
                   ),
                   if (isSearching && visible.isEmpty && !_searchingApi)
                     Padding(
@@ -404,7 +365,7 @@ class _ExplorePageState extends State<ExplorePage> {
             SliverFillRemaining(
               hasScrollBody: false,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
                 child: ErrorView(message: _savedError!, onRetry: _loadFavorites),
               ),
             )
@@ -412,7 +373,7 @@ class _ExplorePageState extends State<ExplorePage> {
             SliverFillRemaining(
               hasScrollBody: false,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
                 child: _ExploreSavedEmptyState(message: l10n.noFavoritesYet, isDark: isDark),
               ),
             )
@@ -420,13 +381,13 @@ class _ExplorePageState extends State<ExplorePage> {
             SliverFillRemaining(
               hasScrollBody: false,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
                 child: _ExploreEmptyState(isDark: isDark),
               ),
             )
           else if (visible.isNotEmpty)
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
@@ -451,175 +412,85 @@ class _ExplorePageState extends State<ExplorePage> {
   }
 }
 
-class _ExploreSearchBar extends StatelessWidget {
-  const _ExploreSearchBar({
-    required this.controller,
-    required this.focusNode,
-    required this.hint,
-    required this.isDark,
+class _ExploreSectionLabel extends StatelessWidget {
+  const _ExploreSectionLabel({
+    required this.icon,
+    required this.title,
     required this.primary,
-    required this.loading,
-    required this.onClear,
-    required this.onSubmitted,
   });
 
-  final TextEditingController controller;
-  final FocusNode focusNode;
-  final String hint;
-  final bool isDark;
+  final IconData icon;
+  final String title;
   final Color primary;
-  final bool loading;
-  final VoidCallback onClear;
-  final ValueChanged<String> onSubmitted;
-
-  static const _height = 52.0;
-  static const _radius = 26.0;
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: Listenable.merge([controller, focusNode]),
-      builder: (context, _) {
-        final focused = focusNode.hasFocus;
-        final hasText = controller.text.isNotEmpty;
-        final active = focused || hasText;
-        final fillColor = isDark
-            ? (active ? const Color(0xFF1C1C1C) : const Color(0xFF161616))
-            : (active ? const Color(0xFFFFF8F7) : const Color(0xFFF9FAFB));
-
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOutCubic,
-          height: _height,
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(_radius),
-            color: fillColor,
-            border: Border.all(
-              color: active
-                  ? primary.withValues(alpha: isDark ? 0.5 : 0.4)
-                  : (isDark ? const Color(0xFF2E2E2E) : const Color(0xFFE5E7EB)),
-              width: active ? 1.5 : 1,
-            ),
-            boxShadow: [
-              if (!isDark && active)
-                BoxShadow(
-                  color: primary.withValues(alpha: 0.08),
-                  blurRadius: 14,
-                  offset: const Offset(0, 4),
-                ),
-            ],
+            color: primary.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
           ),
-          alignment: Alignment.center,
-          child: TextField(
-            controller: controller,
-            focusNode: focusNode,
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: hasText ? FontWeight.w500 : FontWeight.w400,
-              color: isDark ? const Color(0xFFF3F4F6) : const Color(0xFF111827),
-              height: 1.2,
-            ),
-            cursorColor: primary,
-            textInputAction: TextInputAction.search,
-            decoration: InputDecoration(
-              hintText: hint,
-              hintStyle: TextStyle(
-                fontSize: 15,
-                color: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF),
+          child: Icon(icon, size: 16, color: primary),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w700,
               ),
-              border: InputBorder.none,
-              isDense: true,
-              contentPadding: const EdgeInsets.symmetric(vertical: 14),
-              prefixIcon: Icon(
-                Icons.search_rounded,
-                size: 22,
-                color: active
-                    ? primary
-                    : (isDark ? const Color(0xFF9CA3AF) : const Color(0xFF9CA3AF)),
-              ),
-              prefixIconConstraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-              suffixIcon: loading
-                  ? Padding(
-                      padding: const EdgeInsets.only(right: 12),
-                      child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: primary),
-                      ),
-                    )
-                  : hasText
-                      ? IconButton(
-                          icon: Icon(
-                            Icons.cancel_rounded,
-                            size: 20,
-                            color: isDark ? const Color(0xFF6B7280) : const Color(0xFFB0B7C3),
-                          ),
-                          onPressed: onClear,
-                          splashRadius: 18,
-                        )
-                      : null,
-            ),
-            onSubmitted: onSubmitted,
-          ),
-        );
-      },
+        ),
+      ],
     );
   }
 }
 
-class _ExploreFilterChips extends StatelessWidget {
-  const _ExploreFilterChips({
-    required this.filter,
-    required this.isDark,
+class _ExploreFeedSectionHeader extends StatelessWidget {
+  const _ExploreFeedSectionHeader({
+    required this.title,
+    required this.count,
+    required this.showingSaved,
     required this.primary,
-    required this.onChanged,
+    required this.isDark,
   });
 
-  final _ExploreFilter filter;
-  final bool isDark;
+  final String title;
+  final int count;
+  final bool showingSaved;
   final Color primary;
-  final ValueChanged<_ExploreFilter> onChanged;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
-    const options = [
-      (_ExploreFilter.all, 'Tất cả', Icons.grid_view_rounded),
-      (_ExploreFilter.place, 'Địa điểm', Icons.place_rounded),
-      (_ExploreFilter.document, 'Tài liệu', Icons.menu_book_rounded),
-    ];
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          for (final (f, label, icon) in options) ...[
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: FilterChip(
-                selected: filter == f,
-                showCheckmark: false,
-                avatar: Icon(
-                  icon,
-                  size: 16,
-                  color: filter == f ? Colors.white : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
-                ),
-                label: Text(label),
-                labelStyle: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                  color: filter == f ? Colors.white : null,
-                ),
-                selectedColor: primary,
-                backgroundColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF3F4F6),
-                side: BorderSide(
-                  color: filter == f ? primary : (isDark ? const Color(0xFF2D2D2D) : const Color(0xFFE5E7EB)),
-                ),
-                onSelected: (_) => onChanged(f),
+    return Row(
+      children: [
+        Text(
+          title,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.2,
               ),
-            ),
-          ],
+        ),
+        if (showingSaved) ...[
+          const SizedBox(width: 6),
+          const Icon(Icons.bookmark_rounded, size: 18, color: Color(0xFFF59E0B)),
         ],
-      ),
+        const Spacer(),
+        if (count > 0)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+            decoration: BoxDecoration(
+              color: primary.withValues(alpha: isDark ? 0.18 : 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              '$count',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: primary),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -644,10 +515,10 @@ class _ExploreStatsStrip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1A1A1A) : primary.withValues(alpha: 0.06),
+        color: AppColors.primaryTint(context),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: isDark ? const Color(0xFF2D2D2D) : primary.withValues(alpha: 0.12),
+          color: primary.withValues(alpha: isDark ? 0.2 : 0.12),
         ),
       ),
       child: Row(
@@ -657,7 +528,7 @@ class _ExploreStatsStrip extends StatelessWidget {
             width: 1,
             height: 28,
             margin: const EdgeInsets.symmetric(horizontal: 12),
-            color: isDark ? const Color(0xFF353535) : const Color(0xFFE5E7EB),
+            color: AppColors.border(context),
           ),
           _StatPill(icon: Icons.menu_book_rounded, count: docCount, label: 'tài liệu', color: const Color(0xFF3B82F6)),
           const Spacer(),
@@ -702,8 +573,8 @@ class _StatPill extends StatelessWidget {
           style: TextStyle(
             fontSize: 12,
             color: Theme.of(context).brightness == Brightness.dark
-                ? const Color(0xFF9CA3AF)
-                : const Color(0xFF6B7280),
+                ? AppColors.muted(context)
+                : AppColors.muted(context),
           ),
         ),
       ],
@@ -839,7 +710,7 @@ class _SpotlightCard extends StatelessWidget {
     final accent = isPlace ? const Color(0xFFEF4444) : const Color(0xFF3B82F6);
 
     return Material(
-      color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+      color: AppColors.card(context),
       borderRadius: BorderRadius.circular(14),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -850,7 +721,7 @@ class _SpotlightCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: isDark ? const Color(0xFF2D2D2D) : const Color(0xFFE5E7EB),
+              color: AppColors.border(context),
             ),
           ),
           child: Column(
@@ -1017,7 +888,7 @@ class _ExploreFeedCard extends StatelessWidget {
     final label = isPlace ? 'Địa điểm' : 'Tài liệu';
 
     return Material(
-      color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+      color: AppColors.card(context),
       borderRadius: BorderRadius.circular(16),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -1027,7 +898,7 @@ class _ExploreFeedCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isDark ? const Color(0xFF2D2D2D) : const Color(0xFFE5E7EB),
+              color: AppColors.border(context),
             ),
           ),
           child: Row(
@@ -1177,8 +1048,7 @@ class _ExploreLoadingView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final skeleton = isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF3F4F6);
+    final skeleton = AppColors.chipBg(context);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 100),

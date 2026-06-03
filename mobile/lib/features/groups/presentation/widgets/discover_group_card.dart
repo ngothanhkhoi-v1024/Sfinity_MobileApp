@@ -26,7 +26,7 @@ class _DiscoverGroupCardState extends State<DiscoverGroupCard> {
     final cs = theme.colorScheme;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
       decoration: BoxDecoration(
         color: cs.surface,
         borderRadius: BorderRadius.circular(18),
