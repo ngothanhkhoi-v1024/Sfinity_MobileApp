@@ -82,6 +82,14 @@
           }
         },
         {
+          "client_id": "947472672630-o6fak1supils31ngjnpmrfpg3p03ir33.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.sfinity.sfinity",
+            "certificate_hash": "0be6ad4aab7470491fcc8102201daaa10612443c"
+          }
+        },
+        {
           "client_id": "947472672630-eesvq40cn6mfoa16qnadusgpjph5qpdv.apps.googleusercontent.com",
           "client_type": 3
         }
