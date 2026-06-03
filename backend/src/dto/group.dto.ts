@@ -18,6 +18,10 @@ export class CreateGroupDto {
   @IsString()
   @IsOptional()
   avatarUrl?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  autoApprove?: boolean;
 }
 
 export class UpdateGroupDto {
@@ -38,6 +42,10 @@ export class UpdateGroupDto {
   @IsString()
   @IsOptional()
   avatarUrl?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  autoApprove?: boolean;
 }
 
 export class AddGroupMemberDto {

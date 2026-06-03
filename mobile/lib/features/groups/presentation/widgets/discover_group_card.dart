@@ -6,10 +6,12 @@ class DiscoverGroupCard extends StatefulWidget {
     super.key,
     required this.group,
     required this.onJoin,
+    this.onCancel,
   });
 
   final GroupModel group;
   final Future<void> Function() onJoin;
+  final Future<void> Function()? onCancel;
 
   @override
   State<DiscoverGroupCard> createState() => _DiscoverGroupCardState();
@@ -89,25 +91,48 @@ class _DiscoverGroupCardState extends State<DiscoverGroupCard> {
                     height: 24,
                     child: CircularProgressIndicator(strokeWidth: 2.5),
                   )
-                : FilledButton(
-                    onPressed: () async {
-                      setState(() => _isJoining = true);
-                      try {
-                        await widget.onJoin();
-                      } finally {
-                        if (mounted) setState(() => _isJoining = false);
-                      }
-                    },
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                : widget.group.myStatus == 'PENDING'
+                    ? OutlinedButton(
+                        onPressed: () async {
+                          if (widget.onCancel == null) return;
+                          setState(() => _isJoining = true);
+                          try {
+                            await widget.onCancel!();
+                          } finally {
+                            if (mounted) setState(() => _isJoining = false);
+                          }
+                        },
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.orange.shade800,
+                          side: BorderSide(color: Colors.orange.shade400),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text('Hủy yêu cầu', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      )
+                    : FilledButton(
+                        onPressed: () async {
+                          setState(() => _isJoining = true);
+                          try {
+                            await widget.onJoin();
+                          } finally {
+                            if (mounted) setState(() => _isJoining = false);
+                          }
+                        },
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text('Gia nhập', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                       ),
-                    ),
-                    child: const Text('Gia nhập', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                  ),
           ],
         ),
       ),

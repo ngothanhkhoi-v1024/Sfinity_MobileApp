@@ -12,6 +12,7 @@ import '../../features/friendships/presentation/pages/friends_page.dart';
 import '../../features/groups/presentation/pages/group_chat_page.dart';
 import '../../features/groups/presentation/pages/group_detail_page.dart';
 import '../../features/groups/presentation/pages/group_list_page.dart';
+import '../../features/groups/presentation/pages/group_form_page.dart';
 import '../../features/home/presentation/pages/home_shell_page.dart';
 import '../../features/places/presentation/pages/place_detail_page.dart';
 import '../../features/places/presentation/pages/place_share_page.dart';
@@ -63,7 +64,14 @@ GoRouter createAppRouter(AuthState auth) {
       GoRoute(path: RouteNames.register, builder: (_, __) => const RegisterPage()),
       GoRoute(path: RouteNames.forgotPassword, builder: (_, __) => const ForgotPasswordPage()),
       GoRoute(path: RouteNames.otpVerification, builder: (_, __) => const OtpVerificationPage()),
-      GoRoute(path: RouteNames.home, builder: (_, __) => const HomeShellPage()),
+      GoRoute(
+        path: RouteNames.home,
+        builder: (_, state) {
+          final tabStr = state.uri.queryParameters['tab'];
+          final initialTab = tabStr != null ? (int.tryParse(tabStr) ?? 0) : 0;
+          return HomeShellPage(initialTab: initialTab);
+        },
+      ),
       GoRoute(path: RouteNames.search, builder: (_, __) => const SearchPage()),
       GoRoute(path: RouteNames.favorites, builder: (_, __) => const FavoritesPage()),
       // /places/share phải đứng trước /places/:id, nếu không "share" bị match nhầm thành id.
@@ -116,6 +124,11 @@ GoRouter createAppRouter(AuthState auth) {
       // Group & Friends routes
       GoRoute(path: RouteNames.friends, builder: (_, __) => const FriendsPage()),
       GoRoute(path: RouteNames.groups, builder: (_, __) => const GroupListPage()),
+      GoRoute(path: RouteNames.groupCreate, builder: (_, __) => const GroupFormPage()),
+      GoRoute(
+        path: RouteNames.groupEdit,
+        builder: (_, state) => GroupFormPage(groupId: state.pathParameters['id']),
+      ),
       GoRoute(
         path: '/groups/:id',
         builder: (_, state) => GroupDetailPage(groupId: state.pathParameters['id']!),

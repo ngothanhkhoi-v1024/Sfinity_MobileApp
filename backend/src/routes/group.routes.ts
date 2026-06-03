@@ -95,11 +95,20 @@ groupRouter.delete(
   }),
 );
 
+/** Phê duyệt yêu cầu tham gia */
+groupRouter.post(
+  '/:id/members/:uid/approve',
+  asyncHandler(async (req, res) => {
+    res.json(await groupService.approveMember(req.params.id, req.user!.sub, req.params.uid));
+  }),
+);
+
 /** Rời nhóm */
 groupRouter.post(
   '/:id/leave',
   asyncHandler(async (req, res) => {
-    res.json(await groupService.leaveGroup(req.params.id, req.user!.sub));
+    const { newOwnerId } = req.body;
+    res.json(await groupService.leaveGroup(req.params.id, req.user!.sub, newOwnerId));
   }),
 );
 

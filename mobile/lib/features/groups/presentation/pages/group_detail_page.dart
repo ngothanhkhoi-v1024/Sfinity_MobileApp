@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../app.dart';
 import '../../../../core/auth/auth_state.dart';
+import '../../../../core/constants/route_names.dart';
 import '../../data/models/group_model.dart';
 import '../../data/services/group_chat_service.dart';
 import '../controllers/group_controller.dart';
@@ -128,46 +129,32 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         ),
         onPressed: () => context.pop(),
       ),
-      title: Column(
+      title: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                group.name,
-                style: TextStyle(
-                  color: isDark ? Colors.white : cs.onSurface,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16.5,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
-                decoration: BoxDecoration(
-                  color: group.isPublic ? const Color(0xFF4CAF50) : const Color(0xFFE53935),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  group.isPublic ? 'CÔNG KHAI' : 'RIÊNG TƯ',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 8.5,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 3),
           Text(
-            '${group.memberCount} thành viên • ${group.memberCount ~/ 3 + 1} đang online',
+            group.name,
             style: TextStyle(
-              fontSize: 11.5,
-              color: isDark ? Colors.white.withValues(alpha: 0.55) : cs.onSurface.withValues(alpha: 0.6),
-              fontWeight: FontWeight.w400,
+              color: isDark ? Colors.white : cs.onSurface,
+              fontWeight: FontWeight.bold,
+              fontSize: 16.5,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+            decoration: BoxDecoration(
+              color: group.isPublic ? const Color(0xFF4CAF50) : const Color(0xFFE53935),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              group.isPublic ? 'CÔNG KHAI' : 'RIÊNG TƯ',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 8.5,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.5,
+              ),
             ),
           ),
         ],
@@ -227,6 +214,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     final cs = theme.colorScheme;
     final isDark = cs.brightness == Brightness.dark;
     final isOwnerOrAdmin = group.isAdmin || group.members.any((m) => m.user.id == _userId && (m.role == 'OWNER' || m.role == 'ADMIN'));
+    final isGroupOwner = group.isOwner || group.creatorId == _userId || group.members.any((m) => m.user.id == _userId && m.role == 'OWNER');
 
     showModalBottomSheet(
       context: context,
@@ -234,7 +222,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (context) {
+      builder: (sheetCtx) {
         return SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -264,34 +252,34 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                   leading: Icon(Icons.edit_outlined, color: isDark ? Colors.white.withValues(alpha: 0.7) : cs.onSurfaceVariant),
                   title: const Text('Chỉnh sửa thông tin nhóm', style: TextStyle(fontWeight: FontWeight.w500)),
                   onTap: () {
-                    Navigator.pop(context);
-                    _showEditDialog(context, group);
+                    Navigator.pop(sheetCtx);
+                    context.push(RouteNames.groupEdit.replaceFirst(':id', group.id));
                   },
                 ),
                 ListTile(
                   leading: Icon(Icons.person_add_outlined, color: isDark ? Colors.white.withValues(alpha: 0.7) : cs.onSurfaceVariant),
                   title: const Text('Thêm thành viên', style: TextStyle(fontWeight: FontWeight.w500)),
                   onTap: () {
-                    Navigator.pop(context);
+                    Navigator.pop(sheetCtx);
                     _showInviteMemberSheet(context, group);
                   },
                 ),
               ],
-              if (group.isOwner)
+              if (isGroupOwner)
                 ListTile(
                   leading: Icon(Icons.delete_outline_rounded, color: cs.error),
                   title: Text('Giải tán nhóm', style: TextStyle(color: cs.error, fontWeight: FontWeight.w500)),
                   onTap: () {
-                    Navigator.pop(context);
+                    Navigator.pop(sheetCtx);
                     _confirmDelete(context, group);
                   },
                 ),
-              if (!group.isOwner)
+              if (!isGroupOwner || (isGroupOwner && group.members.length > 1))
                 ListTile(
                   leading: Icon(Icons.exit_to_app_rounded, color: cs.error),
                   title: Text('Rời khỏi nhóm', style: TextStyle(color: cs.error, fontWeight: FontWeight.w500)),
                   onTap: () {
-                    Navigator.pop(context);
+                    Navigator.pop(sheetCtx);
                     _confirmLeave(context, group);
                   },
                 ),
@@ -318,239 +306,216 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
 
   // ─── DIALOGS & HELPER METHODS ──────────────────────────────────────────────
 
-  Future<void> _showEditDialog(BuildContext context, GroupModel group) async {
-    final nameCtrl = TextEditingController(text: group.name);
-    final descCtrl = TextEditingController(text: group.description ?? '');
-    bool isPublic = group.isPublic;
 
-    await showDialog(
+
+  Future<String?> _showNewOwnerSelectDialog(BuildContext context, GroupModel group) async {
+    final otherMembers = group.members.where((m) => m.user.id != _myUid).toList();
+    if (otherMembers.isEmpty) return null;
+
+    GroupMemberModel? selectedMember = otherMembers.first;
+    String searchPattern = '';
+
+    return showDialog<String>(
       context: context,
-      barrierDismissible: true,
+      barrierColor: Colors.black.withValues(alpha: 0.4),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSt) {
-          final theme = Theme.of(ctx);
-          final cs = theme.colorScheme;
-          final isDark = cs.brightness == Brightness.dark;
+          final dialogTheme = Theme.of(ctx);
+          final dialogIsDark = dialogTheme.brightness == Brightness.dark;
+          final cs = dialogTheme.colorScheme;
+
+          final filteredMembers = otherMembers
+              .where((m) => m.user.name.toLowerCase().contains(searchPattern.toLowerCase()))
+              .toList();
 
           return Dialog(
-            backgroundColor: Colors.transparent,
-            insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+            backgroundColor: dialogIsDark ? const Color(0xFF242526) : Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+            ),
+            clipBehavior: Clip.antiAlias,
             child: Container(
-              constraints: const BoxConstraints(maxWidth: 400),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF161616) : cs.surface,
-                borderRadius: BorderRadius.circular(28),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.08),
-                    blurRadius: 24,
-                    offset: const Offset(0, 12),
-                  ),
-                ],
-                border: Border.all(
-                  color: isDark ? Colors.white.withValues(alpha: 0.06) : cs.outlineVariant.withValues(alpha: 0.3),
-                  width: 1,
-                ),
-              ),
+              constraints: const BoxConstraints(maxWidth: 360, maxHeight: 520),
+              padding: const EdgeInsets.all(24.0),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Header
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 20, 16, 8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Chỉnh sửa nhóm',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white : cs.onSurface,
-                            fontSize: 18,
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close_rounded),
-                          onPressed: () => Navigator.pop(ctx),
-                        ),
-                      ],
+                  const Text(
+                    'Chọn Trưởng nhóm mới',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Trước khi rời nhóm, bạn bắt buộc phải chuyển quyền Trưởng nhóm cho một thành viên khác.',
+                    style: dialogTheme.textTheme.bodyMedium?.copyWith(
+                      color: dialogIsDark ? const Color(0xFFB0B3B8) : const Color(0xFF65676B),
+                      fontSize: 13,
+                      height: 1.4,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    onChanged: (val) => setSt(() => searchPattern = val),
+                    style: TextStyle(
+                      color: dialogIsDark ? Colors.white : const Color(0xFF050505),
+                      fontSize: 13.5,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'Tìm kiếm thành viên...',
+                      hintStyle: TextStyle(
+                        color: dialogIsDark ? const Color(0xFFB0B3B8) : const Color(0xFF65676B),
+                        fontSize: 13,
+                      ),
+                      prefixIcon: Icon(
+                        Icons.search_rounded,
+                        color: dialogIsDark ? const Color(0xFFB0B3B8) : const Color(0xFF65676B),
+                        size: 20,
+                      ),
+                      filled: true,
+                      fillColor: dialogIsDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF0F2F5),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
                   ),
-                  const Divider(height: 1, thickness: 0.5),
-
-                  // Fields
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Tên nhóm học tập',
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.bold,
-                            color: cs.primary,
-                          ),
+                  const SizedBox(height: 12),
+                  Flexible(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: dialogIsDark ? Colors.white12 : Colors.grey.shade200,
+                          width: 0.8,
                         ),
-                        const SizedBox(height: 6),
-                        TextField(
-                          controller: nameCtrl,
-                          style: TextStyle(color: isDark ? Colors.white : cs.onSurface, fontSize: 14.5),
-                          decoration: InputDecoration(
-                            hintText: 'Nhập tên nhóm...',
-                            filled: true,
-                            fillColor: isDark ? const Color(0xFF242526) : cs.surfaceContainerHigh.withValues(alpha: 0.4),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.5)),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3)),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: cs.primary, width: 1.5),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        Text(
-                          'Mô tả nhóm',
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.bold,
-                            color: cs.primary,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        TextField(
-                          controller: descCtrl,
-                          maxLines: 3,
-                          style: TextStyle(color: isDark ? Colors.white : cs.onSurface, fontSize: 14.5),
-                          decoration: InputDecoration(
-                            hintText: 'Nhập mô tả ngắn cho nhóm...',
-                            filled: true,
-                            fillColor: isDark ? const Color(0xFF242526) : cs.surfaceContainerHigh.withValues(alpha: 0.4),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.5)),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3)),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: cs.primary, width: 1.5),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
-                            color: isDark ? const Color(0xFF1E1E1E) : cs.surfaceContainerHigh.withValues(alpha: 0.3),
-                          ),
-                          child: SwitchListTile(
-                            title: Text(
-                              'Nhóm công khai',
-                              style: TextStyle(
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w600,
-                                color: isDark ? Colors.white.withValues(alpha: 0.9) : cs.onSurface,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: filteredMembers.isEmpty
+                          ? Padding(
+                              padding: const EdgeInsets.all(24.0),
+                              child: Text(
+                                'Không tìm thấy thành viên',
+                                style: TextStyle(
+                                  color: dialogIsDark ? const Color(0xFFB0B3B8) : const Color(0xFF65676B),
+                                  fontSize: 13,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            )
+                          : Scrollbar(
+                              thumbVisibility: true,
+                              child: ListView.separated(
+                                shrinkWrap: true,
+                                physics: const BouncingScrollPhysics(),
+                                itemCount: filteredMembers.length,
+                                separatorBuilder: (context, index) => Divider(
+                                  height: 1,
+                                  color: dialogIsDark ? Colors.white12 : Colors.grey.shade100,
+                                ),
+                                itemBuilder: (ctx, idx) {
+                                  final m = filteredMembers[idx];
+                                  return InkWell(
+                                    onTap: () => setSt(() => selectedMember = m),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                      child: Row(
+                                        children: [
+                                          CircleAvatar(
+                                            radius: 18,
+                                            backgroundImage: m.user.avatar != null && m.user.avatar!.isNotEmpty
+                                                ? NetworkImage(m.user.avatar!)
+                                                : null,
+                                            child: m.user.avatar == null || m.user.avatar!.isEmpty
+                                                ? Text(
+                                                    m.user.name.isNotEmpty ? m.user.name[0].toUpperCase() : '?',
+                                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                                  )
+                                                : null,
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Text(
+                                              m.user.name,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                          ),
+                                          Radio<String>(
+                                            value: m.user.id,
+                                            groupValue: selectedMember?.user.id,
+                                            activeColor: cs.primary,
+                                            onChanged: (_) => setSt(() => selectedMember = m),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
                             ),
-                            subtitle: Text(
-                              isPublic ? 'Mọi người có thể tìm và tham gia' : 'Chỉ những ai được mời mới có thể tham gia',
-                              style: TextStyle(fontSize: 10.5, color: cs.onSurfaceVariant.withValues(alpha: 0.7)),
-                            ),
-                            value: isPublic,
-                            activeColor: cs.primary,
-                            onChanged: (v) => setSt(() => isPublic = v),
-                            contentPadding: EdgeInsets.zero,
-                          ),
-                        ),
-                      ],
                     ),
                   ),
-
-                  // Actions
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                    child: Row(
-                      children: [
-                        Expanded(
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: 44,
                           child: OutlinedButton(
-                            onPressed: () => Navigator.pop(ctx),
                             style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              side: BorderSide.none,
+                              backgroundColor: dialogIsDark
+                                  ? Colors.white.withValues(alpha: 0.08)
+                                  : const Color(0xFFF0F2F5),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(13),
                               ),
-                              side: BorderSide(color: cs.outline),
                             ),
+                            onPressed: () => Navigator.pop(ctx, null),
                             child: Text(
                               'Hủy',
                               style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: cs.outline,
+                                color: dialogIsDark ? Colors.white70 : const Color(0xFF65676B),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
                               ),
                             ),
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(16),
-                              gradient: LinearGradient(
-                                colors: [cs.primary, cs.primary.withValues(alpha: 0.85)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: SizedBox(
+                          height: 44,
+                          child: FilledButton(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: cs.primary,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(13),
                               ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: cs.primary.withValues(alpha: 0.3),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
+                              elevation: 0,
                             ),
-                            child: ElevatedButton(
-                              onPressed: () async {
-                                await _groupCtrl.updateGroup(
-                                  group.id,
-                                  name: nameCtrl.text.trim().isEmpty ? null : nameCtrl.text.trim(),
-                                  description: descCtrl.text.trim(),
-                                  isPublic: isPublic,
-                                );
-                                if (ctx.mounted) Navigator.pop(ctx);
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.transparent,
-                                shadowColor: Colors.transparent,
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                              ),
-                              child: const Text(
-                                'Lưu',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
+                            onPressed: () => Navigator.pop(ctx, selectedMember?.user.id),
+                            child: const Text(
+                              'Xác nhận',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
                               ),
                             ),
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -562,26 +527,133 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   }
 
   Future<void> _confirmLeave(BuildContext context, GroupModel group) async {
+    final isOwner = group.creatorId == _myUid || group.isOwner || group.members.any((m) => m.user.id == _myUid && m.role == 'OWNER');
+    String? newOwnerId;
+
+    if (isOwner) {
+      newOwnerId = await _showNewOwnerSelectDialog(context, group);
+      if (newOwnerId == null) return; // Abort if cancelled
+      if (!context.mounted) return;
+    }
+
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Rời nhóm', style: TextStyle(fontWeight: FontWeight.bold)),
-        content: Text('Bạn có chắc chắn muốn rời nhóm học tập "${group.name}"?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Hủy')),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Rời nhóm'),
+      barrierColor: Colors.black.withValues(alpha: 0.4),
+      builder: (ctx) {
+        final dialogTheme = Theme.of(ctx);
+        final dialogIsDark = dialogTheme.brightness == Brightness.dark;
+
+        return Dialog(
+          backgroundColor: dialogIsDark ? const Color(0xFF242526) : Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
           ),
-        ],
-      ),
+          clipBehavior: Clip.antiAlias,
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: Colors.red.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.logout_rounded,
+                      color: Colors.red,
+                      size: 28,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Rời nhóm?',
+                  style: dialogTheme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 18,
+                    color: dialogIsDark ? Colors.white : const Color(0xFF050505),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Bạn có chắc chắn muốn rời nhóm học tập "${group.name}"?',
+                  style: dialogTheme.textTheme.bodyMedium?.copyWith(
+                    color: dialogIsDark ? const Color(0xFFB0B3B8) : const Color(0xFF65676B),
+                    fontSize: 13,
+                    height: 1.4,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 46,
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide.none,
+                            backgroundColor: dialogIsDark
+                                ? Colors.white.withValues(alpha: 0.08)
+                                : const Color(0xFFF0F2F5),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(13),
+                            ),
+                          ),
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: Text(
+                            'Hủy',
+                            style: TextStyle(
+                              color: dialogIsDark ? Colors.white70 : const Color(0xFF65676B),
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: SizedBox(
+                        height: 46,
+                        child: FilledButton(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(13),
+                            ),
+                            elevation: 0,
+                          ),
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: const Text(
+                            'Rời nhóm',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
     if (confirmed == true) {
-      final ok = await _groupCtrl.leaveGroup(group.id);
+      final ok = await _groupCtrl.leaveGroup(group.id, newOwnerId: newOwnerId);
       if (context.mounted) {
         if (ok) {
-          context.pop();
+          context.go('/?tab=3');
         } else {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_groupCtrl.error ?? 'Lỗi')));
         }
@@ -592,24 +664,122 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   Future<void> _confirmDelete(BuildContext context, GroupModel group) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Xóa nhóm', style: TextStyle(fontWeight: FontWeight.bold)),
-        content: Text('Bạn có chắc chắn muốn xóa nhóm "${group.name}"? Tất cả lịch sử tin nhắn sẽ bị xóa vĩnh viễn.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Hủy')),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Xóa nhóm'),
+      barrierColor: Colors.black.withValues(alpha: 0.4),
+      builder: (ctx) {
+        final dialogTheme = Theme.of(ctx);
+        final dialogIsDark = dialogTheme.brightness == Brightness.dark;
+
+        return Dialog(
+          backgroundColor: dialogIsDark ? const Color(0xFF242526) : Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
           ),
-        ],
-      ),
+          clipBehavior: Clip.antiAlias,
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: Colors.red.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.delete_outline_rounded,
+                      color: Colors.red,
+                      size: 28,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Giải tán nhóm?',
+                  style: dialogTheme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 18,
+                    color: dialogIsDark ? Colors.white : const Color(0xFF050505),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Bạn có chắc chắn muốn xóa nhóm "${group.name}"? Tất cả lịch sử tin nhắn sẽ bị xóa vĩnh viễn.',
+                  style: dialogTheme.textTheme.bodyMedium?.copyWith(
+                    color: dialogIsDark ? const Color(0xFFB0B3B8) : const Color(0xFF65676B),
+                    fontSize: 13,
+                    height: 1.4,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 46,
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide.none,
+                            backgroundColor: dialogIsDark
+                                ? Colors.white.withValues(alpha: 0.08)
+                                : const Color(0xFFF0F2F5),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(13),
+                            ),
+                          ),
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: Text(
+                            'Hủy',
+                            style: TextStyle(
+                              color: dialogIsDark ? Colors.white70 : const Color(0xFF65676B),
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: SizedBox(
+                        height: 46,
+                        child: FilledButton(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(13),
+                            ),
+                            elevation: 0,
+                          ),
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: const Text(
+                            'Giải tán',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
     if (confirmed == true) {
       final ok = await _groupCtrl.deleteGroup(group.id);
       if (context.mounted) {
         if (ok) {
-          context.pop();
+          context.go('/?tab=3');
         } else {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_groupCtrl.error ?? 'Lỗi')));
         }

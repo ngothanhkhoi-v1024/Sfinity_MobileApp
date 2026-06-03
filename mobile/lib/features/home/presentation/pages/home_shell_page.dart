@@ -13,7 +13,8 @@ import 'explore_page.dart';
 
 /// Shell chính: pill nav với 5 tab (Khám phá, Địa điểm, Tài liệu, Cộng đồng, Cá nhân).
 class HomeShellPage extends StatefulWidget {
-  const HomeShellPage({super.key});
+  const HomeShellPage({super.key, this.initialTab = 0});
+  final int initialTab;
 
   @override
   State<HomeShellPage> createState() => _HomeShellPageState();
@@ -21,7 +22,7 @@ class HomeShellPage extends StatefulWidget {
 
 class _HomeShellPageState extends State<HomeShellPage> {
   /// 0 Khám phá, 1 Địa điểm, 2 Tài liệu, 3 Cộng đồng, 4 Cá nhân.
-  int _navIndex = 0;
+  late int _navIndex;
 
   late final List<Widget> _pages = const [
     ExplorePage(),
@@ -34,6 +35,7 @@ class _HomeShellPageState extends State<HomeShellPage> {
   @override
   void initState() {
     super.initState();
+    _navIndex = widget.initialTab;
     PlacesMapFocus.pending.addListener(_onPlacesMapFocus);
   }
 

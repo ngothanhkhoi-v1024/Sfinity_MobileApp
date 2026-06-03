@@ -75,7 +75,7 @@ class _CommunityPageState extends State<CommunityPage>
                 IconButton(
                   icon: Icon(Icons.add_circle_outline, color: cs.primary),
                   tooltip: 'Tạo nhóm',
-                  onPressed: () => _showCreateGroupDialog(context),
+                  onPressed: () => context.push(RouteNames.groupCreate),
                 ),
             ],
             bottom: TabBar(
@@ -184,7 +184,7 @@ class _CommunityPageState extends State<CommunityPage>
 
     final myGroups = _groupCtrl.groups;
     if (myGroups.isEmpty) {
-      return GroupEmptyState(onCreateGroup: () => _showCreateGroupDialog(context));
+      return GroupEmptyState(onCreateGroup: () => context.push(RouteNames.groupCreate));
     }
 
     return RefreshIndicator(
@@ -805,13 +805,30 @@ class _CommunityPageState extends State<CommunityPage>
                             SnackBar(
                               content: Text(
                                 success
-                                    ? 'Đã gia nhập "${group.name}" thành công!'
+                                    ? (group.autoApprove
+                                        ? 'Đã gia nhập "${group.name}" thành công!'
+                                        : 'Yêu cầu gia nhập "${group.name}" đã được gửi và đang chờ duyệt!')
                                     : (_groupCtrl.error ??
                                         'Đã có lỗi xảy ra'),
                               ),
                               backgroundColor: success
                                   ? Colors.green.shade700
                                   : cs.error,
+                            ),
+                          );
+                        }
+                      },
+                      onCancel: () async {
+                        final success = await _groupCtrl.leaveGroup(group.id);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                success
+                                    ? 'Đã hủy yêu cầu tham gia "${group.name}"!'
+                                    : (_groupCtrl.error ?? 'Đã có lỗi xảy ra'),
+                              ),
+                              backgroundColor: success ? Colors.blue.shade700 : cs.error,
                             ),
                           );
                         }
@@ -829,89 +846,5 @@ class _CommunityPageState extends State<CommunityPage>
 
   // ─── Create Group Dialog ─────────────────────────────────────────────────
 
-  Future<void> _showCreateGroupDialog(BuildContext context) async {
-    final nameCtrl = TextEditingController();
-    final descCtrl = TextEditingController();
-    bool isPublic = false;
 
-    await showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSt) => AlertDialog(
-          title: const Text('Tạo nhóm mới',
-              style: TextStyle(fontWeight: FontWeight.bold)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Tên nhóm *',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.group),
-                ),
-                textCapitalization: TextCapitalization.words,
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: descCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Mô tả (tùy chọn)',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.description_outlined),
-                ),
-                maxLines: 2,
-              ),
-              const SizedBox(height: 12),
-              SwitchListTile(
-                title: const Text('Nhóm công khai'),
-                subtitle: const Text('Bất kỳ ai cũng có thể tìm và gia nhập'),
-                value: isPublic,
-                onChanged: (v) => setSt(() => isPublic = v),
-                contentPadding: EdgeInsets.zero,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Hủy'),
-            ),
-            ListenableBuilder(
-              listenable: _groupCtrl,
-              builder: (_, child) => FilledButton(
-                onPressed: _groupCtrl.isSaving
-                    ? null
-                    : () async {
-                        if (nameCtrl.text.trim().isEmpty) return;
-                        final group = await _groupCtrl.createGroup(
-                          name: nameCtrl.text.trim(),
-                          description: descCtrl.text.trim().isEmpty
-                              ? null
-                              : descCtrl.text.trim(),
-                          isPublic: isPublic,
-                        );
-                        if (ctx.mounted) Navigator.pop(ctx);
-                        if (group != null && context.mounted) {
-                          context.push(
-                            RouteNames.groupDetail
-                                .replaceFirst(':id', group.id),
-                          );
-                        }
-                      },
-                child: _groupCtrl.isSaving
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white),
-                      )
-                    : const Text('Tạo nhóm'),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

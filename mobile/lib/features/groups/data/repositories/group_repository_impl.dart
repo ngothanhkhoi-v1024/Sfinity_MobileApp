@@ -13,12 +13,12 @@ class GroupRepositoryImpl implements GroupRepository {
   Future<GroupModel> getGroup(String groupId) => _service.getGroup(groupId);
 
   @override
-  Future<GroupModel> createGroup({required String name, String? description, bool isPublic = false}) =>
-      _service.createGroup(name: name, description: description, isPublic: isPublic);
+  Future<GroupModel> createGroup({required String name, String? description, bool isPublic = false, bool autoApprove = true}) =>
+      _service.createGroup(name: name, description: description, isPublic: isPublic, autoApprove: autoApprove);
 
   @override
-  Future<GroupModel> updateGroup(String groupId, {String? name, String? description, bool? isPublic, String? avatarUrl}) =>
-      _service.updateGroup(groupId, name: name, description: description, isPublic: isPublic, avatarUrl: avatarUrl);
+  Future<GroupModel> updateGroup(String groupId, {String? name, String? description, bool? isPublic, String? avatarUrl, bool? autoApprove}) =>
+      _service.updateGroup(groupId, name: name, description: description, isPublic: isPublic, avatarUrl: avatarUrl, autoApprove: autoApprove);
 
   @override
   Future<void> deleteGroup(String groupId) => _service.deleteGroup(groupId);
@@ -30,7 +30,10 @@ class GroupRepositoryImpl implements GroupRepository {
   Future<void> removeMember(String groupId, String userId) => _service.removeMember(groupId, userId);
 
   @override
-  Future<void> leaveGroup(String groupId) => _service.leaveGroup(groupId);
+  Future<void> approveMember(String groupId, String userId) => _service.approveMember(groupId, userId);
+
+  @override
+  Future<void> leaveGroup(String groupId, {String? newOwnerId}) => _service.leaveGroup(groupId, newOwnerId: newOwnerId);
 
   @override
   Future<List<GroupModel>> discoverPublicGroups() => _service.discoverPublicGroups();
