@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../app.dart';
 import '../../../../core/constants/route_names.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../controllers/group_controller.dart';
 import '../widgets/group_card.dart';
 import '../widgets/discover_group_card.dart';
@@ -30,37 +31,38 @@ class _GroupListPageState extends State<GroupListPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final cs = Theme.of(context).colorScheme;
 
     return DefaultTabController(
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text(
-            'Nhóm học tập',
-            style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.2),
+          title: Text(
+            l10n.studyGroups,
+            style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.2),
           ),
           actions: [
             IconButton(
               icon: const Icon(Icons.person_add_outlined),
-              tooltip: 'Bạn bè',
+              tooltip: l10n.friends,
               onPressed: () => context.push(RouteNames.friends),
             ),
             IconButton(
               icon: Icon(Icons.add_circle_outline, color: cs.primary),
-              tooltip: 'Tạo nhóm',
+              tooltip: l10n.createGroup,
               onPressed: () => context.push(RouteNames.groupCreate),
             ),
           ],
           bottom: TabBar(
-            tabs: const [
+            tabs:  [
               Tab(
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.group_outlined, size: 18),
-                    SizedBox(width: 8),
-                    Text('Nhóm của tôi', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Icon(Icons.group_outlined, size: 18),
+                    const SizedBox(width: 8),
+                    Text(l10n.myGroups, style: const TextStyle(fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
@@ -68,9 +70,9 @@ class _GroupListPageState extends State<GroupListPage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.explore_outlined, size: 18),
-                    SizedBox(width: 8),
-                    Text('Khám phá', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Icon(Icons.explore_outlined, size: 18),
+                    const SizedBox(width: 8),
+                    Text(l10n.exploreGroups, style: const TextStyle(fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
@@ -93,6 +95,7 @@ class _GroupListPageState extends State<GroupListPage> {
   }
 
   Widget _buildMyGroupsTab(BuildContext context, ColorScheme cs) {
+    final l10n = context.l10n;
     final isDark = cs.brightness == Brightness.dark;
 
     return ListenableBuilder(
@@ -134,7 +137,7 @@ class _GroupListPageState extends State<GroupListPage> {
                       Icon(Icons.mail_outline_rounded, color: cs.primary, size: 20),
                       const SizedBox(width: 8),
                       Text(
-                        'Lời mời tham gia nhóm học tập (${invites.length})',
+                        l10n.inviteReceived(invites.length),
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w800,
@@ -146,10 +149,10 @@ class _GroupListPageState extends State<GroupListPage> {
                   ),
                 ),
                 ...invites.map((inv) {
-                  final inviteId = inv['id']?.toString() ?? '';
-                  final groupName = inv['groupName']?.toString() ?? 'Nhóm học tập';
-                  final inviterName = inv['inviterName']?.toString() ?? 'Ai đó';
-                  final avatarUrl = inv['groupAvatarUrl']?.toString();
+                  final inviteId = (inv['id'] as Object?)?.toString() ?? '';
+                  final groupName = (inv['groupName'] as Object?)?.toString() ?? l10n.groupStudy;
+                  final inviterName = (inv['inviterName'] as Object?)?.toString() ?? l10n.someone;
+                  final avatarUrl = (inv['groupAvatarUrl'] as Object?)?.toString();
 
                   return Container(
                     margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -207,7 +210,7 @@ class _GroupListPageState extends State<GroupListPage> {
                                       text: inviterName,
                                       style: const TextStyle(fontWeight: FontWeight.bold),
                                     ),
-                                    const TextSpan(text: ' mời bạn tham gia nhóm '),
+                                    TextSpan(text: l10n.invitedYou),
                                     TextSpan(
                                       text: '"$groupName"',
                                       style: TextStyle(
@@ -233,8 +236,8 @@ class _GroupListPageState extends State<GroupListPage> {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(ok
-                                          ? 'Đã từ chối lời mời vào nhóm "$groupName"'
-                                          : 'Từ chối lời mời thất bại. Vui lòng thử lại.'),
+                                          ? l10n.declineInviteSuccess(groupName)
+                                          : l10n.declineInviteFailed()),
                                     ),
                                   );
                                 }
@@ -247,7 +250,7 @@ class _GroupListPageState extends State<GroupListPage> {
                                 ),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
-                              child: const Text('Từ chối', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+                              child: Text(l10n.decline, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
                             ),
                             const SizedBox(width: 8),
                             // Nút Chấp nhận (Accept)
@@ -267,8 +270,8 @@ class _GroupListPageState extends State<GroupListPage> {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(ok
-                                            ? 'Chúc mừng! Bạn đã gia nhập nhóm "$groupName"'
-                                            : 'Gia nhập nhóm thất bại. Vui lòng thử lại.'),
+                                            ? l10n.acceptInviteSuccess(groupName)
+                                            : l10n.acceptInviteFailed()),
                                         backgroundColor: ok ? Colors.green.shade700 : null,
                                       ),
                                     );
@@ -281,7 +284,7 @@ class _GroupListPageState extends State<GroupListPage> {
                                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                 ),
-                                child: const Text('Chấp nhận', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                                child: Text(l10n.accept, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                               ),
                             ),
                           ],
@@ -304,7 +307,7 @@ class _GroupListPageState extends State<GroupListPage> {
                       Icon(Icons.group_outlined, size: 40, color: cs.onSurfaceVariant.withValues(alpha: 0.3)),
                       const SizedBox(height: 12),
                       Text(
-                        'Bạn chưa tham gia nhóm nào.\nHãy đồng ý lời mời hoặc tạo nhóm mới!',
+                        l10n.noGroupsYet2,
                         style: TextStyle(color: cs.onSurfaceVariant.withValues(alpha: 0.7), height: 1.4),
                         textAlign: TextAlign.center,
                       ),
@@ -327,6 +330,7 @@ class _GroupListPageState extends State<GroupListPage> {
   }
 
   Widget _buildDiscoverTab(BuildContext context, ColorScheme cs) {
+    final l10n = context.l10n;
     return ListenableBuilder(
       listenable: _ctrl,
       builder: (context, _) {
@@ -346,7 +350,7 @@ class _GroupListPageState extends State<GroupListPage> {
                 child: TextField(
                   onChanged: (val) => setState(() => _searchQuery = val.trim()),
                   decoration: InputDecoration(
-                    hintText: 'Tìm kiếm nhóm học tập công khai...',
+                    hintText: l10n.searchPublicGroups,
                     prefixIcon: const Icon(Icons.search),
                     suffixIcon: _searchQuery.isNotEmpty
                         ? IconButton(
@@ -386,8 +390,8 @@ class _GroupListPageState extends State<GroupListPage> {
                             const SizedBox(height: 12),
                             Text(
                               _searchQuery.isEmpty
-                                  ? 'Không có nhóm mới để khám phá'
-                                  : 'Không tìm thấy nhóm phù hợp',
+                                  ? l10n.noGroupsNewExplore
+                                  : l10n.noGroupsMatch,
                               style: TextStyle(color: cs.onSurfaceVariant),
                             ),
                           ],
@@ -408,10 +412,8 @@ class _GroupListPageState extends State<GroupListPage> {
                                 SnackBar(
                                   content: Text(
                                     success
-                                        ? (group.autoApprove
-                                            ? 'Đã gia nhập "${group.name}" thành công!'
-                                            : 'Yêu cầu gia nhập "${group.name}" đã được gửi và đang chờ duyệt!')
-                                        : (_ctrl.error ?? 'Đã có lỗi xảy ra'),
+                                        ? l10n.joinGroupSuccess(group.name)
+                                        : l10n.joinGroupPending(group.name),
                                   ),
                                   backgroundColor: success ? Colors.green.shade700 : cs.error,
                                 ),
@@ -425,8 +427,8 @@ class _GroupListPageState extends State<GroupListPage> {
                                 SnackBar(
                                   content: Text(
                                     success
-                                        ? 'Đã hủy yêu cầu tham gia "${group.name}"!'
-                                        : (_ctrl.error ?? 'Đã có lỗi xảy ra'),
+                                        ? l10n.cancelRequestSuccess(group.name)
+                                        : l10n.errorOccurred,
                                   ),
                                   backgroundColor: success ? Colors.blue.shade700 : cs.error,
                                 ),

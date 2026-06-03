@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/i18n/app_text.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../study_near_me/presentation/widgets/study_near_me_button.dart';
 import 'place_tag_chips.dart';
 import 'places_header_panel.dart';
 import 'places_search_field.dart';
 
-/// Khối điều khiển gọn trên tab Địa điểm (bản đồ & danh sách).
 class PlacesMapToolbar extends StatelessWidget {
   const PlacesMapToolbar({
     super.key,
@@ -43,6 +43,7 @@ class PlacesMapToolbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final isDark = AppColors.isDark(context);
     final surface = AppColors.card(context).withValues(alpha: mapOverlay ? (isDark ? 0.94 : 0.96) : 1);
@@ -97,7 +98,7 @@ class PlacesMapToolbar extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      'Lọc tiện ích',
+                      l10n.filter,
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,

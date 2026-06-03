@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../../data/models/friend_model.dart';
 import '../controllers/friendship_controller.dart';
 
@@ -199,6 +200,8 @@ class _UserProfileBottomSheetState extends State<UserProfileBottomSheet> {
   }
 
   Widget _buildActionButtons(ColorScheme cs) {
+    final l10n = context.l10n;
+
     if (_friendshipStatus == 'ACCEPTED') {
       return OutlinedButton.icon(
         onPressed: () async {
@@ -213,13 +216,13 @@ class _UserProfileBottomSheetState extends State<UserProfileBottomSheet> {
             });
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Đã hủy kết bạn thành công.')),
+                SnackBar(content: Text(l10n.friendRequestSuccess)),
               );
             }
           }
         },
         icon: Icon(Icons.person_remove_outlined, color: cs.error),
-        label: Text('Hủy kết bạn', style: TextStyle(color: cs.error)),
+        label: Text(l10n.unfriend, style: TextStyle(color: cs.error)),
         style: OutlinedButton.styleFrom(
           side: BorderSide(color: cs.error.withValues(alpha: 0.5)),
           padding: const EdgeInsets.symmetric(vertical: 14),
@@ -247,15 +250,15 @@ class _UserProfileBottomSheetState extends State<UserProfileBottomSheet> {
                   });
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Đã từ chối lời mời kết bạn.'),
+                      SnackBar(
+                        content: Text(l10n.declineInvite),
                       ),
                     );
                   }
                 }
               },
               icon: Icon(Icons.close, color: cs.error),
-              label: Text('Từ chối', style: TextStyle(color: cs.error)),
+              label: Text(l10n.cancelRequest, style: TextStyle(color: cs.error)),
               style: OutlinedButton.styleFrom(
                 side: BorderSide(color: cs.error.withValues(alpha: 0.5)),
                 padding: const EdgeInsets.symmetric(vertical: 14),
@@ -279,15 +282,15 @@ class _UserProfileBottomSheetState extends State<UserProfileBottomSheet> {
                   });
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Đã chấp nhận lời mời kết bạn!'),
+                      SnackBar(
+                        content: Text(l10n.friendRequestSuccess),
                       ),
                     );
                   }
                 }
               },
               icon: const Icon(Icons.check),
-              label: const Text('Đồng ý'),
+              label: const Text('Accept'),
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
@@ -311,13 +314,13 @@ class _UserProfileBottomSheetState extends State<UserProfileBottomSheet> {
             });
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Đã thu hồi lời mời kết bạn.')),
+                SnackBar(content: Text(l10n.cancelRequest)),
               );
             }
           }
         },
         icon: Icon(Icons.close, color: cs.error),
-        label: Text('Hủy', style: TextStyle(color: cs.error)),
+        label: Text(l10n.cancel, style: TextStyle(color: cs.error)),
         style: OutlinedButton.styleFrom(
           side: BorderSide(color: cs.error.withValues(alpha: 0.5)),
           padding: const EdgeInsets.symmetric(vertical: 14),
@@ -337,13 +340,13 @@ class _UserProfileBottomSheetState extends State<UserProfileBottomSheet> {
           });
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Đã gửi lời mời kết bạn!')),
+              SnackBar(content: Text(l10n.friendRequestSent)),
             );
           }
         }
       },
       icon: const Icon(Icons.person_add_alt_1_rounded),
-      label: const Text('Kết bạn'),
+      label: Text(l10n.addFriends),
       style: FilledButton.styleFrom(
         padding: const EdgeInsets.symmetric(vertical: 14),
       ),

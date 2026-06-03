@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app.dart';
 import '../../../../core/constants/route_names.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../../../friendships/presentation/controllers/friendship_controller.dart';
 import '../../../friendships/presentation/widgets/friends_list_tab.dart';
 import '../../../groups/presentation/controllers/group_controller.dart';
@@ -14,7 +15,6 @@ import '../../../places/presentation/widgets/places_search_field.dart';
 import '../widgets/community_invite_card.dart';
 import '../widgets/community_segmented_tabs.dart';
 
-/// Tab "Cộng đồng" tổng hợp: Nhóm học tập | Bạn bè | Lời mời | Khám phá nhóm.
 class CommunityPage extends StatefulWidget {
   const CommunityPage({super.key});
 
@@ -48,7 +48,6 @@ class _CommunityPageState extends State<CommunityPage>
     _groupCtrl = SfinityApp.groupController;
     _friendCtrl = SfinityApp.friendshipController;
 
-    // Load all required data
     _groupCtrl.loadMyGroups();
     _groupCtrl.loadDiscoverGroups();
     _groupCtrl.loadReceivedInvitations();
@@ -66,6 +65,7 @@ class _CommunityPageState extends State<CommunityPage>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final cs = Theme.of(context).colorScheme;
     final isDark = cs.brightness == Brightness.dark;
 
@@ -82,7 +82,7 @@ class _CommunityPageState extends State<CommunityPage>
             elevation: 0,
             scrolledUnderElevation: 0,
             title: Text(
-              'Cộng đồng',
+              l10n.explore,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.3,
@@ -92,7 +92,7 @@ class _CommunityPageState extends State<CommunityPage>
               if (_tabController.index == _kTabGroups)
                 IconButton.filledTonal(
                   icon: const Icon(Icons.add_rounded, size: 22),
-                  tooltip: 'Tạo nhóm',
+                  tooltip: l10n.createGroup,
                   onPressed: () => context.push(RouteNames.groupCreate),
                 ),
               const SizedBox(width: 4),
@@ -103,21 +103,21 @@ class _CommunityPageState extends State<CommunityPage>
                 controller: _tabController,
                 onTap: (i) => _tabController.animateTo(i),
                 tabs: [
-                  const CommunityTabItem(
-                    label: 'Nhóm',
+                  CommunityTabItem(
+                    label: l10n.studyGroups,
                     icon: Icons.groups_rounded,
                   ),
-                  const CommunityTabItem(
-                    label: 'Bạn bè',
+                  CommunityTabItem(
+                    label: l10n.friendsTab,
                     icon: Icons.people_rounded,
                   ),
                   CommunityTabItem(
-                    label: 'Lời mời',
+                    label: l10n.invitesTab,
                     icon: Icons.mail_rounded,
                     badgeCount: totalBadge,
                   ),
-                  const CommunityTabItem(
-                    label: 'Khám phá',
+                  CommunityTabItem(
+                    label: l10n.discoverTab,
                     icon: Icons.explore_rounded,
                   ),
                 ],
@@ -137,8 +137,6 @@ class _CommunityPageState extends State<CommunityPage>
       },
     );
   }
-
-  // ─── Tab 0: My Groups ────────────────────────────────────────────────────
 
   Widget _buildMyGroupsTab(BuildContext context, ColorScheme cs, bool isDark) {
     if (_groupCtrl.isLoading && _groupCtrl.groups.isEmpty) {
@@ -176,13 +174,12 @@ class _CommunityPageState extends State<CommunityPage>
     );
   }
 
-  // ─── Tab 2: Invitations ─────────────────────────────────────────────────
-
   Widget _buildInvitationsTab(
     BuildContext context,
     ColorScheme cs,
     bool isDark,
   ) {
+    final l10n = context.l10n;
     final groupInvites = _groupCtrl.receivedInvitations;
     final friendRequests = _friendCtrl.pendingRequests;
     final sentRequests = _friendCtrl.sentRequests;
@@ -219,7 +216,7 @@ class _CommunityPageState extends State<CommunityPage>
             ),
             const SizedBox(height: 16),
             Text(
-              'Không có lời mời nào',
+              l10n.noInvites,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
@@ -228,7 +225,7 @@ class _CommunityPageState extends State<CommunityPage>
             ),
             const SizedBox(height: 6),
             Text(
-              'Các lời mời kết bạn và lời mời tham gia nhóm sẽ hiện ở đây.',
+              l10n.noInvites,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: cs.onSurfaceVariant.withValues(alpha: 0.7),
@@ -251,11 +248,10 @@ class _CommunityPageState extends State<CommunityPage>
       child: ListView(
         padding: const EdgeInsets.fromLTRB(0, 4, 0, 100),
         children: [
-          // ── Friend Requests ─────────────────────────────────────────────
           if (hasFriendRequests) ...[
             CommunitySectionHeader(
               icon: Icons.person_add_alt_rounded,
-              label: 'Lời mời kết bạn (${friendRequests.length})',
+              label: l10n.friendRequests,
               isExpanded: _isFriendRequestsExpanded,
               onTap: () => setState(
                 () => _isFriendRequestsExpanded = !_isFriendRequestsExpanded,
@@ -275,11 +271,10 @@ class _CommunityPageState extends State<CommunityPage>
               ),
             ),
 
-          // ── Sent Friend Requests ─────────────────────────────────────────
           if (hasSent) ...[
             CommunitySectionHeader(
               icon: Icons.schedule_send_rounded,
-              label: 'Đã gửi (${sentRequests.length})',
+              label: l10n.sentRequests(sentRequests.length),
               isExpanded: _isSentRequestsExpanded,
               onTap: () => setState(
                 () => _isSentRequestsExpanded = !_isSentRequestsExpanded,
@@ -299,11 +294,10 @@ class _CommunityPageState extends State<CommunityPage>
               ),
             ),
 
-          // ── Group Invitations ────────────────────────────────────────────
           if (hasGroupInvites) ...[
             CommunitySectionHeader(
               icon: Icons.group_add_rounded,
-              label: 'Lời mời nhóm (${groupInvites.length})',
+              label: l10n.invitesTab,
               isExpanded: _isGroupInvitesExpanded,
               onTap: () => setState(
                 () => _isGroupInvitesExpanded = !_isGroupInvitesExpanded,
@@ -323,6 +317,7 @@ class _CommunityPageState extends State<CommunityPage>
     bool isDark,
     List<dynamic> requests,
   ) {
+    final l10n = context.l10n;
     return requests.map((req) {
       final user = req.requester;
       return CommunityInviteCard(
@@ -370,7 +365,6 @@ class _CommunityPageState extends State<CommunityPage>
                 ),
               ),
               const SizedBox(width: 8),
-              // Reject button
               OutlinedButton(
                 onPressed: () async {
                   await _friendCtrl.respondRequest(req.id, false);
@@ -392,13 +386,12 @@ class _CommunityPageState extends State<CommunityPage>
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
-                child: const Text(
-                  'Từ chối',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+                child: Text(
+                  l10n.decline,
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
                 ),
               ),
               const SizedBox(width: 6),
-              // Accept button
               FilledButton(
                 onPressed: () async {
                   final ok = await _friendCtrl.respondRequest(req.id, true);
@@ -407,8 +400,8 @@ class _CommunityPageState extends State<CommunityPage>
                       SnackBar(
                         content: Text(
                           ok
-                              ? 'Đã chấp nhận lời mời kết bạn!'
-                              : (_friendCtrl.error ?? 'Đã xảy ra lỗi'),
+                              ? l10n.acceptInvite
+                              : (_friendCtrl.error ?? l10n.errorOccurred),
                         ),
                         backgroundColor: ok ? Colors.green.shade700 : null,
                       ),
@@ -426,9 +419,9 @@ class _CommunityPageState extends State<CommunityPage>
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
-                child: const Text(
-                  'Chấp nhận',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                child: Text(
+                  l10n.accept,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                 ),
               ),
             ],
@@ -444,6 +437,7 @@ class _CommunityPageState extends State<CommunityPage>
     bool isDark,
     List<dynamic> requests,
   ) {
+    final l10n = context.l10n;
     return requests.map((req) {
       final user = req.addressee;
       return CommunityInviteCard(
@@ -480,7 +474,7 @@ class _CommunityPageState extends State<CommunityPage>
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Đang chờ xác nhận...',
+                      l10n.friendRequests,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: cs.onSurfaceVariant.withValues(alpha: 0.7),
                         fontStyle: FontStyle.italic,
@@ -495,13 +489,13 @@ class _CommunityPageState extends State<CommunityPage>
                   final messenger = ScaffoldMessenger.of(context);
                   await _friendCtrl.unfriend(req.id);
                   messenger.showSnackBar(
-                    const SnackBar(
-                      content: Text('Đã thu hồi lời mời kết bạn.'),
+                    SnackBar(
+                      content: Text(l10n.friendRequests),
                     ),
                   );
                 },
                 icon: const Icon(Icons.close, size: 14),
-                label: const Text('Hủy'),
+                label: Text(l10n.cancelBtn2),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: cs.error,
                   side: BorderSide(color: cs.error.withValues(alpha: 0.5)),
@@ -529,6 +523,7 @@ class _CommunityPageState extends State<CommunityPage>
     bool isDark,
     List<dynamic> invites,
   ) {
+    final l10n = context.l10n;
     return invites.map((inv) {
       final inviteId = inv['id']?.toString() ?? '';
       final groupName = inv['groupName']?.toString() ?? 'Nhóm học tập';
@@ -578,7 +573,7 @@ class _CommunityPageState extends State<CommunityPage>
                           text: inviterName,
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
-                        const TextSpan(text: ' mời bạn tham gia nhóm '),
+                        TextSpan(text: ' ${l10n.invitesTab} '),
                         TextSpan(
                           text: '"$groupName"',
                           style: TextStyle(
@@ -607,8 +602,8 @@ class _CommunityPageState extends State<CommunityPage>
                         SnackBar(
                           content: Text(
                             ok
-                                ? 'Đã từ chối lời mời vào nhóm "$groupName"'
-                                : 'Từ chối lời mời thất bại. Vui lòng thử lại.',
+                                ? l10n.declineInvite
+                                : l10n.errorOccurred,
                           ),
                         ),
                       );
@@ -629,9 +624,9 @@ class _CommunityPageState extends State<CommunityPage>
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text(
-                    'Từ chối',
-                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+                  child: Text(
+                    l10n.decline,
+                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -655,8 +650,8 @@ class _CommunityPageState extends State<CommunityPage>
                           SnackBar(
                             content: Text(
                               ok
-                                  ? 'Chúc mừng! Bạn đã gia nhập nhóm "$groupName"'
-                                  : 'Gia nhập nhóm thất bại. Vui lòng thử lại.',
+                                  ? l10n.acceptInvite
+                                  : l10n.errorOccurred,
                             ),
                             backgroundColor: ok ? Colors.green.shade700 : null,
                           ),
@@ -675,9 +670,9 @@ class _CommunityPageState extends State<CommunityPage>
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text(
-                      'Chấp nhận',
-                      style: TextStyle(
+                    child: Text(
+                      l10n.accept,
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 12,
                       ),
@@ -693,9 +688,8 @@ class _CommunityPageState extends State<CommunityPage>
     }).toList();
   }
 
-  // ─── Tab 3: Discover Groups ──────────────────────────────────────────────
-
   Widget _buildDiscoverGroupsTab(BuildContext context, ColorScheme cs) {
+    final l10n = context.l10n;
     final filteredGroups = _groupCtrl.discoverGroups.where((g) {
       if (_discoverSearch.isEmpty) return true;
       return g.name.toLowerCase().contains(_discoverSearch.toLowerCase()) ||
@@ -712,7 +706,7 @@ class _CommunityPageState extends State<CommunityPage>
             padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
             child: PlacesSearchField(
               controller: _discoverSearchCtrl,
-              hint: 'Tìm nhóm học tập công khai...',
+              hint: l10n.searchGroupHint,
               onChanged: (_) {},
             ),
           ),
@@ -741,8 +735,8 @@ class _CommunityPageState extends State<CommunityPage>
                         const SizedBox(height: 12),
                         Text(
                           _discoverSearch.isEmpty
-                              ? 'Không có nhóm mới để khám phá'
-                              : 'Không tìm thấy nhóm phù hợp',
+                              ? l10n.noGroupsExplore
+                              : l10n.noGroupsFound,
                           style: TextStyle(color: cs.onSurfaceVariant),
                         ),
                       ],
@@ -763,10 +757,8 @@ class _CommunityPageState extends State<CommunityPage>
                             SnackBar(
                               content: Text(
                                 success
-                                    ? (group.autoApprove
-                                          ? 'Đã gia nhập "${group.name}" thành công!'
-                                          : 'Yêu cầu gia nhập "${group.name}" đã được gửi và đang chờ duyệt!')
-                                    : (_groupCtrl.error ?? 'Đã có lỗi xảy ra'),
+                                    ? l10n.groupCreated
+                                    : (_groupCtrl.error ?? l10n.errorOccurred),
                               ),
                               backgroundColor: success
                                   ? Colors.green.shade700
@@ -782,8 +774,8 @@ class _CommunityPageState extends State<CommunityPage>
                             SnackBar(
                               content: Text(
                                 success
-                                    ? 'Đã hủy yêu cầu tham gia "${group.name}"!'
-                                    : (_groupCtrl.error ?? 'Đã có lỗi xảy ra'),
+                                    ? l10n.leaveGroup
+                                    : (_groupCtrl.error ?? l10n.errorOccurred),
                               ),
                               backgroundColor: success
                                   ? Colors.blue.shade700
@@ -802,6 +794,4 @@ class _CommunityPageState extends State<CommunityPage>
       ),
     );
   }
-
-  // ─── Create Group Dialog ─────────────────────────────────────────────────
 }

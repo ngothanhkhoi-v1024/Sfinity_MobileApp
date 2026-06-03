@@ -97,22 +97,25 @@ class ViewProfilePage extends StatelessWidget {
               // Info cards
               _InfoCard(isDark: isDark, children: [
                 _InfoRow(
+                  context: context,
                   icon: Icons.wc_outlined,
-                  label: 'Giới tính',
+                  label: context.l10n.gender,
                   value: gender != null && gender.isNotEmpty ? gender : '—',
                   isDark: isDark,
                 ),
                 const SizedBox(height: 16),
                 _InfoRow(
+                  context: context,
                   icon: Icons.cake_outlined,
-                  label: 'Ngày sinh',
+                  label: context.l10n.dateOfBirth,
                   value: formattedBirthDate.isNotEmpty ? formattedBirthDate : '—',
                   isDark: isDark,
                 ),
                 const SizedBox(height: 16),
                 _InfoRow(
+                  context: context,
                   icon: Icons.location_on_outlined,
-                  label: 'Địa chỉ',
+                  label: context.l10n.address,
                   value: address != null && address.isNotEmpty ? address : '—',
                   isDark: isDark,
                 ),
@@ -235,12 +238,14 @@ class _AvatarWidgetState extends State<_AvatarWidget> {
 
 class _InfoRow extends StatelessWidget {
   const _InfoRow({
+    required this.context,
     required this.icon,
     required this.label,
     required this.value,
     required this.isDark,
   });
 
+  final BuildContext context;
   final IconData icon;
   final String label;
   final String value;

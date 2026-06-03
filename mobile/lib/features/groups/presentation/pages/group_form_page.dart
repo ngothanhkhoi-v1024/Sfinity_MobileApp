@@ -93,6 +93,7 @@ class _GroupFormPageState extends State<GroupFormPage> {
   }
 
   Future<void> _submit() async {
+    final l10n = context.l10n;
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) return;
 
@@ -116,7 +117,7 @@ class _GroupFormPageState extends State<GroupFormPage> {
         );
         if (success && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(context.l10n.language == 'Vietnamese' ? 'Cập nhật nhóm thành công!' : 'Group updated successfully!')),
+            SnackBar(content: Text(l10n.success)),
           );
           context.pop();
         }
@@ -134,7 +135,7 @@ class _GroupFormPageState extends State<GroupFormPage> {
             await _groupCtrl.updateGroup(group.id, avatarUrl: avatarUrl);
           }
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(context.l10n.language == 'Vietnamese' ? 'Tạo nhóm thành công!' : 'Group created successfully!')),
+            SnackBar(content: Text(l10n.groupCreated)),
           );
           context.pop();
           context.push('/groups/${group.id}');
@@ -143,7 +144,7 @@ class _GroupFormPageState extends State<GroupFormPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.language == 'Vietnamese' ? 'Lỗi: $e' : 'Error: $e')),
+            SnackBar(content: Text(l10n.groupChatError(e.toString()))),
         );
       }
     } finally {

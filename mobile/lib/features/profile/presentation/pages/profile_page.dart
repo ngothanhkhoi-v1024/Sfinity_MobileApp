@@ -37,7 +37,7 @@ class ProfilePage extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             _ProfileSection(
-              title: 'Tài khoản',
+              title: context.l10n.account,
               isDark: isDark,
               children: [
                 _ProfileMenuItem(
@@ -65,7 +65,7 @@ class ProfilePage extends StatelessWidget {
               ],
             ),
             _ProfileSection(
-              title: 'Hoạt động',
+              title: context.l10n.studyGroups,
               isDark: isDark,
               children: [
                 _ProfileMenuItem(
@@ -85,7 +85,7 @@ class ProfilePage extends StatelessWidget {
               ],
             ),
             _ProfileSection(
-              title: 'Hỗ trợ',
+              title: context.l10n.feedback,
               isDark: isDark,
               children: [
                 _ProfileMenuItem(
@@ -105,7 +105,7 @@ class ProfilePage extends StatelessWidget {
               ],
             ),
             _ProfileSection(
-              title: 'Ứng dụng',
+              title: context.l10n.settings,
               isDark: isDark,
               children: [
                 _ProfileMenuItem(
@@ -234,7 +234,7 @@ class _ProfileHeader extends StatelessWidget {
                           ],
                           const SizedBox(height: 8),
                           Text(
-                            'Xem hồ sơ',
+                            context.l10n.viewProfile,
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,

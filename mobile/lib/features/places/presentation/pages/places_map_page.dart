@@ -9,6 +9,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../../core/constants/map_config.dart';
 import '../../../../core/constants/route_names.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../../../../core/network/api_client.dart';
 import '../../data/models/place_model.dart';
 import '../../../study_near_me/presentation/controllers/study_near_me_controller.dart';
@@ -22,7 +23,6 @@ import '../widgets/places_map_loading_skeleton.dart';
 import '../widgets/places_map_toolbar.dart';
 import '../widgets/places_map_zoom_controls.dart';
 
-/// Bản đồ địa điểm — tile OpenStreetMap (open source).
 class PlacesMapPage extends StatefulWidget {
   const PlacesMapPage({super.key});
 
@@ -69,9 +69,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
         if (id != null && id.isNotEmpty) ids.add(id);
       }
       if (mounted) setState(() => _favoritePlaceIds = ids);
-    } catch (_) {
-      // Không chặn bản đồ nếu chưa đăng nhập hoặc lỗi mạng.
-    }
+    } catch (_) {}
   }
 
   bool _isSavedPlace(PlaceModel place) =>
@@ -236,17 +234,18 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
   }
 
   Future<void> _deletePlace(String placeId) async {
+    final l10n = context.l10n;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Xóa địa điểm?'),
-        content: const Text('Bạn có chắc muốn xóa địa điểm này khỏi bản đồ?'),
+        title: Text(l10n.deletePlace),
+        content: Text(l10n.deletePlaceConfirm),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Hủy')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancelBtn2)),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Xóa'),
+            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -256,7 +255,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
       await _ctrl.deletePlace(placeId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đã xóa địa điểm')),
+          SnackBar(content: Text(l10n.placeDeleted)),
         );
       }
     } on DioException catch (e) {
@@ -269,6 +268,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
   }
 
   void _showPickLocationSheet(LatLng point) {
+    final l10n = context.l10n;
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -297,7 +297,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
                       ),
                     ),
                   ),
-                  Text('Lưu địa điểm mới', style: Theme.of(ctx).textTheme.titleLarge),
+                  Text(l10n.saveNewPlace, style: Theme.of(ctx).textTheme.titleLarge),
                   const SizedBox(height: 8),
                   Text(
                     '${point.latitude.toStringAsFixed(5)}, ${point.longitude.toStringAsFixed(5)}',
@@ -308,7 +308,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Nhấn giữ bản đồ hoặc dùng nút + để chọn vị trí',
+                    l10n.holdMapOrButton,
                     style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                   ),
                   const SizedBox(height: 16),
@@ -323,7 +323,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
                           .then((_) => _ctrl.loadPlaces());
                     },
                     icon: const Icon(Icons.add_location_alt_rounded),
-                    label: const Text('Lưu địa điểm này'),
+                    label: Text(l10n.saveThisPlace),
                   ),
                 ],
               ),
@@ -335,8 +335,9 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
   }
 
   void _showPlaceSheet(PlaceModel place, LatLng point) {
+    final l10n = context.l10n;
     PlacesMapFocus.highlight(place.id);
-    final distanceText = _ctrl.distanceLabelFor(place);
+    final distanceText = _ctrl.distanceLabelFor(place, noLocationYet: () => l10n.noYourLocation);
 
     _placeSheetOpen = true;
     showModalBottomSheet<void>(
@@ -344,6 +345,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) {
+        final l10n = ctx.l10n;
         final bottomInset = MediaQuery.paddingOf(ctx).bottom;
         final theme = Theme.of(ctx);
         final isDark = theme.brightness == Brightness.dark;
@@ -468,7 +470,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
                     const SizedBox(height: 16),
                     _PlaceSheetAction(
                       icon: Icons.visibility_rounded,
-                      label: 'Xem chi tiết địa điểm',
+                      label: l10n.viewPlaceDetail,
                       primary: true,
                       onTap: place.id.isEmpty
                           ? null
@@ -479,7 +481,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
                     ),
                     _PlaceSheetAction(
                       icon: Icons.deselect_rounded,
-                      label: 'Bỏ chọn địa điểm',
+                      label: l10n.remove,
                       onTap: () {
                         Navigator.pop(ctx);
                         _clearPlaceSelection(closeSheet: false);
@@ -488,7 +490,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
                     if (_ctrl.isOwnedByCurrentUser(place) && place.id.isNotEmpty) ...[
                       _PlaceSheetAction(
                         icon: Icons.upload_file_rounded,
-                        label: 'Tải tài liệu',
+                        label: l10n.searchDocument,
                         onTap: () {
                           Navigator.pop(ctx);
                           context.push(
@@ -503,7 +505,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
                       ),
                       _PlaceSheetAction(
                         icon: Icons.edit_rounded,
-                        label: 'Sửa địa điểm',
+                        label: l10n.editPlace,
                         onTap: () {
                           Navigator.pop(ctx);
                           context.push('/places/${place.id}/edit').then((_) => _ctrl.loadPlaces());
@@ -511,7 +513,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
                       ),
                       _PlaceSheetAction(
                         icon: Icons.delete_outline_rounded,
-                        label: 'Xóa địa điểm',
+                        label: l10n.deletePlace,
                         destructive: true,
                         onTap: () {
                           Navigator.pop(ctx);
@@ -532,6 +534,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
   }
 
   Widget _buildHighlightBanner() {
+    final l10n = context.l10n;
     final highlightedId = PlacesMapFocus.highlightedPlaceId.value;
     if (highlightedId == null) return const SizedBox.shrink();
 
@@ -564,7 +567,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                place?.title ?? 'Địa điểm đang chọn',
+                place?.title ?? l10n.selectedLocation,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
@@ -575,7 +578,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
               icon: const Icon(Icons.close_rounded, size: 18),
               color: primary,
               visualDensity: VisualDensity.compact,
-              tooltip: 'Bỏ chọn',
+              tooltip: l10n.remove,
             ),
           ],
         ),
@@ -611,11 +614,12 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
   }
 
   Future<void> _onStudyNearMe() async {
+    final l10n = context.l10n;
     final ok = await _studyNearMeCtrl.loadNearby(location: _ctrl.myLocation);
     if (!mounted) return;
     if (!ok) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_studyNearMeCtrl.error ?? 'Không tìm được kết quả')),
+        SnackBar(content: Text(_studyNearMeCtrl.error ?? l10n.noResultsFound)),
       );
       return;
     }
@@ -630,6 +634,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
   }
 
   Widget _buildListSectionHeader(int count) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -642,7 +647,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _ctrl.communityMode ? 'Địa điểm cộng đồng' : 'Địa điểm của bạn',
+                  _ctrl.communityMode ? l10n.communityPlaces : l10n.myPlaces,
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
@@ -671,7 +676,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
                   Icon(Icons.near_me, size: 14, color: theme.colorScheme.primary),
                   const SizedBox(width: 4),
                   Text(
-                    'Gần bạn',
+                    l10n.nearby,
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
@@ -687,6 +692,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
   }
 
   Widget _buildPlacesList(List<PlaceModel> places, {required bool listMode}) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final sorted = _ctrl.sortedActivePlaces();
@@ -709,15 +715,13 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
               ),
               const SizedBox(height: 12),
               Text(
-                _ctrl.communityMode ? 'Chưa có địa điểm cộng đồng' : 'Chưa có địa điểm',
+                _ctrl.communityMode ? l10n.noPlaceCommunity : l10n.noPlace,
                 style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 6),
               Text(
-                _ctrl.communityMode
-                    ? 'Thêm địa điểm đầu tiên bằng nút + trên bản đồ.'
-                    : 'Nhấn giữ bản đồ hoặc nút + để thêm địa điểm.',
+                _ctrl.communityMode ? l10n.addFirstPlace : l10n.holdMapOrButton,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
@@ -738,7 +742,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
         return PlaceListTile(
           title: place.title,
           subtitle: _ctrl.subtitleFor(place),
-          distanceLabel: _ctrl.distanceLabelFor(place),
+          distanceLabel: _ctrl.distanceLabelFor(place, noLocationYet: () => context.l10n.noYourLocation),
           isCommunity: _ctrl.communityMode,
           isSaved: _isSavedPlace(place),
           onTap: () => context.push('/places/${place.id}'),
@@ -868,7 +872,10 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
           onPressed: _ctrl.locating
               ? null
               : () async {
-                  await _ctrl.initLocation();
+                  await _ctrl.initLocation(
+        enableGPSHint: () => context.l10n.enableGPSNearMe,
+        cannotGetLocation: () => context.l10n.cannotGetCurrentLocation,
+      );
                   final here = _ctrl.myLocation;
                   if (here != null) _safeMove(here, 14);
                 },
@@ -1013,13 +1020,13 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
               color: (isDark ? const Color(0xFF242424) : Colors.white).withValues(alpha: 0.92),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               child: Text(
                 '© OpenStreetMap contributors',
                 style: TextStyle(
                   fontSize: 11,
-                  color: isDark ? Colors.white60 : Colors.black54,
+                  color: Color(0xFF888888),
                 ),
               ),
             ),

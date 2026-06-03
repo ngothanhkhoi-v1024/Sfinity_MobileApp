@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../../data/services/group_chat_service.dart';
 import '../widgets/share_document_sheet.dart';
 
@@ -14,6 +15,7 @@ class AttachmentMenu {
     required Future<void> Function() onShareDoc,
     required Future<void> Function() onShareLocation,
   }) {
+    final l10n = context.l10n;
     final cs = Theme.of(context).colorScheme;
     final isDark = cs.brightness == Brightness.dark;
 
@@ -39,7 +41,7 @@ class AttachmentMenu {
               ),
             ),
             Text(
-              'Đính kèm',
+              l10n.attach,
               style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -52,7 +54,7 @@ class AttachmentMenu {
               children: [
                 _AttachOption(
                   icon: Icons.image_rounded,
-                  label: 'Thư viện\nảnh',
+                  label: l10n.photoLibrary,
                   color: const Color(0xFF6366F1),
                   onTap: () {
                     Navigator.pop(ctx);
@@ -61,7 +63,7 @@ class AttachmentMenu {
                 ),
                 _AttachOption(
                   icon: Icons.camera_alt_rounded,
-                  label: 'Máy\nảnh',
+                  label: l10n.camera,
                   color: const Color(0xFF0EA5E9),
                   onTap: () {
                     Navigator.pop(ctx);
@@ -70,7 +72,7 @@ class AttachmentMenu {
                 ),
                 _AttachOption(
                   icon: Icons.insert_drive_file_rounded,
-                  label: 'Chọn\nfile',
+                  label: l10n.selectFile,
                   color: const Color(0xFFEA580C),
                   onTap: () {
                     Navigator.pop(ctx);
@@ -79,7 +81,7 @@ class AttachmentMenu {
                 ),
                 _AttachOption(
                   icon: Icons.menu_book_rounded,
-                  label: 'Tài liệu\nhọc tập',
+                  label: l10n.studyMaterials,
                   color: cs.primary,
                   onTap: () {
                     Navigator.pop(ctx);
@@ -88,7 +90,7 @@ class AttachmentMenu {
                 ),
                 _AttachOption(
                   icon: Icons.location_on_rounded,
-                  label: 'Chia sẻ\nđịa điểm',
+                  label: l10n.shareLocation,
                   color: const Color(0xFF10B981),
                   onTap: () {
                     Navigator.pop(ctx);
@@ -190,6 +192,7 @@ class UploadProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final cs = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -212,7 +215,7 @@ class UploadProgressBar extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Đang tải lên${fileName != null ? ': $fileName' : ''}...',
+                  l10n.uploadingProgress(fileName != null ? ': $fileName' : ''),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),

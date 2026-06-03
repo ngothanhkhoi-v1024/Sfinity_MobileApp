@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/utils/validators.dart';
 import '../controllers/document_form_controller.dart';
@@ -45,7 +46,7 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
     if (widget.isEdit) {
       _loadExisting();
     } else if (widget.placeTitle != null && widget.placeTitle!.isNotEmpty) {
-      _body.text = 'Tài liệu học tập tại địa điểm: ${widget.placeTitle}';
+      _body.text = '${context.l10n.documentStudyShared} ${widget.placeTitle}';
     }
   }
 
@@ -103,6 +104,7 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
     if (!_formKey.currentState!.validate()) return;
 
     try {
+      final l10n = context.l10n;
       final success = await _controller.submit(
         isEdit: widget.isEdit,
         documentId: widget.documentId,
@@ -119,7 +121,7 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(widget.isEdit ? 'Cập nhật tài liệu thành công!' : 'Chia sẻ tài liệu thành công!'),
+            content: Text(widget.isEdit ? l10n.documentUpdateSuccess : l10n.documentShareSuccess),
             backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
@@ -141,15 +143,16 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final primary = theme.colorScheme.primary;
+    final l10n = context.l10n;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
           widget.isEdit
-              ? 'Sửa tài liệu'
+              ? l10n.editDocument
               : widget.isDocument
-                  ? 'Đăng tài liệu học tập'
-                  : 'Chia sẻ địa điểm',
+                  ? l10n.documentUploadTitle
+                  : l10n.shareToGroup,
         ),
       ),
       body: AnimatedBuilder(
@@ -177,7 +180,7 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              'Đang tải tài liệu cho: ${widget.placeTitle}',
+                              l10n.loadDocumentFor(widget.placeTitle!),
                               style: TextStyle(
                                 fontWeight: FontWeight.w600,
                                 color: theme.colorScheme.onSurface,
@@ -200,8 +203,8 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
                     controller: _title,
                     autovalidateMode: AutovalidateMode.onUserInteraction,
                     decoration: InputDecoration(
-                      labelText: widget.isDocument ? 'Tên tài liệu / môn học' : 'Tên địa điểm',
-                      hintText: widget.isDocument ? 'VD: Đề cương Ôn tập Giải tích 1 K68' : 'VD: Thư viện Tạ Quang Bửu',
+                      labelText: widget.isDocument ? l10n.documentName : l10n.placeName,
+                      hintText: widget.isDocument ? l10n.documentNameHint : 'VD: Thư viện Tạ Quang Bửu',
                       prefixIcon: Icon(widget.isDocument ? Icons.bookmark_added_outlined : Icons.place_outlined),
                     ),
                     validator: AppValidators.validateRequired,
@@ -211,19 +214,19 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
                     TextFormField(
                       controller: _subjectCode,
                       autovalidateMode: AutovalidateMode.onUserInteraction,
-                      decoration: const InputDecoration(
-                        labelText: 'Mã môn học / học phần',
+                      decoration: InputDecoration(
+                        labelText: l10n.studyDocument,
                         hintText: 'VD: MI1111',
-                        prefixIcon: Icon(Icons.code),
+                        prefixIcon: const Icon(Icons.code),
                       ),
                     ),
                     const SizedBox(height: 16),
 
                     DropdownButtonFormField<String>(
                       value: _controller.selectedCategoryId,
-                      decoration: const InputDecoration(
-                        labelText: 'Danh mục tài liệu',
-                        prefixIcon: Icon(Icons.category_outlined),
+                      decoration: InputDecoration(
+                        labelText: l10n.category,
+                        prefixIcon: const Icon(Icons.category_outlined),
                       ),
                       items: _controller.categories.map<DropdownMenuItem<String>>((cat) {
                         return DropdownMenuItem<String>(
@@ -232,15 +235,15 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
                         );
                       }).toList(),
                       onChanged: _controller.selectCategory,
-                      validator: (v) => v == null ? 'Vui lòng chọn danh mục' : null,
+                      validator: (v) => v == null ? l10n.selectCategory : null,
                     ),
                     const SizedBox(height: 16),
 
                     DropdownButtonFormField<String>(
                       value: _controller.selectedStatus,
-                      decoration: const InputDecoration(
-                        labelText: 'Chế độ hiển thị',
-                        prefixIcon: Icon(Icons.visibility_outlined),
+                      decoration: InputDecoration(
+                        labelText: l10n.publicAllSee,
+                        prefixIcon: const Icon(Icons.visibility_outlined),
                       ),
                       items: SfinityApp.auth.user?['role']?.toString() == 'admin'
                           ? const [
@@ -250,7 +253,7 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
                               ),
                               DropdownMenuItem<String>(
                                 value: 'DRAFT',
-                                child: Text('Chỉ mình tôi (Bản nháp)'),
+                                child: Text(l10n.all),
                               ),
                             ]
                           : const [
@@ -260,7 +263,7 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
                               ),
                               DropdownMenuItem<String>(
                                 value: 'DRAFT',
-                                child: Text('Chỉ mình tôi (Bản nháp)'),
+                                child: Text(l10n.reset_),
                               ),
                             ],
                       onChanged: _controller.selectStatus,
@@ -269,10 +272,10 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
 
                     TextFormField(
                       controller: _tagsController,
-                      decoration: const InputDecoration(
-                        labelText: 'Thẻ từ khóa (Tags)',
-                        hintText: 'Cách nhau bằng dấu phẩy, VD: de-thi, giai-tich, k68',
-                        prefixIcon: Icon(Icons.label_outline),
+                      decoration: InputDecoration(
+                        labelText: l10n.tags,
+                        hintText: l10n.tags,
+                        prefixIcon: const Icon(Icons.label_outline),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -281,14 +284,14 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
                     controller: _body,
                     autovalidateMode: AutovalidateMode.onUserInteraction,
                     decoration: InputDecoration(
-                      labelText: widget.isDocument ? 'Mô tả tóm tắt, ghi chú tài liệu...' : 'Mô tả chi tiết địa điểm',
+                      labelText: widget.isDocument ? l10n.placeDescriptionHint : l10n.placeDescriptionDetail,
                       hintText: widget.isDocument
-                          ? 'Nêu rõ tài liệu gồm những gì, có lời giải hay không...'
-                          : 'Nêu thông tin về WiFi, ổ cắm điện, giờ mở cửa...',
+                          ? l10n.placeDescriptionDetail
+                          : l10n.placeDescription,
                       alignLabelWithHint: true,
                     ),
                     maxLines: 5,
-                    validator: (v) => v != null && v.trim().length >= 2 ? null : 'Mô tả tối thiểu 2 ký tự',
+                    validator: (v) => v != null && v.trim().length >= 2 ? null : l10n.placeDescriptionMin,
                   ),
                   const SizedBox(height: 24),
 
@@ -320,7 +323,7 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
                                 strokeWidth: 2.5,
                               ),
                             )
-                          : Text(widget.isEdit ? 'Cập nhật tài liệu' : 'Đăng tài liệu ngay'),
+                          : Text(widget.isEdit ? l10n.updatePlace : l10n.postDocument),
                     ),
                   ),
                 ],

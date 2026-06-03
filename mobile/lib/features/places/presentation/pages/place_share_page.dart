@@ -4,11 +4,11 @@ import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../core/constants/map_config.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../../../../core/services/geocoding_service.dart';
 import '../controllers/place_form_controller.dart';
 import '../widgets/place_tag_chips.dart';
 
-/// Chọn vị trí trên OSM và đăng / sửa địa điểm.
 class PlaceSharePage extends StatefulWidget {
   const PlaceSharePage({super.key, this.editPlaceId});
 
@@ -85,11 +85,16 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
   }
 
   Future<void> _submit() async {
+    final l10n = context.l10n;
     try {
-      await _ctrl.submit(editPlaceId: widget.editPlaceId);
+      await _ctrl.submit(
+        editPlaceId: widget.editPlaceId,
+        nameRequired: () => l10n.placeNameRequired,
+        invalidCoordinates: () => l10n.invalidCoordinates,
+      );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_isEdit ? 'Đã cập nhật địa điểm' : 'Đã lưu địa điểm')),
+          SnackBar(content: Text(_isEdit ? l10n.updatePlace : l10n.savedPlace)),
         );
         context.pop();
       }
@@ -104,9 +109,10 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     if (_ctrl.loadingPlace) {
       return Scaffold(
-        appBar: AppBar(title: Text(_isEdit ? 'Sửa địa điểm' : 'Lưu địa điểm')),
+        appBar: AppBar(title: Text(_isEdit ? l10n.editPlace : l10n.saveNewPlace)),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -114,7 +120,7 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
     final picked = MapConfig.sanitize(_ctrl.picked);
 
     return Scaffold(
-      appBar: AppBar(title: Text(_isEdit ? 'Sửa địa điểm' : 'Lưu địa điểm')),
+      appBar: AppBar(title: Text(_isEdit ? l10n.editPlace : l10n.saveNewPlace)),
       body: Column(
         children: [
           Padding(
@@ -125,7 +131,7 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
                   child: TextField(
                     controller: _ctrl.searchController,
                     decoration: InputDecoration(
-                      hintText: 'Tìm theo tên hoặc địa chỉ…',
+                      hintText: l10n.searchPlaceByName,
                       prefixIcon: const Icon(Icons.search),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       isDense: true,
@@ -198,7 +204,7 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (_ctrl.geocodingAddress)
-                  const Text('Đang lấy địa chỉ…', style: TextStyle(fontSize: 12))
+                  Text(l10n.loading, style: const TextStyle(fontSize: 12))
                 else if (_ctrl.address != null && _ctrl.address!.isNotEmpty)
                   Text(
                     _ctrl.address!,
@@ -206,7 +212,7 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
                   )
                 else
                   Text(
-                    'Chạm bản đồ để chọn vị trí · ${picked.latitude.toStringAsFixed(5)}, ${picked.longitude.toStringAsFixed(5)}',
+                    '${l10n.holdMapOrButton} · ${picked.latitude.toStringAsFixed(5)}, ${picked.longitude.toStringAsFixed(5)}',
                     style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                   ),
               ],
@@ -219,18 +225,18 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
                 children: [
                   TextField(
                     controller: _ctrl.nameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Tên địa điểm',
-                      border: OutlineInputBorder(),
-                      hintText: 'VD: Thư viện, quán cà phê học nhóm',
+                    decoration: InputDecoration(
+                      labelText: l10n.placeName,
+                      border: const OutlineInputBorder(),
+                      hintText: l10n.placeDescriptionHint,
                     ),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: _ctrl.descriptionController,
-                    decoration: const InputDecoration(
-                      labelText: 'Mô tả thêm (ghi chú, giờ mở cửa…)',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: l10n.additionalDescription,
+                      border: const OutlineInputBorder(),
                     ),
                     maxLines: 4,
                   ),
@@ -243,7 +249,7 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
                   Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      'Ai có thể thấy địa điểm này?',
+                      l10n.placeDisplayOnMap,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
@@ -251,16 +257,16 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
                   ),
                   const SizedBox(height: 10),
                   SegmentedButton<bool>(
-                    segments: const [
+                    segments: [
                       ButtonSegment<bool>(
                         value: false,
-                        label: Text('Chỉ mình tôi'),
-                        icon: Icon(Icons.lock_outline, size: 18),
+                        label: Text(l10n.personal),
+                        icon: const Icon(Icons.lock_outline, size: 18),
                       ),
                       ButtonSegment<bool>(
                         value: true,
-                        label: Text('Cộng đồng'),
-                        icon: Icon(Icons.public, size: 18),
+                        label: Text(l10n.communityContent),
+                        icon: const Icon(Icons.public, size: 18),
                       ),
                     ],
                     selected: {_ctrl.isPublic},
@@ -271,8 +277,8 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
                   const SizedBox(height: 8),
                   Text(
                     _ctrl.isPublic
-                        ? 'Địa điểm hiển thị trên bản đồ cộng đồng cho mọi người.'
-                        : 'Chỉ bạn thấy trong tab Của tôi, không hiện trên bản đồ cộng đồng.',
+                        ? l10n.placeWillShowMap
+                        : l10n.noPlaceCommunity,
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey.shade600,
@@ -283,8 +289,8 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
                     onPressed: _ctrl.loading ? null : _submit,
                     child: Text(
                       _ctrl.loading
-                          ? 'Đang lưu…'
-                          : (_isEdit ? 'Cập nhật địa điểm' : 'Lưu địa điểm'),
+                          ? l10n.loading
+                          : (_isEdit ? l10n.updatePlace : l10n.savePlace),
                     ),
                   ),
                 ],

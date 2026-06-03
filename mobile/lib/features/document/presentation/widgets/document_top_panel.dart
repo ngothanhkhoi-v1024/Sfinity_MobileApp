@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/i18n/app_text.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../places/presentation/widgets/places_search_field.dart';
 import 'document_mode_toggle.dart';
 
-/// Khối điều khiển gọn: chế độ + tìm kiếm + lọc danh mục.
 class DocumentTopPanel extends StatelessWidget {
   const DocumentTopPanel({
     super.key,
@@ -34,13 +34,14 @@ class DocumentTopPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final primary = AppColors.primaryOf(context);
+    final l10n = context.l10n;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (!embedded) ...[
           Text(
-            'Tài liệu học tập',
+            l10n.studyMaterials,
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.w800,
                   letterSpacing: -0.5,
@@ -51,8 +52,8 @@ class DocumentTopPanel extends StatelessWidget {
         ],
         Text(
           communityMode
-              ? 'Bài giảng, đề thi và ghi chú từ cộng đồng'
-              : 'Tài liệu bạn đã đăng tải',
+              ? l10n.documentsCategory
+              : l10n.yourUploadedDocuments,
           style: TextStyle(fontSize: embedded ? 13 : 14, color: AppColors.subtitle(context), height: 1.35),
         ),
         const SizedBox(height: 10),
@@ -73,7 +74,7 @@ class DocumentTopPanel extends StatelessWidget {
                   Expanded(
                     child: PlacesSearchField(
                       controller: searchController,
-                      hint: 'Tìm tài liệu, mã môn, từ khóa…',
+                      hint: l10n.searchDocumentHint,
                       onChanged: onSearchChanged,
                     ),
                   ),

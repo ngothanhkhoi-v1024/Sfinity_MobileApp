@@ -13,7 +13,6 @@ import '../../../study_near_me/presentation/widgets/study_near_me_results_sheet.
 import '../../../../core/theme/app_colors.dart';
 import '../widgets/explore_top_panel.dart';
 
-/// Tab Khám phá — feed địa điểm & tài liệu.
 class ExplorePage extends StatefulWidget {
   const ExplorePage({super.key});
 
@@ -101,7 +100,7 @@ class _ExplorePageState extends State<ExplorePage> {
     if (!mounted) return;
     if (!ok) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_studyNearMeCtrl.error ?? 'Không tìm được kết quả')),
+        SnackBar(content: Text(_studyNearMeCtrl.error ?? context.l10n.noResultsFound)),
       );
       return;
     }
@@ -232,7 +231,7 @@ class _ExplorePageState extends State<ExplorePage> {
     final displayDocCount = _showingSaved ? _savedDocCount : _docCount;
     final sectionTitle = _showingSaved
         ? l10n.saved
-        : (isSearching ? 'Kết quả' : 'Mới nhất');
+        : (isSearching ? l10n.results : l10n.newest);
 
     return RefreshIndicator(
       onRefresh: _onRefresh,
@@ -251,7 +250,7 @@ class _ExplorePageState extends State<ExplorePage> {
                 delegate: SliverChildListDelegate([
                   ExploreTopPanel(
                     title: l10n.explore,
-                    subtitle: 'Địa điểm học tập và tài liệu từ cộng đồng',
+                    subtitle: l10n.studyNearMe,
                     searchController: _searchController,
                     searchHint: l10n.searchHint,
                     filter: _filter,
@@ -274,7 +273,7 @@ class _ExplorePageState extends State<ExplorePage> {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            'Đang tìm…',
+                            l10n.loading,
                             style: TextStyle(fontSize: 12, color: primary),
                           ),
                         ],
@@ -309,7 +308,7 @@ class _ExplorePageState extends State<ExplorePage> {
                     const SizedBox(height: 14),
                     _ExploreSectionLabel(
                       icon: Icons.auto_awesome_rounded,
-                      title: 'Gợi ý cho bạn',
+                      title: l10n.studyNearMe,
                       primary: primary,
                     ),
                     const SizedBox(height: 8),
@@ -374,7 +373,7 @@ class _ExplorePageState extends State<ExplorePage> {
               hasScrollBody: false,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
-                child: _ExploreSavedEmptyState(message: l10n.noFavoritesYet, isDark: isDark),
+                child: _ExploreSavedEmptyState(message: l10n.saved, isDark: isDark),
               ),
             )
           else if (!_showingSaved && !isSearching && _items.isEmpty)
@@ -512,6 +511,7 @@ class _ExploreStatsStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
@@ -523,14 +523,14 @@ class _ExploreStatsStrip extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _StatPill(icon: Icons.place_rounded, count: placeCount, label: 'địa điểm', color: const Color(0xFFEF4444)),
+          _StatPill(icon: Icons.place_rounded, count: placeCount, label: l10n.places, color: const Color(0xFFEF4444)),
           Container(
             width: 1,
             height: 28,
             margin: const EdgeInsets.symmetric(horizontal: 12),
             color: AppColors.border(context),
           ),
-          _StatPill(icon: Icons.menu_book_rounded, count: docCount, label: 'tài liệu', color: const Color(0xFF3B82F6)),
+          _StatPill(icon: Icons.menu_book_rounded, count: docCount, label: l10n.documents, color: const Color(0xFF3B82F6)),
           const Spacer(),
           Icon(
             showingSaved ? Icons.bookmark_rounded : Icons.trending_up_rounded,
@@ -597,6 +597,7 @@ class _ExploreActionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Row(
       children: [
         Expanded(
@@ -612,7 +613,7 @@ class _ExploreActionRow extends StatelessWidget {
         Expanded(
           child: _GradientShortcutTile(
             icon: Icons.add_circle_rounded,
-            label: 'Đăng bài',
+            label: l10n.share,
             gradient: const [Color(0xFF3B82F6), Color(0xFF2563EB)],
             onTap: onCreate,
           ),
@@ -767,12 +768,13 @@ class _ExploreNoResults extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Column(
       children: [
         Icon(Icons.search_off_rounded, size: 40, color: Colors.grey.shade500),
         const SizedBox(height: 8),
-        Text('Không tìm thấy "$query"'),
-        TextButton(onPressed: onClear, child: const Text('Xóa tìm kiếm')),
+        Text(l10n.noSearchResults(query)),
+        TextButton(onPressed: onClear, child: Text(l10n.clearSearch)),
       ],
     );
   }
@@ -793,6 +795,7 @@ class _StudyNearMeBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Material(
       elevation: 0,
       borderRadius: BorderRadius.circular(20),
@@ -829,23 +832,23 @@ class _StudyNearMeBanner extends StatelessWidget {
                       : const Icon(Icons.my_location_rounded, color: Colors.white, size: 26),
                 ),
                 const SizedBox(width: 14),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Học gần tôi',
-                        style: TextStyle(
+                        l10n.studyNearMe,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 17,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.2,
                         ),
                       ),
-                      SizedBox(height: 4),
+                      const SizedBox(height: 4),
                       Text(
-                        'Tìm địa điểm & tài liệu quanh bạn',
-                        style: TextStyle(
+                        l10n.places,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 13,
                           height: 1.3,
@@ -883,9 +886,10 @@ class _ExploreFeedCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final accent = isPlace ? const Color(0xFFEF4444) : const Color(0xFF3B82F6);
     final accentBg = accent.withValues(alpha: isDark ? 0.18 : 0.1);
-    final label = isPlace ? 'Địa điểm' : 'Tài liệu';
+    final label = isPlace ? l10n.places : l10n.documents;
 
     return Material(
       color: AppColors.card(context),
@@ -987,12 +991,12 @@ class _ExploreEmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Chưa có bài chia sẻ',
+            context.l10n.noResultsFound,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 6),
           Text(
-            'Hãy là người đầu tiên đăng địa điểm hoặc tài liệu!',
+            context.l10n.noResultsFound,
             textAlign: TextAlign.center,
             style: TextStyle(color: muted, height: 1.4),
           ),
@@ -1033,7 +1037,7 @@ class _ExploreSavedEmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Lưu địa điểm hoặc tài liệu từ trang chi tiết để xem tại đây',
+            context.l10n.saved,
             textAlign: TextAlign.center,
             style: TextStyle(color: muted, height: 1.4, fontSize: 13),
           ),

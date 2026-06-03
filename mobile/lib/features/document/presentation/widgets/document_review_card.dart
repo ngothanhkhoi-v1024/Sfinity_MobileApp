@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-/// Thẻ hiển thị đánh giá & nhận xét của một sinh viên cho tài liệu
+import '../../../../core/i18n/app_text.dart';
+
 class DocumentReviewCard extends StatelessWidget {
   const DocumentReviewCard({
     super.key,
@@ -17,6 +18,7 @@ class DocumentReviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final authorName = (review['author'] as Map?)?['name']?.toString() ?? 'Người dùng Sfinity';
     final rating = (review['rating'] as num?)?.toInt() ?? 5;
     final comment = review['comment']?.toString() ?? '';
@@ -55,14 +57,13 @@ class DocumentReviewCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Pinned tag for Author Review
               if (isAuthor) ...[
                 Row(
                   children: [
                     const Icon(Icons.push_pin, size: 10, color: Colors.green),
                     const SizedBox(width: 4),
                     Text(
-                      'Bình luận được ghim từ Tác giả',
+                      l10n.noCommentsFound,
                       style: TextStyle(
                         color: Colors.green.shade700,
                         fontSize: 9,
@@ -112,9 +113,9 @@ class DocumentReviewCard extends StatelessWidget {
                                       borderRadius: BorderRadius.circular(4),
                                       border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
                                     ),
-                                    child: const Text(
-                                      'Tác giả',
-                                      style: TextStyle(
+                                    child: Text(
+                                      l10n.viewProfile,
+                                      style: const TextStyle(
                                         color: Colors.green,
                                         fontSize: 8,
                                         fontWeight: FontWeight.bold,

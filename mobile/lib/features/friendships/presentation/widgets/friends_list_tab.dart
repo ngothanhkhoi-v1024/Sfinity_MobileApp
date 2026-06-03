@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../../../../core/constants/route_names.dart';
 import '../controllers/friendship_controller.dart';
 import '../../../places/presentation/widgets/places_search_field.dart';
@@ -40,6 +41,7 @@ class _FriendsListTabState extends State<FriendsListTab> {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final ctrl = widget.controller;
+    final l10n = context.l10n;
 
     if (ctrl.isLoading) {
       return const Center(child: CircularProgressIndicator());
@@ -56,9 +58,9 @@ class _FriendsListTabState extends State<FriendsListTab> {
     if (friends.isEmpty) {
       return FriendshipsEmptyState(
         icon: Icons.people_outline_rounded,
-        title: 'Chưa có bạn bè',
-        subtitle: 'Tìm kiếm và gửi lời mời kết bạn để kết nối nhé!',
-        actionLabel: 'Thêm bạn bè',
+        title: l10n.noFriends,
+        subtitle: l10n.noFriendsSearchHint,
+        actionLabel: l10n.addFriends,
         onAction: () => context.push(RouteNames.friends),
       );
     }
@@ -74,7 +76,7 @@ class _FriendsListTabState extends State<FriendsListTab> {
               Expanded(
                 child: PlacesSearchField(
                   controller: _localSearchCtrl,
-                  hint: 'Tìm trong danh sách bạn bè...',
+                  hint: l10n.searchFriends,
                   onChanged: (_) {},
                 ),
               ),
@@ -106,7 +108,7 @@ class _FriendsListTabState extends State<FriendsListTab> {
                     child: Padding(
                       padding: const EdgeInsets.all(32),
                       child: Text(
-                        'Không tìm thấy bạn bè phù hợp.',
+                        l10n.noFriendsFound,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: isDark ? Colors.grey.shade500 : Colors.grey.shade600,
@@ -147,7 +149,7 @@ class _FriendsListTabState extends State<FriendsListTab> {
                                 messenger.showSnackBar(
                                   SnackBar(
                                     content: Text(
-                                      ctrl.error ?? 'Đã xảy ra lỗi',
+                                      ctrl.error ?? l10n.friendRequestError,
                                     ),
                                     backgroundColor: Colors.red,
                                   ),
@@ -156,13 +158,13 @@ class _FriendsListTabState extends State<FriendsListTab> {
                             }
                           },
                           itemBuilder: (_) => [
-                            const PopupMenuItem(
+                            PopupMenuItem(
                               value: 'view_profile',
-                              child: Text('Xem hồ sơ'),
+                              child: Text(l10n.viewProfile),
                             ),
-                            const PopupMenuItem(
+                            PopupMenuItem(
                               value: 'unfriend',
-                              child: Text('Hủy kết bạn'),
+                              child: Text(l10n.unfriend),
                             ),
                           ],
                         ),

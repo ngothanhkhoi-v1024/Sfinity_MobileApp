@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:dio/dio.dart';
 import 'package:sfinity/features/document/presentation/pages/pdf_full_screen_page.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../../data/models/group_message_model.dart';
 import '../../data/services/group_chat_service.dart';
 import '../../data/models/group_model.dart';
@@ -27,12 +28,12 @@ class GroupFilesTab extends StatefulWidget {
 
 class _GroupFilesTabState extends State<GroupFilesTab> {
   final _chatService = GroupChatService();
-  String _selectedCategory = 'Tất cả';
+  String _selectedCategory = '';
   String _searchQuery = '';
   String _selectedMemberId = 'all';
   final _searchController = TextEditingController();
 
-  final List<String> _categories = ['Tất cả', 'Tài liệu', 'Hình ảnh', 'Tập tin', 'Địa điểm'];
+  List<String> _categories = [];
 
   @override
   void initState() {
@@ -42,6 +43,22 @@ class _GroupFilesTabState extends State<GroupFilesTab> {
         _searchQuery = _searchController.text.trim();
       });
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final l10n = context.l10n;
+    _categories = [
+      l10n.allFiles,
+      l10n.documents,
+      l10n.images,
+      l10n.files,
+      l10n.location,
+    ];
+    if (_selectedCategory.isEmpty) {
+      _selectedCategory = l10n.allFiles;
+    }
   }
 
   @override
@@ -63,6 +80,7 @@ class _GroupFilesTabState extends State<GroupFilesTab> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final isDark = cs.brightness == Brightness.dark;
@@ -76,7 +94,7 @@ class _GroupFilesTabState extends State<GroupFilesTab> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snap.hasError) {
-            return Center(child: Text('Lỗi: ${snap.error}'));
+            return Center(child: Text(l10n.groupChatError(snap.error.toString())));
           }
 
           final allResources = snap.data ?? [];
@@ -84,11 +102,11 @@ class _GroupFilesTabState extends State<GroupFilesTab> {
           // Filter resources locally based on selected category, search query & member selection
           final filteredResources = allResources.where((msg) {
             // Category filter
-            if (_selectedCategory != 'Tất cả') {
-              if (_selectedCategory == 'Tài liệu' && msg.type != MessageType.document) return false;
-              if (_selectedCategory == 'Địa điểm' && msg.type != MessageType.location) return false;
-              if (_selectedCategory == 'Tập tin' && msg.type != MessageType.file) return false;
-              if (_selectedCategory == 'Hình ảnh' && msg.type != MessageType.image) return false;
+            if (_selectedCategory != l10n.allFiles) {
+              if (_selectedCategory == l10n.documents && msg.type != MessageType.document) return false;
+              if (_selectedCategory == l10n.location && msg.type != MessageType.location) return false;
+              if (_selectedCategory == l10n.files && msg.type != MessageType.file) return false;
+              if (_selectedCategory == l10n.images && msg.type != MessageType.image) return false;
             }
 
             // Member selection filter
@@ -116,7 +134,7 @@ class _GroupFilesTabState extends State<GroupFilesTab> {
                 child: Row(
                   children: [
                     Text(
-                      'Kho lưu trữ nhóm (${filteredResources.length})',
+                      l10n.groupStorage(filteredResources.length),
                       style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                     ),
                   ],
@@ -131,7 +149,7 @@ class _GroupFilesTabState extends State<GroupFilesTab> {
                   child: TextField(
                     controller: _searchController,
                     decoration: InputDecoration(
-                      hintText: 'Tìm kiếm theo tên file hoặc thành viên đăng...',
+                      hintText: l10n.searchFileByName,
                       prefixIcon: const Icon(Icons.search_rounded),
                       suffixIcon: _searchQuery.isNotEmpty
                           ? IconButton(
@@ -169,13 +187,13 @@ class _GroupFilesTabState extends State<GroupFilesTab> {
                       icon: Icon(Icons.arrow_drop_down_rounded, color: cs.primary),
                       selectedItemBuilder: (context) {
                         return [
-                          const DropdownMenuItem<String>(
+                          DropdownMenuItem<String>(
                             value: 'all',
                             child: Row(
                               children: [
-                                Icon(Icons.people_alt_rounded, size: 20),
-                                SizedBox(width: 8),
-                                Text('Tất cả thành viên', style: TextStyle(fontWeight: FontWeight.w500)),
+                                const Icon(Icons.people_alt_rounded, size: 20),
+                                const SizedBox(width: 8),
+                                Text(l10n.allMembers, style: const TextStyle(fontWeight: FontWeight.w500)),
                               ],
                             ),
                           ),
@@ -205,13 +223,13 @@ class _GroupFilesTabState extends State<GroupFilesTab> {
                         ];
                       },
                       items: [
-                        const DropdownMenuItem<String>(
+                        DropdownMenuItem<String>(
                           value: 'all',
                           child: Row(
                             children: [
-                              Icon(Icons.people_alt_rounded, size: 20),
-                              SizedBox(width: 8),
-                              Text('Tất cả thành viên'),
+                              const Icon(Icons.people_alt_rounded, size: 20),
+                              const SizedBox(width: 8),
+                              Text(l10n.allMembers),
                             ],
                           ),
                         ),
@@ -297,9 +315,9 @@ class _GroupFilesTabState extends State<GroupFilesTab> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              _selectedCategory == 'Địa điểm'
+                              _selectedCategory == l10n.location
                                   ? Icons.place_rounded
-                                  : _selectedCategory == 'Hình ảnh'
+                                  : _selectedCategory == l10n.images
                                       ? Icons.image_rounded
                                       : Icons.folder_open_rounded,
                               size: 64,
@@ -307,14 +325,14 @@ class _GroupFilesTabState extends State<GroupFilesTab> {
                             ),
                             const SizedBox(height: 12),
                             Text(
-                              'Không tìm thấy tài nguyên nào',
+                              l10n.noResourceFound,
                               style: TextStyle(color: cs.onSurfaceVariant, fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               _searchQuery.isNotEmpty
-                                  ? 'Thử thay đổi từ khóa tìm kiếm khác.'
-                                  : 'Hãy chia sẻ các tài nguyên bổ ích vào nhóm chat nhé!',
+                                  ? l10n.tryDifferentKeyword
+                                  : l10n.shareResources,
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: cs.onSurfaceVariant.withValues(alpha: 0.7),
                               ),
@@ -345,8 +363,8 @@ class _GroupFilesTabState extends State<GroupFilesTab> {
 
                           // Xử lý dạng Địa điểm: Hiện dạng thẻ List tiện dụng
                           if (msg.type == MessageType.location) {
-                            final title = msg.fileName ?? 'Vị trí địa lý';
-                            final subtitle = 'Địa điểm chia sẻ • Gửi bởi ${msg.senderName}';
+                            final title = msg.fileName ?? l10n.locationPlaceholder;
+                            final subtitle = l10n.placeSharedSentBy(msg.senderName);
                             final leading = Container(
                               padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
@@ -448,6 +466,7 @@ class _ImageResourceItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final imageUrl = message.fileUrl ?? '';
@@ -499,7 +518,7 @@ class _ImageResourceItem extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(left: 4),
             child: Text(
-              '${message.fileName ?? "Hình ảnh"} • Đăng bởi ${message.senderName}',
+              l10n.imageSharedBy(message.fileName ?? l10n.images, message.senderName),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: cs.onSurfaceVariant.withValues(alpha: 0.8),
                 fontSize: 11,
@@ -559,6 +578,7 @@ class _FileResourceItemState extends State<_FileResourceItem> {
   }
 
   Future<void> _downloadFile() async {
+    final l10n = context.l10n;
     final fileUrl = widget.message.fileUrl;
     if (fileUrl == null || fileUrl.isEmpty || _localPath == null) return;
 
@@ -587,7 +607,7 @@ class _FileResourceItemState extends State<_FileResourceItem> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Đã tải xong: ${widget.message.fileName}'),
+            content: Text(l10n.fileUploadedSuccess(widget.message.fileName ?? '')),
             backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
@@ -599,7 +619,7 @@ class _FileResourceItemState extends State<_FileResourceItem> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Tải file thất bại: $e'),
+            content: Text(l10n.fileUploadFailed(e.toString())),
             backgroundColor: Colors.red,
           ),
         );
@@ -633,6 +653,7 @@ class _FileResourceItemState extends State<_FileResourceItem> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final isDark = cs.brightness == Brightness.dark;
@@ -647,8 +668,8 @@ class _FileResourceItemState extends State<_FileResourceItem> {
     String subtitle = '';
 
     if (isDoc) {
-      title = msg.sharedDocumentTitle ?? 'Tài liệu không tên';
-      subtitle = 'Tài liệu học tập • Chia sẻ bởi ${msg.senderName}';
+      title = msg.sharedDocumentTitle ?? l10n.untitledDocument;
+      subtitle = l10n.documentStudyShared.replaceAll('...', ' • ${msg.senderName}');
       leading = Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
@@ -658,9 +679,9 @@ class _FileResourceItemState extends State<_FileResourceItem> {
         child: Icon(Icons.picture_as_pdf_rounded, color: Colors.red.shade700),
       );
     } else {
-      title = msg.fileName ?? 'Tệp đính kèm';
+      title = msg.fileName ?? l10n.sharedFile;
       final sizeStr = widget.formatSize(msg.fileSize);
-      subtitle = '${sizeStr.isNotEmpty ? "$sizeStr • " : ""}Tập tin • Gửi bởi ${msg.senderName}';
+      subtitle = '${sizeStr.isNotEmpty ? "$sizeStr • " : ""}${l10n.files} • ${msg.senderName}';
       final extColor = _colorForFile(title);
       leading = Container(
         padding: const EdgeInsets.all(10),
@@ -699,7 +720,7 @@ class _FileResourceItemState extends State<_FileResourceItem> {
                       MaterialPageRoute(
                         builder: (context) => PdfFullScreenPage(
                           pdfBytes: bytes,
-                          title: msg.fileName ?? 'Tài liệu',
+                          title: msg.fileName ?? l10n.documentLabel,
                         ),
                       ),
                     );
@@ -708,7 +729,7 @@ class _FileResourceItemState extends State<_FileResourceItem> {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Không thể mở tệp tin PDF: $e'),
+                        content: Text(l10n.cannotOpenPDF(e.toString())),
                         backgroundColor: Colors.red,
                       ),
                     );

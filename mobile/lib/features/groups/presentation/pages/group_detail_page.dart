@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../app.dart';
 import '../../../../core/auth/auth_state.dart';
 import '../../../../core/constants/route_names.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../../data/models/group_model.dart';
 import '../../data/services/group_chat_service.dart';
 import '../controllers/group_controller.dart';
@@ -41,15 +42,15 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     _friendCtrl.loadFriends();
 
     _userId = _auth.user?['id']?.toString();
-    _userName = _auth.user?['name']?.toString() ?? 'Bạn';
+    _userName = _auth.user?['name']?.toString() ?? '';
     _userAvatar = _auth.user?['avatar']?.toString();
   }
 
   String get _myUid => _userId ?? '';
 
-
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return ListenableBuilder(
       listenable: _groupCtrl,
       builder: (context, _) {
@@ -60,7 +61,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         if (group == null) {
           return Scaffold(
             appBar: AppBar(),
-            body: const Center(child: Text('Không tìm thấy nhóm học tập')),
+            body: Center(child: Text(l10n.groupNotFound)),
           );
         }
         final cs = Theme.of(context).colorScheme;
@@ -80,7 +81,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                   GroupChatTab(
                     groupId: group.id,
                     userId: _myUid,
-                    userName: _userName ?? 'Bạn',
+                    userName: _userName ?? '',
                     userAvatar: _userAvatar,
                   ),
                   GroupFilesTab(
@@ -91,7 +92,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                       chatService: _chatService,
                       groupId: group.id,
                       senderId: _myUid,
-                      senderName: _userName ?? 'Bạn',
+                      senderName: _userName ?? '',
                       senderAvatar: _userAvatar,
                     ),
                   ),
@@ -111,6 +112,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   }
 
   Widget _buildSliverAppBar(BuildContext context, GroupModel group, bool innerBoxIsScrolled) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final isDark = cs.brightness == Brightness.dark;
@@ -148,7 +150,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
-              group.isPublic ? 'CÔNG KHAI' : 'RIÊNG TƯ',
+              group.isPublic ? l10n.publicGroup : l10n.privateGroup,
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 8.5,
@@ -198,10 +200,10 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
             unselectedLabelColor: isDark ? Colors.white.withValues(alpha: 0.5) : cs.onSurfaceVariant.withValues(alpha: 0.6),
             labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
             unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13.5),
-            tabs: const [
-              Tab(text: 'Trò chuyện'),
-              Tab(text: 'Kho lưu trữ'),
-              Tab(text: 'Thành viên'),
+            tabs:  [
+              Tab(text: l10n.groupChatTab),
+              Tab(text: l10n.groupStorageTab),
+              Tab(text: l10n.groupMembersTab),
             ],
           ),
         ),
@@ -210,6 +212,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   }
 
   void _showGroupSettingsBottomSheet(BuildContext context, GroupModel group) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final isDark = cs.brightness == Brightness.dark;
@@ -239,7 +242,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
                 child: Text(
-                  'Tùy chọn nhóm học tập',
+                  l10n.groupOptions,
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: isDark ? Colors.white : cs.onSurface,
@@ -250,7 +253,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
               if (isOwnerOrAdmin) ...[
                 ListTile(
                   leading: Icon(Icons.edit_outlined, color: isDark ? Colors.white.withValues(alpha: 0.7) : cs.onSurfaceVariant),
-                  title: const Text('Chỉnh sửa thông tin nhóm', style: TextStyle(fontWeight: FontWeight.w500)),
+                  title: Text(l10n.editGroupTitle, style: const TextStyle(fontWeight: FontWeight.w500)),
                   onTap: () {
                     Navigator.pop(sheetCtx);
                     context.push(RouteNames.groupEdit.replaceFirst(':id', group.id));
@@ -258,7 +261,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                 ),
                 ListTile(
                   leading: Icon(Icons.person_add_outlined, color: isDark ? Colors.white.withValues(alpha: 0.7) : cs.onSurfaceVariant),
-                  title: const Text('Thêm thành viên', style: TextStyle(fontWeight: FontWeight.w500)),
+                  title: Text(l10n.addMembers, style: const TextStyle(fontWeight: FontWeight.w500)),
                   onTap: () {
                     Navigator.pop(sheetCtx);
                     _showInviteMemberSheet(context, group);
@@ -268,7 +271,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
               if (isGroupOwner)
                 ListTile(
                   leading: Icon(Icons.delete_outline_rounded, color: cs.error),
-                  title: Text('Giải tán nhóm', style: TextStyle(color: cs.error, fontWeight: FontWeight.w500)),
+                  title: Text(l10n.disbandGroup, style: TextStyle(color: cs.error, fontWeight: FontWeight.w500)),
                   onTap: () {
                     Navigator.pop(sheetCtx);
                     _confirmDelete(context, group);
@@ -277,7 +280,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
               if (!isGroupOwner || (isGroupOwner && group.members.length > 1))
                 ListTile(
                   leading: Icon(Icons.exit_to_app_rounded, color: cs.error),
-                  title: Text('Rời khỏi nhóm', style: TextStyle(color: cs.error, fontWeight: FontWeight.w500)),
+                  title: Text(l10n.leaveGroup, style: TextStyle(color: cs.error, fontWeight: FontWeight.w500)),
                   onTap: () {
                     Navigator.pop(sheetCtx);
                     _confirmLeave(context, group);
@@ -309,6 +312,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
 
 
   Future<String?> _showNewOwnerSelectDialog(BuildContext context, GroupModel group) async {
+    final l10n = context.l10n;
     final otherMembers = group.members.where((m) => m.user.id != _myUid).toList();
     if (otherMembers.isEmpty) return null;
 
@@ -341,9 +345,9 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text(
-                    'Chọn Trưởng nhóm mới',
-                    style: TextStyle(
+                  Text(
+                    l10n.selectNewOwnerTitle,
+                    style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
                     ),
@@ -351,7 +355,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Trước khi rời nhóm, bạn bắt buộc phải chuyển quyền Trưởng nhóm cho một thành viên khác.',
+                    l10n.mustTransferOwnership,
                     style: dialogTheme.textTheme.bodyMedium?.copyWith(
                       color: dialogIsDark ? const Color(0xFFB0B3B8) : const Color(0xFF65676B),
                       fontSize: 13,
@@ -367,7 +371,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                       fontSize: 13.5,
                     ),
                     decoration: InputDecoration(
-                      hintText: 'Tìm kiếm thành viên...',
+                      hintText: l10n.searchMembers,
                       hintStyle: TextStyle(
                         color: dialogIsDark ? const Color(0xFFB0B3B8) : const Color(0xFF65676B),
                         fontSize: 13,
@@ -400,7 +404,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                           ? Padding(
                               padding: const EdgeInsets.all(24.0),
                               child: Text(
-                                'Không tìm thấy thành viên',
+                                l10n.memberNotFound,
                                 style: TextStyle(
                                   color: dialogIsDark ? const Color(0xFFB0B3B8) : const Color(0xFF65676B),
                                   fontSize: 13,
@@ -481,7 +485,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                             ),
                             onPressed: () => Navigator.pop(ctx, null),
                             child: Text(
-                              'Hủy',
+                              l10n.cancel,
                               style: TextStyle(
                                 color: dialogIsDark ? Colors.white70 : const Color(0xFF65676B),
                                 fontWeight: FontWeight.w600,
@@ -505,9 +509,9 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                               elevation: 0,
                             ),
                             onPressed: () => Navigator.pop(ctx, selectedMember?.user.id),
-                            child: const Text(
-                              'Xác nhận',
-                              style: TextStyle(
+                            child: Text(
+                              l10n.confirm,
+                              style: const TextStyle(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 14,
                               ),
@@ -527,6 +531,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   }
 
   Future<void> _confirmLeave(BuildContext context, GroupModel group) async {
+    final l10n = context.l10n;
     final isOwner = group.creatorId == _myUid || group.isOwner || group.members.any((m) => m.user.id == _myUid && m.role == 'OWNER');
     String? newOwnerId;
 
@@ -540,6 +545,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.4),
       builder: (ctx) {
+        final l10n = ctx.l10n;
         final dialogTheme = Theme.of(ctx);
         final dialogIsDark = dialogTheme.brightness == Brightness.dark;
 
@@ -571,7 +577,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Rời nhóm?',
+                  l10n.leaveGroupConfirm,
                   style: dialogTheme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                     fontSize: 18,
@@ -581,7 +587,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Bạn có chắc chắn muốn rời nhóm học tập "${group.name}"?',
+                  l10n.leaveGroupConfirm,
                   style: dialogTheme.textTheme.bodyMedium?.copyWith(
                     color: dialogIsDark ? const Color(0xFFB0B3B8) : const Color(0xFF65676B),
                     fontSize: 13,
@@ -607,7 +613,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                           ),
                           onPressed: () => Navigator.pop(ctx, false),
                           child: Text(
-                            'Hủy',
+                            l10n.cancel,
                             style: TextStyle(
                               color: dialogIsDark ? Colors.white70 : const Color(0xFF65676B),
                               fontWeight: FontWeight.w600,
@@ -631,9 +637,9 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                             elevation: 0,
                           ),
                           onPressed: () => Navigator.pop(ctx, true),
-                          child: const Text(
-                            'Rời nhóm',
-                            style: TextStyle(
+                          child: Text(
+                            l10n.leaveGroupBtn,
+                            style: const TextStyle(
                               fontWeight: FontWeight.w600,
                               fontSize: 14.5,
                             ),
@@ -655,17 +661,19 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         if (ok) {
           context.go('/?tab=3');
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_groupCtrl.error ?? 'Lỗi')));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_groupCtrl.error ?? l10n.error)));
         }
       }
     }
   }
 
   Future<void> _confirmDelete(BuildContext context, GroupModel group) async {
+    final l10n = context.l10n;
     final confirmed = await showDialog<bool>(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.4),
       builder: (ctx) {
+        final l10n = ctx.l10n;
         final dialogTheme = Theme.of(ctx);
         final dialogIsDark = dialogTheme.brightness == Brightness.dark;
 
@@ -697,7 +705,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Giải tán nhóm?',
+                  l10n.disbandGroupConfirm,
                   style: dialogTheme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                     fontSize: 18,
@@ -707,7 +715,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Bạn có chắc chắn muốn xóa nhóm "${group.name}"? Tất cả lịch sử tin nhắn sẽ bị xóa vĩnh viễn.',
+                  l10n.disbandGroupWithName(group.name),
                   style: dialogTheme.textTheme.bodyMedium?.copyWith(
                     color: dialogIsDark ? const Color(0xFFB0B3B8) : const Color(0xFF65676B),
                     fontSize: 13,
@@ -733,7 +741,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                           ),
                           onPressed: () => Navigator.pop(ctx, false),
                           child: Text(
-                            'Hủy',
+                            l10n.cancel,
                             style: TextStyle(
                               color: dialogIsDark ? Colors.white70 : const Color(0xFF65676B),
                               fontWeight: FontWeight.w600,
@@ -757,9 +765,9 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                             elevation: 0,
                           ),
                           onPressed: () => Navigator.pop(ctx, true),
-                          child: const Text(
-                            'Giải tán',
-                            style: TextStyle(
+                          child: Text(
+                            l10n.disband,
+                            style: const TextStyle(
                               fontWeight: FontWeight.w600,
                               fontSize: 14.5,
                             ),
@@ -781,7 +789,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         if (ok) {
           context.go('/?tab=3');
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_groupCtrl.error ?? 'Lỗi')));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_groupCtrl.error ?? l10n.error)));
         }
       }
     }

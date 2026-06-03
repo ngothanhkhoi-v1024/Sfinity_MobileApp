@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../app.dart';
 import '../../../../core/auth/auth_state.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../../data/models/group_message_model.dart';
 import '../../data/services/group_chat_service.dart';
 import 'package:sfinity/features/places/data/models/place_model.dart';
@@ -40,7 +41,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
     super.initState();
     _auth = SfinityApp.auth;
     _userId = _auth.user?['id']?.toString();
-    _userName = _auth.user?['name']?.toString() ?? 'Bạn';
+    _userName = _auth.user?['name']?.toString() ?? '';
     _userAvatar = _auth.user?['avatar']?.toString();
     _messagesStream = _chatService.messagesStream(widget.groupId);
   }
@@ -76,7 +77,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
     await _chatService.sendTextMessage(
       groupId: widget.groupId,
       senderId: _userId!,
-      senderName: _userName ?? 'Bạn',
+      senderName: _userName ?? '',
       senderAvatar: _userAvatar,
       text: text,
     );
@@ -94,6 +95,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
   }
 
   Future<void> _pickImage(ImageSource source) async {
+    final l10n = context.l10n;
     try {
       final picker = ImagePicker();
       final XFile? picked = await picker.pickImage(
@@ -112,7 +114,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
       await _chatService.sendImageMessage(
         groupId: widget.groupId,
         senderId: _userId!,
-        senderName: _userName ?? 'Bạn',
+        senderName: _userName ?? '',
         senderAvatar: _userAvatar,
         imageFile: File(picked.path),
         fileName: picked.name,
@@ -123,7 +125,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Gửi ảnh thất bại: $e'),
+            content: Text(l10n.sendImageFailed(e.toString())),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -140,6 +142,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
   }
 
   Future<void> _pickFile() async {
+    final l10n = context.l10n;
     try {
       final result = await FilePicker.pickFiles(
         type: FileType.any,
@@ -154,8 +157,8 @@ class _GroupChatPageState extends State<GroupChatPage> {
       if (pf.size > maxSizeBytes) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Kích thước tệp vượt quá giới hạn cho phép (tối đa 200MB).'),
+            SnackBar(
+              content: Text(l10n.fileSizeLimit),
               backgroundColor: Colors.red,
             ),
           );
@@ -172,7 +175,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
       await _chatService.sendFileMessage(
         groupId: widget.groupId,
         senderId: _userId!,
-        senderName: _userName ?? 'Bạn',
+        senderName: _userName ?? '',
         senderAvatar: _userAvatar,
         file: File(pf.path!),
         fileName: pf.name,
@@ -184,7 +187,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Gửi file thất bại: $e'),
+            content: Text(l10n.sendFileFailed(e.toString())),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -206,13 +209,14 @@ class _GroupChatPageState extends State<GroupChatPage> {
       chatService: _chatService,
       groupId: widget.groupId,
       senderId: _userId ?? '',
-      senderName: _userName ?? 'Bạn',
+      senderName: _userName ?? '',
       senderAvatar: _userAvatar,
       onDone: _scrollToBottom,
     );
   }
 
   Future<void> _shareLocation() async {
+    final l10n = context.l10n;
     try {
       // Show loading indicator
       showDialog(
@@ -249,7 +253,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
         await _chatService.sendLocationMessage(
           groupId: widget.groupId,
           senderId: _userId ?? '',
-          senderName: _userName ?? 'Bạn',
+          senderName: _userName ?? '',
           senderAvatar: _userAvatar,
           latitude: selectedPlace.latitude ?? 0.0,
           longitude: selectedPlace.longitude ?? 0.0,
@@ -261,7 +265,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi tải danh sách địa điểm: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text(l10n.loadPlaceListError(e.toString())), backgroundColor: Colors.red),
         );
       }
     }
@@ -269,6 +273,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
@@ -278,11 +283,11 @@ class _GroupChatPageState extends State<GroupChatPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              widget.groupName ?? 'Chat nhóm',
+              widget.groupName ?? l10n.groupChat,
               style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
             ),
             Text(
-              'Nhóm học tập',
+              l10n.studyGroup,
               style: TextStyle(
                   fontSize: 11, color: cs.onSurface.withValues(alpha: 0.6)),
             ),
@@ -305,7 +310,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (snap.hasError) {
-                  return Center(child: Text('Lỗi: ${snap.error}'));
+                  return Center(child: Text(l10n.groupChatError(snap.error.toString())));
                 }
                 final rawMessages = snap.data ?? [];
                 final messages = rawMessages.where((msg) {
@@ -332,11 +337,10 @@ class _GroupChatPageState extends State<GroupChatPage> {
                             size: 64,
                             color: cs.onSurfaceVariant.withValues(alpha: 0.3)),
                         const SizedBox(height: 12),
-                        Text('Chưa có tin nhắn nào',
-                            style: TextStyle(color: cs.onSurfaceVariant)),
+                        Text(l10n.noMessages, style: TextStyle(color: cs.onSurfaceVariant)),
                         const SizedBox(height: 4),
                         Text(
-                          'Hãy là người đầu tiên gửi tin!',
+                          l10n.beFirstToSend,
                           style: theme.textTheme.bodySmall?.copyWith(
                               color: cs.onSurfaceVariant
                                   .withValues(alpha: 0.7)),

@@ -1,7 +1,7 @@
 import '../../../../core/constants/place_tags.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../models/place_model.dart';
 
-/// Text hiển thị cho list / subtitle — không phụ thuộc UI.
 abstract final class PlaceDisplayUtils {
   static String subtitle(PlaceModel place, {required bool community}) {
     if (place.tags.isNotEmpty) {
@@ -15,9 +15,9 @@ abstract final class PlaceDisplayUtils {
       return place.address!;
     }
     if (community) {
-      return place.authorName ?? 'Người dùng';
+      return place.authorName ?? 'User';
     }
-    return 'Địa điểm của bạn';
+    return 'Your place';
   }
 
   static String listSectionSubtitle({
@@ -27,14 +27,14 @@ abstract final class PlaceDisplayUtils {
     required int nearbyRadiusKm,
   }) {
     if (count == 0) {
-      return filterTags.isEmpty ? 'Chưa có địa điểm' : 'Không có địa điểm phù hợp bộ lọc';
+      return filterTags.isEmpty ? 'No places yet' : 'No places match filters';
     }
     if (filterTags.isNotEmpty) {
-      return '$count địa điểm · ${PlaceTags.labelsFor(filterTags.toList())}';
+      return '$count places · ${PlaceTags.labelsFor(filterTags.toList())}';
     }
     if (hasUserLocation) {
-      return '$count địa điểm · trong $nearbyRadiusKm km';
+      return '$count places · within $nearbyRadiusKm km';
     }
-    return '$count địa điểm';
+    return '$count places';
   }
 }

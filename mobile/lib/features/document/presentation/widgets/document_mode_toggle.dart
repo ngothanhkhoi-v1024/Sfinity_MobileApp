@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/i18n/app_text.dart';
 import '../../../../core/theme/app_colors.dart';
 
-/// Chuyển Cộng đồng / Cá nhân — gradient thương hiệu Sfinity.
 class DocumentModeToggle extends StatelessWidget {
   const DocumentModeToggle({
     super.key,
@@ -18,6 +18,7 @@ class DocumentModeToggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = AppColors.isDark(context);
+    final l10n = context.l10n;
 
     return Padding(
       padding: compact ? EdgeInsets.zero : const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -35,7 +36,6 @@ class DocumentModeToggle extends StatelessWidget {
 
             return Stack(
               children: [
-                // Thanh trượt / Sliding Selector Pill
                 AnimatedAlign(
                   duration: const Duration(milliseconds: 250),
                   curve: Curves.easeInOutCubic,
@@ -60,10 +60,8 @@ class DocumentModeToggle extends StatelessWidget {
                   ),
                 ),
                 
-                // Các nút nhấn chọn chế độ
                 Row(
                   children: [
-                    // Tab Cộng đồng
                     Expanded(
                       child: GestureDetector(
                         behavior: HitTestBehavior.opaque,
@@ -91,7 +89,7 @@ class DocumentModeToggle extends StatelessWidget {
                                       : FontWeight.w500,
                                   fontSize: 14,
                                 ),
-                                child: const Text('Cộng đồng'),
+                                child: Text(l10n.explore),
                               ),
                             ],
                           ),
@@ -99,7 +97,6 @@ class DocumentModeToggle extends StatelessWidget {
                       ),
                     ),
                     
-                    // Tab Cá nhân
                     Expanded(
                       child: GestureDetector(
                         behavior: HitTestBehavior.opaque,
@@ -127,7 +124,7 @@ class DocumentModeToggle extends StatelessWidget {
                                       : FontWeight.w500,
                                   fontSize: 14,
                                 ),
-                                child: const Text('Cá nhân'),
+                                child: Text(l10n.yourUploadedDocuments),
                               ),
                             ],
                           ),

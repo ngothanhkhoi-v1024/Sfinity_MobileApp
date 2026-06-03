@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sfinity/features/places/data/models/place_model.dart';
+import '../../../../core/i18n/app_text.dart';
 
 class PlacePickerSheet extends StatefulWidget {
   const PlacePickerSheet({
@@ -49,6 +50,7 @@ class _PlacePickerSheetState extends State<PlacePickerSheet> with SingleTickerPr
   }
 
   Widget _buildList(List<PlaceModel> places, ColorScheme cs, ThemeData theme) {
+    final l10n = context.l10n;
     final filtered = _filterList(places);
     if (filtered.isEmpty) {
       return Center(
@@ -60,7 +62,7 @@ class _PlacePickerSheetState extends State<PlacePickerSheet> with SingleTickerPr
               Icon(Icons.location_off_rounded, size: 48, color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
               const SizedBox(height: 12),
               Text(
-                'Không tìm thấy địa điểm nào',
+                l10n.noPlaceYet,
                 style: TextStyle(color: cs.onSurfaceVariant),
               ),
             ],
@@ -101,7 +103,7 @@ class _PlacePickerSheetState extends State<PlacePickerSheet> with SingleTickerPr
               overflow: TextOverflow.ellipsis,
             ),
             subtitle: Text(
-              place.address ?? 'Không có địa chỉ cụ thể',
+              place.address ?? l10n.noAddress,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: cs.onSurfaceVariant,
                 fontSize: 12,
@@ -121,6 +123,7 @@ class _PlacePickerSheetState extends State<PlacePickerSheet> with SingleTickerPr
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final isDark = cs.brightness == Brightness.dark;
@@ -144,7 +147,7 @@ class _PlacePickerSheetState extends State<PlacePickerSheet> with SingleTickerPr
             ),
           ),
           Text(
-            'Chọn địa điểm chia sẻ',
+            l10n.sharePlace,
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
             ),
@@ -156,7 +159,7 @@ class _PlacePickerSheetState extends State<PlacePickerSheet> with SingleTickerPr
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Tìm kiếm địa điểm...',
+                hintText: l10n.searchPlaceSheet,
                 prefixIcon: const Icon(Icons.search_rounded),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
@@ -182,9 +185,9 @@ class _PlacePickerSheetState extends State<PlacePickerSheet> with SingleTickerPr
             labelColor: cs.primary,
             unselectedLabelColor: cs.onSurfaceVariant,
             indicatorColor: cs.primary,
-            tabs: const [
-              Tab(text: 'Địa điểm của tôi'),
-              Tab(text: 'Địa điểm công cộng'),
+            tabs:  [
+              Tab(text: l10n.myPlaces),
+              Tab(text: l10n.publicPlaces),
             ],
           ),
           const SizedBox(height: 8),

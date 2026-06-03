@@ -97,12 +97,6 @@ class PlaceEngagementController extends ChangeNotifier {
   }
 
   Future<bool> submitReview(String placeId) async {
-    if (!SfinityApp.auth.isAuthenticated) {
-      error = 'Đăng nhập để đánh giá địa điểm';
-      notifyListeners();
-      return false;
-    }
-
     submitting = true;
     error = null;
     notifyListeners();
@@ -170,15 +164,7 @@ class PlaceEngagementController extends ChangeNotifier {
     required double placeLat,
     required double placeLng,
   }) async {
-    if (!SfinityApp.auth.isAuthenticated) {
-      error = 'Đăng nhập để check-in';
-      notifyListeners();
-      return false;
-    }
-
     if (checkInStatus?.hasCheckedIn == true) {
-      error = 'Bạn đã check-in tại địa điểm này rồi';
-      notifyListeners();
       return false;
     }
 
@@ -189,8 +175,7 @@ class PlaceEngagementController extends ChangeNotifier {
     try {
       final reading = await _location.getCurrentLocationReading();
       if (reading == null) {
-        error =
-            'Không lấy được vị trí GPS. Bật định vị và thử lại.';
+        error = 'Không lấy được vị trí GPS. Bật định vị và thử lại.';
         checkInSubmitting = false;
         notifyListeners();
         return false;
@@ -243,12 +228,6 @@ class PlaceEngagementController extends ChangeNotifier {
   }
 
   Future<bool> pickAndUploadPhoto(String placeId) async {
-    if (!SfinityApp.auth.isAuthenticated) {
-      error = 'Đăng nhập để thêm ảnh';
-      notifyListeners();
-      return false;
-    }
-
     final picker = ImagePicker();
     final picked = await picker.pickImage(
       source: ImageSource.gallery,

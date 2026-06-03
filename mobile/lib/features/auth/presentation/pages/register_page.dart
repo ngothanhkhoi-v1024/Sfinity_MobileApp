@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/route_names.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../../../../core/utils/validators.dart';
 import '../controllers/register_controller.dart';
 import '../widgets/auth_card.dart';
@@ -47,6 +48,7 @@ class _RegisterPageState extends State<RegisterPage> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     FocusScope.of(context).unfocus();
+    final l10n = context.l10n;
     final success = await _controller.register(
       _email.text.trim(),
       _password.text,
@@ -56,26 +58,26 @@ class _RegisterPageState extends State<RegisterPage> {
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => AlertDialog(
+        builder: (dialogContext) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Row(
-            children: const [
+            children: [
               Icon(Icons.mark_email_unread_rounded, color: Colors.blue, size: 28),
               SizedBox(width: 10),
-              Text('Xác thực Email', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text(l10n.verifyEmail, style: TextStyle(fontWeight: FontWeight.bold)),
             ],
           ),
-          content: const Text(
-            'Đăng ký tài khoản thành công!\n\nChúng tôi đã gửi một liên kết xác thực đến email của bạn. Vui lòng kiểm tra hộp thư (bao gồm cả thư rác/spam nếu không thấy) và nhấp vào liên kết để kích hoạt tài khoản của bạn trước khi tiến hành đăng nhập.',
+          content: Text(
+            l10n.registerSuccess,
             style: TextStyle(fontSize: 15, height: 1.4),
           ),
           actions: [
             FilledButton(
               onPressed: () {
-                Navigator.of(context).pop();
+                Navigator.of(dialogContext).pop();
                 context.go(RouteNames.login);
               },
-              child: const Text('Đã hiểu & Đăng nhập'),
+              child: Text(l10n.understood),
             ),
           ],
         ),
@@ -86,6 +88,7 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final isDark = theme.brightness == Brightness.dark;
 
     final primaryColor = theme.colorScheme.primary;
@@ -95,6 +98,7 @@ class _RegisterPageState extends State<RegisterPage> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
+        title: Text(l10n.registerTitle),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -155,7 +159,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                           const SizedBox(height: 18),
                           Text(
-                            'Đăng ký',
+                            l10n.register,
                             style: theme.textTheme.headlineMedium?.copyWith(
                               fontWeight: FontWeight.w800,
                               color: onSurfaceColor,
@@ -164,7 +168,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Đăng ký tài khoản mới để bắt đầu sử dụng Sfinity.',
+                            l10n.registerTitle,
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: onSurfaceColor.withOpacity(0.75),
                             ),
@@ -193,14 +197,14 @@ class _RegisterPageState extends State<RegisterPage> {
                           ],
                           AuthTextField(
                             controller: _name,
-                            labelText: 'Họ tên',
+                            labelText: l10n.fullName,
                             prefixIcon: const Icon(Icons.person_outline_rounded),
                             validator: AppValidators.validateName,
                           ),
                           const SizedBox(height: 14),
                           AuthTextField(
                             controller: _email,
-                            labelText: 'Email',
+                            labelText: l10n.email,
                             prefixIcon: const Icon(Icons.mail_outline_rounded),
                             keyboardType: TextInputType.emailAddress,
                             validator: AppValidators.validateEmail,
@@ -208,14 +212,14 @@ class _RegisterPageState extends State<RegisterPage> {
                           const SizedBox(height: 14),
                           PasswordField(
                             controller: _password,
-                            labelText: 'Mật khẩu',
+                            labelText: l10n.password,
                             textInputAction: TextInputAction.next,
                             validator: AppValidators.validatePassword,
                           ),
                           const SizedBox(height: 14),
                           PasswordField(
                             controller: _confirmPassword,
-                            labelText: 'Xác nhận mật khẩu',
+                            labelText: l10n.confirmPasswordField,
                             validator: (value) => AppValidators.validateConfirmPassword(value, _password.text),
                             onFieldSubmitted: (_) => _submit(),
                           ),
@@ -231,14 +235,14 @@ class _RegisterPageState extends State<RegisterPage> {
                                       color: Colors.white,
                                     ),
                                   )
-                                : const Text('Đăng ký'),
+                                : Text(l10n.register),
                           ),
                           const SizedBox(height: 18),
                           TextButton(
                             onPressed: _controller.isLoading
                                 ? null
                                 : () => context.go(RouteNames.login),
-                            child: const Text('Đã có tài khoản? Đăng nhập ngay'),
+                            child: Text(l10n.alreadyHaveAccount),
                           ),
                         ],
                       ),

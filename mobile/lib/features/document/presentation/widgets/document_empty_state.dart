@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/i18n/app_text.dart';
 import '../../../../core/theme/app_colors.dart';
 
-/// Premium empty state hiển thị khi không có tài liệu hoặc không tìm thấy kết quả.
 class DocumentEmptyState extends StatelessWidget {
   const DocumentEmptyState({
     super.key,
@@ -10,15 +10,13 @@ class DocumentEmptyState extends StatelessWidget {
     this.onClearSearch,
   });
 
-  /// Nếu true: hiển thị thông báo "Không tìm thấy kết quả" và nút xóa bộ lọc.
   final bool hasSearchQuery;
-
-  /// Callback xóa bộ lọc tìm kiếm.
   final VoidCallback? onClearSearch;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       children: [
@@ -30,7 +28,6 @@ class DocumentEmptyState extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Layered circular background icon
               Container(
                 width: 80,
                 height: 80,
@@ -58,9 +55,7 @@ class DocumentEmptyState extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               Text(
-                hasSearchQuery
-                    ? 'Không tìm thấy kết quả'
-                    : 'Chưa có tài liệu nào',
+                hasSearchQuery ? l10n.noSearchResults('') : l10n.noDocumentsFound,
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -71,8 +66,8 @@ class DocumentEmptyState extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 hasSearchQuery
-                    ? 'Không tìm thấy tài liệu phù hợp với từ khóa của bạn. Thử tìm mã môn học hoặc từ khóa khác xem sao!'
-                    : 'Hãy là người đầu tiên chia sẻ tài liệu ôn thi hữu ích cho cộng đồng Sfinity ngay hôm nay!',
+                    ? l10n.noSearchResults('')
+                    : l10n.noDocumentsFound,
                 style: TextStyle(
                   fontSize: 13,
                   color: AppColors.muted(context),
@@ -85,7 +80,7 @@ class DocumentEmptyState extends StatelessWidget {
                 TextButton.icon(
                   onPressed: onClearSearch,
                   icon: const Icon(Icons.refresh_rounded, size: 18),
-                  label: const Text('Xóa bộ lọc tìm kiếm'),
+                  label: Text(l10n.clearSearch),
                   style: TextButton.styleFrom(
                     foregroundColor: AppColors.primaryOf(context),
                     padding: const EdgeInsets.symmetric(

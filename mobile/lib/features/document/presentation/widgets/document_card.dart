@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../app.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../../../../core/theme/app_colors.dart';
 
 /// Card hiển thị một item tài liệu học tập trên bảng tin.
@@ -21,13 +22,14 @@ class DocumentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final body = item['body']?.toString() ?? '';
     final fileType = (item['fileType']?.toString() ?? 'pdf').toLowerCase();
     final subjectCode = item['subjectCode']?.toString() ?? '';
     final downloads = item['downloadsCount'] ?? 0;
     final author = item['author'] as Map?;
-    final authorName = author?['name']?.toString() ?? 'Cộng đồng';
+    final authorName = author?['name']?.toString() ?? l10n.community;
 
     final currentUserId = SfinityApp.auth.user?['id']?.toString();
     final isAuthor = item['authorId']?.toString() == currentUserId;

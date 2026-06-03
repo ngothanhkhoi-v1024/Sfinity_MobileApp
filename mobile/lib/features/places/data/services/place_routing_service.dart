@@ -2,9 +2,9 @@ import 'package:dio/dio.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../core/constants/map_config.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../models/place_route_model.dart';
 
-/// Định tuyến qua OSRM (OpenStreetMap) — không cần API key.
 class PlaceRoutingService {
   PlaceRoutingService({Dio? dio}) : _dio = dio ?? Dio(_defaultOptions);
 
@@ -20,6 +20,9 @@ class PlaceRoutingService {
     required LatLng origin,
     required LatLng destination,
     required RouteTravelMode travelMode,
+    required String Function() noPathFound,
+    required String Function() noSuitableRoute,
+    required String Function() invalidRouteData,
   }) async {
     final coords =
         '${origin.longitude},${origin.latitude};${destination.longitude},${destination.latitude}';
@@ -52,14 +55,12 @@ class PlaceRoutingService {
     }
 
     if (data == null) {
-      throw PlaceRoutingException(
-        lastError?.toString() ?? 'Không tìm được đường đi',
-      );
+      throw PlaceRoutingException(noPathFound());
     }
 
     final routes = data['routes'] as List<dynamic>?;
     if (routes == null || routes.isEmpty) {
-      throw const PlaceRoutingException('Không có tuyến đường phù hợp');
+      throw PlaceRoutingException(noSuitableRoute());
     }
 
     final route = routes.first as Map<String, dynamic>;
@@ -78,7 +79,7 @@ class PlaceRoutingService {
         .toList();
 
     if (polyline.isEmpty) {
-      throw const PlaceRoutingException('Dữ liệu tuyến không hợp lệ');
+      throw PlaceRoutingException(invalidRouteData());
     }
 
     final legs = route['legs'] as List<dynamic>? ?? [];
@@ -118,7 +119,7 @@ class PlaceRoutingService {
 
     String instruction;
     if (type == 'arrive') {
-      instruction = 'Đến đích';
+      instruction = 'Arrive';
     } else if (name.isNotEmpty) {
       instruction = '$action — $name · $dist';
     } else {
@@ -155,31 +156,31 @@ class PlaceRoutingService {
   }
 
   static String _maneuverLabel(String type, String modifier) {
-    if (type == 'depart') return 'Bắt đầu';
-    if (type == 'arrive') return 'Đến nơi';
-    if (type == 'roundabout' || type == 'rotary') return 'Vào vòng xoay';
+    if (type == 'depart') return 'Start';
+    if (type == 'arrive') return 'Arrive';
+    if (type == 'roundabout' || type == 'rotary') return 'Enter roundabout';
     if (type == 'exit roundabout' || type == 'exit rotary') {
-      return 'Ra khỏi vòng xoay';
+      return 'Exit roundabout';
     }
-    if (type == 'merge') return 'Nhập làn';
-    if (type == 'fork') return 'Ngã ba';
+    if (type == 'merge') return 'Merge';
+    if (type == 'fork') return 'Fork';
     if (type == 'end of road') {
-      return modifier.contains('left') ? 'Cuối đường, rẽ trái' : 'Cuối đường, rẽ phải';
+      return modifier.contains('left') ? 'End of road, turn left' : 'End of road, turn right';
     }
-    if (type == 'new name' || type == 'continue') return 'Tiếp tục đi thẳng';
-    if (type == 'on ramp') return 'Vào đường nhánh';
-    if (type == 'off ramp') return 'Ra đường nhánh';
+    if (type == 'new name' || type == 'continue') return 'Continue straight';
+    if (type == 'on ramp') return 'Enter ramp';
+    if (type == 'off ramp') return 'Exit ramp';
 
     return switch (modifier) {
-      'left' => 'Rẽ trái',
-      'right' => 'Rẽ phải',
-      'slight left' => 'Hơi nghiêng trái',
-      'slight right' => 'Hơi nghiêng phải',
-      'sharp left' => 'Rẽ gắt trái',
-      'sharp right' => 'Rẽ gắt phải',
-      'uturn' => 'Quay đầu',
-      'straight' => 'Đi thẳng',
-      _ => 'Tiếp tục',
+      'left' => 'Turn left',
+      'right' => 'Turn right',
+      'slight left' => 'Slight left',
+      'slight right' => 'Slight right',
+      'sharp left' => 'Sharp left',
+      'sharp right' => 'Sharp right',
+      'uturn' => 'U-turn',
+      'straight' => 'Go straight',
+      _ => 'Continue',
     };
   }
 
