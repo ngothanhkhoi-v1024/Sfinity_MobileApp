@@ -128,7 +128,7 @@ export function PlacesPage() {
   };
 
   const columns: ColumnsType<PlaceItem> = [
-    { title: 'Tên địa điểm', dataIndex: 'title', ellipsis: true },
+    { title: 'Tên địa điểm', dataIndex: 'title', width: 200, ellipsis: true },
     {
       title: 'Trạng thái',
       dataIndex: 'status',
@@ -223,6 +223,7 @@ export function PlacesPage() {
         columns={columns}
         dataSource={data}
         pagination={{ pageSize: 10 }}
+        scroll={{ x: 1000 }}
       />
 
       {/* View Detail Modal */}
