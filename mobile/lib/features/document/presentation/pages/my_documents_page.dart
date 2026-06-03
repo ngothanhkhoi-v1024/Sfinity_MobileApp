@@ -1,0 +1,708 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:dio/dio.dart';
+
+import '../../../../app.dart';
+import '../../../../core/constants/route_names.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../shared/widgets/error_view.dart';
+import '../widgets/document_list_skeleton.dart';
+
+class MyDocumentsPage extends StatefulWidget {
+  const MyDocumentsPage({super.key});
+
+  @override
+  State<MyDocumentsPage> createState() => _MyDocumentsPageState();
+}
+
+class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+  final TextEditingController _searchController = TextEditingController();
+  List<dynamic> _allDocuments = [];
+  bool _loading = true;
+  String? _error;
+  String _searchQuery = '';
+
+  // Stats
+  int _totalCount = 0;
+  int _pendingCount = 0;
+  int _publishedCount = 0;
+  int _rejectedCount = 0;
+  int _draftCount = 0;
+  int _hiddenCount = 0;
+
+  final List<String> _statuses = ['ALL', 'PENDING', 'PUBLISHED', 'REJECTED', 'DRAFT', 'HIDDEN'];
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: _statuses.length, vsync: this);
+    _tabController.addListener(() {
+      if (mounted) setState(() {});
+    });
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text.trim().toLowerCase();
+      });
+    });
+    _loadDocuments();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadDocuments() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    try {
+      final currentUserId = SfinityApp.auth.user?['id']?.toString();
+      final res = await SfinityApp.documentRepository.getDocuments(
+        authorId: currentUserId,
+        limit: 100,
+      );
+      final rawList = res['items'] as List? ?? [];
+      
+      // Filter out only document-type items
+      _allDocuments = rawList.where((e) {
+        final itemMap = e as Map<String, dynamic>;
+        final type = itemMap['type']?.toString();
+        if (type != null) {
+          return type == 'document';
+        }
+        final body = itemMap['body']?.toString() ?? '';
+        return !body.contains('type:place');
+      }).toList();
+
+      _calculateStats();
+    } on DioException catch (e) {
+      _error = e.message ?? 'Đã xảy ra lỗi kết nối';
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+        });
+      }
+    }
+  }
+
+  void _calculateStats() {
+    _totalCount = _allDocuments.length;
+    _pendingCount = 0;
+    _publishedCount = 0;
+    _rejectedCount = 0;
+    _draftCount = 0;
+    _hiddenCount = 0;
+
+    for (final doc in _allDocuments) {
+      final status = doc['status']?.toString();
+      if (status == 'PENDING') _pendingCount++;
+      if (status == 'PUBLISHED') _publishedCount++;
+      if (status == 'REJECTED') _rejectedCount++;
+      if (status == 'DRAFT') _draftCount++;
+      if (status == 'HIDDEN') _hiddenCount++;
+    }
+  }
+
+  List<dynamic> _getFilteredDocuments(String status) {
+    return _allDocuments.where((doc) {
+      final docStatus = doc['status']?.toString() ?? 'DRAFT';
+      
+      // Filter by tab status
+      if (status != 'ALL' && docStatus != status) {
+        return false;
+      }
+
+      // Filter by search query
+      if (_searchQuery.isNotEmpty) {
+        final title = (doc['title']?.toString() ?? '').toLowerCase();
+        final body = (doc['body']?.toString() ?? '').toLowerCase();
+        final subjectCode = (doc['subjectCode']?.toString() ?? '').toLowerCase();
+        final category = (doc['category'] as Map?)?['name']?.toString() ?? '';
+        
+        final matches = title.contains(_searchQuery) ||
+            body.contains(_searchQuery) ||
+            subjectCode.contains(_searchQuery) ||
+            category.toLowerCase().contains(_searchQuery);
+        
+        if (!matches) return false;
+      }
+
+      return true;
+    }).toList();
+  }
+
+  Future<void> _deleteDocument(String id) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Xóa tài liệu'),
+        content: const Text('Bạn có chắc chắn muốn xóa tài liệu này không? Hành động này không thể hoàn tác.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Hủy'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Xóa'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      try {
+        await SfinityApp.documentRepository.deleteDocument(id);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Xóa tài liệu thành công')),
+          );
+          _loadDocuments();
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Xóa tài liệu thất bại: $e')),
+          );
+        }
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = AppColors.primaryOf(context);
+
+    return Scaffold(
+      backgroundColor: AppColors.scaffold(context),
+      appBar: AppBar(
+        title: const Text(
+          'Tài liệu của tôi',
+          style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: -0.3),
+        ),
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.add_circle_outline, color: primary, size: 26),
+            onPressed: () async {
+              await context.push(
+                RouteNames.documentCreate,
+                extra: const {'contentType': 'document'},
+              );
+              _loadDocuments();
+            },
+          ),
+        ],
+      ),
+      body: _loading
+          ? const Padding(
+              padding: EdgeInsets.all(16),
+              child: DocumentListSkeleton(),
+            )
+          : _error != null
+              ? ErrorView(message: _error!, onRetry: _loadDocuments)
+              : Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _buildStatsDashboard(primary),
+                          const SizedBox(height: 12),
+                          // Modern Search Bar
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            decoration: AppColors.panel(context, radius: 12),
+                            child: TextField(
+                              controller: _searchController,
+                              decoration: InputDecoration(
+                                icon: Icon(Icons.search, color: AppColors.muted(context), size: 20),
+                                hintText: 'Tìm kiếm tài liệu học tập...',
+                                hintStyle: TextStyle(fontSize: 14, color: AppColors.muted(context)),
+                                border: InputBorder.none,
+                                isDense: true,
+                                contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                                suffixIcon: _searchQuery.isNotEmpty
+                                    ? GestureDetector(
+                                        onTap: () => _searchController.clear(),
+                                        child: Icon(Icons.close, color: AppColors.muted(context), size: 18),
+                                      )
+                                    : null,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: TabBarView(
+                        controller: _tabController,
+                        children: _statuses.map((status) {
+                          final docs = _getFilteredDocuments(status);
+                          return RefreshIndicator(
+                            color: primary,
+                            onRefresh: _loadDocuments,
+                            child: docs.isEmpty
+                                ? _buildEmptyState()
+                                : ListView.builder(
+                                    physics: const AlwaysScrollableScrollPhysics(
+                                      parent: BouncingScrollPhysics(),
+                                    ),
+                                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+                                    itemCount: docs.length,
+                                    itemBuilder: (context, index) {
+                                      final doc = docs[index] as Map<String, dynamic>;
+                                      return _MyDocumentCard(
+                                        doc: doc,
+                                        primary: primary,
+                                        onTap: () async {
+                                          await context.push('/document/${doc['id']}');
+                                          _loadDocuments();
+                                        },
+                                        onEdit: () async {
+                                          await context.push('/document/${doc['id']}/edit');
+                                          _loadDocuments();
+                                        },
+                                        onDelete: () => _deleteDocument(doc['id'].toString()),
+                                      );
+                                    },
+                                  ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ],
+                ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: Container(
+        height: MediaQuery.of(context).size.height * 0.45,
+        alignment: Alignment.center,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.folder_open_rounded, size: 48, color: AppColors.muted(context)),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Không tìm thấy tài liệu',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.subtitle(context)),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Các tài liệu của bạn sẽ hiển thị ở đây.',
+              style: TextStyle(fontSize: 13, color: AppColors.muted(context)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatsDashboard(Color primary) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      child: Row(
+        children: [
+          _buildStatItem(
+            title: 'Tài liệu',
+            value: '$_totalCount',
+            icon: Icons.article_rounded,
+            color: primary,
+            isSelected: _tabController.index == 0,
+            onTap: () => _tabController.animateTo(0),
+          ),
+          const SizedBox(width: 8),
+          _buildStatItem(
+            title: 'Chờ duyệt',
+            value: '$_pendingCount',
+            icon: Icons.hourglass_empty_rounded,
+            color: Colors.blue.shade700,
+            isSelected: _tabController.index == 1,
+            onTap: () => _tabController.animateTo(1),
+          ),
+          const SizedBox(width: 8),
+          _buildStatItem(
+            title: 'Đã duyệt',
+            value: '$_publishedCount',
+            icon: Icons.check_circle_outline_rounded,
+            color: Colors.green.shade700,
+            isSelected: _tabController.index == 2,
+            onTap: () => _tabController.animateTo(2),
+          ),
+          const SizedBox(width: 8),
+          _buildStatItem(
+            title: 'Từ chối',
+            value: '$_rejectedCount',
+            icon: Icons.cancel_outlined,
+            color: Colors.red.shade700,
+            isSelected: _tabController.index == 3,
+            onTap: () => _tabController.animateTo(3),
+          ),
+          const SizedBox(width: 8),
+          _buildStatItem(
+            title: 'Bản nháp',
+            value: '$_draftCount',
+            icon: Icons.edit_note_rounded,
+            color: Colors.orange.shade700,
+            isSelected: _tabController.index == 4,
+            onTap: () => _tabController.animateTo(4),
+          ),
+          const SizedBox(width: 8),
+          _buildStatItem(
+            title: 'Bị ẩn',
+            value: '$_hiddenCount',
+            icon: Icons.visibility_off_outlined,
+            color: Colors.grey.shade700,
+            isSelected: _tabController.index == 5,
+            onTap: () => _tabController.animateTo(5),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem({
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color color,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    final isDark = AppColors.isDark(context);
+    
+    final cardBgColor = isSelected 
+        ? color 
+        : (isDark ? const Color(0xFF1E293B) : Colors.white);
+    
+    final textColor = isSelected 
+        ? Colors.white 
+        : (isDark ? Colors.white : Colors.grey[900]);
+        
+    final subtitleColor = isSelected
+        ? Colors.white.withValues(alpha: 0.8)
+        : AppColors.muted(context);
+        
+    final iconColor = isSelected ? Colors.white : color;
+
+    return Material(
+      color: cardBgColor,
+      borderRadius: BorderRadius.circular(14),
+      elevation: isSelected ? 4 : 0,
+      shadowColor: color.withValues(alpha: 0.3),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          width: 86,
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isSelected ? Colors.transparent : color.withValues(alpha: 0.15),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: iconColor, size: 20),
+              const SizedBox(height: 6),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: textColor,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: subtitleColor,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MyDocumentCard extends StatelessWidget {
+  const _MyDocumentCard({
+    required this.doc,
+    required this.primary,
+    required this.onTap,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final Map<String, dynamic> doc;
+  final Color primary;
+  final VoidCallback onTap;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final title = doc['title']?.toString() ?? '';
+    final body = doc['body']?.toString() ?? '';
+    final fileType = (doc['fileType']?.toString() ?? 'pdf').toLowerCase();
+    final subjectCode = doc['subjectCode']?.toString() ?? '';
+    final downloads = doc['downloadsCount'] ?? 0;
+    final status = doc['status']?.toString() ?? 'DRAFT';
+
+    final (fileIcon, iconColor) = _resolveFileIcon(fileType, theme);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: AppColors.panel(context, radius: 16),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // File Type Icon
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: iconColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(fileIcon, size: 28, color: iconColor),
+                ),
+                const SizedBox(width: 12),
+                // Core Details
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          if (subjectCode.isNotEmpty) ...[
+                            _Badge(
+                              text: subjectCode.toUpperCase(),
+                              color: primary,
+                              bgOpacity: 0.08,
+                            ),
+                            const SizedBox(width: 6),
+                          ],
+                          _Badge(
+                            text: (doc['category'] as Map?)?['name']?.toString() ?? 'Tài liệu',
+                            color: AppColors.muted(context),
+                            backgroundColor: AppColors.chipBg(context),
+                          ),
+                          const SizedBox(width: 6),
+                          // Downloads count tag
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF10B981).withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.file_download_outlined, size: 10, color: Color(0xFF10B981)),
+                                const SizedBox(width: 2),
+                                Text(
+                                  '$downloads',
+                                  style: const TextStyle(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF10B981),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Spacer(),
+                          _buildStatusBadge(status),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          height: 1.25,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      if (body.isNotEmpty)
+                        Text(
+                          body.split('\n').first,
+                          style: TextStyle(fontSize: 11, color: AppColors.muted(context)),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 4),
+                // Card Actions Dropdown
+                PopupMenuButton<String>(
+                  icon: Icon(Icons.more_vert_rounded, color: AppColors.muted(context), size: 20),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 100),
+                  onSelected: (val) {
+                    if (val == 'edit') {
+                      onEdit();
+                    } else if (val == 'delete') {
+                      onDelete();
+                    }
+                  },
+                  itemBuilder: (ctx) => [
+                    const PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit_outlined, size: 16),
+                          SizedBox(width: 8),
+                          Text('Sửa', style: TextStyle(fontSize: 13)),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete_outline, size: 16, color: Colors.red),
+                          SizedBox(width: 8),
+                          Text('Xóa', style: TextStyle(fontSize: 13, color: Colors.red)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusBadge(String status) {
+    switch (status) {
+      case 'DRAFT':
+        return const _Badge(
+          text: 'Nháp',
+          color: Colors.orange,
+          bgOpacity: 0.1,
+        );
+      case 'PENDING':
+        return const _Badge(
+          text: 'Chờ duyệt',
+          color: Colors.blue,
+          bgOpacity: 0.1,
+        );
+      case 'REJECTED':
+        return const _Badge(
+          text: 'Từ chối',
+          color: Colors.red,
+          bgOpacity: 0.1,
+        );
+      case 'HIDDEN':
+        return const _Badge(
+          text: 'Bị ẩn',
+          color: Colors.grey,
+          bgOpacity: 0.1,
+        );
+      case 'PUBLISHED':
+        return const _Badge(
+          text: 'Đã duyệt',
+          color: Colors.green,
+          bgOpacity: 0.1,
+        );
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
+  (IconData, Color) _resolveFileIcon(String fileType, ThemeData theme) {
+    switch (fileType) {
+      case 'pdf':
+        return (Icons.picture_as_pdf, AppColors.primary);
+      case 'docx':
+      case 'doc':
+        return (Icons.description, const Color(0xFF1E88E5));
+      case 'link':
+        return (Icons.link, const Color(0xFF8E24AA));
+      default:
+        return (Icons.article_outlined, theme.colorScheme.primary);
+    }
+  }
+}
+
+class _Badge extends StatelessWidget {
+  const _Badge({
+    required this.text,
+    required this.color,
+    this.backgroundColor,
+    this.bgOpacity,
+  });
+
+  final String text;
+  final Color color;
+  final Color? backgroundColor;
+  final double? bgOpacity;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: backgroundColor ?? color.withValues(alpha: bgOpacity ?? 0.08),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 9,
+          fontWeight: FontWeight.bold,
+          color: color,
+        ),
+      ),
+    );
+  }
+}

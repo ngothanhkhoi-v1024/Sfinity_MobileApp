@@ -21,6 +21,8 @@ class ProfilePage extends StatelessWidget {
         final avatarUrl = user?['avatar']?.toString();
         final displayName = user?['name']?.toString() ?? '';
         final email = user?['email']?.toString() ?? '';
+        final authProvider = user?['authProvider']?.toString() ?? 'local';
+        final isLocalUser = authProvider == 'local';
 
         return ListView(
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 100),
@@ -52,13 +54,14 @@ class ProfilePage extends StatelessWidget {
                   onTap: () => context.push(RouteNames.editProfile),
                   isDark: isDark,
                 ),
-                _ProfileMenuItem(
-                  icon: Icons.lock_outline_rounded,
-                  iconColor: const Color(0xFF8B5CF6),
-                  title: context.l10n.changePassword,
-                  onTap: () => context.push(RouteNames.changePassword),
-                  isDark: isDark,
-                ),
+                if (isLocalUser)
+                  _ProfileMenuItem(
+                    icon: Icons.lock_outline_rounded,
+                    iconColor: const Color(0xFF8B5CF6),
+                    title: context.l10n.changePassword,
+                    onTap: () => context.push(RouteNames.changePassword),
+                    isDark: isDark,
+                  ),
               ],
             ),
             _ProfileSection(
@@ -76,7 +79,7 @@ class ProfilePage extends StatelessWidget {
                   icon: Icons.article_outlined,
                   iconColor: const Color(0xFF10B981),
                   title: context.l10n.myPosts,
-                  onTap: () => context.push(RouteNames.documentList),
+                  onTap: () => context.push(RouteNames.myDocuments),
                   isDark: isDark,
                 ),
               ],

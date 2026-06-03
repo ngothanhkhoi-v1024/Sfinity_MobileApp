@@ -23,6 +23,7 @@ class DocumentListPage extends StatefulWidget {
 
 class _DocumentListPageState extends State<DocumentListPage> {
   late final DocumentListController _controller;
+  bool _showFilters = false;
 
   @override
   void initState() {
@@ -56,6 +57,7 @@ class _DocumentListPageState extends State<DocumentListPage> {
                 final item = _controller.filteredItems[i] as Map<String, dynamic>;
                 return DocumentCard(
                   item: item,
+                  showStatus: false, // Bỏ luôn tag ở đây
                   onTap: () => context.push('/document/${item['id']}'),
                 );
               },
@@ -93,7 +95,8 @@ class _DocumentListPageState extends State<DocumentListPage> {
                   categories: _controller.categories,
                   selectedCategory: _controller.selectedCategory,
                   onCategorySelected: _controller.changeCategory,
-                  resultCount: _controller.loading ? null : _controller.filteredItems.length,
+                  showFilters: _showFilters,
+                  onToggleFilters: () => setState(() => _showFilters = !_showFilters),
                 ),
               ),
               const SizedBox(height: 4),
@@ -134,7 +137,8 @@ class _DocumentListPageState extends State<DocumentListPage> {
                   categories: _controller.categories,
                   selectedCategory: _controller.selectedCategory,
                   onCategorySelected: _controller.changeCategory,
-                  resultCount: _controller.loading ? null : _controller.filteredItems.length,
+                  showFilters: _showFilters,
+                  onToggleFilters: () => setState(() => _showFilters = !_showFilters),
                 ),
               ),
               Expanded(child: _buildContent()),

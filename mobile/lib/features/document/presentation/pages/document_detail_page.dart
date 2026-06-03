@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:go_router/go_router.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:intl/intl.dart';
 
@@ -128,10 +128,46 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
     }
   }
 
-  void _share() {
-    final title = _controller.document?['title']?.toString() ?? 'Sfinity';
-    final fileUrl = _controller.document?['fileUrl']?.toString() ?? '';
-    Share.share('Tải tài liệu "$title" trên Sfinity: $fileUrl');
+  Future<void> _confirmDelete(BuildContext context, String docId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Xóa tài liệu'),
+        content: const Text('Bạn có chắc chắn muốn xóa tài liệu này không? Hành động này không thể hoàn tác.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Hủy'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Xóa'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      try {
+        setState(() {
+          _pdfBytes = null;
+        });
+        await SfinityApp.documentRepository.deleteDocument(docId);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Xóa tài liệu thành công')),
+          );
+          Navigator.pop(context);
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Xóa tài liệu thất bại: $e')),
+          );
+        }
+      }
+    }
   }
 
   Future<void> _downloadFile() async {
@@ -302,7 +338,8 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
         final tags = doc['tags'] as List? ?? [];
         final category = (doc['category'] as Map?)?['name']?.toString() ?? 'Tài liệu';
         final fileUrl = doc['fileUrl']?.toString() ?? '';
-        
+        final isAuthor = doc['authorId']?.toString() == currentUserId;
+
         if (fileUrl.isNotEmpty) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _loadPdfBytes(fileUrl);
@@ -396,21 +433,13 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                     ? const SizedBox(
                         width: 20,
                         height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                        ),
+                        child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : Icon(
                         fileType == 'LINK' ? Icons.open_in_new : Icons.file_download_outlined,
                       ),
                 onPressed: _controller.downloading ? null : _downloadFile,
                 tooltip: 'Tải xuống',
-              ),
-              // Share Button
-              IconButton(
-                icon: const Icon(Icons.share_outlined),
-                onPressed: _share,
-                tooltip: 'Chia sẻ',
               ),
               // Save/Bookmark Button
               if (!_loadingFavorite)
@@ -421,6 +450,46 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                   ),
                   onPressed: _toggleFavorite,
                   tooltip: _isFavorite ? 'Hủy lưu' : 'Lưu tài liệu',
+                ),
+              // 3-dots overflow popup menu for edit/delete (only for author)
+              if (isAuthor)
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert),
+                  onSelected: (value) async {
+                    switch (value) {
+                      case 'edit':
+                        await context.push('/document/${doc['id']}/edit');
+                        _controller.load(widget.documentId);
+                        break;
+                      case 'delete':
+                        if (context.mounted) {
+                          _confirmDelete(context, doc['id'].toString());
+                        }
+                        break;
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit_outlined, size: 20),
+                          SizedBox(width: 8),
+                          Text('Chỉnh sửa'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                          SizedBox(width: 8),
+                          Text('Xóa tài liệu', style: TextStyle(color: Colors.red)),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
             ],
           ),
@@ -735,7 +804,7 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
       crossAxisCount: 2,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: 3.2, // Tỉ lệ xẹt ngang và nhỏ gọn hơn rất nhiều cho 4 thẻ nhỏ lại
+      childAspectRatio: 3.2,
       crossAxisSpacing: 10,
       mainAxisSpacing: 10,
       children: [
@@ -744,18 +813,6 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
           label: 'MÃ MÔN HỌC',
           value: subjectCode.toUpperCase(),
           accentColor: Colors.indigo, // Indigo cho Mã môn học
-        ),
-        DocumentInfoTile(
-          icon: Icons.insert_drive_file,
-          label: 'ĐỊNH DẠNG',
-          value: fileType,
-          accentColor: const Color(0xFFE11D48), // Rose/Red đặc trưng PDF
-        ),
-        DocumentInfoTile(
-          icon: Icons.data_usage,
-          label: 'DUNG LƯỢNG',
-          value: fileSize,
-          accentColor: const Color(0xFF0284C7), // Blue/Ocean dung lượng
         ),
         DocumentInfoTile(
           icon: Icons.file_download,

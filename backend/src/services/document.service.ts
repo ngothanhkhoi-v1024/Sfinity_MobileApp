@@ -232,11 +232,18 @@ export const documentService = {
       await assertPlaceOwnerForDocument(dto.placeId, authorId, role);
     }
 
+    let initialStatus = dto.status ?? ContentStatus.PENDING;
+    if (role !== UserRole.ADMIN) {
+      if (initialStatus === ContentStatus.PUBLISHED || initialStatus === ContentStatus.REJECTED || initialStatus === ContentStatus.HIDDEN) {
+        initialStatus = ContentStatus.PENDING;
+      }
+    }
+
     const newDocument: any = {
       id: docRef.id,
       title: dto.title,
       body: dto.body,
-      status: dto.status ?? ContentStatus.DRAFT,
+      status: initialStatus,
       authorId,
       categoryId: dto.categoryId ?? null,
       type,
@@ -289,9 +296,22 @@ export const documentService = {
       updatedAt: new Date(),
     };
 
+    let hasContentChanges = false;
     for (const [key, value] of Object.entries(dto)) {
       if (value !== undefined) {
         updateData[key] = value;
+        if (['title', 'body', 'fileUrl', 'categoryId', 'subjectCode', 'tags'].includes(key)) {
+          hasContentChanges = true;
+        }
+      }
+    }
+
+    if (role !== UserRole.ADMIN) {
+      if (dto.status === ContentStatus.PUBLISHED || dto.status === ContentStatus.REJECTED || dto.status === ContentStatus.HIDDEN) {
+        updateData.status = ContentStatus.PENDING;
+      }
+      if (hasContentChanges && (item.status === ContentStatus.PUBLISHED || item.status === ContentStatus.REJECTED || item.status === ContentStatus.HIDDEN)) {
+        updateData.status = ContentStatus.PENDING;
       }
     }
 
@@ -331,7 +351,7 @@ export const documentService = {
 
     const docRef = getDb().collection('documents').doc(id);
     await docRef.update({
-      status: ContentStatus.DRAFT,
+      status: ContentStatus.HIDDEN,
       updatedAt: new Date(),
     });
 
@@ -340,6 +360,28 @@ export const documentService = {
       userId: item.authorId,
       title: `Nội dung "${item.title}" đã bị ẩn`,
       body: `Admin đã ẩn ${typeLabel} của bạn. Lý do: ${reason}`,
+    });
+
+    return documentService.findOne(id);
+  },
+
+  async adminReject(id: string, reason: string) {
+    const item = await documentService.findOne(id);
+    if (!item.authorId) {
+      throw new HttpError(400, 'Không tìm thấy tác giả để gửi thông báo', 'Bad Request');
+    }
+
+    const docRef = getDb().collection('documents').doc(id);
+    await docRef.update({
+      status: ContentStatus.REJECTED,
+      updatedAt: new Date(),
+    });
+
+    const typeLabel = (item.type ?? 'document') === 'place' ? 'địa điểm' : 'tài liệu';
+    await notificationsService.create({
+      userId: item.authorId,
+      title: `Tài liệu "${item.title}" bị từ chối duyệt`,
+      body: `Admin đã từ chối duyệt ${typeLabel} của bạn. Lý do: ${reason}`,
     });
 
     return documentService.findOne(id);

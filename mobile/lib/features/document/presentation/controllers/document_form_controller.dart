@@ -20,10 +20,15 @@ class DocumentFormController extends ChangeNotifier {
   double uploadProgress = 0.0;
   bool uploading = false;
   File? localFileToUpload;
-  String selectedStatus = 'PUBLISHED';
+  String selectedStatus = 'PENDING';
 
   void selectStatus(String? val) {
-    selectedStatus = val ?? 'PUBLISHED';
+    final isAdmin = SfinityApp.auth.user?['role']?.toString() == 'admin';
+    if (!isAdmin) {
+      selectedStatus = (val == 'DRAFT') ? 'DRAFT' : 'PENDING';
+    } else {
+      selectedStatus = val ?? 'PUBLISHED';
+    }
     notifyListeners();
   }
 

@@ -107,6 +107,20 @@ documentRouter.patch(
   }),
 );
 
+documentRouter.patch(
+  '/:id/reject',
+  ...adminOnly,
+  asyncHandler(async (req, res) => {
+    const dto = await validateBody(AdminHideDto, req.body);
+    res.json(
+      await documentService.adminReject(
+        req.params.id,
+        dto.reason,
+      ),
+    );
+  }),
+);
+
 documentRouter.delete(
   '/:id/admin-delete',
   ...adminOnly,

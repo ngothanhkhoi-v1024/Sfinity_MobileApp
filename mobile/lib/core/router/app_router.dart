@@ -7,6 +7,7 @@ import '../../features/auth/presentation/pages/register_page.dart';
 import '../../features/document/presentation/pages/document_detail_page.dart';
 import '../../features/document/presentation/pages/document_form_page.dart';
 import '../../features/document/presentation/pages/document_list_page.dart';
+import '../../features/document/presentation/pages/my_documents_page.dart';
 import '../../features/feedback/presentation/pages/feedback_page.dart';
 import '../../features/friendships/presentation/pages/friends_page.dart';
 import '../../features/groups/presentation/pages/group_chat_page.dart';
@@ -109,6 +110,10 @@ GoRouter createAppRouter(AuthState auth) {
         path: RouteNames.documentList,
         builder: (_, __) => const DocumentListPage(),
         routes: [
+          GoRoute(
+            path: 'my',
+            builder: (_, __) => const MyDocumentsPage(),
+          ),
           GoRoute(
             path: 'create',
             builder: (_, state) {

@@ -16,7 +16,10 @@ export enum UserStatus {
 
 export enum ContentStatus {
   DRAFT = 'DRAFT',
+  PENDING = 'PENDING',
   PUBLISHED = 'PUBLISHED',
+  REJECTED = 'REJECTED',
+  HIDDEN = 'HIDDEN',
 }
 
 export enum ReportStatus {

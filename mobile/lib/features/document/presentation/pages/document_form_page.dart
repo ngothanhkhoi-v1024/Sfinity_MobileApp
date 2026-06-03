@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../app.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/utils/validators.dart';
 import '../controllers/document_form_controller.dart';
@@ -241,16 +242,27 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
                         labelText: 'Chế độ hiển thị',
                         prefixIcon: Icon(Icons.visibility_outlined),
                       ),
-                      items: const [
-                        DropdownMenuItem<String>(
-                          value: 'PUBLISHED',
-                          child: Text('Công khai (Mọi người đều thấy)'),
-                        ),
-                        DropdownMenuItem<String>(
-                          value: 'DRAFT',
-                          child: Text('Chỉ mình tôi (Bản nháp)'),
-                        ),
-                      ],
+                      items: SfinityApp.auth.user?['role']?.toString() == 'admin'
+                          ? const [
+                              DropdownMenuItem<String>(
+                                value: 'PUBLISHED',
+                                child: Text('Công khai (Mọi người đều thấy)'),
+                              ),
+                              DropdownMenuItem<String>(
+                                value: 'DRAFT',
+                                child: Text('Chỉ mình tôi (Bản nháp)'),
+                              ),
+                            ]
+                          : const [
+                              DropdownMenuItem<String>(
+                                value: 'PENDING',
+                                child: Text('Công khai (Gửi yêu cầu xét duyệt)'),
+                              ),
+                              DropdownMenuItem<String>(
+                                value: 'DRAFT',
+                                child: Text('Chỉ mình tôi (Bản nháp)'),
+                              ),
+                            ],
                       onChanged: _controller.selectStatus,
                     ),
                     const SizedBox(height: 16),

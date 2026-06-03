@@ -25,6 +25,7 @@ abstract final class RouteNames {
 
   // Document
   static const documentList = '/document';
+  static const myDocuments = '/document/my';
   static const documentDetail = '/document/:id';
   static const documentCreate = '/document/create';
   static const documentEdit = '/document/:id/edit';
