@@ -15,24 +15,10 @@ class ProfilePage extends StatelessWidget {
     return AnimatedBuilder(
       animation: SfinityApp.auth,
       builder: (context, _) {
-        final user = SfinityApp.auth.user;
-        final avatarUrl = user?['avatar']?.toString();
-        final displayName = user?['name']?.toString() ?? '';
-
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
           children: [
-            CircleAvatar(
-              radius: 40,
-              backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
-              child: avatarUrl == null || avatarUrl.isEmpty
-                  ? Text((displayName.isNotEmpty ? displayName : 'U')[0].toUpperCase())
-                  : null,
-            ),
-            const SizedBox(height: 12),
-            Text(displayName, style: Theme.of(context).textTheme.titleLarge, textAlign: TextAlign.center),
-            Text(user?['email']?.toString() ?? '', textAlign: TextAlign.center),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             _buildMenuTile(
               context,
               icon: Icons.person_outlined,

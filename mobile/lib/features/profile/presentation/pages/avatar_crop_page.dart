@@ -1,8 +1,30 @@
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+
+class CropResult {
+  final File file;
+  final CropData transform;
+
+  CropResult({required this.file, required this.transform});
+}
+
+class CropData {
+  final double scale;
+  final double tx;
+  final double ty;
+  final Size? sourceSize;
+
+  CropData({
+    required this.scale,
+    required this.tx,
+    required this.ty,
+    this.sourceSize,
+  });
+}
 
 class AvatarCropPage extends StatefulWidget {
   const AvatarCropPage({super.key, required this.imageFile});
@@ -19,6 +41,23 @@ class _AvatarCropPageState extends State<AvatarCropPage> {
   bool _processing = false;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _centerImage();
+    });
+  }
+
+  void _centerImage() {
+    final cropRenderBox = _cropKey.currentContext?.findRenderObject() as RenderBox?;
+    if (cropRenderBox == null) return;
+
+    final cropSize = cropRenderBox.size.shortestSide;
+
+    _controller.value = Matrix4.identity();
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
     super.dispose();
@@ -26,29 +65,80 @@ class _AvatarCropPageState extends State<AvatarCropPage> {
 
   Future<void> _cancel() async {
     if (_processing) return;
-    Navigator.of(context).pop();
+    Navigator.of(context).pop(null);
+  }
+
+  CropData _extractTransform() {
+    final m = _controller.value;
+    final a = m.entry(0, 0), b = m.entry(1, 0);
+    final scale = math.sqrt(a * a + b * b);
+    final tx = m.entry(0, 3);
+    final ty = m.entry(1, 3);
+    return CropData(
+      scale: scale,
+      tx: tx,
+      ty: ty,
+      sourceSize: _getCropSize(),
+    );
+  }
+
+  Size? _getCropSize() {
+    final renderBox = _cropKey.currentContext?.findRenderObject() as RenderBox?;
+    return renderBox?.size;
   }
 
   Future<void> _confirm() async {
     if (_processing) return;
 
+    final cropSize = _getCropSize();
+    if (cropSize == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Lỗi: không xác định được kích thước ảnh')),
+        );
+      }
+      return;
+    }
+
     setState(() => _processing = true);
+
     try {
       final pixelRatio = View.of(context).devicePixelRatio;
       final boundary = _cropKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
-      if (boundary == null) return;
+      if (boundary == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Lỗi: không chụp được ảnh')),
+          );
+        }
+        return;
+      }
 
-      await Future<void>.delayed(const Duration(milliseconds: 16));
-      final image = await boundary.toImage(pixelRatio: pixelRatio);
-      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      if (byteData == null) return;
+      await Future<void>.delayed(const Duration(milliseconds: 100));
 
-      final tempDir = await Directory.systemTemp.createTemp('sfinity_avatar_crop_');
+      final img = await boundary.toImage(pixelRatio: pixelRatio);
+      final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
+      img.dispose();
+
+      if (byteData == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Lỗi: không mã hóa được ảnh')),
+          );
+        }
+        return;
+      }
+
+      final bytes = byteData.buffer.asUint8List();
+      final tempDir = await Directory.systemTemp.createTemp('sfinity_avatar_');
       final outFile = File('${tempDir.path}/avatar_${DateTime.now().millisecondsSinceEpoch}.png');
-      await outFile.writeAsBytes(byteData.buffer.asUint8List(), flush: true);
+      await outFile.writeAsBytes(bytes, flush: true);
 
       if (!mounted) return;
-      Navigator.of(context).pop(outFile);
+      Navigator.of(context).pop(CropResult(
+        file: outFile,
+        transform: CropData(scale: 1.0, tx: 0, ty: 0, sourceSize: null),
+      ));
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -120,16 +210,14 @@ class _AvatarCropPageState extends State<AvatarCropPage> {
                               color: const Color(0xFF111111),
                               child: InteractiveViewer(
                                 transformationController: _controller,
-                                minScale: 1.0,
+                                minScale: 0.5,
                                 maxScale: 4.0,
                                 panEnabled: true,
-                                boundaryMargin: const EdgeInsets.all(80),
+                                boundaryMargin: const EdgeInsets.all(100),
                                 clipBehavior: Clip.hardEdge,
-                                child: SizedBox.expand(
-                                  child: Image.file(
-                                    widget.imageFile,
-                                    fit: BoxFit.cover,
-                                  ),
+                                child: Image.file(
+                                  widget.imageFile,
+                                  fit: BoxFit.contain,
                                 ),
                               ),
                             ),
@@ -189,5 +277,3 @@ class _AvatarCropPageState extends State<AvatarCropPage> {
     );
   }
 }
-
-

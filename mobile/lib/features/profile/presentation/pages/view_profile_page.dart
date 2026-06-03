@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../../app.dart';
-import '../../../../core/constants/route_names.dart';
 import '../../../../core/i18n/app_text.dart';
 
 class ViewProfilePage extends StatelessWidget {
@@ -20,18 +18,25 @@ class ViewProfilePage extends StatelessWidget {
         final avatarUrl = user?['avatar']?.toString();
         final displayName = user?['name']?.toString() ?? '';
         final email = user?['email']?.toString() ?? '';
-        final bio = user?['bio']?.toString();
+        final gender = user?['gender']?.toString();
+        final birthDate = user?['birthDate']?.toString();
+        final address = user?['address']?.toString();
+
+        String formattedBirthDate;
+        if (birthDate != null && birthDate.isNotEmpty) {
+          final parts = birthDate.split('-');
+          if (parts.length == 3) {
+            formattedBirthDate = '${parts[2]}/${parts[1]}/${parts[0]}';
+          } else {
+            formattedBirthDate = birthDate;
+          }
+        } else {
+          formattedBirthDate = '';
+        }
 
         return Scaffold(
           appBar: AppBar(
             title: Text(AppLocalizations.of(context).viewProfile),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.edit_outlined),
-                tooltip: AppLocalizations.of(context).editProfile,
-                onPressed: () => context.push(RouteNames.editProfile),
-              ),
-            ],
           ),
           body: ListView(
             padding: const EdgeInsets.all(24),
@@ -59,7 +64,7 @@ class ViewProfilePage extends StatelessWidget {
               // Name
               Center(
                 child: Text(
-                  displayName,
+                  displayName.isNotEmpty ? displayName : '—',
                   style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
                   textAlign: TextAlign.center,
                 ),
@@ -68,7 +73,7 @@ class ViewProfilePage extends StatelessWidget {
               // Email
               Center(
                 child: Text(
-                  email,
+                  email.isNotEmpty ? email : '—',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -76,39 +81,89 @@ class ViewProfilePage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 32),
-              // Bio section
-              _InfoCard(
-                isDark: isDark,
-                children: [
-                  Text(
-                    AppLocalizations.of(context).bio,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      color: theme.colorScheme.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    bio?.isNotEmpty == true ? bio! : '—',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: bio?.isNotEmpty == true
-                          ? (isDark ? const Color(0xFFF2F2F2) : const Color(0xFF1F2937))
-                          : theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 32),
-              // Edit button
-              FilledButton.icon(
-                onPressed: () => context.push(RouteNames.editProfile),
-                icon: const Icon(Icons.edit_outlined),
-                label: Text(AppLocalizations.of(context).editProfile),
-              ),
+
+              // Info cards
+              _InfoCard(isDark: isDark, children: [
+                _InfoRow(
+                  icon: Icons.wc_outlined,
+                  label: 'Giới tính',
+                  value: gender != null && gender.isNotEmpty ? gender : '—',
+                  isDark: isDark,
+                ),
+                const SizedBox(height: 16),
+                _InfoRow(
+                  icon: Icons.cake_outlined,
+                  label: 'Ngày sinh',
+                  value: formattedBirthDate.isNotEmpty ? formattedBirthDate : '—',
+                  isDark: isDark,
+                ),
+                const SizedBox(height: 16),
+                _InfoRow(
+                  icon: Icons.location_on_outlined,
+                  label: 'Địa chỉ',
+                  value: address != null && address.isNotEmpty ? address : '—',
+                  isDark: isDark,
+                ),
+              ]),
             ],
           ),
         );
       },
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.isDark,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final valueColor = value != '—'
+        ? (isDark ? const Color(0xFFF2F2F2) : const Color(0xFF1F2937))
+        : theme.colorScheme.onSurfaceVariant;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          icon,
+          size: 20,
+          color: theme.colorScheme.primary,
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: valueColor,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

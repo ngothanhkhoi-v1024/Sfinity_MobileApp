@@ -16,7 +16,20 @@ class AuthLocalDatabase {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          await db.execute(
+            'ALTER TABLE user_session ADD COLUMN birthDate TEXT',
+          );
+          await db.execute(
+            'ALTER TABLE user_session ADD COLUMN gender TEXT',
+          );
+          await db.execute(
+            'ALTER TABLE user_session ADD COLUMN address TEXT',
+          );
+        }
+      },
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE user_session (
@@ -24,6 +37,9 @@ class AuthLocalDatabase {
             email TEXT,
             name TEXT,
             avatar TEXT,
+            birthDate TEXT,
+            gender TEXT,
+            address TEXT,
             accessToken TEXT,
             isLoggedIn INTEGER
           )
@@ -43,6 +59,9 @@ class AuthLocalDatabase {
     required String email,
     required String name,
     String? avatar,
+    String? birthDate,
+    String? gender,
+    String? address,
     required String accessToken,
   }) async {
     final db = await database;
@@ -53,6 +72,9 @@ class AuthLocalDatabase {
         'email': email,
         'name': name,
         'avatar': avatar ?? '',
+        'birthDate': birthDate ?? '',
+        'gender': gender ?? '',
+        'address': address ?? '',
         'accessToken': accessToken,
         'isLoggedIn': 1,
       },
@@ -90,6 +112,9 @@ class AuthLocalDatabase {
         'email': user['email'],
         'name': user['name'],
         'avatar': user['avatar'],
+        'birthDate': user['birthDate'],
+        'gender': user['gender'],
+        'address': user['address'],
       };
     }
     return null;
