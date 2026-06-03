@@ -1,7 +1,8 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
 import { AdminLayout } from '@/components/layout/AdminLayout';
-import { CategoriesPage } from '@/pages/categories/CategoriesPage';
+import { DocCategoriesPage } from '@/pages/categories/DocCategoriesPage';
+import { AmenitiesPage } from '@/pages/categories/AmenitiesPage';
 import { ContentPage } from '@/pages/content/ContentPage';
 import { DashboardPage } from '@/pages/dashboard/DashboardPage';
 import { AdminsPage } from '@/pages/admins/AdminsPage';
@@ -25,7 +26,8 @@ export function AppRoutes() {
             <Route index element={<DashboardPage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="content" element={<ContentPage />} />
-            <Route path="categories" element={<CategoriesPage />} />
+            <Route path="categories" element={<DocCategoriesPage />} />
+            <Route path="amenities" element={<AmenitiesPage />} />
             <Route path="feedback" element={<FeedbackPage />} />
             <Route path="reports" element={<ReportsPage />} />
             <Route path="notifications" element={<NotificationsPage />} />

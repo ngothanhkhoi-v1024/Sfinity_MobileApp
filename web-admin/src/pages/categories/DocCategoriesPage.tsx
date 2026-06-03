@@ -1,5 +1,5 @@
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
-import { Button, Form, Input, Modal, Popconfirm, Space, Table, Typography, message } from 'antd';
+import { Button, Form, Input, Modal, Popconfirm, Space, Table, Tag, Typography, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -11,7 +11,7 @@ import {
   type CategoryItem,
 } from '@/api/categories';
 
-export function CategoriesPage() {
+export function DocCategoriesPage() {
   const [data, setData] = useState<CategoryItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -21,7 +21,7 @@ export function CategoriesPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      setData(await fetchCategories());
+      setData(await fetchCategories('DOCUMENT'));
     } catch {
       message.error('Không tải được danh mục');
     } finally {
@@ -41,7 +41,11 @@ export function CategoriesPage() {
 
   const openEdit = (item: CategoryItem) => {
     setEditing(item);
-    form.setFieldsValue(item);
+    form.setFieldsValue({
+      name: item.name,
+      slug: item.slug,
+      description: item.description,
+    });
     setModalOpen(true);
   };
 
@@ -52,7 +56,7 @@ export function CategoriesPage() {
         await updateCategory(editing.id, values);
         message.success('Đã cập nhật');
       } else {
-        await createCategory(values);
+        await createCategory({ ...values, type: 'DOCUMENT' });
         message.success('Đã tạo danh mục');
       }
       setModalOpen(false);
@@ -66,19 +70,28 @@ export function CategoriesPage() {
     { title: 'Tên', dataIndex: 'name' },
     { title: 'Slug', dataIndex: 'slug' },
     { title: 'Mô tả', dataIndex: 'description', ellipsis: true },
-    { title: 'Số bài', dataIndex: ['_count', 'contents'] },
+    {
+      title: 'Số mục',
+      dataIndex: ['_count', 'documents'],
+      width: 100,
+      render: (v: number) => v ?? 0,
+    },
     {
       title: 'Thao tác',
       key: 'actions',
+      width: 160,
       render: (_, record) => (
         <Space>
           <Button size="small" onClick={() => openEdit(record)}>
             Sửa
           </Button>
-          <Popconfirm title="Xóa danh mục?" onConfirm={async () => {
-            await deleteCategory(record.id);
-            load();
-          }}>
+          <Popconfirm
+            title="Xóa danh mục này?"
+            onConfirm={async () => {
+              await deleteCategory(record.id);
+              load();
+            }}
+          >
             <Button size="small" danger icon={<DeleteOutlined />} />
           </Popconfirm>
         </Space>
@@ -90,17 +103,25 @@ export function CategoriesPage() {
     <div>
       <Space style={{ width: '100%', justifyContent: 'space-between', marginBottom: 16 }}>
         <Typography.Title level={4} style={{ margin: 0 }}>
-          Danh mục
+          Danh mục tài liệu
         </Typography.Title>
         <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
           Thêm danh mục
         </Button>
       </Space>
 
-      <Table rowKey="id" loading={loading} columns={columns} dataSource={data} />
+      <Table
+        rowKey="id"
+        loading={loading}
+        columns={columns}
+        dataSource={data}
+        pagination={{ pageSize: 10 }}
+        scroll={{ x: 800 }}
+        locale={{ emptyText: 'Chưa có danh mục tài liệu nào' }}
+      />
 
       <Modal
-        title={editing ? 'Sửa danh mục' : 'Thêm danh mục'}
+        title={editing ? 'Sửa danh mục' : 'Thêm danh mục tài liệu'}
         open={modalOpen}
         onCancel={() => setModalOpen(false)}
         onOk={handleSubmit}
@@ -111,7 +132,7 @@ export function CategoriesPage() {
             <Input />
           </Form.Item>
           <Form.Item name="slug" label="Slug" rules={[{ required: true }]}>
-            <Input placeholder="tin-tuc" />
+            <Input placeholder="danh-muc-abc" />
           </Form.Item>
           <Form.Item name="description" label="Mô tả">
             <Input.TextArea rows={3} />

@@ -11,6 +11,7 @@ export function createApp() {
   const app = express();
   app.use(cors({ origin: true, credentials: true }));
   app.use(express.json());
+  app.use('/uploads', express.static('./uploads'));
   app.use('/api', apiRouter);
   app.use(
     '/api/docs',

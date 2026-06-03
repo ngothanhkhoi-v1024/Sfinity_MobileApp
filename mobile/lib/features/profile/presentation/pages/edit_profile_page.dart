@@ -2,8 +2,8 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../../../app.dart';
 import '../../../../core/network/api_client.dart';
@@ -37,7 +37,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
     final avatar = user?['avatar']?.toString();
     if (avatar != null && avatar.isNotEmpty) {
-      _avatarUrl = avatar;
+      // Android emulator: localhost → 10.0.2.2
+      _avatarUrl = avatar.replaceFirst('http://localhost:', 'http://10.0.2.2:');
     }
 
     final birthStr = user?['birthDate']?.toString();
@@ -62,6 +63,21 @@ class _EditProfilePageState extends State<EditProfilePage> {
     if (_pickingAvatar || _uploading) return;
     _pickingAvatar = true;
     try {
+      // Request permission on Android 13+ (API 33+), older versions rely on manifest.
+      final photos = Permission.photos;
+      final status = await photos.request();
+      if (status.isDenied || status.isPermanentlyDenied) {
+        final granted = await Permission.storage.request();
+        if (!granted.isGranted) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Vui lòng cấp quyền truy cập ảnh trong Cài đặt')),
+            );
+          }
+          return;
+        }
+      }
+
       final picker = ImagePicker();
       final picked = await picker.pickImage(
         source: ImageSource.gallery,
@@ -69,23 +85,27 @@ class _EditProfilePageState extends State<EditProfilePage> {
         imageQuality: 85,
       );
 
-      if (picked == null) return;
+      if (picked == null) {
+        _pickingAvatar = false;
+        return;
+      }
 
       setState(() {
         _pickedAvatar = File(picked.path);
+        _pickingAvatar = false;
       });
-    } finally {
+    } catch (e) {
       _pickingAvatar = false;
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi chọn ảnh: $e')),
+        );
+      }
     }
   }
 
   Future<String> _uploadAvatar(File file) async {
-    final userId = SfinityApp.auth.user?['id']?.toString() ?? 'unknown';
-    final remoteName = '${DateTime.now().millisecondsSinceEpoch}_${file.path.split(RegExp(r'[/\\]')).last}';
-    final path = 'avatars/$userId/$remoteName';
-    final ref = FirebaseStorage.instance.ref().child(path);
-    final snapshot = await ref.putFile(file);
-    return snapshot.ref.getDownloadURL();
+    return await ApiClient.instance.uploadFile(file);
   }
 
   String _formatDate(DateTime date) {
@@ -113,7 +133,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
       String? avatarUrl = _avatarUrl;
       if (_pickedAvatar != null) {
-        avatarUrl = await _uploadAvatar(_pickedAvatar!);
+        var url = await _uploadAvatar(_pickedAvatar!);
+        // Android emulator không resolve được localhost — thay bằng 10.0.2.2
+        if (url.startsWith('http://localhost:')) {
+          url = url.replaceFirst('http://localhost:', 'http://10.0.2.2:');
+        }
+        avatarUrl = url;
       }
 
       final payload = <String, dynamic>{
@@ -139,10 +164,23 @@ class _EditProfilePageState extends State<EditProfilePage> {
         merged['avatar'] = avatarUrl;
       }
       if (merged['avatar'] != null && merged['avatar'].toString().isNotEmpty) {
-        final base = merged['avatar'].toString().split('?').first;
-        merged['avatar'] = '$base?v=${DateTime.now().millisecondsSinceEpoch}';
+        var avatarStr = merged['avatar'].toString().split('?').first;
+        // Android emulator: localhost → 10.0.2.2
+        if (avatarStr.startsWith('http://localhost:')) {
+          avatarStr = avatarStr.replaceFirst('http://localhost:', 'http://10.0.2.2:');
+        }
+        merged['avatar'] = '$avatarStr?v=${DateTime.now().millisecondsSinceEpoch}';
       }
       SfinityApp.auth.setUser(merged);
+
+      // Sync local SQLite cache
+      await SfinityApp.auth.updateCachedProfile(
+        name: _name.text.trim(),
+        avatar: avatarUrl,
+        birthDate: _birthDate != null ? _formatDate(_birthDate!) : null,
+        gender: _gender,
+        address: _address.text.trim(),
+      );
 
       // Sync extra fields to Firestore
       try {
@@ -167,6 +205,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(ApiClient.instance.errorMessage(e))),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi khi tải ảnh lên: $e')),
         );
       }
     } finally {

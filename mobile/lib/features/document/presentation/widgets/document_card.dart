@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_colors.dart';
+
 /// Card hiển thị một item tài liệu học tập trên bảng tin.
 ///
 /// Hiển thị icon loại tệp, mã môn học, danh mục, tiêu đề, mô tả ngắn,
@@ -27,25 +29,10 @@ class DocumentCard extends StatelessWidget {
     final (fileIcon, iconColor) = _resolveFileIcon(fileType, theme);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: theme.brightness == Brightness.light
-              ? Colors.grey.shade200
-              : Colors.grey.shade800,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: AppColors.panel(context, radius: 14),
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(14),
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(12),
@@ -82,8 +69,8 @@ class DocumentCard extends StatelessWidget {
                           text: (item['category'] as Map?)?['name']
                                   ?.toString() ??
                               'Tài liệu',
-                          color: Colors.grey.shade700,
-                          backgroundColor: Colors.grey.shade200,
+                          color: AppColors.muted(context),
+                          backgroundColor: AppColors.chipBg(context),
                         ),
                         if (item['status'] == 'DRAFT') ...[
                           const SizedBox(width: 6),
@@ -111,10 +98,7 @@ class DocumentCard extends StatelessWidget {
                     // Description preview
                     Text(
                       body.split('\n').first,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade600,
-                      ),
+                      style: TextStyle(fontSize: 12, color: AppColors.muted(context)),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -122,25 +106,22 @@ class DocumentCard extends StatelessWidget {
                     // Metadata row
                     Row(
                       children: [
-                        const Icon(Icons.person_outline,
-                            size: 14, color: Colors.grey),
+                        Icon(Icons.person_outline, size: 14, color: AppColors.muted(context)),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
                             authorName,
-                            style: const TextStyle(
-                                fontSize: 11, color: Colors.grey),
+                            style: TextStyle(fontSize: 11, color: AppColors.muted(context)),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        const Icon(Icons.file_download_outlined,
-                            size: 14, color: Colors.grey),
+                        Icon(Icons.file_download_outlined,
+                            size: 14, color: AppColors.muted(context)),
                         const SizedBox(width: 2),
                         Text(
                           '$downloads',
-                          style:
-                              const TextStyle(fontSize: 11, color: Colors.grey),
+                          style: TextStyle(fontSize: 11, color: AppColors.muted(context)),
                         ),
                         const SizedBox(width: 10),
                       ],
@@ -148,7 +129,7 @@ class DocumentCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right, color: Colors.grey.shade400),
+              Icon(Icons.chevron_right_rounded, color: AppColors.muted(context)),
             ],
           ),
         ),
@@ -159,7 +140,7 @@ class DocumentCard extends StatelessWidget {
   (IconData, Color) _resolveFileIcon(String fileType, ThemeData theme) {
     switch (fileType) {
       case 'pdf':
-        return (Icons.picture_as_pdf, const Color(0xFFE53935));
+        return (Icons.picture_as_pdf, AppColors.primary);
       case 'docx':
       case 'doc':
         return (Icons.description, const Color(0xFF1E88E5));

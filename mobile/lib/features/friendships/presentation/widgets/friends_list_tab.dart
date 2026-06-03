@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/route_names.dart';
 import '../controllers/friendship_controller.dart';
+import '../../../places/presentation/widgets/places_search_field.dart';
 import 'friend_tile.dart';
 import 'user_profile_bottom_sheet.dart';
 import 'friendships_empty_state.dart';
@@ -62,62 +63,59 @@ class _FriendsListTabState extends State<FriendsListTab> {
       );
     }
 
+    final isDark = theme.brightness == Brightness.dark;
+
     return Column(
       children: [
-        // Local Filter Search Bar with Add Friend shortcut button next to it
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
           child: Row(
             children: [
               Expanded(
-                child: SearchBar(
+                child: PlacesSearchField(
                   controller: _localSearchCtrl,
-                  hintText: 'Tìm kiếm trong danh sách bạn bè...',
-                  leading: const Icon(Icons.search),
-                  trailing: [
-                    if (_localSearchCtrl.text.isNotEmpty)
-                      IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _localSearchCtrl.clear();
-                          FocusScope.of(context).unfocus();
-                        },
-                      ),
-                  ],
-                  elevation: const WidgetStatePropertyAll(0),
-                  backgroundColor: WidgetStatePropertyAll(
-                    cs.surfaceContainerHighest.withValues(alpha: 0.3),
-                  ),
+                  hint: 'Tìm trong danh sách bạn bè...',
+                  onChanged: (_) {},
                 ),
               ),
               const SizedBox(width: 8),
-              IconButton.filledTonal(
-                icon: const Icon(Icons.person_add_alt_1_rounded),
-                onPressed: () => context.push(RouteNames.friends),
-                tooltip: 'Thêm bạn bè',
+              Material(
+                color: cs.primary.withValues(alpha: isDark ? 0.2 : 0.1),
+                borderRadius: BorderRadius.circular(14),
+                child: InkWell(
+                  onTap: () => context.push(RouteNames.friends),
+                  borderRadius: BorderRadius.circular(14),
+                  child: const SizedBox(
+                    width: 48,
+                    height: 48,
+                    child: Icon(Icons.person_add_rounded, size: 22),
+                  ),
+                ),
               ),
             ],
           ),
         ),
-
         Expanded(
           child: RefreshIndicator(
+            color: cs.primary,
             onRefresh: () async {
               await ctrl.loadFriends();
             },
             child: filteredFriends.isEmpty
-                ? const Center(
+                ? Center(
                     child: Padding(
-                      padding: EdgeInsets.all(32),
+                      padding: const EdgeInsets.all(32),
                       child: Text(
-                        'Không tìm thấy bạn bè phù hợp trong danh sách.',
+                        'Không tìm thấy bạn bè phù hợp.',
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.grey),
+                        style: TextStyle(
+                          color: isDark ? Colors.grey.shade500 : Colors.grey.shade600,
+                        ),
                       ),
                     ),
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.only(bottom: 24),
+                    padding: const EdgeInsets.only(bottom: 100),
                     itemCount: filteredFriends.length,
                     itemBuilder: (_, i) {
                       final friend = filteredFriends[i];
