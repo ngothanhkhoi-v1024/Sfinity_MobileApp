@@ -20,6 +20,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final _name = TextEditingController();
   String? _avatarUrl;
   File? _pickedAvatar;
+  Matrix4? _avatarTransform;
   bool _uploading = false;
 
   @override
@@ -47,16 +48,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
     if (picked == null) return;
     if (!mounted) return;
 
-    final cropped = await Navigator.of(context).push<File?>(
+    final result = await Navigator.of(context).push<CropResult>(
       MaterialPageRoute(
         builder: (_) => AvatarCropPage(imageFile: File(picked.path)),
       ),
     );
 
-    if (cropped == null || !mounted) return;
+    if (result == null || !mounted) return;
 
     setState(() {
-      _pickedAvatar = cropped;
+      _pickedAvatar = result.file;
+      _avatarTransform = result.transform;
     });
   }
 
@@ -125,6 +127,95 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 
+  Widget _buildProfilePreview() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final name = _name.text.isNotEmpty ? _name.text : (SfinityApp.auth.user?['name']?.toString() ?? '—');
+    final email = SfinityApp.auth.user?['email']?.toString() ?? '—';
+
+    // Ưu tiên ảnh đã crop, rồi mới đến URL cũ
+    final previewImage = _pickedAvatar != null
+        ? FileImage(_pickedAvatar!) as ImageProvider
+        : (_avatarUrl != null && _avatarUrl!.isNotEmpty)
+            ? NetworkImage(_avatarUrl!)
+            : null;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1A1A1A) : Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          ClipOval(
+            child: Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primaryContainer,
+              ),
+              child: previewImage != null
+                  ? Image(
+                      image: previewImage,
+                      fit: BoxFit.cover,
+                      width: 56,
+                      height: 56,
+                    )
+                  : Center(
+                      child: Text(
+                        name.isNotEmpty ? name[0].toUpperCase() : '?',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                    ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? const Color(0xFFF2F2F2) : const Color(0xFF1F2937),
+                      ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  email,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              'Preview',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: Theme.of(context).colorScheme.onPrimaryContainer,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -133,6 +224,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
+            _buildProfilePreview(),
+            const SizedBox(height: 24),
             _buildAvatarPreview(),
             const SizedBox(height: 16),
             OutlinedButton.icon(

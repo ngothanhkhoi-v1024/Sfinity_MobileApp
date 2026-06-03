@@ -35,6 +35,13 @@ class ProfilePage extends StatelessWidget {
             const SizedBox(height: 24),
             _buildMenuTile(
               context,
+              icon: Icons.person_outlined,
+              title: context.l10n.viewProfile,
+              onTap: () => context.push(RouteNames.viewProfile),
+              isDark: isDark,
+            ),
+            _buildMenuTile(
+              context,
               icon: Icons.edit_outlined,
               title: context.l10n.editProfile,
               onTap: () => context.push(RouteNames.editProfile),
