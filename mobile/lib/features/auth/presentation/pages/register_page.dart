@@ -95,7 +95,6 @@ class _RegisterPageState extends State<RegisterPage> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Đăng ký tài khoản'),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
