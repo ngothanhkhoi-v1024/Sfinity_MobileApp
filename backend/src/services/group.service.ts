@@ -23,6 +23,7 @@ export const groupService = {
       description: dto.description ?? null,
       avatarUrl: dto.avatarUrl ?? null,
       isPublic: dto.isPublic ?? false,
+      autoApprove: dto.autoApprove ?? true,
       creatorId,
       createdAt: now,
       updatedAt: now,
@@ -38,6 +39,7 @@ export const groupService = {
       userId: creatorId,
       role: 'OWNER',
       joinedAt: now,
+      status: 'APPROVED',
     };
     await db.collection('group_members').doc(memberId).set(memberData);
 
@@ -74,7 +76,7 @@ export const groupService = {
     
     const membersList = membersSnap.docs.map(d => d.data()!);
 
-    const isMember = membersList.some((m) => m.userId === userId);
+    const isMember = membersList.some((m) => m.userId === userId && m.status !== 'PENDING');
     if (!isMember && !groupData.isPublic) {
       throw new HttpError(403, 'Bạn không phải thành viên nhóm này.', 'Forbidden');
     }
@@ -88,6 +90,7 @@ export const groupService = {
           id: m.id,
           role: m.role,
           joinedAt: toDate(m.joinedAt),
+          status: m.status ?? 'APPROVED',
           user: {
             id: m.userId,
             name: uData?.name ?? 'Unknown',
@@ -111,6 +114,7 @@ export const groupService = {
       description: groupData.description,
       avatarUrl: groupData.avatarUrl,
       isPublic: groupData.isPublic,
+      autoApprove: groupData.autoApprove ?? true,
       creatorId: groupData.creatorId,
       createdAt: toDate(groupData.createdAt),
       updatedAt: toDate(groupData.updatedAt),
@@ -130,7 +134,7 @@ export const groupService = {
       .where('userId', '==', userId)
       .get();
 
-    const memberships = membershipsSnap.docs.map(d => d.data()!);
+    const memberships = membershipsSnap.docs.map(d => d.data()!).filter(m => m.status !== 'PENDING');
 
     const groupsList = await Promise.all(
       memberships.map(async (m) => {
@@ -166,6 +170,7 @@ export const groupService = {
           description: groupData.description,
           avatarUrl: groupData.avatarUrl,
           isPublic: groupData.isPublic,
+          autoApprove: groupData.autoApprove ?? true,
           creatorId: groupData.creatorId,
           createdAt: toDate(groupData.createdAt),
           updatedAt: toDate(groupData.updatedAt),
@@ -329,6 +334,7 @@ export const groupService = {
     if (dto.description !== undefined) updateData.description = dto.description;
     if (dto.isPublic !== undefined) updateData.isPublic = dto.isPublic;
     if (dto.avatarUrl !== undefined) updateData.avatarUrl = dto.avatarUrl;
+    if (dto.autoApprove !== undefined) updateData.autoApprove = dto.autoApprove;
 
     await db.collection('groups').doc(groupId).update(updateData);
     
@@ -377,25 +383,29 @@ export const groupService = {
     const membershipsSnap = await db.collection('group_members')
       .where('userId', '==', userId)
       .get();
-    const joinedGroupIds = new Set(membershipsSnap.docs.map(d => d.data().groupId));
-
+    const memberships = membershipsSnap.docs.map(d => d.data()!);
+    const membershipsMap = new Map(memberships.map(m => [m.groupId, m]));
+ 
     // Lấy tất cả nhóm công khai
     const publicGroupsSnap = await db.collection('groups')
       .where('isPublic', '==', true)
       .get();
     
     const publicGroups = publicGroupsSnap.docs.map(d => d.data()!);
-
-    // Lọc nhóm chưa tham gia
-    const discoverableGroups = publicGroups.filter(g => !joinedGroupIds.has(g.id));
-
+ 
+    // Lọc nhóm chưa tham gia (hoặc chỉ mới ở trạng thái PENDING)
+    const discoverableGroups = publicGroups.filter(g => {
+      const m = membershipsMap.get(g.id);
+      return !m || m.status === 'PENDING';
+    });
+ 
     // Hydrate thông tin thành viên (giống listUserGroups)
     const result = await Promise.all(
       discoverableGroups.map(async (groupData) => {
         const membersCountSnap = await db.collection('group_members')
           .where('groupId', '==', groupData.id)
           .get();
-
+ 
         const allGroupMembers = membersCountSnap.docs.map(d => d.data()!);
         
         const hydratedShortMembers = await Promise.all(
@@ -411,13 +421,16 @@ export const groupService = {
             };
           })
         );
-
+ 
+        const myMembership = membershipsMap.get(groupData.id);
+ 
         return {
           id: groupData.id,
           name: groupData.name,
           description: groupData.description,
           avatarUrl: groupData.avatarUrl,
           isPublic: groupData.isPublic,
+          autoApprove: groupData.autoApprove ?? true,
           creatorId: groupData.creatorId,
           createdAt: toDate(groupData.createdAt),
           updatedAt: toDate(groupData.updatedAt),
@@ -425,10 +438,12 @@ export const groupService = {
           _count: {
             members: allGroupMembers.length,
           },
+          myRole: myMembership ? myMembership.role : null,
+          myStatus: myMembership ? myMembership.status : null,
         };
       })
     );
-
+ 
     // Sắp xếp theo ngày tạo mới nhất
     result.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     return result;
@@ -448,8 +463,15 @@ export const groupService = {
     const memberId = `${groupId}_${userId}`;
     const memberDoc = await db.collection('group_members').doc(memberId).get();
     if (memberDoc.exists) {
+      const data = memberDoc.data()!;
+      if (data.status === 'PENDING') {
+        throw new HttpError(400, 'Bạn đã gửi yêu cầu tham gia và đang chờ duyệt.', 'Bad Request');
+      }
       throw new HttpError(409, 'Bạn đã là thành viên của nhóm này.', 'Conflict');
     }
+
+    const autoApprove = groupData.autoApprove ?? true;
+    const isPending = !autoApprove;
 
     const now = new Date();
     const memberData = {
@@ -458,6 +480,7 @@ export const groupService = {
       userId,
       role: 'MEMBER',
       joinedAt: now,
+      status: isPending ? 'PENDING' : 'APPROVED',
     };
 
     await db.collection('group_members').doc(memberId).set(memberData);
@@ -623,6 +646,7 @@ export const groupService = {
           userId,
           role: 'MEMBER',
           joinedAt: now,
+          status: 'APPROVED',
         };
         await db.collection('group_members').doc(memberId).set(memberData);
       }
@@ -630,6 +654,24 @@ export const groupService = {
       // Từ chối lời mời
       await inviteRef.update({ status: 'DECLINED' });
     }
+
+    return { success: true };
+  },
+
+  /** Phê duyệt yêu cầu tham gia nhóm */
+  async approveMember(groupId: string, actorId: string, targetUserId: string) {
+    const db = getDb();
+    await this._requireOwnerOrAdmin(groupId, actorId);
+
+    const memberId = `${groupId}_${targetUserId}`;
+    const memberDoc = await db.collection('group_members').doc(memberId).get();
+    if (!memberDoc.exists) {
+      throw new HttpError(404, 'Yêu cầu tham gia không tồn tại.', 'Not Found');
+    }
+
+    await db.collection('group_members').doc(memberId).update({
+      status: 'APPROVED',
+    });
 
     return { success: true };
   },

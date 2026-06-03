@@ -28,12 +28,14 @@ class GroupApiService {
     required String name,
     String? description,
     bool isPublic = false,
+    bool autoApprove = true,
   }) async {
     try {
       final data = await _client.post('/groups', {
         'name': name,
         if (description != null) 'description': description,
         'isPublic': isPublic,
+        'autoApprove': autoApprove,
       });
       return GroupModel.fromJson(data);
     } on DioException catch (e) {
@@ -46,6 +48,7 @@ class GroupApiService {
     String? description,
     bool? isPublic,
     String? avatarUrl,
+    bool? autoApprove,
   }) async {
     try {
       final data = await _client.patch('/groups/$groupId', {
@@ -53,6 +56,7 @@ class GroupApiService {
         if (description != null) 'description': description,
         if (isPublic != null) 'isPublic': isPublic,
         if (avatarUrl != null) 'avatarUrl': avatarUrl,
+        if (autoApprove != null) 'autoApprove': autoApprove,
       });
       return GroupModel.fromJson(data);
     } on DioException catch (e) {
@@ -80,6 +84,14 @@ class GroupApiService {
   Future<void> removeMember(String groupId, String userId) async {
     try {
       await _client.delete('/groups/$groupId/members/$userId');
+    } on DioException catch (e) {
+      throw Exception(_client.errorMessage(e));
+    }
+  }
+
+  Future<void> approveMember(String groupId, String userId) async {
+    try {
+      await _client.post('/groups/$groupId/members/$userId/approve', {});
     } on DioException catch (e) {
       throw Exception(_client.errorMessage(e));
     }

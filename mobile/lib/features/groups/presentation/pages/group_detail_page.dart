@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../app.dart';
 import '../../../../core/auth/auth_state.dart';
+import '../../../../core/constants/route_names.dart';
 import '../../data/models/group_model.dart';
 import '../../data/services/group_chat_service.dart';
 import '../controllers/group_controller.dart';
@@ -128,46 +129,32 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         ),
         onPressed: () => context.pop(),
       ),
-      title: Column(
+      title: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                group.name,
-                style: TextStyle(
-                  color: isDark ? Colors.white : cs.onSurface,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16.5,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
-                decoration: BoxDecoration(
-                  color: group.isPublic ? const Color(0xFF4CAF50) : const Color(0xFFE53935),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  group.isPublic ? 'CÔNG KHAI' : 'RIÊNG TƯ',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 8.5,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 3),
           Text(
-            '${group.memberCount} thành viên • ${group.memberCount ~/ 3 + 1} đang online',
+            group.name,
             style: TextStyle(
-              fontSize: 11.5,
-              color: isDark ? Colors.white.withValues(alpha: 0.55) : cs.onSurface.withValues(alpha: 0.6),
-              fontWeight: FontWeight.w400,
+              color: isDark ? Colors.white : cs.onSurface,
+              fontWeight: FontWeight.bold,
+              fontSize: 16.5,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+            decoration: BoxDecoration(
+              color: group.isPublic ? const Color(0xFF4CAF50) : const Color(0xFFE53935),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              group.isPublic ? 'CÔNG KHAI' : 'RIÊNG TƯ',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 8.5,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.5,
+              ),
             ),
           ),
         ],
@@ -266,7 +253,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                   title: const Text('Chỉnh sửa thông tin nhóm', style: TextStyle(fontWeight: FontWeight.w500)),
                   onTap: () {
                     Navigator.pop(sheetCtx);
-                    _showEditDialog(context, group);
+                    context.push(RouteNames.groupEdit.replaceFirst(':id', group.id));
                   },
                 ),
                 ListTile(
@@ -319,248 +306,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
 
   // ─── DIALOGS & HELPER METHODS ──────────────────────────────────────────────
 
-  Future<void> _showEditDialog(BuildContext context, GroupModel group) async {
-    final nameCtrl = TextEditingController(text: group.name);
-    final descCtrl = TextEditingController(text: group.description ?? '');
-    bool isPublic = group.isPublic;
 
-    await showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSt) {
-          final theme = Theme.of(ctx);
-          final cs = theme.colorScheme;
-          final isDark = cs.brightness == Brightness.dark;
-
-          return Dialog(
-            backgroundColor: Colors.transparent,
-            insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 400),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF161616) : cs.surface,
-                borderRadius: BorderRadius.circular(28),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.08),
-                    blurRadius: 24,
-                    offset: const Offset(0, 12),
-                  ),
-                ],
-                border: Border.all(
-                  color: isDark ? Colors.white.withValues(alpha: 0.06) : cs.outlineVariant.withValues(alpha: 0.3),
-                  width: 1,
-                ),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Header
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 20, 16, 8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Chỉnh sửa nhóm',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white : cs.onSurface,
-                            fontSize: 18,
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close_rounded),
-                          onPressed: () => Navigator.pop(ctx),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Divider(height: 1, thickness: 0.5),
-
-                  // Fields
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Tên nhóm học tập',
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.bold,
-                            color: cs.primary,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        TextField(
-                          controller: nameCtrl,
-                          style: TextStyle(color: isDark ? Colors.white : cs.onSurface, fontSize: 14.5),
-                          decoration: InputDecoration(
-                            hintText: 'Nhập tên nhóm...',
-                            filled: true,
-                            fillColor: isDark ? const Color(0xFF242526) : cs.surfaceContainerHigh.withValues(alpha: 0.4),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.5)),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3)),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: cs.primary, width: 1.5),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        Text(
-                          'Mô tả nhóm',
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.bold,
-                            color: cs.primary,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        TextField(
-                          controller: descCtrl,
-                          maxLines: 3,
-                          style: TextStyle(color: isDark ? Colors.white : cs.onSurface, fontSize: 14.5),
-                          decoration: InputDecoration(
-                            hintText: 'Nhập mô tả ngắn cho nhóm...',
-                            filled: true,
-                            fillColor: isDark ? const Color(0xFF242526) : cs.surfaceContainerHigh.withValues(alpha: 0.4),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.5)),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3)),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: cs.primary, width: 1.5),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
-                            color: isDark ? const Color(0xFF1E1E1E) : cs.surfaceContainerHigh.withValues(alpha: 0.3),
-                          ),
-                          child: SwitchListTile(
-                            title: Text(
-                              'Nhóm công khai',
-                              style: TextStyle(
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w600,
-                                color: isDark ? Colors.white.withValues(alpha: 0.9) : cs.onSurface,
-                              ),
-                            ),
-                            subtitle: Text(
-                              isPublic ? 'Mọi người có thể tìm và tham gia' : 'Chỉ những ai được mời mới có thể tham gia',
-                              style: TextStyle(fontSize: 10.5, color: cs.onSurfaceVariant.withValues(alpha: 0.7)),
-                            ),
-                            value: isPublic,
-                            activeColor: cs.primary,
-                            onChanged: (v) => setSt(() => isPublic = v),
-                            contentPadding: EdgeInsets.zero,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Actions
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () => Navigator.pop(ctx),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              side: BorderSide(color: cs.outline),
-                            ),
-                            child: Text(
-                              'Hủy',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: cs.outline,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(16),
-                              gradient: LinearGradient(
-                                colors: [cs.primary, cs.primary.withValues(alpha: 0.85)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: cs.primary.withValues(alpha: 0.3),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: ElevatedButton(
-                              onPressed: () async {
-                                await _groupCtrl.updateGroup(
-                                  group.id,
-                                  name: nameCtrl.text.trim().isEmpty ? null : nameCtrl.text.trim(),
-                                  description: descCtrl.text.trim(),
-                                  isPublic: isPublic,
-                                );
-                                if (ctx.mounted) Navigator.pop(ctx);
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.transparent,
-                                shadowColor: Colors.transparent,
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                              ),
-                              child: const Text(
-                                'Lưu',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
 
   Future<String?> _showNewOwnerSelectDialog(BuildContext context, GroupModel group) async {
     final otherMembers = group.members.where((m) => m.user.id != _myUid).toList();

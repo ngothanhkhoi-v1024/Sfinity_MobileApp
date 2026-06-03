@@ -105,6 +105,24 @@ class AppLocalizations {
       'studyPlacesOrMaterials': 'Địa điểm học tập hoặc tài liệu cho cộng đồng',
       'libraryCafeStudyGroupSpace': 'Thư viện, quán cà phê, không gian học nhóm…',
       'notesSlidesExamPapersSubjectSummaries': 'Ghi chú, slide, đề thi, tóm tắt môn học…',
+      'createGroupTitle': 'Tạo nhóm mới',
+      'editGroupTitle': 'Chỉnh sửa thông tin nhóm',
+      'groupNameLabel': 'Tên nhóm *',
+      'groupNameHint': 'Nhập tên nhóm của bạn',
+      'groupDescLabel': 'Mô tả (tùy chọn)',
+      'groupDescHint': 'Thêm vài lời về nhóm này...',
+      'publicGroupLabel': 'Nhóm công khai',
+      'publicGroupHint': 'Bất kỳ ai cũng có thể tìm và gia nhập nhóm này.',
+      'privateGroupHint': 'Chỉ những thành viên được mời mới có thể tham gia.',
+      'autoApproveLabel': 'Tự động duyệt thành viên',
+      'autoApproveHint': 'Thành viên mới tham gia trực tiếp không cần phê duyệt.',
+      'requireApprovalHint': 'Thành viên mới cần được chủ nhóm phê duyệt trước.',
+      'createGroupBtn': 'Tạo nhóm',
+      'saveChangesBtn': 'Lưu thay đổi',
+      'cancelBtn': 'Hủy',
+      'joinRequestsLabel': 'Yêu cầu duyệt',
+      'approveBtn': 'Duyệt',
+      'declineBtn': 'Từ chối',
     },
     'en': {
       'appName': 'Sfinity',
@@ -200,6 +218,24 @@ class AppLocalizations {
       'studyPlacesOrMaterials': 'Study places or materials for the community',
       'libraryCafeStudyGroupSpace': 'Library, café, study group space…',
       'notesSlidesExamPapersSubjectSummaries': 'Notes, slides, exam papers, subject summaries…',
+      'createGroupTitle': 'Create new group',
+      'editGroupTitle': 'Edit group details',
+      'groupNameLabel': 'Group name *',
+      'groupNameHint': 'Enter your group name',
+      'groupDescLabel': 'Description (optional)',
+      'groupDescHint': 'Add a few words about this group...',
+      'publicGroupLabel': 'Public group',
+      'publicGroupHint': 'Anyone can find and join this group.',
+      'privateGroupHint': 'Only invited members can join.',
+      'autoApproveLabel': 'Auto-approve members',
+      'autoApproveHint': 'New members join directly without approval.',
+      'requireApprovalHint': 'New members need owner approval first.',
+      'createGroupBtn': 'Create group',
+      'saveChangesBtn': 'Save changes',
+      'cancelBtn': 'Cancel',
+      'joinRequestsLabel': 'Join requests',
+      'approveBtn': 'Approve',
+      'declineBtn': 'Decline',
     },
   };
 
@@ -306,6 +342,24 @@ class AppLocalizations {
   String get studyPlacesOrMaterials => _text('studyPlacesOrMaterials');
   String get libraryCafeStudyGroupSpace => _text('libraryCafeStudyGroupSpace');
   String get notesSlidesExamPapersSubjectSummaries => _text('notesSlidesExamPapersSubjectSummaries');
+  String get createGroupTitle => _text('createGroupTitle');
+  String get editGroupTitle => _text('editGroupTitle');
+  String get groupNameLabel => _text('groupNameLabel');
+  String get groupNameHint => _text('groupNameHint');
+  String get groupDescLabel => _text('groupDescLabel');
+  String get groupDescHint => _text('groupDescHint');
+  String get publicGroupLabel => _text('publicGroupLabel');
+  String get publicGroupHint => _text('publicGroupHint');
+  String get privateGroupHint => _text('privateGroupHint');
+  String get autoApproveLabel => _text('autoApproveLabel');
+  String get autoApproveHint => _text('autoApproveHint');
+  String get requireApprovalHint => _text('requireApprovalHint');
+  String get createGroupBtn => _text('createGroupBtn');
+  String get saveChangesBtn => _text('saveChangesBtn');
+  String get cancelBtn => _text('cancelBtn');
+  String get joinRequestsLabel => _text('joinRequestsLabel');
+  String get approveBtn => _text('approveBtn');
+  String get declineBtn => _text('declineBtn');
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
