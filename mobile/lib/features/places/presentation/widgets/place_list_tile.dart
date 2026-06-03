@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 
+import 'place_map_pin.dart';
 import 'place_mini_map_preview.dart';
 
 class PlaceListTile extends StatelessWidget {
@@ -11,6 +12,7 @@ class PlaceListTile extends StatelessWidget {
     required this.distanceLabel,
     required this.isCommunity,
     required this.onTap,
+    this.isSaved = false,
     this.showMapAction = false,
     this.onMapTap,
     this.mapPoint,
@@ -21,6 +23,7 @@ class PlaceListTile extends StatelessWidget {
   final String subtitle;
   final String distanceLabel;
   final bool isCommunity;
+  final bool isSaved;
   final VoidCallback onTap;
   final bool showMapAction;
   final VoidCallback? onMapTap;
@@ -32,40 +35,35 @@ class PlaceListTile extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final primary = theme.colorScheme.primary;
-    final accent = isCommunity ? primary : const Color(0xFF1565C0);
+    final accent = isSaved ? const Color(0xFFF59E0B) : (isCommunity ? primary : const Color(0xFF1565C0));
+    final pinVariant = isSaved
+        ? PlaceMapPinVariant.saved
+        : (isCommunity ? PlaceMapPinVariant.community : PlaceMapPinVariant.saved);
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 8),
       child: Material(
-        color: isDark ? const Color(0xFF252525) : Colors.white,
-        elevation: isDark ? 0 : 1,
-        shadowColor: Colors.black.withValues(alpha: 0.04),
-        borderRadius: BorderRadius.circular(16),
+        color: isDark ? const Color(0xFF1F1F1F) : Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(14, 14, 12, 14),
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: isDark ? const Color(0xFF2D2D2D) : const Color(0xFFE5E7EB),
+              ),
+            ),
+            padding: const EdgeInsets.all(12),
             child: Row(
               children: [
                 if (showMiniMap && mapPoint != null)
-                  PlaceMiniMapPreview(point: mapPoint!, accentColor: accent)
+                  PlaceMiniMapPreview(point: mapPoint!, accentColor: accent, size: 52)
                 else
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          accent.withValues(alpha: 0.18),
-                          accent.withValues(alpha: 0.06),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Icon(Icons.place_rounded, color: accent, size: 26),
+                  SizedBox(
+                    width: 40,
+                    height: 44,
+                    child: PlaceMapPin(variant: pinVariant, size: 40),
                   ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -81,62 +79,55 @@ class PlaceListTile extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 3),
                       Text(
                         subtitle,
                         style: TextStyle(
                           fontSize: 12,
-                          color: isDark ? Colors.grey.shade400 : const Color(0xFF6B7280),
+                          color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: accent.withValues(alpha: isDark ? 0.2 : 0.1),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        distanceLabel,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: accent,
-                        ),
-                      ),
-                    ),
-                    if (showMapAction && onMapTap != null) ...[
                       const SizedBox(height: 6),
-                      InkWell(
-                        onTap: onMapTap,
-                        borderRadius: BorderRadius.circular(8),
-                        child: Padding(
-                          padding: const EdgeInsets.all(4),
-                          child: Icon(
-                            Icons.map_outlined,
-                            size: 18,
-                            color: isDark ? Colors.grey.shade400 : Colors.grey.shade500,
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: accent.withValues(alpha: isDark ? 0.18 : 0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          distanceLabel,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: accent,
                           ),
                         ),
                       ),
-                    ] else ...[
-                      const SizedBox(height: 6),
-                      Icon(
-                        Icons.chevron_right_rounded,
-                        size: 20,
-                        color: isDark ? Colors.grey.shade500 : Colors.grey.shade400,
-                      ),
                     ],
-                  ],
+                  ),
                 ),
+                const SizedBox(width: 6),
+                if (showMapAction && onMapTap != null)
+                  Material(
+                    color: primary.withValues(alpha: isDark ? 0.15 : 0.08),
+                    borderRadius: BorderRadius.circular(10),
+                    child: InkWell(
+                      onTap: onMapTap,
+                      borderRadius: BorderRadius.circular(10),
+                      child: const Padding(
+                        padding: EdgeInsets.all(8),
+                        child: Icon(Icons.map_rounded, size: 20),
+                      ),
+                    ),
+                  )
+                else
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    size: 22,
+                    color: isDark ? const Color(0xFF6B7280) : const Color(0xFFD1D5DB),
+                  ),
               ],
             ),
           ),

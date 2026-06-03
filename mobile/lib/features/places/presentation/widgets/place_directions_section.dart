@@ -31,16 +31,57 @@ class _PlaceDirectionsSectionState extends State<PlaceDirectionsSection> {
   bool _loading = false;
   String? _error;
   PlaceRouteResult? _route;
+  RouteTravelMode _mode = RouteTravelMode.motorcycle;
+  LatLng? _origin;
 
-  Future<void> _loadDirections() async {
+  /// Cache theo profile OSRM (`foot` / `driving`).
+  final _cacheByProfile = <String, PlaceRouteResult>{};
+
+  Color _colorForMode(RouteTravelMode mode) => switch (mode) {
+        RouteTravelMode.walking => const Color(0xFF10B981),
+        RouteTravelMode.motorcycle => const Color(0xFFF59E0B),
+        RouteTravelMode.car => const Color(0xFF3B82F6),
+      };
+
+  PlaceRouteResult _withMode(PlaceRouteResult base, RouteTravelMode mode) {
+    return PlaceRouteResult(
+      polyline: base.polyline,
+      steps: base.steps,
+      totalDistanceMeters: base.totalDistanceMeters,
+      totalDurationSeconds: base.totalDurationSeconds,
+      origin: base.origin,
+      destination: base.destination,
+      travelMode: mode,
+    );
+  }
+
+  Future<void> _loadDirections({RouteTravelMode? mode}) async {
+    final targetMode = mode ?? _mode;
+    final profileKey = targetMode.cacheKey;
+
+    if (_cacheByProfile.containsKey(profileKey)) {
+      final cached = _withMode(_cacheByProfile[profileKey]!, targetMode);
+      setState(() {
+        _expanded = true;
+        _mode = targetMode;
+        _route = cached;
+        _loading = false;
+        _error = null;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) => _fitRouteOnMap(cached));
+      return;
+    }
+
     setState(() {
       _loading = true;
       _error = null;
       _expanded = true;
+      _mode = targetMode;
     });
 
     try {
-      final origin = await _locationService.getCurrentLocation();
+      _origin ??= await _locationService.getCurrentLocation();
+      final origin = _origin;
       if (origin == null) {
         setState(() {
           _loading = false;
@@ -53,7 +94,10 @@ class _PlaceDirectionsSectionState extends State<PlaceDirectionsSection> {
       final route = await _routingService.fetchRoute(
         origin: origin,
         destination: widget.destination,
+        travelMode: targetMode,
       );
+
+      _cacheByProfile[profileKey] = route;
 
       if (!mounted) return;
       setState(() {
@@ -75,6 +119,11 @@ class _PlaceDirectionsSectionState extends State<PlaceDirectionsSection> {
         _error = 'Không tải được chỉ đường. Kiểm tra mạng và thử lại.';
       });
     }
+  }
+
+  void _onModeChanged(RouteTravelMode mode) {
+    if (mode == _mode && _route != null) return;
+    _loadDirections(mode: mode);
   }
 
   void _fitRouteOnMap(PlaceRouteResult route) {
@@ -99,6 +148,8 @@ class _PlaceDirectionsSectionState extends State<PlaceDirectionsSection> {
       _expanded = false;
       _route = null;
       _error = null;
+      _cacheByProfile.clear();
+      _origin = null;
     });
   }
 
@@ -116,11 +167,13 @@ class _PlaceDirectionsSectionState extends State<PlaceDirectionsSection> {
         ),
         icon: const Icon(Icons.directions_rounded),
         label: const Text(
-          'Dẫn đường từ vị trí của tôi',
+          'Chỉ đường đi',
           style: TextStyle(fontWeight: FontWeight.w600),
         ),
       );
     }
+
+    final routeColor = _route != null ? _colorForMode(_mode) : widget.accentColor;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -143,11 +196,17 @@ class _PlaceDirectionsSectionState extends State<PlaceDirectionsSection> {
           ],
         ),
         const SizedBox(height: 8),
+        _TravelModeSelector(
+          selected: _mode,
+          loading: _loading,
+          onChanged: _onModeChanged,
+        ),
+        const SizedBox(height: 8),
         ClipRRect(
           borderRadius: BorderRadius.circular(16),
           child: SizedBox(
             height: 220,
-            child: _buildMap(isDark),
+            child: _buildMap(isDark, routeColor),
           ),
         ),
         const SizedBox(height: 12),
@@ -159,14 +218,14 @@ class _PlaceDirectionsSectionState extends State<PlaceDirectionsSection> {
         else if (_error != null)
           _ErrorBox(
             message: _error!,
-            onRetry: _loadDirections,
+            onRetry: () => _loadDirections(mode: _mode),
           )
         else if (_route != null)
           _RouteSummary(
             route: _route!,
             locationService: _locationService,
             isDark: isDark,
-            accentColor: widget.accentColor,
+            accentColor: routeColor,
           ),
         if (_route != null) ...[
           const SizedBox(height: 12),
@@ -183,7 +242,7 @@ class _PlaceDirectionsSectionState extends State<PlaceDirectionsSection> {
                   step: e.value,
                   isLast: e.key == _route!.steps.length - 1,
                   isDark: isDark,
-                  accentColor: widget.accentColor,
+                  accentColor: routeColor,
                 ),
               ),
         ],
@@ -191,7 +250,7 @@ class _PlaceDirectionsSectionState extends State<PlaceDirectionsSection> {
     );
   }
 
-  Widget _buildMap(bool isDark) {
+  Widget _buildMap(bool isDark, Color routeColor) {
     final route = _route;
     final center = route?.polyline.isNotEmpty == true
         ? route!.polyline[route.polyline.length ~/ 2]
@@ -216,7 +275,7 @@ class _PlaceDirectionsSectionState extends State<PlaceDirectionsSection> {
             polylines: [
               Polyline(
                 points: route.polyline,
-                color: widget.accentColor,
+                color: routeColor,
                 strokeWidth: 5,
                 borderColor: Colors.white.withValues(alpha: 0.9),
                 borderStrokeWidth: 2,
@@ -239,7 +298,7 @@ class _PlaceDirectionsSectionState extends State<PlaceDirectionsSection> {
                 width: 36,
                 height: 36,
                 child: _MapDot(
-                  color: widget.accentColor,
+                  color: routeColor,
                   icon: Icons.place_rounded,
                 ),
               ),
@@ -253,13 +312,126 @@ class _PlaceDirectionsSectionState extends State<PlaceDirectionsSection> {
                 width: 36,
                 height: 36,
                 child: _MapDot(
-                  color: widget.accentColor,
+                  color: routeColor,
                   icon: Icons.place_rounded,
                 ),
               ),
             ],
           ),
       ],
+    );
+  }
+}
+
+class _TravelModeSelector extends StatelessWidget {
+  const _TravelModeSelector({
+    required this.selected,
+    required this.loading,
+    required this.onChanged,
+  });
+
+  final RouteTravelMode selected;
+  final bool loading;
+  final ValueChanged<RouteTravelMode> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final track = isDark ? const Color(0xFF2A2A2A) : const Color(0xFFF3F4F6);
+
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: track,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          for (final mode in RouteTravelMode.values)
+            Expanded(
+              child: _TravelModeChip(
+                mode: mode,
+                selected: selected == mode,
+                loading: loading && selected == mode,
+                onTap: loading ? null : () => onChanged(mode),
+                isDark: isDark,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TravelModeChip extends StatelessWidget {
+  const _TravelModeChip({
+    required this.mode,
+    required this.selected,
+    required this.loading,
+    required this.onTap,
+    required this.isDark,
+  });
+
+  final RouteTravelMode mode;
+  final bool selected;
+  final bool loading;
+  final VoidCallback? onTap;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
+    final accent = switch (mode) {
+      RouteTravelMode.walking => const Color(0xFF10B981),
+      RouteTravelMode.motorcycle => const Color(0xFFF59E0B),
+      RouteTravelMode.car => const Color(0xFF3B82F6),
+    };
+
+    return Material(
+      color: selected
+          ? (isDark ? accent.withValues(alpha: 0.22) : Colors.white)
+          : Colors.transparent,
+      borderRadius: BorderRadius.circular(9),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(9),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (loading)
+                SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: selected ? accent : primary,
+                  ),
+                )
+              else
+                Icon(
+                  mode.icon,
+                  size: 18,
+                  color: selected
+                      ? accent
+                      : (isDark ? Colors.grey.shade500 : Colors.grey.shade600),
+                ),
+              const SizedBox(height: 2),
+              Text(
+                mode.label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  color: selected
+                      ? (isDark ? Colors.white : const Color(0xFF1F2937))
+                      : (isDark ? Colors.grey.shade500 : Colors.grey.shade600),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -306,7 +478,8 @@ class _RouteSummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dist = locationService.formatDistanceMeters(route.totalDistanceMeters.round());
-    final mins = (route.totalDurationSeconds / 60).ceil();
+    final mins = (route.displayDurationSeconds / 60).ceil();
+    final modeLabel = route.travelMode.label;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -317,15 +490,31 @@ class _RouteSummary extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(Icons.route_outlined, color: accentColor, size: 22),
+          Icon(route.travelMode.icon, color: accentColor, size: 22),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              '$dist · khoảng $mins phút',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: isDark ? Colors.grey.shade200 : Colors.grey.shade900,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$modeLabel · $dist · ~$mins phút',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.grey.shade200 : Colors.grey.shade900,
+                  ),
+                ),
+                if (route.travelMode == RouteTravelMode.motorcycle)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      'Tuyến xe máy dùng đường ô tô (ước lượng thời gian)',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: isDark ? Colors.grey.shade500 : Colors.grey.shade600,
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         ],
