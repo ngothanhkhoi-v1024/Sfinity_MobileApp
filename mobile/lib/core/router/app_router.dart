@@ -23,6 +23,7 @@ import '../../features/notifications/presentation/pages/notification_settings_pa
 import '../../features/onboarding/presentation/pages/onboarding_page.dart';
 import '../../features/splash/presentation/pages/splash_page.dart';
 import '../../features/profile/presentation/pages/edit_profile_page.dart';
+import '../../features/profile/presentation/pages/view_profile_page.dart';
 import '../../features/report/presentation/pages/report_page.dart';
 import '../../features/security/presentation/pages/change_password_page.dart';
 import '../../features/settings/presentation/pages/language_settings_page.dart';
@@ -155,6 +156,10 @@ GoRouter createAppRouter(AuthState auth) {
       GoRoute(
         path: RouteNames.notifications,
         builder: (_, __) => const NotificationsPage(),
+      ),
+      GoRoute(
+        path: RouteNames.viewProfile,
+        builder: (_, __) => const ViewProfilePage(),
       ),
       GoRoute(
         path: RouteNames.editProfile,

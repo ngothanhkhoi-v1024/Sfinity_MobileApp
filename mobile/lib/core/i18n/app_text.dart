@@ -41,6 +41,8 @@ class AppLocalizations {
       'useAppInVietnamese': 'Sử dụng giao diện tiếng Việt',
       'useAppInEnglish': 'Sử dụng giao diện tiếng Anh',
       'editProfile': 'Chỉnh sửa hồ sơ',
+      'viewProfile': 'Xem hồ sơ',
+      'bio': 'Giới thiệu bản thân',
       'myPosts': 'Bài đăng của tôi',
       'feedback': 'Phản hồi',
       'reportViolation': 'Báo cáo vi phạm',
@@ -154,6 +156,8 @@ class AppLocalizations {
       'useAppInVietnamese': 'Use the app in Vietnamese',
       'useAppInEnglish': 'Use the app in English',
       'editProfile': 'Edit profile',
+      'viewProfile': 'View profile',
+      'bio': 'About me',
       'myPosts': 'My posts',
       'feedback': 'Feedback',
       'reportViolation': 'Report violation',
@@ -280,6 +284,8 @@ class AppLocalizations {
   String get useAppInVietnamese => _text('useAppInVietnamese');
   String get useAppInEnglish => _text('useAppInEnglish');
   String get editProfile => _text('editProfile');
+  String get viewProfile => _text('viewProfile');
+  String get bio => _text('bio');
   String get myPosts => _text('myPosts');
   String get feedback => _text('feedback');
   String get reportViolation => _text('reportViolation');

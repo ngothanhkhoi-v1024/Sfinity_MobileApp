@@ -33,6 +33,9 @@ function sanitizeUser(user: {
   authProvider: AuthProvider;
   createdAt: any;
   notificationsEnabled?: boolean;
+  birthDate?: string;
+  gender?: string;
+  address?: string;
 }) {
   return {
     id: user.id,
@@ -44,6 +47,9 @@ function sanitizeUser(user: {
     authProvider: (user.authProvider ?? AuthProvider.LOCAL).toLowerCase() as 'local' | 'google' | 'facebook',
     createdAt: toDate(user.createdAt),
     notificationsEnabled: user.notificationsEnabled ?? true,
+    birthDate: user.birthDate ?? undefined,
+    gender: user.gender ?? undefined,
+    address: user.address ?? undefined,
   };
 }
 
@@ -298,6 +304,15 @@ export const authService = {
     };
     if (dto.avatar !== undefined) {
       updateData.avatar = dto.avatar;
+    }
+    if (dto.birthDate !== undefined) {
+      updateData.birthDate = dto.birthDate;
+    }
+    if (dto.gender !== undefined) {
+      updateData.gender = dto.gender;
+    }
+    if (dto.address !== undefined) {
+      updateData.address = dto.address;
     }
 
     await userRef.update(updateData);

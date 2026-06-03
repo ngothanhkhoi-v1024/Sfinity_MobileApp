@@ -37,6 +37,7 @@ abstract final class RouteNames {
   static const themeSettings = '/settings/theme';
 
   // Profile & security
+  static const viewProfile = '/profile/view';
   static const editProfile = '/profile/edit';
   static const changePassword = '/security/change-password';
   static const twoFactor = '/security/two-factor';

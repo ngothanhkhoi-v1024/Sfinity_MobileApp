@@ -122,6 +122,11 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> data) {
+    return _apiService.updateProfile(data);
+  }
+
+  @override
   Future<String?> getToken() {
     return _localDatabase.getToken();
   }
@@ -176,6 +181,9 @@ class AuthRepositoryImpl implements AuthRepository {
       email: userMap['email']?.toString() ?? '',
       name: userMap['name']?.toString() ?? '',
       avatar: userMap['avatar']?.toString(),
+      birthDate: userMap['birthDate']?.toString(),
+      gender: userMap['gender']?.toString(),
+      address: userMap['address']?.toString(),
       accessToken: token,
     );
 

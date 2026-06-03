@@ -118,7 +118,7 @@ class _SfinityAppState extends State<SfinityApp> {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: Listenable.merge([themeManager, localeManager, notificationManager]),
+      animation: Listenable.merge([auth, themeManager, localeManager, notificationManager]),
       builder: (context, child) {
         return MaterialApp.router(
           title: 'Sfinity',

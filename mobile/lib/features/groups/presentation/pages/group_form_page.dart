@@ -8,7 +8,6 @@ import 'package:firebase_storage/firebase_storage.dart';
 import '../../../../app.dart';
 import '../../../../core/i18n/app_text.dart';
 import '../controllers/group_controller.dart';
-import '../../../profile/presentation/pages/avatar_crop_page.dart';
 
 class GroupFormPage extends StatefulWidget {
   const GroupFormPage({super.key, this.groupId});
@@ -74,23 +73,14 @@ class _GroupFormPageState extends State<GroupFormPage> {
     final picker = ImagePicker();
     final picked = await picker.pickImage(
       source: ImageSource.gallery,
-      maxWidth: 1024,
+      maxWidth: 800,
       imageQuality: 85,
     );
 
     if (picked == null) return;
-    if (!mounted) return;
-
-    final cropped = await Navigator.of(context).push<File?>(
-      MaterialPageRoute(
-        builder: (_) => AvatarCropPage(imageFile: File(picked.path)),
-      ),
-    );
-
-    if (cropped == null || !mounted) return;
 
     setState(() {
-      _pickedAvatar = cropped;
+      _pickedAvatar = File(picked.path);
     });
   }
 
