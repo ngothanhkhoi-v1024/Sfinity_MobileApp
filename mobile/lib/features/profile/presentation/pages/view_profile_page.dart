@@ -1,7 +1,25 @@
+import 'dart:typed_data';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../app.dart';
 import '../../../../core/i18n/app_text.dart';
+
+Future<Uint8List?> _tryFetchAvatar(String url) async {
+  try {
+    final response = await Dio().get<List<int>>(
+      url,
+      options: Options(responseType: ResponseType.bytes),
+    );
+    if (response.data == null) return null;
+    final bytes = Uint8List.fromList(response.data!);
+    if (bytes.isEmpty) return null;
+    return bytes;
+  } catch (_) {
+    return null;
+  }
+}
 
 class ViewProfilePage extends StatelessWidget {
   const ViewProfilePage({super.key});
@@ -43,21 +61,10 @@ class ViewProfilePage extends StatelessWidget {
             children: [
               // Avatar
               Center(
-                child: CircleAvatar(
-                  radius: 56,
-                  backgroundColor: theme.colorScheme.primaryContainer,
-                  backgroundImage:
-                      avatarUrl != null && avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
-                  child: avatarUrl == null || avatarUrl.isEmpty
-                      ? Text(
-                          displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
-                          style: TextStyle(
-                            fontSize: 40,
-                            fontWeight: FontWeight.bold,
-                            color: theme.colorScheme.onPrimaryContainer,
-                          ),
-                        )
-                      : null,
+                child: _AvatarWithFallback(
+                  avatarUrl: avatarUrl,
+                  displayName: displayName,
+                  theme: theme,
                 ),
               ),
               const SizedBox(height: 16),
@@ -109,6 +116,80 @@ class ViewProfilePage extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _AvatarWithFallback extends StatefulWidget {
+  const _AvatarWithFallback({
+    required this.avatarUrl,
+    required this.displayName,
+    required this.theme,
+  });
+
+  final String? avatarUrl;
+  final String displayName;
+  final ThemeData theme;
+
+  @override
+  State<_AvatarWithFallback> createState() => _AvatarWithFallbackState();
+}
+
+class _AvatarWithFallbackState extends State<_AvatarWithFallback> {
+  Uint8List? _bytes;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void didUpdateWidget(_AvatarWithFallback oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.avatarUrl != widget.avatarUrl) {
+      _load();
+    }
+  }
+
+  Future<void> _load() async {
+    if (widget.avatarUrl == null || widget.avatarUrl!.isEmpty) return;
+    final bytes = await _tryFetchAvatar(widget.avatarUrl!);
+    if (mounted) setState(() => _bytes = bytes);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipOval(
+      child: SizedBox(
+        width: 112,
+        height: 112,
+        child: _bytes != null
+            ? Image.memory(
+                _bytes!,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _buildPlaceholder(),
+              )
+            : _buildPlaceholder(),
+      ),
+    );
+  }
+
+  Widget _buildPlaceholder() {
+    return Container(
+      color: widget.theme.colorScheme.primaryContainer,
+      child: Center(
+        child: Text(
+          widget.displayName.isNotEmpty
+              ? widget.displayName[0].toUpperCase()
+              : '?',
+          style: TextStyle(
+            fontSize: 40,
+            fontWeight: FontWeight.bold,
+            color: widget.theme.colorScheme.onPrimaryContainer,
+          ),
+        ),
+      ),
     );
   }
 }

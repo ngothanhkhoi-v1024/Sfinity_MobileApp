@@ -8,7 +8,6 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../app.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../features/auth/data/services/firestore_user_service.dart';
-import 'avatar_crop_page.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -27,6 +26,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   String _gender = 'Khác';
 
   bool _uploading = false;
+  bool _pickingAvatar = false;
 
   @override
   void initState() {
@@ -59,27 +59,24 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Future<void> _pickAvatar() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 1024,
-      imageQuality: 85,
-    );
+    if (_pickingAvatar || _uploading) return;
+    _pickingAvatar = true;
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 800,
+        imageQuality: 85,
+      );
 
-    if (picked == null) return;
-    if (!mounted) return;
+      if (picked == null) return;
 
-    final result = await Navigator.of(context).push<CropResult>(
-      MaterialPageRoute(
-        builder: (_) => AvatarCropPage(imageFile: File(picked.path)),
-      ),
-    );
-
-    if (result == null || !mounted) return;
-
-    setState(() {
-      _pickedAvatar = result.file;
-    });
+      setState(() {
+        _pickedAvatar = File(picked.path);
+      });
+    } finally {
+      _pickingAvatar = false;
+    }
   }
 
   Future<String> _uploadAvatar(File file) async {
