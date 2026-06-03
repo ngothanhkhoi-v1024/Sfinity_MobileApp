@@ -108,14 +108,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
         actions: [
           SizedBox(
             width: double.infinity,
-            child: OutlinedButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(cancelText),
-            ),
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
             child: FilledButton(
               onPressed: () {
                 Navigator.pop(ctx);
@@ -125,6 +117,14 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 backgroundColor: Theme.of(ctx).colorScheme.error,
               ),
               child: Text(deleteText),
+            ),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(cancelText),
             ),
           ),
         ],
@@ -252,20 +252,20 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                       actions: [
                                         SizedBox(
                                           width: double.infinity,
-                                          child: OutlinedButton(
-                                            onPressed: () => Navigator.pop(ctx, false),
-                                            child: Text(l10n.cancel),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        SizedBox(
-                                          width: double.infinity,
                                           child: FilledButton(
                                             onPressed: () => Navigator.pop(ctx, true),
                                             style: FilledButton.styleFrom(
                                               backgroundColor: Theme.of(context).colorScheme.error,
                                             ),
                                             child: Text(l10n.yesDelete),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        SizedBox(
+                                          width: double.infinity,
+                                          child: OutlinedButton(
+                                            onPressed: () => Navigator.pop(ctx, false),
+                                            child: Text(l10n.cancel),
                                           ),
                                         ),
                                       ],
