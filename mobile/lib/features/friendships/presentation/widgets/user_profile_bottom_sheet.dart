@@ -12,7 +12,11 @@ class UserProfileBottomSheet extends StatefulWidget {
   final FriendUser user;
   final FriendshipController ctrl;
 
-  static void show(BuildContext context, FriendUser user, FriendshipController ctrl) {
+  static void show(
+    BuildContext context,
+    FriendUser user,
+    FriendshipController ctrl,
+  ) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -95,7 +99,12 @@ class _UserProfileBottomSheetState extends State<UserProfileBottomSheet> {
     final colors = _gradientForName(user.name);
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(20, 0, 20, MediaQuery.of(context).padding.bottom + 24),
+      padding: EdgeInsets.fromLTRB(
+        20,
+        0,
+        20,
+        MediaQuery.of(context).padding.bottom + 24,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -126,13 +135,16 @@ class _UserProfileBottomSheetState extends State<UserProfileBottomSheet> {
                   backgroundColor: Colors.white.withValues(alpha: 0.25),
                   child: CircleAvatar(
                     radius: 42,
-                    backgroundImage: user.avatar != null && user.avatar!.isNotEmpty
+                    backgroundImage:
+                        user.avatar != null && user.avatar!.isNotEmpty
                         ? NetworkImage(user.avatar!)
                         : null,
                     backgroundColor: Colors.white,
                     child: user.avatar == null || user.avatar!.isEmpty
                         ? Text(
-                            user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
+                            user.name.isNotEmpty
+                                ? user.name[0].toUpperCase()
+                                : '?',
                             style: TextStyle(
                               fontSize: 32,
                               fontWeight: FontWeight.bold,
@@ -150,7 +162,13 @@ class _UserProfileBottomSheetState extends State<UserProfileBottomSheet> {
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
-                    shadows: [Shadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2))],
+                    shadows: [
+                      Shadow(
+                        color: Colors.black26,
+                        blurRadius: 4,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -182,41 +200,30 @@ class _UserProfileBottomSheetState extends State<UserProfileBottomSheet> {
 
   Widget _buildActionButtons(ColorScheme cs) {
     if (_friendshipStatus == 'ACCEPTED') {
-      return Row(
-        children: [
-          Expanded(
-            child: FilledButton.icon(
-              onPressed: () => Navigator.pop(context),
-              icon: const Icon(Icons.chat_bubble_outline_rounded),
-              label: const Text('Nhắn tin'),
-            ),
-          ),
-          const SizedBox(width: 12),
-          OutlinedButton.icon(
-            onPressed: () async {
-              if (_friendshipId == null) return;
-              setState(() => _isLoading = true);
-              final success = await widget.ctrl.unfriend(_friendshipId!);
-              if (mounted) setState(() => _isLoading = false);
-              if (success) {
-                setState(() {
-                  _friendshipStatus = null;
-                  _friendshipId = null;
-                });
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Đã hủy kết bạn thành công.')),
-                  );
-                }
-              }
-            },
-            icon: Icon(Icons.person_remove_outlined, color: cs.error),
-            label: Text('Hủy kết bạn', style: TextStyle(color: cs.error)),
-            style: OutlinedButton.styleFrom(
-              side: BorderSide(color: cs.error.withValues(alpha: 0.5)),
-            ),
-          ),
-        ],
+      return OutlinedButton.icon(
+        onPressed: () async {
+          if (_friendshipId == null) return;
+          setState(() => _isLoading = true);
+          final success = await widget.ctrl.unfriend(_friendshipId!);
+          if (mounted) setState(() => _isLoading = false);
+          if (success) {
+            setState(() {
+              _friendshipStatus = null;
+              _friendshipId = null;
+            });
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Đã hủy kết bạn thành công.')),
+              );
+            }
+          }
+        },
+        icon: Icon(Icons.person_remove_outlined, color: cs.error),
+        label: Text('Hủy kết bạn', style: TextStyle(color: cs.error)),
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(color: cs.error.withValues(alpha: 0.5)),
+          padding: const EdgeInsets.symmetric(vertical: 14),
+        ),
       );
     }
 
@@ -228,7 +235,10 @@ class _UserProfileBottomSheetState extends State<UserProfileBottomSheet> {
               onPressed: () async {
                 if (_friendshipId == null) return;
                 setState(() => _isLoading = true);
-                final success = await widget.ctrl.respondRequest(_friendshipId!, false);
+                final success = await widget.ctrl.respondRequest(
+                  _friendshipId!,
+                  false,
+                );
                 if (mounted) setState(() => _isLoading = false);
                 if (success) {
                   setState(() {
@@ -237,7 +247,9 @@ class _UserProfileBottomSheetState extends State<UserProfileBottomSheet> {
                   });
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Đã từ chối lời mời kết bạn.')),
+                      const SnackBar(
+                        content: Text('Đã từ chối lời mời kết bạn.'),
+                      ),
                     );
                   }
                 }
@@ -256,7 +268,10 @@ class _UserProfileBottomSheetState extends State<UserProfileBottomSheet> {
               onPressed: () async {
                 if (_friendshipId == null) return;
                 setState(() => _isLoading = true);
-                final success = await widget.ctrl.respondRequest(_friendshipId!, true);
+                final success = await widget.ctrl.respondRequest(
+                  _friendshipId!,
+                  true,
+                );
                 if (mounted) setState(() => _isLoading = false);
                 if (success) {
                   setState(() {
@@ -264,7 +279,9 @@ class _UserProfileBottomSheetState extends State<UserProfileBottomSheet> {
                   });
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Đã chấp nhận lời mời kết bạn!')),
+                      const SnackBar(
+                        content: Text('Đã chấp nhận lời mời kết bạn!'),
+                      ),
                     );
                   }
                 }
