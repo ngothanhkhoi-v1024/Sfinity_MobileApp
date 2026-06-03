@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-enum MessageType { text, document, image, file }
+enum MessageType { text, document, image, file, location }
 
 class GroupMessageModel {
   final String id;
@@ -11,6 +11,7 @@ class GroupMessageModel {
   final MessageType type;
   final String? sharedDocumentId;
   final String? sharedDocumentTitle;
+  final String? sharedPlaceId;
   // For image / file messages
   final String? fileUrl;
   final String? fileName;
@@ -28,6 +29,7 @@ class GroupMessageModel {
     required this.type,
     this.sharedDocumentId,
     this.sharedDocumentTitle,
+    this.sharedPlaceId,
     this.fileUrl,
     this.fileName,
     this.fileSize,
@@ -43,6 +45,7 @@ class GroupMessageModel {
       'document' => MessageType.document,
       'image' => MessageType.image,
       'file' => MessageType.file,
+      'location' => MessageType.location,
       _ => MessageType.text,
     };
 
@@ -60,6 +63,7 @@ class GroupMessageModel {
       type: type,
       sharedDocumentId: data['sharedDocumentId']?.toString(),
       sharedDocumentTitle: data['sharedDocumentTitle']?.toString(),
+      sharedPlaceId: data['sharedPlaceId']?.toString(),
       fileUrl: data['fileUrl']?.toString(),
       fileName: data['fileName']?.toString(),
       fileSize: data['fileSize'] as int?,
@@ -79,10 +83,12 @@ class GroupMessageModel {
         MessageType.document => 'document',
         MessageType.image => 'image',
         MessageType.file => 'file',
+        MessageType.location => 'location',
         _ => 'text',
       },
       'sharedDocumentId': sharedDocumentId,
       'sharedDocumentTitle': sharedDocumentTitle,
+      'sharedPlaceId': sharedPlaceId,
       'fileUrl': fileUrl,
       'fileName': fileName,
       'fileSize': fileSize,

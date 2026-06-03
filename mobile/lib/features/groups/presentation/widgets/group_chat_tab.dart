@@ -2,6 +2,9 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:sfinity/app.dart';
+import 'package:sfinity/features/places/data/models/place_model.dart';
+import 'place_picker_sheet.dart';
 import '../../data/models/group_message_model.dart';
 import '../../data/services/group_chat_service.dart';
 import 'attachment_menu.dart';
@@ -98,6 +101,7 @@ class _GroupChatTabState extends State<GroupChatTab> {
       onPickImage: _pickImage,
       onPickFile: _pickFile,
       onShareDoc: _showShareDocumentSheet,
+      onShareLocation: _shareLocation,
     );
   }
 
@@ -216,6 +220,61 @@ class _GroupChatTabState extends State<GroupChatTab> {
       senderAvatar: widget.userAvatar,
       onDone: _scrollToBottom,
     );
+  }
+
+  Future<void> _shareLocation() async {
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => const Center(child: CircularProgressIndicator()),
+      );
+
+      final currentUserId = widget.userId;
+      // Load my places and public places
+      final myPlaces = await SfinityApp.placeRepository.listPlaces(
+        PlaceListQuery(authorId: currentUserId),
+      );
+      final publicPlaces = await SfinityApp.placeRepository.listPlaces(
+        PlaceListQuery(publishedOnly: true),
+      );
+
+      if (mounted) Navigator.pop(context); // Dismiss loading
+
+      if (!mounted) return;
+      final selectedPlace = await showModalBottomSheet<PlaceModel>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (ctx) {
+          return PlacePickerSheet(
+            myPlaces: myPlaces,
+            publicPlaces: publicPlaces,
+          );
+        },
+      );
+
+      if (selectedPlace != null) {
+        await _chatService.sendLocationMessage(
+          groupId: widget.groupId,
+          senderId: widget.userId,
+          senderName: widget.userName,
+          senderAvatar: widget.userAvatar,
+          latitude: selectedPlace.latitude ?? 0.0,
+          longitude: selectedPlace.longitude ?? 0.0,
+          address: selectedPlace.title,
+          placeId: selectedPlace.id,
+        );
+        _scrollToBottom();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi tải danh sách địa điểm: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   @override

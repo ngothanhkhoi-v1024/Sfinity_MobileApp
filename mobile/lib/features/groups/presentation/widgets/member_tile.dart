@@ -80,13 +80,23 @@ class MemberTile extends StatelessWidget {
             ? Text(member.user.email!, style: theme.textTheme.bodySmall?.copyWith(fontSize: 11))
             : null,
         trailing: member.role == 'OWNER'
-            ? Icon(Icons.star_rounded, color: Colors.amber.shade600)
+            ? Padding(
+                padding: const EdgeInsets.all(4),
+                child: Icon(Icons.star_rounded, color: Colors.amber.shade600, size: 24),
+              )
             : member.role == 'ADMIN'
-                ? Icon(Icons.shield_rounded, color: cs.primary)
+                ? Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: Icon(Icons.shield_rounded, color: cs.primary, size: 24),
+                  )
                 : (isGroupAdmin && !isMe && onRemove != null)
-                    ? IconButton(
-                        icon: Icon(Icons.remove_circle_outline, color: cs.error, size: 20),
-                        onPressed: onRemove,
+                    ? GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: onRemove,
+                        child: Padding(
+                          padding: const EdgeInsets.all(4),
+                          child: Icon(Icons.remove_circle_outline, color: cs.error, size: 24),
+                        ),
                       )
                     : null,
       ),

@@ -95,6 +95,7 @@ class GroupController extends ChangeNotifier {
     try {
       final existingMembersJson = _currentGroup?.members.map((m) => m.toJson()).toList();
       final existingRole = _currentGroup?.myRole;
+      final existingCount = _currentGroup?.memberCount;
 
       final updated = await _repository.updateGroup(
         groupId,
@@ -108,6 +109,7 @@ class GroupController extends ChangeNotifier {
         _currentGroup = GroupModel.fromJson({
           ...updated.toJson(),
           'members': existingMembersJson,
+          '_count': {'members': existingCount ?? existingMembersJson.length},
           if (updated.myRole == null && existingRole != null) 'myRole': existingRole,
         });
       } else {
@@ -132,9 +134,11 @@ class GroupController extends ChangeNotifier {
     try {
       final member = await _repository.addMember(groupId, userId);
       if (_currentGroup?.id == groupId) {
+        final newMembers = [...(_currentGroup!.members.map((m) => m.toJson())), member.toJson()];
         _currentGroup = GroupModel.fromJson({
           ..._currentGroup!.toJson(),
-          'members': [...(_currentGroup!.members.map((m) => m.toJson())), member.toJson()],
+          'members': newMembers,
+          '_count': {'members': newMembers.length},
         });
         notifyListeners();
       }

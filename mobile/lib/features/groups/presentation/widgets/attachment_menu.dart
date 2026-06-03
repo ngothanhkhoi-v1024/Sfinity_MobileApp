@@ -12,6 +12,7 @@ class AttachmentMenu {
     required Future<void> Function(ImageSource source) onPickImage,
     required Future<void> Function() onPickFile,
     required Future<void> Function() onShareDoc,
+    required Future<void> Function() onShareLocation,
   }) {
     final cs = Theme.of(context).colorScheme;
     final isDark = cs.brightness == Brightness.dark;
@@ -44,8 +45,10 @@ class AttachmentMenu {
                   ),
             ),
             const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            Wrap(
+              spacing: 16,
+              runSpacing: 16,
+              alignment: WrapAlignment.center,
               children: [
                 _AttachOption(
                   icon: Icons.image_rounded,
@@ -81,6 +84,15 @@ class AttachmentMenu {
                   onTap: () {
                     Navigator.pop(ctx);
                     onShareDoc();
+                  },
+                ),
+                _AttachOption(
+                  icon: Icons.location_on_rounded,
+                  label: 'Chia sẻ\nđịa điểm',
+                  color: const Color(0xFF10B981),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    onShareLocation();
                   },
                 ),
               ],
