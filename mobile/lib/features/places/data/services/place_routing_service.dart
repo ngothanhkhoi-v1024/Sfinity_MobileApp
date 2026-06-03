@@ -19,28 +19,41 @@ class PlaceRoutingService {
   Future<PlaceRouteResult> fetchRoute({
     required LatLng origin,
     required LatLng destination,
-    String profile = 'driving',
+    required RouteTravelMode travelMode,
   }) async {
     final coords =
         '${origin.longitude},${origin.latitude};${destination.longitude},${destination.latitude}';
-    final url =
-        '${MapConfig.osrmBaseUrl}/route/v1/$profile/$coords';
+    final profiles = travelMode == RouteTravelMode.walking
+        ? ['foot', 'walking']
+        : [travelMode.osrmProfile];
 
-    final response = await _dio.get<Map<String, dynamic>>(
-      url,
-      queryParameters: const {
-        'overview': 'full',
-        'geometries': 'geojson',
-        'steps': 'true',
-        'alternatives': 'false',
-      },
-    );
+    Map<String, dynamic>? data;
+    Object? lastError;
+    for (final profile in profiles) {
+      try {
+        final response = await _dio.get<Map<String, dynamic>>(
+          '${MapConfig.osrmBaseUrl}/route/v1/$profile/$coords',
+          queryParameters: const {
+            'overview': 'full',
+            'geometries': 'geojson',
+            'steps': 'true',
+            'alternatives': 'false',
+          },
+        );
+        final body = response.data;
+        if (body != null && body['code'] == 'Ok') {
+          data = body;
+          break;
+        }
+        lastError = body?['message']?.toString();
+      } on DioException catch (e) {
+        lastError = e;
+      }
+    }
 
-    final data = response.data;
-    if (data == null || data['code'] != 'Ok') {
-      final message = data?['message']?.toString();
+    if (data == null) {
       throw PlaceRoutingException(
-        message ?? 'Không tìm được đường đi',
+        lastError?.toString() ?? 'Không tìm được đường đi',
       );
     }
 
@@ -87,6 +100,7 @@ class PlaceRoutingService {
       totalDurationSeconds: (route['duration'] as num?)?.toDouble() ?? 0,
       origin: origin,
       destination: destination,
+      travelMode: travelMode,
     );
   }
 
