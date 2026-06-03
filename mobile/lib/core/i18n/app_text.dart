@@ -123,6 +123,14 @@ class AppLocalizations {
       'joinRequestsLabel': 'Yêu cầu duyệt',
       'approveBtn': 'Duyệt',
       'declineBtn': 'Từ chối',
+      'welcomeDescription': 'Khám phá hàng nghìn địa điểm học tập và tài liệu được cộng đồng chia sẻ. Lưu lại những gì yêu thích và truy cập mọi lúc.',
+      'smartSearchDescription': 'Bộ lọc thông minh giúp bạn tìm đúng nội dung trong vài giây. Sắp xếp theo chủ đề, khoảng cách hoặc mức độ phù hợp.',
+      'stayConnectedDescription': 'Đăng nhập một lần, dữ liệu tự động đồng bộ trên tất cả thiết bị. Không bao giờ mất đi nội dung yêu thích dù đổi điện thoại.',
+      'welcomeBadge': 'Nền tảng học tập',
+      'smartSearchBadge': 'Nhanh & chính xác',
+      'stayConnectedBadge': 'Đa thiết bị',
+      'skip': 'Bỏ qua',
+      'getStartedNow': 'Bắt đầu ngay',
     },
     'en': {
       'appName': 'Sfinity',
@@ -236,6 +244,14 @@ class AppLocalizations {
       'joinRequestsLabel': 'Join requests',
       'approveBtn': 'Approve',
       'declineBtn': 'Decline',
+      'welcomeDescription': 'Discover thousands of study spots and community-shared materials. Save your favorites and access them anytime.',
+      'smartSearchDescription': 'Smart filters help you find the right content in seconds. Sort by topic, distance, or relevance.',
+      'stayConnectedDescription': 'Sign in once and your data syncs automatically across all devices. Never lose your favorites when switching phones.',
+      'welcomeBadge': 'Learning platform',
+      'smartSearchBadge': 'Fast & accurate',
+      'stayConnectedBadge': 'Multi-device',
+      'skip': 'Skip',
+      'getStartedNow': 'Get started',
     },
   };
 
@@ -360,6 +376,14 @@ class AppLocalizations {
   String get joinRequestsLabel => _text('joinRequestsLabel');
   String get approveBtn => _text('approveBtn');
   String get declineBtn => _text('declineBtn');
+  String get welcomeDescription => _text('welcomeDescription');
+  String get smartSearchDescription => _text('smartSearchDescription');
+  String get stayConnectedDescription => _text('stayConnectedDescription');
+  String get welcomeBadge => _text('welcomeBadge');
+  String get smartSearchBadge => _text('smartSearchBadge');
+  String get stayConnectedBadge => _text('stayConnectedBadge');
+  String get skip => _text('skip');
+  String get getStartedNow => _text('getStartedNow');
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
