@@ -1,5 +1,5 @@
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
-import { Button, Form, Input, Modal, Popconfirm, Space, Table, Tag, Typography, message } from 'antd';
+import { Button, Form, Input, Modal, Popconfirm, Select, Space, Table, Tag, Typography, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -44,7 +44,12 @@ export function NotificationsPage() {
     const values = await form.validateFields();
     setSending(true);
     try {
-      const result = await sendNotification(values);
+      const payload = {
+        title: values.title,
+        body: values.body,
+        ...(values.userId ? { userId: values.userId } : {}),
+      };
+      const result = await sendNotification(payload);
       message.success(`Đã gửi thông báo (${JSON.stringify(result)})`);
       setModalOpen(false);
       form.resetFields();
@@ -160,18 +165,21 @@ export function NotificationsPage() {
           <Form.Item name="body" label="Nội dung" rules={[{ required: true }]}>
             <Input.TextArea rows={4} />
           </Form.Item>
-          <Form.Item name="userId" label="Gửi cho (để trống = tất cả user)">
-            <Input placeholder="userId hoặc để trống" list="user-ids" />
+          <Form.Item name="userId" label="Gửi cho">
+            <Select
+              allowClear
+              showSearch
+              placeholder="Tất cả người dùng"
+              optionFilterProp="label"
+              options={[
+                { value: '', label: 'Tất cả người dùng' },
+                ...users.map((u) => ({
+                  value: u.id,
+                  label: `${u.name}${u.notificationsEnabled === false ? ' (đã tắt thông báo)' : ''}`,
+                })),
+              ]}
+            />
           </Form.Item>
-          <datalist id="user-ids">
-            {users.map((u) => (
-              <option
-                key={u.id}
-                value={u.id}
-                label={`${u.name}${u.notificationsEnabled === false ? ' (đã tắt thông báo)' : ''}`}
-              />
-            ))}
-          </datalist>
         </Form>
       </Modal>
     </div>
