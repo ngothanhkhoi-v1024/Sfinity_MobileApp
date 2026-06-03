@@ -190,7 +190,7 @@ export const notificationsService = {
   async findAllAdmin() {
     const snapshot = await getDb().collection('notifications').get();
     const list = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as any));
-    
+
     // Sort desc by createdAt in memory
     list.sort((a, b) => toDate(b.createdAt).getTime() - toDate(a.createdAt).getTime());
 
@@ -219,5 +219,20 @@ export const notificationsService = {
     );
 
     return resolved;
+  },
+
+  async adminDelete(id: string) {
+    await getDb().collection('notifications').doc(id).delete();
+    return { success: true };
+  },
+
+  async adminDeleteAll() {
+    const snapshot = await getDb().collection('notifications').get();
+    if (!snapshot.empty) {
+      const batch = getDb().batch();
+      snapshot.docs.forEach((doc) => batch.delete(doc.ref));
+      await batch.commit();
+    }
+    return { success: true };
   },
 };

@@ -56,6 +56,22 @@ notificationsRouter.patch(
 );
 
 notificationsRouter.delete(
+  '/admin/all',
+  ...adminOnly,
+  asyncHandler(async (_req, res) => {
+    res.json(await notificationsService.adminDeleteAll());
+  }),
+);
+
+notificationsRouter.delete(
+  '/admin/:id',
+  ...adminOnly,
+  asyncHandler(async (req, res) => {
+    res.json(await notificationsService.adminDelete(req.params.id));
+  }),
+);
+
+notificationsRouter.delete(
   '/',
   jwtAuthMiddleware,
   asyncHandler(async (req, res) => {

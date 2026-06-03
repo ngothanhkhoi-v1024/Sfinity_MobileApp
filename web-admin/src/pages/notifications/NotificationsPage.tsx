@@ -1,14 +1,22 @@
-import { Button, Form, Input, Modal, Table, Tag, Typography, message } from 'antd';
+import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
+import { Button, Form, Input, Modal, Popconfirm, Space, Table, Tag, Typography, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useCallback, useEffect, useState } from 'react';
 
-import { fetchNotificationHistory, sendNotification, type NotificationItem } from '@/api/notifications';
+import {
+  adminDeleteAllNotifications,
+  adminDeleteNotification,
+  fetchNotificationHistory,
+  sendNotification,
+  type NotificationItem,
+} from '@/api/notifications';
 import { fetchUsers, type UserRecord } from '@/api/users';
 
 export function NotificationsPage() {
   const [history, setHistory] = useState<NotificationItem[]>([]);
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [form] = Form.useForm();
 
@@ -34,6 +42,7 @@ export function NotificationsPage() {
 
   const handleSend = async () => {
     const values = await form.validateFields();
+    setSending(true);
     try {
       const result = await sendNotification(values);
       message.success(`Đã gửi thông báo (${JSON.stringify(result)})`);
@@ -42,6 +51,27 @@ export function NotificationsPage() {
       load();
     } catch {
       message.error('Gửi thất bại');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleDeleteOne = async (id: string) => {
+    try {
+      await adminDeleteNotification(id);
+      setHistory((prev) => prev.filter((n) => n.id !== id));
+    } catch {
+      message.error('Xóa thất bại');
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    try {
+      await adminDeleteAllNotifications();
+      setHistory([]);
+      message.success('Đã dọn tất cả thông báo');
+    } catch {
+      message.error('Xóa thất bại');
     }
   };
 
@@ -62,6 +92,21 @@ export function NotificationsPage() {
     },
     { title: 'Đã đọc', dataIndex: 'read', render: (v: boolean) => (v ? 'Có' : 'Chưa') },
     { title: 'Thời gian', dataIndex: 'createdAt', render: (v: string) => new Date(v).toLocaleString('vi-VN') },
+    {
+      title: 'Thao tác',
+      key: 'actions',
+      width: 80,
+      render: (_, record) => (
+        <Popconfirm
+          title="Xóa thông báo này?"
+          onConfirm={() => handleDeleteOne(record.id)}
+          okText="Xóa"
+          cancelText="Hủy"
+        >
+          <Button size="small" danger icon={<DeleteOutlined />} />
+        </Popconfirm>
+      ),
+    },
   ];
 
   return (
@@ -70,14 +115,44 @@ export function NotificationsPage() {
         <Typography.Title level={4} style={{ margin: 0 }}>
           Thông báo
         </Typography.Title>
-        <Button type="primary" onClick={() => setModalOpen(true)}>
-          Gửi thông báo
-        </Button>
+        <Space>
+          {history.length > 0 && (
+            <Popconfirm
+              title="Xóa tất cả thông báo?"
+              description="Hành động này không thể hoàn tác."
+              onConfirm={handleDeleteAll}
+              okText="Xóa tất cả"
+              cancelText="Hủy"
+              okButtonProps={{ danger: true }}
+            >
+              <Button icon={<DeleteOutlined />}>
+                Dọn bớt
+              </Button>
+            </Popconfirm>
+          )}
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalOpen(true)}>
+            Gửi thông báo
+          </Button>
+        </Space>
       </div>
 
-      <Table rowKey="id" loading={loading} columns={columns} dataSource={history} pagination={{ pageSize: 10 }} />
+      <Table
+        rowKey="id"
+        loading={loading}
+        columns={columns}
+        dataSource={history}
+        pagination={{ pageSize: 10 }}
+        locale={{ emptyText: 'Chưa có thông báo nào' }}
+      />
 
-      <Modal title="Gửi thông báo" open={modalOpen} onCancel={() => setModalOpen(false)} onOk={handleSend} okText="Gửi">
+      <Modal
+        title="Gửi thông báo"
+        open={modalOpen}
+        onCancel={() => setModalOpen(false)}
+        onOk={handleSend}
+        okText="Gửi"
+        okButtonProps={{ loading: sending }}
+      >
         <Form form={form} layout="vertical">
           <Form.Item name="title" label="Tiêu đề" rules={[{ required: true }]}>
             <Input />
