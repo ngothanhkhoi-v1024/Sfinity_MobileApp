@@ -169,7 +169,7 @@ class AppLocalizations {
       'reset_': 'Đặt lại',
       'displayMode': 'Chế độ hiển thị',
       'publicApproved': 'Công khai (Mọi người đều thấy)',
-      'publicPending': 'Công khai (Gửi yêu cầu xét duyệt)',
+      'publicPending': 'Công khai',
       'onlyMeDraft': 'Chỉ mình tôi (Bản nháp)',
       'statusDraft': 'Bản nháp',
       'statusPending': 'Chờ duyệt',

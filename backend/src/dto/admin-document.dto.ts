@@ -17,3 +17,9 @@ export class AdminUnhideDto {
   @IsString()
   note?: string;
 }
+
+export class AdminApproveDto {
+  @IsOptional()
+  @IsString()
+  note?: string;
+}
