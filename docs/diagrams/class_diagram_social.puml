@@ -1,0 +1,145 @@
+@startuml Sfinity_Class_Social
+!theme plain
+
+title Sfinity — Module: Social (Friends, Groups, Chat)
+
+' ═══════════════════════════════════════════════════════════
+' ENUMS
+' ═══════════════════════════════════════════════════════════
+
+package "Enums" {
+  enum MembershipRole {
+    OWNER
+    ADMIN
+    MEMBER
+  }
+  enum MembershipStatus {
+    PENDING
+    APPROVED
+    DECLINED
+  }
+  enum FriendshipStatus {
+    PENDING
+    ACCEPTED
+    BLOCKED
+  }
+}
+
+' ═══════════════════════════════════════════════════════════
+' CLASSES
+' ═══════════════════════════════════════════════════════════
+
+class User <<Collection: users>> {
+  id: String
+  email: String
+  name: String
+  avatar: String?
+  role: UserRole
+  status: ACTIVE
+}
+
+class Friendship <<Collection: friendships>> {
+  id: String (PK)
+  requesterId: String
+  addresseeId: String
+  status: FriendshipStatus
+  createdAt: DateTime
+  updatedAt: DateTime
+  --
+  + accept()
+  + reject()
+  + block()
+}
+
+class Group <<Collection: groups>> {
+  id: String (PK)
+  name: String
+  description: String?
+  avatarUrl: String?
+  isPublic: Boolean
+  autoApprove: Boolean
+  creatorId: String
+  createdAt: DateTime
+  updatedAt: DateTime
+  --
+  + addMember(userId)
+  + removeMember(userId)
+  + inviteMember(userId)
+  + promoteToAdmin(userId)
+}
+
+class GroupMember <<Collection: group_members>> {
+  id: String (PK)
+  groupId: String
+  userId: String
+  role: MembershipRole
+  status: MembershipStatus
+  joinedAt: DateTime
+  --
+  + approve()
+  + demote()
+  + promote()
+}
+
+class GroupInvitation <<Collection: group_invitations>> {
+  id: String (PK)
+  groupId: String
+  groupName: String
+  inviterId: String
+  inviterName: String
+  inviteeId: String
+  status: MembershipStatus
+  createdAt: DateTime
+  --
+  + accept()
+  + decline()
+}
+
+class ChatMessage <<Collection: messages>> {
+  id: String (PK)
+  groupId: String
+  senderId: String
+  type: String
+  content: String?
+  imageUrl: String?
+  documentId: String?
+  latitude: Float?
+  longitude: Float?
+  reactions: String
+  createdAt: DateTime
+  --
+  + addReaction(emoji)
+  + removeReaction(emoji)
+}
+
+' ═══════════════════════════════════════════════════════════
+' RELATIONSHIPS
+' ═══════════════════════════════════════════════════════════
+
+User "1" --> "*" Friendship : sent requests
+User "1" --> "*" Friendship : received requests
+User "1" --> "*" GroupMember : memberships
+User "1" --> "*" GroupInvitation : invites sent
+User "1" --> "*" GroupInvitation : invites received
+User "1" --> "*" ChatMessage : messages sent
+User "1" --> "*" Group : created groups
+
+Friendship "1" --> "1" User : requester
+Friendship "1" --> "1" User : addressee
+
+Group "1" --> "*" GroupMember : members
+Group "1" --> "*" GroupInvitation : invitations
+Group "1" --> "*" ChatMessage : messages
+Group "1" --> "1" User : created by
+
+GroupMember "1" --> "1" Group : belongs to
+GroupMember "1" --> "1" User : is
+
+GroupInvitation "1" --> "1" Group : targets
+GroupInvitation "1" --> "1" User : inviter
+GroupInvitation "1" --> "1" User : invitee
+
+ChatMessage "1" --> "1" Group : in group
+ChatMessage "1" --> "1" User : sent by
+
+@enduml

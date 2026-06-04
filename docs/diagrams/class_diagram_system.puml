@@ -1,0 +1,95 @@
+@startuml Sfinity_Class_System
+!theme plain
+
+title Sfinity — Module: Moderation & System
+
+' ═══════════════════════════════════════════════════════════
+' ENUMS
+' ═══════════════════════════════════════════════════════════
+
+package "Enums" {
+  enum ReportStatus {
+    PENDING
+    RESOLVED
+    REJECTED
+  }
+}
+
+' ═══════════════════════════════════════════════════════════
+' CLASSES
+' ═══════════════════════════════════════════════════════════
+
+class User <<Collection: users>> {
+  id: String
+  email: String
+  name: String
+  avatar: String?
+  role: String
+  status: String
+}
+
+class Report <<Collection: reports>> {
+  id: String (PK)
+  userId: String
+  targetType: String
+  targetId: String
+  reason: String
+  description: String?
+  status: ReportStatus
+  resolution: String?
+  createdAt: DateTime
+  updatedAt: DateTime
+  --
+  + resolve(resolution)
+  + reject()
+}
+
+class Feedback <<Collection: feedbacks>> {
+  id: String (PK)
+  userId: String
+  message: String
+  rating: Int?
+  resolved: Boolean
+  reply: String?
+  repliedAt: DateTime?
+  createdAt: DateTime
+  updatedAt: DateTime
+  --
+  + reply(message)
+  + resolve()
+}
+
+class Notification <<Collection: notifications>> {
+  id: String (PK)
+  userId: String
+  title: String
+  body: String
+  read: Boolean
+  createdAt: DateTime
+  --
+  + markRead()
+  + markAllRead()
+}
+
+class Setting <<Collection: settings>> {
+  id: String (PK)
+  autoApproveDocuments: Boolean
+  autoApprovePlaces: Boolean
+  updatedAt: DateTime
+  --
+  + toggleAutoApprove(type)
+}
+
+' ═══════════════════════════════════════════════════════════
+' RELATIONSHIPS
+' ═══════════════════════════════════════════════════════════
+
+User "1" --> "*" Report : submits
+User "1" --> "*" Feedback : sends
+User "1" --> "*" Notification : receives
+
+Report "1" --> "1" User : reported by
+Feedback "1" --> "1" User : from user
+Notification "1" --> "1" User : for user
+
+@enduml

@@ -1,0 +1,152 @@
+@startuml Sfinity_Class_Content
+!theme plain
+
+title Sfinity — Module: Content & Places
+
+' ═══════════════════════════════════════════════════════════
+' ENUMS
+' ═══════════════════════════════════════════════════════════
+
+package "Enums" {
+  enum ContentStatus {
+    DRAFT
+    PENDING
+    PUBLISHED
+    REJECTED
+    HIDDEN
+  }
+}
+
+' ═══════════════════════════════════════════════════════════
+' CLASSES
+' ═══════════════════════════════════════════════════════════
+
+class Content <<Collection: documents>> {
+  id: String (PK)
+  title: String
+  body: String?
+  status: ContentStatus
+  type: "document" | "place"
+  authorId: String
+  categoryId: String?
+  fileUrl: String?
+  fileType: String?
+  fileSize: Int?
+  subjectCode: String?
+  tags: String[]
+  downloadsCount: Int
+  avgRating: Float?
+  reviewCount: Int
+  latitude: Float?
+  longitude: Float?
+  address: String?
+  zone: String?
+  hiddenReason: String?
+  createdAt: DateTime
+  updatedAt: DateTime
+  --
+  + publish()
+  + approve()
+  + reject(reason)
+  + hide(reason)
+  + delete()
+  + incrementDownload()
+}
+
+class Category <<Collection: categories>> {
+  id: String (PK)
+  name: String
+  slug: String
+  description: String?
+  type: "DOCUMENT" | "PLACE"
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+class Amenity <<Collection: amenities>> {
+  id: String (PK / slug)
+  name: String
+  description: String?
+}
+
+class Favorite <<Collection: favorites>> {
+  id: String (PK)
+  userId: String
+  documentId: String
+  createdAt: DateTime
+}
+
+class PlaceReview <<Collection: place_reviews>> {
+  id: String (PK)
+  placeId: String
+  userId: String
+  rating: Int
+  comment: String?
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+class PlacePhoto <<Collection: place_photos>> {
+  id: String (PK)
+  placeId: String
+  userId: String
+  imageUrl: String
+  caption: String?
+  createdAt: DateTime
+}
+
+class PlaceCheckIn <<Collection: place_checkins>> {
+  id: String (PK)
+  placeId: String
+  userId: String
+  latitude: Float
+  longitude: Float
+  accuracy: Float
+  distanceMeters: Float
+  createdAt: DateTime
+}
+
+class DocumentReview <<Collection: document_reviews>> {
+  id: String (PK)
+  documentId: String
+  userId: String
+  rating: Int
+  comment: String?
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+' ═══════════════════════════════════════════════════════════
+' RELATIONSHIPS
+' ═══════════════════════════════════════════════════════════
+
+Content "1" --> "0..1" Category : belongs to
+Content "1" --> "*" Favorite : has
+Content "1" --> "*" PlaceReview : receives
+Content "1" --> "*" PlacePhoto : has
+Content "1" --> "*" PlaceCheckIn : tracks
+Content "1" --> "*" DocumentReview : receives
+
+Favorite "1" --> "1" Content : targets
+Favorite "1" --> "1" User : owned by
+
+PlaceReview "1" --> "1" Content : for place
+PlaceReview "1" --> "1" User : written by
+
+PlacePhoto "1" --> "1" Content : for place
+PlacePhoto "1" --> "1" User : uploaded by
+
+PlaceCheckIn "1" --> "1" Content : at place
+PlaceCheckIn "1" --> "1" User : checked in by
+
+DocumentReview "1" --> "1" Content : for document
+DocumentReview "1" --> "1" User : written by
+
+User "1" --> "*" Content : creates
+User "1" --> "*" Favorite : saves
+User "1" --> "*" PlaceReview : writes
+User "1" --> "*" PlacePhoto : uploads
+User "1" --> "*" PlaceCheckIn : performs
+User "1" --> "*" DocumentReview : writes
+
+@enduml

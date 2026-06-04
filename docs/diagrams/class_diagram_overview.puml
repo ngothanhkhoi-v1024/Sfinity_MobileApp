@@ -1,0 +1,200 @@
+@startuml Sfinity_Class_Overview
+!theme plain
+
+' === CHẤT LƯỢNG CAO ===
+' Render: PlantUML Server — thêm ?dpi=300 vào URL
+' Ví dụ: https://www.plantuml.com/plantuml/svg/~1?dpi=300
+
+' === SKINPARAMS GIẢM KÍCH THƯỚC ===
+skinparam dpi 300
+skinparam classFontSize 12
+skinparam attributeFontSize 11
+skinparam shadowing false
+skinparam padding 3
+skinparam minclasswidth 80
+skinparam nodesep 10
+skinparam ranksep 15
+
+title Sfinity — Sơ đồ lớp tổng quan (DPI 300)
+
+' ═══════════════════════════════════════════════════════
+' CỘT TRÁI — AUTH & CONTENT
+' ═══════════════════════════════════════════════════════
+
+package "AUTH" {
+  class User {
+    id: String
+    email: String
+    name: String
+    avatar: String?
+    role: String
+    status: String
+    authProvider: String
+  }
+  class PasswordReset {
+    email: String
+    code: String
+    expiresAt: DateTime
+    used: Boolean
+  }
+}
+
+package "CONTENT" {
+  class Content {
+    id: String
+    title: String
+    type: String
+    status: String
+    authorId: String
+    categoryId: String?
+    tags: String[]
+    fileUrl: String?
+    lat: Float?
+    lng: Float?
+    avgRating: Float?
+    reviewCount: Int
+  }
+  class Category {
+    name: String
+    slug: String
+    type: String
+  }
+  class Favorite {
+    userId: String
+    documentId: String
+  }
+}
+
+' ═══════════════════════════════════════════════════════
+' CỘT PHẢI — SOCIAL & SYSTEM
+' ═══════════════════════════════════════════════════════
+
+package "SOCIAL" {
+  class Friendship {
+    requesterId: String
+    addresseeId: String
+    status: String
+  }
+  class Group {
+    name: String
+    description: String?
+    isPublic: Boolean
+    autoApprove: Boolean
+    creatorId: String
+  }
+  class GroupMember {
+    groupId: String
+    userId: String
+    role: String
+    status: String
+  }
+  class GroupInvitation {
+    groupId: String
+    inviterId: String
+    inviteeId: String
+    status: String
+  }
+  class ChatMessage {
+    groupId: String
+    senderId: String
+    type: String
+    content: String?
+    reactions: String
+  }
+}
+
+package "REVIEW" {
+  class PlaceReview {
+    placeId: String
+    userId: String
+    rating: Int
+    comment: String?
+  }
+  class PlacePhoto {
+    placeId: String
+    userId: String
+    imageUrl: String
+  }
+  class PlaceCheckIn {
+    placeId: String
+    userId: String
+    lat: Float
+    lng: Float
+    distanceMeters: Float
+  }
+  class DocumentReview {
+    documentId: String
+    userId: String
+    rating: Int
+    comment: String?
+  }
+}
+
+package "SYSTEM" {
+  class Report {
+    userId: String
+    targetType: String
+    targetId: String
+    reason: String
+    status: String
+    resolution: String?
+  }
+  class Feedback {
+    userId: String
+    message: String
+    rating: Int?
+    resolved: Boolean
+    reply: String?
+  }
+  class Notification {
+    userId: String
+    title: String
+    body: String
+    read: Boolean
+  }
+}
+
+' ═══════════════════════════════════════════════════════
+' RELATIONSHIPS — KEY ONLY
+' ═══════════════════════════════════════════════════════
+
+User "1" --> "*" Content : author
+User "1" --> "*" Favorite
+User "1" --> "*" GroupMember
+User "1" --> "*" ChatMessage
+User "1" --> "*" Notification
+User "1" --> "*" Report
+User "1" --> "*" Feedback
+User "1" --> "*" Friendship : sent/received
+
+Content "1" --> "0..1" Category
+Content "1" --> "*" Favorite
+Content "1" --> "*" PlaceReview
+Content "1" --> "*" PlaceCheckIn
+Content "1" --> "*" DocumentReview
+
+Group "1" --> "*" GroupMember
+Group "1" --> "*" ChatMessage
+Group "1" --> "1" User : creator
+GroupMember "1" --> "1" Group
+GroupMember "1" --> "1" User
+
+Favorite "1" --> "1" User
+Favorite "1" --> "1" Content
+
+PlaceReview "1" --> "1" Content
+PlaceReview "1" --> "1" User
+PlaceCheckIn "1" --> "1" Content
+DocumentReview "1" --> "1" Content
+
+ChatMessage "1" --> "1" Group
+ChatMessage "1" --> "1" User
+
+Friendship "1" --> "1" User : requester
+Friendship "1" --> "1" User : addressee
+
+Report "1" --> "1" User
+Feedback "1" --> "1" User
+Notification "1" --> "1" User
+
+@enduml

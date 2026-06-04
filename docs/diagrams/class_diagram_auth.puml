@@ -1,0 +1,70 @@
+@startuml Sfinity_Class_Auth
+!theme plain
+
+title Sfinity — Module: Authentication & Users
+
+' ═══════════════════════════════════════════════════════════
+' ENUMS
+' ═══════════════════════════════════════════════════════════
+
+package "Enums" {
+  enum UserRole {
+    USER
+    ADMIN
+  }
+  enum UserStatus {
+    ACTIVE
+    BANNED
+  }
+  enum AuthProvider {
+    LOCAL
+    GOOGLE
+    FACEBOOK
+  }
+}
+
+' ═══════════════════════════════════════════════════════════
+' CLASSES
+' ═══════════════════════════════════════════════════════════
+
+class User <<Collection: users>> {
+  id: String (PK / Firebase UID)
+  email: String
+  passwordHash: String? (nullable cho OAuth)
+  name: String
+  avatar: String?
+  role: UserRole
+  status: UserStatus
+  authProvider: AuthProvider
+  notificationsEnabled: Boolean
+  birthDate: DateTime?
+  gender: String?
+  address: String?
+  createdAt: DateTime
+  updatedAt: DateTime
+  --
+  + authenticate(password): Boolean
+  + updateProfile(data)
+  + changePassword(newHash)
+  + sendPasswordReset()
+}
+
+class PasswordReset <<Collection: password_resets>> {
+  id: String (PK)
+  email: String
+  code: String (6 digits)
+  expiresAt: DateTime
+  used: Boolean
+  createdAt: DateTime
+  --
+  + isValid(): Boolean
+  + markUsed()
+}
+
+' ═══════════════════════════════════════════════════════════
+' RELATIONSHIPS
+' ═══════════════════════════════════════════════════════════
+
+User "1" --> "*" PasswordReset : requests
+
+@enduml
