@@ -40,6 +40,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     _auth = SfinityApp.auth;
     _groupCtrl.loadGroup(widget.groupId);
     _friendCtrl.loadFriends();
+    _friendCtrl.loadPendingRequests();
+    _friendCtrl.loadSentRequests();
 
     _userId = _auth.user?['id']?.toString();
     _userName = _auth.user?['name']?.toString() ?? '';

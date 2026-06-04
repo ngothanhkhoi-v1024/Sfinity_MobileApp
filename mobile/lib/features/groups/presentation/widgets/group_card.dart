@@ -1,67 +1,101 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import '../../../../core/i18n/app_text.dart';
+import 'package:intl/intl.dart';
+
+import '../../data/models/group_message_model.dart';
 import '../../data/models/group_model.dart';
 
 class GroupCard extends StatelessWidget {
   const GroupCard({super.key, required this.group, this.onTap});
+
   final GroupModel group;
+  final VoidCallback? onTap;
+
+  Stream<GroupMessageModel?> get _latestMessageStream {
+    return FirebaseFirestore.instance
+        .collection('groups')
+        .doc(group.id)
+        .collection('messages')
+        .orderBy('createdAt', descending: true)
+        .limit(1)
+        .snapshots()
+        .map((snap) {
+      if (snap.docs.isEmpty) return null;
+      return GroupMessageModel.fromFirestore(snap.docs.first);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<GroupMessageModel?>(
+      stream: _latestMessageStream,
+      builder: (context, snapshot) {
+        final message = snapshot.hasError ? null : snapshot.data;
+        return _GroupCardBody(
+          group: group,
+          message: message,
+          onTap: onTap,
+        );
+      },
+    );
+  }
+}
+
+class _GroupCardBody extends StatelessWidget {
+  const _GroupCardBody({
+    required this.group,
+    required this.message,
+    required this.onTap,
+  });
+
+  final GroupModel group;
+  final GroupMessageModel? message;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final isDark = cs.brightness == Brightness.dark;
+    final preview = _messagePreview(message);
+    final sender = message?.senderName.trim() ?? '';
+    final time = message == null ? '' : DateFormat('HH:mm').format(message!.createdAt);
+    final hasPreview = preview.isNotEmpty;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          decoration: BoxDecoration(
-            color: isDark ? Colors.white.withValues(alpha: 0.025) : Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: isDark ? Colors.white.withValues(alpha: 0.05) : cs.outlineVariant.withValues(alpha: 0.35),
-              width: 0.8,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Ink(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF242424) : cs.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : cs.outlineVariant.withValues(alpha: 0.7),
+              ),
+              boxShadow: isDark
+                  ? []
+                  : [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 16,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
             ),
-            boxShadow: isDark
-                ? []
-                : [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
-                      blurRadius: 12,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                // Avatar nhóm
-                CircleAvatar(
-                  radius: 26,
-                  backgroundColor: cs.primary.withValues(alpha: 0.1),
-                  backgroundImage:
-                      group.avatarUrl != null && group.avatarUrl!.isNotEmpty ? NetworkImage(group.avatarUrl!) : null,
-                  child: group.avatarUrl == null || group.avatarUrl!.isEmpty
-                      ? Text(
-                          group.name.isNotEmpty ? group.name[0].toUpperCase() : '?',
-                          style: TextStyle(
-                            color: cs.primary,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 20,
-                          ),
-                        )
-                      : null,
-                ),
+                _GroupAvatar(group: group),
                 const SizedBox(width: 14),
-                // Tên & thông tin nhóm
                 Expanded(
                   child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
@@ -69,90 +103,122 @@ class GroupCard extends StatelessWidget {
                           Expanded(
                             child: Text(
                               group.name,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15,
-                                color: isDark ? Colors.white : Colors.black87,
-                              ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
-                            decoration: BoxDecoration(
-                              color: group.isPublic
-                                  ? const Color(0xFF4CAF50).withValues(alpha: 0.12)
-                                  : const Color(0xFFE53935).withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(5),
-                            ),
-                            child: Text(
-                              group.isPublic ? l10n.publicBadge : l10n.privateGroup,
-                              style: TextStyle(
-                                color: group.isPublic ? const Color(0xFF4CAF50) : const Color(0xFFE53935),
-                                fontSize: 9.5,
+                              style: theme.textTheme.titleSmall?.copyWith(
                                 fontWeight: FontWeight.w800,
-                                letterSpacing: 0.4,
+                                color: isDark ? Colors.white : const Color(0xFF171717),
+                                letterSpacing: 0,
                               ),
                             ),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 5),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.group_outlined,
-                            size: 13.5,
-                            color: isDark ? Colors.white.withValues(alpha: 0.4) : cs.onSurfaceVariant.withValues(alpha: 0.6),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${group.members.length} ${l10n.member.toLowerCase()}',
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              color: isDark ? Colors.white.withValues(alpha: 0.45) : cs.onSurfaceVariant.withValues(alpha: 0.65),
-                            ),
-                          ),
-                          if (group.isAdmin || group.isOwner) ...[
+                          if (time.isNotEmpty) ...[
                             const SizedBox(width: 10),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 5.5, vertical: 1.5),
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [Color(0xFF0084FF), Color(0xFFFF5A36)],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
-                                borderRadius: BorderRadius.circular(5),
-                              ),
-                              child: Text(
-                                group.isOwner ? l10n.groupOwner : l10n.adminBadge,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 9.5,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.3,
-                                ),
+                            Text(
+                              time,
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: isDark
+                                    ? Colors.white.withValues(alpha: 0.42)
+                                    : cs.onSurfaceVariant.withValues(alpha: 0.75),
                               ),
                             ),
                           ],
                         ],
                       ),
+                      const SizedBox(height: 7),
+                      SizedBox(
+                        height: 18,
+                        child: hasPreview
+                            ? RichText(
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                text: TextSpan(
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: isDark
+                                        ? Colors.white.withValues(alpha: 0.55)
+                                        : cs.onSurfaceVariant,
+                                    height: 1.25,
+                                    letterSpacing: 0,
+                                  ),
+                                  children: [
+                                    if (sender.isNotEmpty)
+                                      TextSpan(
+                                        text: '$sender: ',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w800,
+                                          color: isDark
+                                              ? Colors.white.withValues(alpha: 0.8)
+                                              : const Color(0xFF404040),
+                                        ),
+                                      ),
+                                    TextSpan(text: preview),
+                                  ],
+                                ),
+                              )
+                            : const SizedBox.shrink(),
+                      ),
                     ],
                   ),
-                ),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  size: 22,
-                  color: isDark ? Colors.white.withValues(alpha: 0.2) : cs.onSurfaceVariant.withValues(alpha: 0.4),
                 ),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  String _messagePreview(GroupMessageModel? message) {
+    if (message == null) return '';
+    final text = message.text?.trim();
+    if (text != null && text.isNotEmpty) return text;
+
+    final documentTitle = message.sharedDocumentTitle?.trim();
+    if (documentTitle != null && documentTitle.isNotEmpty) return documentTitle;
+
+    final fileName = message.fileName?.trim();
+    if (fileName != null && fileName.isNotEmpty) return fileName;
+
+    return '';
+  }
+}
+
+class _GroupAvatar extends StatelessWidget {
+  const _GroupAvatar({required this.group});
+
+  final GroupModel group;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final avatarUrl = group.avatarUrl?.trim();
+
+    return Container(
+      width: 54,
+      height: 54,
+      decoration: BoxDecoration(
+        color: cs.primary.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(14),
+        image: avatarUrl != null && avatarUrl.isNotEmpty
+            ? DecorationImage(
+                image: NetworkImage(avatarUrl),
+                fit: BoxFit.cover,
+              )
+            : null,
+      ),
+      alignment: Alignment.center,
+      child: avatarUrl == null || avatarUrl.isEmpty
+          ? Text(
+              group.name.isNotEmpty ? group.name[0].toUpperCase() : '',
+              style: TextStyle(
+                color: cs.primary,
+                fontWeight: FontWeight.w800,
+                fontSize: 22,
+                letterSpacing: 0,
+              ),
+            )
+          : null,
     );
   }
 }

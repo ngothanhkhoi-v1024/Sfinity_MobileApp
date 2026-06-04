@@ -34,8 +34,6 @@ abstract final class RouteNames {
   static const notifications = '/notifications';
   static const notificationSettings = '/notifications/settings';
   static const settings = '/settings';
-  static const languageSettings = '/settings/language';
-  static const themeSettings = '/settings/theme';
 
   // Profile & security
   static const viewProfile = '/profile/view';
