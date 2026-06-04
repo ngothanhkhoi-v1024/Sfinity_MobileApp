@@ -4,4 +4,8 @@ export class UpdateSettingsDto {
   @IsOptional()
   @IsBoolean()
   autoApproveDocuments?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  autoApprovePlaces?: boolean;
 }
