@@ -248,7 +248,7 @@ export const documentService = {
     const newDocument: any = {
       id: docRef.id,
       title: dto.title,
-      body: dto.body,
+      body: dto.body ?? '',
       status: initialStatus,
       authorId,
       categoryId: dto.categoryId ?? null,

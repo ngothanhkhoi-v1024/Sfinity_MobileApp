@@ -1,6 +1,5 @@
 import { getDb } from '../lib/firebase';
 import { HttpError } from '../lib/http-error';
-import { CategoryType } from '../dto/category.dto';
 import type { CreateCategoryDto, UpdateCategoryDto } from '../dto/category.dto';
 
 const toDate = (val: any): Date => {
@@ -30,7 +29,6 @@ async function seedCategories() {
       id: docRef.id,
       name: cat.name,
       description: cat.description,
-      type: CategoryType.DOCUMENT,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -39,7 +37,7 @@ async function seedCategories() {
 }
 
 export const categoriesService = {
-  async findAll(type?: string) {
+  async findAll() {
     await seedCategories();
 
     const snapshot = await getDb().collection('categories').get();
@@ -57,7 +55,6 @@ export const categoriesService = {
           id: cat.id,
           name: cat.name,
           description: cat.description ?? null,
-          type: cat.type ?? CategoryType.DOCUMENT,
           createdAt: toDate(cat.createdAt),
           updatedAt: toDate(cat.updatedAt),
           _count: {
@@ -68,10 +65,6 @@ export const categoriesService = {
     );
 
     const sorted = categoriesWithCount.sort((a, b) => a.name.localeCompare(b.name));
-
-    if (type) {
-      return sorted.filter((c) => c.type === type);
-    }
 
     return sorted;
   },
@@ -93,7 +86,6 @@ export const categoriesService = {
       id: cat.id,
       name: cat.name,
       description: cat.description ?? null,
-      type: cat.type ?? CategoryType.DOCUMENT,
       createdAt: toDate(cat.createdAt),
       updatedAt: toDate(cat.updatedAt),
       _count: {
@@ -118,7 +110,6 @@ export const categoriesService = {
       id: docRef.id,
       name: dto.name,
       description: dto.description ?? null,
-      type: dto.type ?? CategoryType.DOCUMENT,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -144,7 +135,6 @@ export const categoriesService = {
       id: updated.id,
       name: updated.name,
       description: updated.description ?? null,
-      type: updated.type ?? CategoryType.DOCUMENT,
       createdAt: toDate(updated.createdAt),
       updatedAt: toDate(updated.updatedAt),
     };

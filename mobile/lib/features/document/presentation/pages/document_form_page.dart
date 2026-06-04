@@ -34,7 +34,6 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
   final _title = TextEditingController();
   final _body = TextEditingController();
   final _subjectCode = TextEditingController();
-  final _tagsController = TextEditingController();
 
   late final DocumentFormController _controller;
 
@@ -42,11 +41,13 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
   void initState() {
     super.initState();
     _controller = DocumentFormController();
-    _controller.loadCategories(null, widget.isEdit);
     if (widget.isEdit) {
       _loadExisting();
-    } else if (widget.placeTitle != null && widget.placeTitle!.isNotEmpty) {
-      _body.text = '${context.l10n.documentStudyShared} ${widget.placeTitle}';
+    } else {
+      _controller.loadCategories(null, widget.isEdit);
+      if (widget.placeTitle != null && widget.placeTitle!.isNotEmpty) {
+        _body.text = '${context.l10n.documentStudyShared} ${widget.placeTitle}';
+      }
     }
   }
 
@@ -55,7 +56,6 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
     _title.dispose();
     _body.dispose();
     _subjectCode.dispose();
-    _tagsController.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -69,9 +69,6 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
       
       final categoryId = data['categoryId']?.toString();
       _controller.selectCategory(categoryId);
-      
-      final tagsList = data['tags'] as List? ?? [];
-      _tagsController.text = tagsList.join(', ');
 
       final fileUrl = data['fileUrl']?.toString() ?? '';
       if (fileUrl.isNotEmpty) {
@@ -84,7 +81,7 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
       if (status != null) {
         _controller.selectStatus(status);
       }
-      _controller.loadCategories(categoryId, widget.isEdit);
+      await _controller.loadCategories(categoryId, widget.isEdit);
     } catch (_) {}
   }
 
@@ -113,7 +110,7 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
         title: _title.text.trim(),
         body: _body.text.trim(),
         subjectCode: _subjectCode.text.trim(),
-        tagsText: _tagsController.text,
+        tagsText: '',
         externalUrl: '',
         placeId: widget.placeId,
       );
@@ -215,9 +212,9 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
                       controller: _subjectCode,
                       autovalidateMode: AutovalidateMode.onUserInteraction,
                       decoration: InputDecoration(
-                        labelText: l10n.studyDocument,
-                        hintText: 'VD: MI1111',
-                        prefixIcon: const Icon(Icons.code),
+                        labelText: l10n.subjectCode,
+                        hintText: 'VD: Giải tích 1',
+                        prefixIcon: const Icon(Icons.book_outlined),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -290,16 +287,6 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
                       onChanged: _controller.selectStatus,
                     ),
                     const SizedBox(height: 16),
-
-                    TextFormField(
-                      controller: _tagsController,
-                      decoration: InputDecoration(
-                        labelText: l10n.tags,
-                        hintText: l10n.tags,
-                        prefixIcon: const Icon(Icons.label_outline),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
                   ],
                   TextFormField(
                     controller: _body,
@@ -309,8 +296,12 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
                       hintText: l10n.documentDescriptionHint,
                       alignLabelWithHint: true,
                     ),
-                    maxLines: 5,
-                    validator: (v) => v != null && v.trim().length >= 2 ? null : l10n.documentDescriptionMin,
+                    maxLines: 3,
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) return null;
+                      if (v.trim().length < 2) return l10n.documentDescriptionMin;
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 24),
 
