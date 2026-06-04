@@ -1,7 +1,7 @@
 import { createApp } from './app';
 import { config } from './lib/config';
 import { isFirebaseReady } from './lib/firebase';
-import { amenitiesService } from './services/amenities.service';
+import { seedAmenities } from './services/amenities.service';
 
 async function bootstrap() {
   if (!isFirebaseReady()) {
@@ -9,7 +9,7 @@ async function bootstrap() {
   } else {
     console.log('Firebase Admin SDK is fully configured and ready.');
     try {
-      await amenitiesService.findAll();
+      await seedAmenities();
       console.log('Amenities initialized successfully.');
     } catch (e) {
       console.error('Failed to initialize amenities:', e);

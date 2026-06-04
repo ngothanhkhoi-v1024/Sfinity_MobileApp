@@ -17,11 +17,14 @@ const DEFAULT_AMENITIES = [
   { name: 'Giữ xe', description: 'Có khu vực giữ xe' },
 ];
 
-async function seedAmenities() {
+export async function seedAmenities() {
   const snapshot = await getDb().collection('amenities').get();
-  console.log('[amenities] seed — doc count:', snapshot.size);
-  if (!snapshot.empty) return;
+  if (!snapshot.empty) {
+    console.log(`[amenities] seed — already has ${snapshot.size} docs, skipping.`);
+    return;
+  }
 
+  console.log('[amenities] seed — seeding defaults...');
   const batch = getDb().batch();
   for (const amenity of DEFAULT_AMENITIES) {
     const docRef = getDb().collection('amenities').doc();
@@ -34,19 +37,12 @@ async function seedAmenities() {
     });
   }
   await batch.commit();
+  console.log('[amenities] seed — done.');
 }
 
 export const amenitiesService = {
   async findAll() {
-    console.log('[amenities] findAll called');
-    try {
-      await seedAmenities();
-    } catch (e) {
-      console.error('[amenities] seed error:', e);
-    }
-
     const snapshot = await getDb().collection('amenities').get();
-    console.log('[amenities] findAll — docs found:', snapshot.size);
     const items = snapshot.docs.map((doc) => {
       const data = doc.data();
       return {
