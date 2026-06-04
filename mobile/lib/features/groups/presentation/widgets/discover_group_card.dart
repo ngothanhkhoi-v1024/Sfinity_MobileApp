@@ -133,7 +133,7 @@ class _DiscoverGroupCardState extends State<DiscoverGroupCard> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: Text(l10n.groupsTab, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        child: Text(l10n.joinGroup, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                       ),
           ],
         ),
