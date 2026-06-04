@@ -1,9 +1,9 @@
-import { PlusOutlined, TeamOutlined } from '@ant-design/icons';
-import { Button, Form, Input, Modal, Table, Tag, Typography, message } from 'antd';
+import { DeleteOutlined, PlusOutlined, TeamOutlined } from '@ant-design/icons';
+import { Button, Form, Input, Modal, Popconfirm, Table, Tag, message } from 'antd';
 import { useCallback, useEffect, useState } from 'react';
 
 import { apiClient } from '@/api/client';
-import { fetchUsers, type UserRecord } from '@/api/users';
+import { deleteUser, fetchUsers, type UserRecord } from '@/api/users';
 import { PageHeader } from '@/components/common/PageHeader';
 
 export function AdminsPage() {
@@ -38,8 +38,10 @@ export function AdminsPage() {
       form.resetFields();
       setModalOpen(false);
       load();
-    } catch {
-      message.error('Tạo admin thất bại');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })
+        ?.response?.data?.message;
+      message.error(msg ?? 'Tạo admin thất bại');
     } finally {
       setSubmitting(false);
     }
@@ -48,6 +50,16 @@ export function AdminsPage() {
   const handleCancel = () => {
     form.resetFields();
     setModalOpen(false);
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteUser(id);
+      message.success('Đã xóa admin');
+      load();
+    } catch {
+      message.error('Xóa thất bại');
+    }
   };
 
   return (
@@ -109,6 +121,24 @@ export function AdminsPage() {
               <Tag color={enabled === false ? 'default' : 'blue'}>
                 {enabled === false ? 'Đã tắt' : 'Đang bật'}
               </Tag>
+            ),
+          },
+          // Sau cột 'Thông báo', thêm:
+          {
+            title: 'Thao tác',
+            key: 'actions',
+            width: 80,
+            render: (_: unknown, record: UserRecord) => (
+              <Popconfirm
+                title="Xóa admin này?"
+                description="Hành động này không thể hoàn tác."
+                okText="Xóa"
+                cancelText="Hủy"
+                okButtonProps={{ danger: true }}
+                onConfirm={() => handleDelete(record.id)}
+              >
+                <Button size="small" danger icon={<DeleteOutlined />} />
+              </Popconfirm>
             ),
           },
         ]}
