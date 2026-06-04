@@ -82,9 +82,8 @@ class _CommunityPageState extends State<CommunityPage>
             elevation: 0,
             scrolledUnderElevation: 0,
             title: Text(
-              l10n.explore,
+              l10n.community,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
                     letterSpacing: -0.3,
                   ),
             ),
@@ -757,7 +756,9 @@ class _CommunityPageState extends State<CommunityPage>
                             SnackBar(
                               content: Text(
                                 success
-                                    ? l10n.groupCreated
+                                    ? (group.autoApprove
+                                        ? l10n.joinGroupSuccess(group.name)
+                                        : l10n.joinGroupPending(group.name))
                                     : (_groupCtrl.error ?? l10n.errorOccurred),
                               ),
                               backgroundColor: success
@@ -774,7 +775,7 @@ class _CommunityPageState extends State<CommunityPage>
                             SnackBar(
                               content: Text(
                                 success
-                                    ? l10n.leaveGroup
+                                    ? l10n.cancelRequestSuccess(group.name)
                                     : (_groupCtrl.error ?? l10n.errorOccurred),
                               ),
                               backgroundColor: success

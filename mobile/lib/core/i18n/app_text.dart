@@ -32,6 +32,7 @@ class AppLocalizations {
       'enableNotifications': 'Bật lại thông báo',
       'theme': 'Giao diện',
       'changePassword': 'Đổi mật khẩu',
+      'setPassword': 'Thiết lập mật khẩu',
       'language': 'Ngôn ngữ',
       'system': 'Hệ thống',
       'light': 'Sáng',
@@ -507,6 +508,8 @@ class AppLocalizations {
       'changePasswordSuccess': 'Đổi mật khẩu thành công',
       'currentPassword': 'Mật khẩu hiện tại',
       'newPasswordRequired': 'Mật khẩu mới',
+      'setPasswordSuccess': 'Thiết lập mật khẩu thành công',
+      'joinGroup': 'Xin vào',
     },
     'en': {
       'appName': 'Sfinity',
@@ -529,6 +532,7 @@ class AppLocalizations {
       'enableNotifications': 'Enable notifications',
       'theme': 'Theme',
       'changePassword': 'Change password',
+      'setPassword': 'Set password',
       'language': 'Language',
       'system': 'System',
       'light': 'Light',
@@ -1004,6 +1008,8 @@ class AppLocalizations {
       'changePasswordSuccess': 'Password changed successfully',
       'currentPassword': 'Current password',
       'newPasswordRequired': 'New password',
+      'setPasswordSuccess': 'Password set successfully',
+      'joinGroup': 'Join',
     },
   };
 
@@ -1039,6 +1045,7 @@ class AppLocalizations {
   String get enableNotifications => _text('enableNotifications');
   String get theme => _text('theme');
   String get changePassword => _text('changePassword');
+  String get setPassword => _text('setPassword');
   String get language => _text('language');
   String get system => _text('system');
   String get light => _text('light');
@@ -1332,9 +1339,9 @@ class AppLocalizations {
   String acceptInviteFailed([String? name]) => name != null && name.isNotEmpty
       ? '$name ${_text('acceptInviteFailed')}'
       : _text('acceptInviteFailed');
-  String joinGroupSuccess(String name) => '$name ${_text('joinGroupSuccess')}';
-  String joinGroupPending(String name) => '$name ${_text('joinGroupPending')}';
-  String cancelRequestSuccess(String name) => '$name ${_text('cancelRequestSuccess')}';
+  String joinGroupSuccess(String name) => _text('joinGroupSuccess');
+  String joinGroupPending(String name) => _text('joinGroupPending');
+  String cancelRequestSuccess(String name) => _text('cancelRequestSuccess');
   String get noGroupsYet2 => _text('noGroupsYet2');
   String get noGroupsNewExplore => _text('noGroupsNewExplore');
   String get noGroupsMatch => _text('noGroupsMatch');
@@ -1551,6 +1558,8 @@ class AppLocalizations {
   String get changePasswordSuccess => _text('changePasswordSuccess');
   String get currentPassword => _text('currentPassword');
   String get newPasswordRequired => _text('newPasswordRequired');
+  String get setPasswordSuccess => _text('setPasswordSuccess');
+  String get joinGroup => _text('joinGroup');
   // Method for offline profile load
   String offlineProfileLoad(String err) => _format('offlineProfileLoad', {'{name}': err});
 

@@ -22,7 +22,8 @@ class ProfilePage extends StatelessWidget {
         final displayName = user?['name']?.toString() ?? '';
         final email = user?['email']?.toString() ?? '';
         final authProvider = user?['authProvider']?.toString() ?? 'local';
-        final isLocalUser = authProvider == 'local';
+        final hasPassword = user?['hasPassword'] as bool? ?? false;
+        final canChangeOrSetPassword = hasPassword || authProvider == 'google' || authProvider == 'facebook';
 
         return ListView(
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 100),
@@ -54,11 +55,11 @@ class ProfilePage extends StatelessWidget {
                   onTap: () => context.push(RouteNames.editProfile),
                   isDark: isDark,
                 ),
-                if (isLocalUser)
+                if (canChangeOrSetPassword)
                   _ProfileMenuItem(
                     icon: Icons.lock_outline_rounded,
                     iconColor: const Color(0xFF8B5CF6),
-                    title: context.l10n.changePassword,
+                    title: hasPassword ? context.l10n.changePassword : context.l10n.setPassword,
                     onTap: () => context.push(RouteNames.changePassword),
                     isDark: isDark,
                   ),
