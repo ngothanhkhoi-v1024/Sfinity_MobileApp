@@ -4,7 +4,7 @@ export interface PlaceItem {
   id: string;
   title: string;
   body: string;
-  status: 'DRAFT' | 'PUBLISHED';
+  status: 'DRAFT' | 'PENDING' | 'PUBLISHED' | 'REJECTED' | 'HIDDEN';
   authorId: string;
   categoryId: string | null;
   type: 'place';
@@ -112,5 +112,15 @@ export async function adminDeletePlace(id: string, reason: string): Promise<void
 
 export async function adminUnhidePlace(id: string, note?: string): Promise<PlaceItem> {
   const { data } = await apiClient.patch<PlaceItem>(`/document/${id}/admin-unhide`, { note });
+  return data;
+}
+
+export async function adminApprovePlace(id: string, note?: string): Promise<PlaceItem> {
+  const { data } = await apiClient.patch<PlaceItem>(`/document/${id}/approve`, { note });
+  return data;
+}
+
+export async function adminRejectPlace(id: string, reason: string): Promise<PlaceItem> {
+  const { data } = await apiClient.patch<PlaceItem>(`/document/${id}/reject`, { reason });
   return data;
 }

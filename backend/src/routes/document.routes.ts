@@ -1,7 +1,7 @@
 import { ContentStatus, UserRole } from '../types/enums';
 import { Router } from 'express';
 
-import { AdminDeleteDto, AdminHideDto, AdminUnhideDto } from '../dto/admin-document.dto';
+import { AdminApproveDto, AdminDeleteDto, AdminHideDto, AdminUnhideDto } from '../dto/admin-document.dto';
 import { CreateDocumentDto, UpdateDocumentDto } from '../dto/document.dto';
 import { CreateDocumentReviewDto } from '../dto/document-review.dto';
 import { asyncHandler } from '../lib/async-handler';
@@ -142,6 +142,20 @@ documentRouter.patch(
     const dto = await validateBody(AdminUnhideDto, req.body);
     res.json(
       await documentService.adminUnhide(
+        req.params.id,
+        dto.note,
+      ),
+    );
+  }),
+);
+
+documentRouter.patch(
+  '/:id/approve',
+  ...adminOnly,
+  asyncHandler(async (req, res) => {
+    const dto = await validateBody(AdminApproveDto, req.body);
+    res.json(
+      await documentService.adminApprove(
         req.params.id,
         dto.note,
       ),

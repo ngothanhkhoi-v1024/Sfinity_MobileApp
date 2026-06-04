@@ -4,6 +4,7 @@ import { getDb } from '../lib/firebase';
 import { distanceMeters } from '../lib/geo';
 import { HttpError } from '../lib/http-error';
 import { notificationsService } from './notifications.service';
+import { settingsService } from './settings.service';
 import { ContentStatus, UserRole } from '../types/enums';
 import type { CreateDocumentDto, UpdateDocumentDto } from '../dto/document.dto';
 
@@ -237,6 +238,11 @@ export const documentService = {
       if (initialStatus === ContentStatus.PUBLISHED || initialStatus === ContentStatus.REJECTED || initialStatus === ContentStatus.HIDDEN) {
         initialStatus = ContentStatus.PENDING;
       }
+      const settings = await settingsService.get();
+      const autoApprove = type === 'place' ? settings.autoApprovePlaces : settings.autoApproveDocuments;
+      if ((initialStatus === ContentStatus.PENDING || initialStatus === ContentStatus.DRAFT) && autoApprove) {
+        initialStatus = ContentStatus.PUBLISHED;
+      }
     }
 
     const newDocument: any = {
@@ -312,6 +318,11 @@ export const documentService = {
       }
       if (hasContentChanges && (item.status === ContentStatus.PUBLISHED || item.status === ContentStatus.REJECTED || item.status === ContentStatus.HIDDEN)) {
         updateData.status = ContentStatus.PENDING;
+        const settings = await settingsService.get();
+        const autoApprove = docType === 'place' ? settings.autoApprovePlaces : settings.autoApproveDocuments;
+        if (autoApprove) {
+          updateData.status = ContentStatus.PUBLISHED;
+        }
       }
     }
 
@@ -424,6 +435,29 @@ export const documentService = {
         ? `Admin đã bỏ ẩn ${typeLabel} của bạn. Ghi chú: ${note}`
         : `Admin đã bỏ ẩn và khôi phục ${typeLabel} của bạn.`,
     });
+
+    return documentService.findOne(id);
+  },
+
+  async adminApprove(id: string, note?: string) {
+    const item = await documentService.findOne(id);
+
+    const docRef = getDb().collection('documents').doc(id);
+    await docRef.update({
+      status: ContentStatus.PUBLISHED,
+      updatedAt: new Date(),
+    });
+
+    if (item.authorId) {
+      const typeLabel = (item.type ?? 'document') === 'place' ? 'địa điểm' : 'tài liệu';
+      await notificationsService.create({
+        userId: item.authorId,
+        title: `Nội dung "${item.title}" đã được duyệt`,
+        body: note
+          ? `${typeLabel.charAt(0).toUpperCase() + typeLabel.slice(1)} của bạn đã được admin duyệt và xuất bản. Ghi chú: ${note}`
+          : `${typeLabel.charAt(0).toUpperCase() + typeLabel.slice(1)} của bạn đã được admin duyệt và xuất bản.`,
+      });
+    }
 
     return documentService.findOne(id);
   },
