@@ -238,11 +238,10 @@ export const documentService = {
       if (initialStatus === ContentStatus.PUBLISHED || initialStatus === ContentStatus.REJECTED || initialStatus === ContentStatus.HIDDEN) {
         initialStatus = ContentStatus.PENDING;
       }
-      if (initialStatus === ContentStatus.PENDING || initialStatus === ContentStatus.DRAFT) {
-        const settings = await settingsService.get();
-        if (settings.autoApproveDocuments) {
-          initialStatus = ContentStatus.PUBLISHED;
-        }
+      const settings = await settingsService.get();
+      const autoApprove = type === 'place' ? settings.autoApprovePlaces : settings.autoApproveDocuments;
+      if ((initialStatus === ContentStatus.PENDING || initialStatus === ContentStatus.DRAFT) && autoApprove) {
+        initialStatus = ContentStatus.PUBLISHED;
       }
     }
 
@@ -320,7 +319,8 @@ export const documentService = {
       if (hasContentChanges && (item.status === ContentStatus.PUBLISHED || item.status === ContentStatus.REJECTED || item.status === ContentStatus.HIDDEN)) {
         updateData.status = ContentStatus.PENDING;
         const settings = await settingsService.get();
-        if (settings.autoApproveDocuments) {
+        const autoApprove = docType === 'place' ? settings.autoApprovePlaces : settings.autoApproveDocuments;
+        if (autoApprove) {
           updateData.status = ContentStatus.PUBLISHED;
         }
       }

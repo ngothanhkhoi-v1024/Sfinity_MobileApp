@@ -5,10 +5,12 @@ const SETTINGS_ID = 'global';
 
 export interface SystemSettings {
   autoApproveDocuments: boolean;
+  autoApprovePlaces: boolean;
 }
 
 const defaults: SystemSettings = {
   autoApproveDocuments: false,
+  autoApprovePlaces: false,
 };
 
 export const settingsService = {
@@ -20,6 +22,7 @@ export const settingsService = {
     const data = doc.data() as Partial<SystemSettings>;
     return {
       autoApproveDocuments: data.autoApproveDocuments ?? defaults.autoApproveDocuments,
+      autoApprovePlaces: data.autoApprovePlaces ?? defaults.autoApprovePlaces,
     };
   },
 

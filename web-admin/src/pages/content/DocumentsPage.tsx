@@ -31,7 +31,7 @@ import {
   fetchDocuments,
   type DocumentItem,
 } from '@/api/documents';
-import { fetchSettings, updateSettings } from '@/api/settings';
+import { useSettings } from '@/contexts/SettingsContext';
 import { PageHeader } from '@/components/common/PageHeader';
 import { PageShell } from '@/components/common/PageShell';
 
@@ -54,10 +54,9 @@ const STATUS_COLORS: Record<ContentStatus, string> = {
 };
 
 export function DocumentsPage() {
+  const { settings, saving, toggleAutoApprove } = useSettings();
   const [data, setData] = useState<DocumentItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [autoApprove, setAutoApprove] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [viewModal, setViewModal] = useState<DocumentItem | null>(null);
   const [hideModal, setHideModal] = useState<DocumentItem | null>(null);
   const [deleteModal, setDeleteModal] = useState<DocumentItem | null>(null);
@@ -82,30 +81,7 @@ export function DocumentsPage() {
 
   useEffect(() => {
     load();
-    loadSettings();
   }, [load]);
-
-  const loadSettings = useCallback(async () => {
-    try {
-      const settings = await fetchSettings();
-      setAutoApprove(settings.autoApproveDocuments);
-    } catch {
-      // ignore
-    }
-  }, []);
-
-  const handleToggle = async (checked: boolean) => {
-    setSaving(true);
-    try {
-      await updateSettings({ autoApproveDocuments: checked });
-      setAutoApprove(checked);
-      message.success('Đã lưu cài đặt');
-    } catch {
-      message.error('Lưu thất bại');
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const handleApprove = async () => {
     if (!approveModal) return;
@@ -327,8 +303,8 @@ export function DocumentsPage() {
           <Space>
             <span style={{ fontSize: 13, color: '#64748b' }}>Duyệt tự động</span>
             <Switch
-              checked={autoApprove}
-              onChange={handleToggle}
+              checked={settings?.autoApproveDocuments ?? false}
+              onChange={(checked) => toggleAutoApprove('autoApproveDocuments', checked)}
               loading={saving}
               checkedChildren="Bật"
               unCheckedChildren="Tắt"

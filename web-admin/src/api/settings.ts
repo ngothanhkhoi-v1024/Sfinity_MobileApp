@@ -2,6 +2,7 @@ import { apiClient } from './client';
 
 export interface SystemSettings {
   autoApproveDocuments: boolean;
+  autoApprovePlaces: boolean;
 }
 
 export async function fetchSettings(): Promise<SystemSettings> {
