@@ -48,7 +48,7 @@ class ProfilePage extends StatelessWidget {
                   onTap: () => context.push(RouteNames.viewProfile),
                   isDark: isDark,
                 ),
-                if (isLocalUser)
+                if (canChangeOrSetPassword)
                   _ProfileMenuItem(
                     icon: Icons.lock_outline_rounded,
                     iconColor: const Color(0xFF8B5CF6),
