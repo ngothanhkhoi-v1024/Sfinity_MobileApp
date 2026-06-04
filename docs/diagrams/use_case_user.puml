@@ -1,0 +1,86 @@
+@startuml Sfinity_UseCase_User
+skinparam {
+    dpi 100
+    nodesep 12
+    ranksep 15
+}
+
+title Sfinity - Use Case: Người dùng (User)
+left to right direction
+
+actor "Người dùng (User)" as User
+
+rectangle Sfinity_User {
+
+    package "Hồ sơ & Bảo mật" <<Profile>> {
+        usecase "Xem / Chỉnh sửa hồ sơ" as UC_Profile
+        usecase "Đổi mật khẩu" as UC_ChangePW
+        usecase "Cài đặt thông báo" as UC_NotifPrefs
+    }
+
+    package "Tài liệu" <<Documents>> {
+        usecase "Duyệt & tìm kiếm tài liệu" as UC_BrowseDoc
+        usecase "Xem chi tiết tài liệu" as UC_ViewDoc
+        usecase "Tạo tài liệu mới" as UC_CreateDoc
+        usecase "Sửa / Xóa tài liệu" as UC_EditDoc
+        usecase "Tải tài liệu" as UC_DownloadDoc
+        usecase "Đánh giá tài liệu" as UC_ReviewDoc
+    }
+
+    package "Địa điểm" <<Places>> {
+        usecase "Xem bản đồ địa điểm" as UC_ViewMap
+        usecase "Xem chi tiết địa điểm" as UC_ViewPlace
+        usecase "Check-in tại địa điểm" as UC_CheckIn
+        usecase "Đánh giá địa điểm" as UC_ReviewPlace
+        usecase "Tải ảnh địa điểm" as UC_UploadPhoto
+        usecase "Tìm nơi học gần đây" as UC_StudyNearMe
+    }
+
+    package "Kết bạn & Nhóm" <<Social>> {
+        usecase "Tìm kiếm người dùng" as UC_SearchUsers
+        usecase "Gửi / Phản hồi lời mời kết bạn" as UC_Friend
+        usecase "Khám phá nhóm công khai" as UC_DiscoverGroup
+        usecase "Tạo nhóm học tập" as UC_CreateGroup
+        usecase "Tham gia / Quản lý nhóm" as UC_ManageGroup
+        usecase "Nhắn tin trong nhóm" as UC_Chat
+    }
+
+    package "Tương tác" <<Interactions>> {
+        usecase "Yêu thích / Đánh dấu" as UC_Favorites
+        usecase "Xem lịch sử hoạt động" as UC_History
+        usecase "Xem thông báo" as UC_Notifs
+        usecase "Gửi phản hồi (Feedback)" as UC_Feedback
+        usecase "Báo cáo vi phạm" as UC_Report
+        usecase "Upload hình ảnh" as UC_UploadMedia
+    }
+}
+
+User --> UC_Profile
+User --> UC_ChangePW
+User --> UC_NotifPrefs
+User --> UC_BrowseDoc
+User --> UC_ViewDoc
+User --> UC_CreateDoc
+User --> UC_EditDoc
+User --> UC_DownloadDoc
+User --> UC_ReviewDoc
+User --> UC_ViewMap
+User --> UC_ViewPlace
+User --> UC_CheckIn
+User --> UC_ReviewPlace
+User --> UC_UploadPhoto
+User --> UC_StudyNearMe
+User --> UC_SearchUsers
+User --> UC_Friend
+User --> UC_DiscoverGroup
+User --> UC_CreateGroup
+User --> UC_ManageGroup
+User --> UC_Chat
+User --> UC_Favorites
+User --> UC_History
+User --> UC_Notifs
+User --> UC_Feedback
+User --> UC_Report
+User --> UC_UploadMedia
+
+@enduml

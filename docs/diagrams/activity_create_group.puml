@@ -1,0 +1,37 @@
+@startuml Activity_Create_Group
+skinparam {
+    dpi 100
+    nodesep 15
+    ranksep 20
+}
+
+title Activity - Tạo nhóm học tập
+
+start
+
+:Người dùng nhấn "Tạo nhóm";
+
+:Nhập tên nhóm và mô tả;
+
+:Chọn quyền riêng tư;
+
+if (Nhóm riêng tư?) then (Có)
+    :Thiết lập mật khẩu (tùy chọn);
+endif
+
+if (Upload ảnh nhóm?) then (Có)
+    :Chọn ảnh từ thiết bị;
+    :Upload ảnh lên server;
+endif
+
+:Nhấn "Tạo nhóm";
+
+:Hệ thống tạo nhóm mới;
+
+:Hệ thống thêm người tạo làm chủ sở hữu (OWNER);
+
+:Chuyển hướng vào trang nhóm;
+
+stop
+
+@enduml

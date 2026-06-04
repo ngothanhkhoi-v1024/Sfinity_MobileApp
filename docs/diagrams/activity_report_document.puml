@@ -1,0 +1,32 @@
+@startuml Activity_Report_Document
+skinparam {
+    dpi 100
+    nodesep 15
+    ranksep 20
+}
+
+title Activity - Báo cáo vi phạm tài liệu
+
+start
+
+:Người dùng đang xem tài liệu;
+
+:Nhấn nút "Báo cáo";
+
+:Hiển thị danh sách lý do báo cáo;
+
+:Chọn lý do vi phạm;
+
+if (Lý do khác?) then (Có)
+    :Nhập mô tả chi tiết;
+endif
+
+:Nhấn "Gửi báo cáo";
+
+:Hệ thống tạo bản ghi Report, trạng thái PENDING;
+
+:Hiển thị thông báo "Đã gửi báo cáo";
+
+stop
+
+@enduml

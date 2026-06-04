@@ -1,0 +1,64 @@
+@startuml Sequence_Admin_Handle_Reports
+title Sequence - Admin xử lý báo cáo vi phạm
+
+actor "Admin" as Admin
+participant "Flutter App (Admin)" as App
+participant "Express API" as API
+participant "Firestore" as Firestore
+participant "Notification Service" as Notify
+
+Admin -> App : Mở trang quản lý báo cáo
+App -> API : GET /reports?status=PENDING
+API -> Firestore : Truy vấn reports\n{ status: "PENDING" }
+Firestore --> API : Danh sách báo cáo
+API --> App : { items: [...], total }
+App --> Admin : Hiển thị danh sách báo cáo
+Admin -> App : Chọn một báo cáo để xem chi tiết
+App -> API : GET /reports/:id
+API -> Firestore : Lấy report + user + target info
+Firestore --> API : Full report details
+API --> App : Report data
+App --> Admin : Hiển thị chi tiết báo cáo
+
+alt HÀNH ĐỘNG: TỪ CHỐI
+    Admin -> App : Nhấn "Từ chối"
+    App -> API : PATCH /reports/:id/resolve\n{ status: "REJECTED", resolution }
+    API -> Firestore : Cập nhật report status = REJECTED
+    Firestore --> API : Report resolved
+    API --> App : 200 OK
+    App --> Admin : "Đã từ chối báo cáo"
+end
+
+alt HÀNH ĐỘNG: XỬ LÝ (Ẩn/Xóa nội dung)
+    Admin -> App : Chọn hành động\n(Ẩn tài liệu / Xóa tài liệu / Cảnh cáo user)
+    alt Ẩn tài liệu
+        App -> API : PATCH /document/:id/admin-hide\n{ reason }
+        API -> Firestore : Cập nhật status = HIDDEN
+        Firestore --> API : Document hidden
+        API -> Notify : Thông báo tác giả\n"Tài liệu bị ẩn vì vi phạm"
+        Notify -> Firestore : Notification saved
+    else Xóa tài liệu
+        App -> API : DELETE /document/:id/admin-delete\n{ reason }
+        API -> Firestore : Xóa document + gửi notification
+        Firestore --> API : Document deleted
+    else Cảnh cáo user
+        App -> API : PATCH /users/:userId\n{ status: "BANNED" }
+        API -> Firestore : Cập nhật user status = BANNED
+        Firestore --> API : User banned
+        API -> Notify : Thông báo user\n"Tài khoản đã bị khóa"
+        Notify -> Firestore : Notification saved
+    end
+end
+
+API -> Notify : Thông báo cho người báo cáo\n"Report đã được xử lý"
+Notify -> Firestore : Lưu notification
+Firestore --> Notify : Done
+API --> App : 200 OK
+App --> Admin : "Đã xử lý báo cáo"
+
+note right of Admin
+  Dashboard stats cập nhật tự động:
+  GET /admin/dashboard/stats
+end note
+
+@enduml

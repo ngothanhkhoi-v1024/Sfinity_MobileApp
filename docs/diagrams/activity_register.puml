@@ -1,0 +1,43 @@
+@startuml Activity_Register
+skinparam {
+    dpi 100
+    nodesep 15
+    ranksep 20
+}
+
+title Activity - Đăng ký
+
+start
+
+:Mở ứng dụng;
+
+:Nhấn "Đăng ký";
+
+:Nhập họ tên, email, mật khẩu;
+
+if (Thông tin hợp lệ?) then (Không)
+    :Hiển thị lỗi validation;
+    :Quay lại form;
+    stop
+endif
+
+:Nhấn "Đăng ký";
+
+:Hệ thống gửi mã OTP qua email;
+
+:Nhập mã OTP;
+
+if (OTP hợp lệ?) then (Không)
+    :Hiển thị lỗi OTP sai;
+    :Yêu cầu nhập lại;
+endif
+
+:Hệ thống tạo tài khoản, trạng thái ACTIVE;
+
+:Lưu token vào storage;
+
+:Chuyển hướng về trang đăng nhập;
+
+stop
+
+@enduml

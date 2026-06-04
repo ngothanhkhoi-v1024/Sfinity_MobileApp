@@ -1,0 +1,218 @@
+@startuml Sfinity_Component_Mobile
+!theme plain
+
+title Sfinity — Component Diagram: Flutter Mobile App
+
+package "lib/" {
+
+  package "core/" {
+    [AppConfig] as AppConfig
+    [AppTheme] as AppTheme
+    [AppRouter\n(go_router)] as AppRouter
+    [DioClient\n(HTTP client)] as DioClient
+    [AuthService] as AuthService
+    [StorageService] as StorageService
+  }
+
+  package "features/auth/" {
+    [LoginPage] as LoginPage
+    [RegisterPage] as RegisterPage
+    [ForgotPasswordPage] as ForgotPasswordPage
+    [OTPVerificationPage] as OTPVerificationPage
+  }
+
+  package "features/home/" {
+    [HomeShellPage\n(BottomNav + Drawer)] as HomeShellPage
+    [ExplorePage] as ExplorePage
+    [CommunityPage] as CommunityPage
+  }
+
+  package "features/document/" {
+    [DocumentListPage] as DocListPage
+    [DocumentDetailPage] as DocDetailPage
+    [DocumentFormPage\n(CRUD)] as DocFormPage
+    [MyDocumentsPage] as MyDocsPage
+    [PDFViewerPage] as PDFPage
+  }
+
+  package "features/places/" {
+    [PlacesMapPage] as PlacesMapPage
+    [PlaceDetailPage] as PlaceDetailPage
+    [PlaceSharePage] as PlaceSharePage
+  }
+
+  package "features/profile/" {
+    [ProfilePage] as ProfilePage
+    [EditProfilePage] as EditProfilePage
+    [ViewProfilePage] as ViewProfilePage
+  }
+
+  package "features/friendships/" {
+    [FriendsPage] as FriendsPage
+  }
+
+  package "features/groups/" {
+    [GroupListPage] as GroupListPage
+    [GroupDetailPage] as GroupDetailPage
+    [GroupChatPage] as GroupChatPage
+    [GroupFormPage] as GroupFormPage
+  }
+
+  package "features/notifications/" {
+    [NotificationsPage] as NotificationsPage
+    [NotificationSettingsPage] as NotifSettingsPage
+  }
+
+  package "features/settings/" {
+    [SettingsPage] as SettingsPage
+    [ThemeSettingsPage] as ThemeSettingsPage
+    [LanguageSettingsPage] as LangSettingsPage
+  }
+
+  package "features/security/" {
+    [ChangePasswordPage] as ChangePWPage
+    [TwoFactorPage] as TwoFactorPage
+    [SessionManagementPage] as SessionPage
+  }
+
+  package "features/feedback/" {
+    [FeedbackPage] as FeedbackPage
+    [RateAppPage] as RateAppPage
+  }
+
+  package "features/report/" {
+    [ReportPage] as ReportPage
+  }
+
+  package "features/favorites/" {
+    [FavoritesPage] as FavoritesPage
+  }
+
+  package "features/history/" {
+    [HistoryPage] as HistoryPage
+    [RecentlyViewedPage] as RecentPage
+  }
+
+  package "features/media/" {
+    [MediaUploadPage] as MediaUploadPage
+    [ImageViewerPage] as ImageViewerPage
+  }
+
+  package "features/search/" {
+    [SearchPage] as SearchPage
+  }
+
+  package "shared/" {
+    [LoadingWidget] as LoadingWidget
+    [ErrorWidget] as ErrorWidget
+    [EmptyStateWidget] as EmptyWidget
+    [ConfirmDialog] as ConfirmDialog
+  }
+}
+
+' ─── Data layer ────────────────────────────────────────────
+package "data/" {
+  [AuthRepository] as AuthRepo
+  [DocumentRepository] as DocRepo
+  [PlaceRepository] as PlaceRepo
+  [FriendshipRepository] as FriendRepo
+  [GroupRepository] as GroupRepo
+  [NotificationRepository] as NotifRepo
+  [FeedbackRepository] as FeedbackRepo
+}
+
+' ─── External ──────────────────────────────────────────────
+[Firebase Auth] as FirebaseExt
+[Sfinity API\n(Express)] as APIExt
+
+' ═══════════════════════════════════════════════════════════
+' RELATIONSHIPS
+' ═══════════════════════════════════════════════════════════
+
+DioClient --> AuthService
+DioClient --> APIExt
+DioClient --> StorageService
+
+AuthService --> AuthRepo
+AuthService --> FirebaseExt
+
+DocRepo --> DioClient
+PlaceRepo --> DioClient
+FriendRepo --> DioClient
+GroupRepo --> DioClient
+NotifRepo --> DioClient
+FeedbackRepo --> DioClient
+
+AppRouter --> LoginPage
+AppRouter --> RegisterPage
+AppRouter --> HomeShellPage
+AppRouter --> DocListPage
+AppRouter --> DocDetailPage
+AppRouter --> DocFormPage
+AppRouter --> MyDocsPage
+AppRouter --> PDFPage
+AppRouter --> PlacesMapPage
+AppRouter --> PlaceDetailPage
+AppRouter --> PlaceSharePage
+AppRouter --> ProfilePage
+AppRouter --> EditProfilePage
+AppRouter --> ViewProfilePage
+AppRouter --> FriendsPage
+AppRouter --> GroupListPage
+AppRouter --> GroupDetailPage
+AppRouter --> GroupChatPage
+AppRouter --> GroupFormPage
+AppRouter --> NotificationsPage
+AppRouter --> NotifSettingsPage
+AppRouter --> SettingsPage
+AppRouter --> ThemeSettingsPage
+AppRouter --> LangSettingsPage
+AppRouter --> ChangePWPage
+AppRouter --> TwoFactorPage
+AppRouter --> SessionPage
+AppRouter --> FeedbackPage
+AppRouter --> RateAppPage
+AppRouter --> ReportPage
+AppRouter --> FavoritesPage
+AppRouter --> HistoryPage
+AppRouter --> RecentPage
+AppRouter --> MediaUploadPage
+AppRouter --> ImageViewerPage
+AppRouter --> SearchPage
+
+DocListPage --> DocRepo
+DocDetailPage --> DocRepo
+DocFormPage --> DocRepo
+MyDocsPage --> DocRepo
+PDFPage --> DocRepo
+
+PlaceDetailPage --> PlaceRepo
+PlacesMapPage --> PlaceRepo
+PlaceSharePage --> PlaceRepo
+
+FriendsPage --> FriendRepo
+
+GroupListPage --> GroupRepo
+GroupDetailPage --> GroupRepo
+GroupChatPage --> GroupRepo
+GroupFormPage --> GroupRepo
+
+NotificationsPage --> NotifRepo
+NotifSettingsPage --> NotifRepo
+
+FeedbackPage --> FeedbackRepo
+RateAppPage --> FeedbackRepo
+
+HomeShellPage --> ExplorePage
+HomeShellPage --> PlacesMapPage
+HomeShellPage --> DocListPage
+HomeShellPage --> CommunityPage
+HomeShellPage --> ProfilePage
+
+CommunityPage --> FriendsPage
+CommunityPage --> GroupListPage
+
+ProfilePage --> EditProfilePage
+ProfilePage --> ViewProfilePage
+
+@enduml

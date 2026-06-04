@@ -1,0 +1,39 @@
+@startuml Activity_CheckIn
+skinparam {
+    dpi 100
+    nodesep 15
+    ranksep 20
+}
+
+title Activity - Check-in địa điểm
+
+start
+
+:Người dùng mở bản đồ địa điểm;
+
+:Bật GPS để lấy vị trí hiện tại;
+
+:Hệ thống hiển thị các địa điểm trên bản đồ;
+
+:Người dùng chọn một địa điểm;
+
+:Xem thông tin chi tiết địa điểm;
+
+:Nhấn "Check-in";
+
+:Hệ thống kiểm tra khoảng cách GPS;
+
+if (Trong phạm vi cho phép?) then (Không)
+    :Hiển thị lỗi "Bạn không ở gần địa điểm này";
+    stop
+endif
+
+:Hệ thống tạo bản ghi check-in;
+
+:Cập nhật thông tin địa điểm;
+
+:Hiển thị thông báo "Check-in thành công";
+
+stop
+
+@enduml

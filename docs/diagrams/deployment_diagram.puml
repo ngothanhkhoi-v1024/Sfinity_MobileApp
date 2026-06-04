@@ -1,0 +1,108 @@
+@startuml Sfinity_Deployment_Diagram
+!theme plain
+
+title Sfinity — Deployment Diagram
+
+' ═══════════════════════════════════════════════════════════
+' NODES
+' ═══════════════════════════════════════════════════════════
+
+node "<<Mobile Device>>\nAndroid / iOS" as Mobile {
+  artifact "Flutter App\n(APK / IPA)" as FlutterApp
+  artifact "Firebase SDK\n(Firebase Auth)" as FirebaseSDK
+}
+
+node "<<Web Browser>>" as Browser {
+  artifact "React SPA\n(Vite Build)" as ReactApp
+}
+
+node "<<Server>>\nWeb Server" as WebServer {
+  artifact "Nginx\n(reverse proxy)" as Nginx
+}
+
+node "<<Server>>\nApplication Server" as AppServer {
+  artifact "Node.js / Express\n(TypeScript)" as ExpressApp
+  artifact "JWT Middleware" as JWTMiddleware
+  artifact "RBAC Middleware" as RBACMiddleware
+  artifact "Prisma ORM" as Prisma
+  artifact "Firebase Admin SDK" as FirebaseAdmin
+  artifact "Swagger UI" as Swagger
+  artifact "Nodemailer" as Mailer
+  artifact "Multer\n(file upload)" as Uploader
+}
+
+node "<<Database>>" as Database {
+  database "SQLite\n(Prisma migrations)" as SQLite
+  folder "uploads/\n(images, files)" as Uploads
+}
+
+cloud "Firebase" {
+  artifact "Firebase Auth\n(Google, Facebook)" as FirebaseAuth
+  artifact "Cloud Messaging\n(push notifications)" as FCM
+  artifact "Firestore\n(optional)" as Firestore
+}
+
+' ═══════════════════════════════════════════════════════════
+' CONNECTIONS
+' ═══════════════════════════════════════════════════════════
+
+Mobile --> Browser : HTTPS
+Mobile --> FirebaseSDK : OAuth 2.0
+FlutterApp ---> FirebaseSDK
+FlutterApp -up-> ExpressApp : HTTP/REST
+ReactApp -up-> ExpressApp : HTTP/REST
+
+Browser -up-> Nginx : HTTPS (prod)
+WebServer -up-> Nginx : reverse proxy
+
+Nginx --> ExpressApp : localhost:3000
+
+ExpressApp --> Prisma
+ExpressApp --> FirebaseAdmin
+ExpressApp --> Mailer
+ExpressApp --> Uploader
+ExpressApp --> JWTMiddleware
+ExpressApp --> RBACMiddleware
+
+Prisma --> SQLite
+Uploader --> Uploads
+
+FirebaseAdmin --> FirebaseAuth
+FirebaseAdmin --> FCM
+
+ExpressApp --> FirebaseAuth : verify token
+ExpressApp --> FCM : send push
+
+' ═══════════════════════════════════════════════════════════
+' DEPLOYMENT NOTES
+' ═══════════════════════════════════════════════════════════
+
+note bottom of Mobile
+  **Flutter run targets:**
+  - Android emulator: 10.0.2.2:3000
+  - iOS simulator: localhost:3000
+  - Physical device (LAN): <machine-ip>:3000
+  - Chrome web: flutter run -d chrome
+end note
+
+note bottom of AppServer
+  **API Base URL:**
+  - Dev: http://localhost:3000/api
+  - Prod: https://api.sfinity.com/api
+end note
+
+note bottom of Database
+  **Prisma Schema:**
+  - migrations/ folder
+  - prisma/dev.db (SQLite)
+  - prisma/seed.ts
+end note
+
+note right of FirebaseAuth
+  **Auth providers:**
+  - Email/Password (local)
+  - Google (OAuth)
+  - Facebook (OAuth)
+end note
+
+@enduml

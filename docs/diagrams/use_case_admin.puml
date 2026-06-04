@@ -1,0 +1,58 @@
+@startuml Sfinity_UseCase_Admin
+skinparam {
+    dpi 100
+    nodesep 20
+    ranksep 20
+}
+
+title Sfinity - Use Case: Quản trị viên (Admin)
+left to right direction
+
+actor "Quản trị viên (Administrator)" as Admin
+
+rectangle Sfinity_Admin {
+
+    package "Thống kê" <<Dashboard>> {
+        usecase "Xem Dashboard thống kê" as UC_Dashboard
+    }
+
+    package "Quản lý người dùng" <<Users>> {
+        usecase "Xem / Tìm kiếm người dùng" as UC_ListUsers
+        usecase "Cập nhật / Khóa tài khoản" as UC_ManageUser
+        usecase "Tạo tài khoản Admin mới" as UC_CreateAdmin
+    }
+
+    package "Kiểm duyệt nội dung" <<Moderation>> {
+        usecase "Duyệt / Từ chối tài liệu" as UC_ApproveDoc
+        usecase "Ẩn / Hiện / Xóa tài liệu" as UC_ModDoc
+        usecase "Xóa bình luận vi phạm" as UC_ModComment
+    }
+
+    package "Phản hồi & Báo cáo" <<Feedback>> {
+        usecase "Xem & Phản hồi feedback" as UC_ReplyFeedback
+        usecase "Xem & Xử lý báo cáo vi phạm" as UC_ResolveReport
+    }
+
+    package "Cấu hình hệ thống" <<Settings>> {
+        usecase "Quản lý danh mục tài liệu" as UC_ManageCats
+        usecase "Quản lý tiện ích địa điểm" as UC_ManageAmenities
+        usecase "Cấu hình cài đặt hệ thống" as UC_SystemSettings
+        usecase "Gửi thông báo hệ thống" as UC_SendNotif
+    }
+}
+
+Admin --> UC_Dashboard
+Admin --> UC_ListUsers
+Admin --> UC_ManageUser
+Admin --> UC_CreateAdmin
+Admin --> UC_ApproveDoc
+Admin --> UC_ModDoc
+Admin --> UC_ModComment
+Admin --> UC_ReplyFeedback
+Admin --> UC_ResolveReport
+Admin --> UC_ManageCats
+Admin --> UC_ManageAmenities
+Admin --> UC_SystemSettings
+Admin --> UC_SendNotif
+
+@enduml

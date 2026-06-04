@@ -1,0 +1,36 @@
+@startuml Activity_Auth
+skinparam {
+    dpi 100
+    nodesep 15
+    ranksep 20
+}
+
+title Activity - Xác thực
+
+start
+
+:Người dùng mở ứng dụng;
+
+if (Đã đăng nhập?) then (Có)
+    :Chuyển hướng về trang chính;
+    stop
+else (Không)
+    :Hiển thị màn hình đăng nhập;
+endif
+
+:Người dùng nhập email & mật khẩu;
+
+:Hệ thống xác thực thông tin;
+
+if (Thông tin hợp lệ?) then (Có)
+    :Tạo JWT token;
+    :Lưu token vào storage;
+    :Chuyển hướng về trang chính;
+    stop
+else (Không)
+    :Hiển thị thông báo lỗi;
+    :Quay lại màn hình đăng nhập;
+    stop
+endif
+
+@enduml

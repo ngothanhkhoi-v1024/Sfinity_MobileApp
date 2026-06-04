@@ -1,0 +1,31 @@
+@startuml Sequence_Register
+title Sequence - Đăng ký tài khoản
+
+actor "Người dùng" as User
+participant "Flutter App" as App
+participant "Express API" as API
+participant "Firebase Auth" as Firebase
+participant "Firestore" as Firestore
+participant "Nodemailer" as Email
+
+User -> App : Nhập thông tin đăng ký\n{ name, email, password }
+App -> API : POST /auth/register\n{ name, email, password }
+API -> Firebase : Tạo user với email/password\n(Firebase Admin SDK)
+Firebase --> API : Firebase UID
+API -> Firestore : Tạo user document\n{ uid, email, name, role: USER, status: ACTIVE }
+Firestore --> API : User document created
+API -> API : Hash mật khẩu (bcrypt)
+API -> Firebase : Cập nhật passwordHash vào Firebase Auth
+Firebase --> API : Updated
+API -> Email : Gửi email xác thực\n(Firebase email action link)
+Email --> User : Email xác thực
+User -> User : Mở link xác thực
+User -> App : Xác thực email thành công
+App -> API : GET /auth/me (sau khi đăng nhập)
+API -> Firestore : Xác thực JWT → Lấy user
+Firestore --> API : User data
+API --> App : { accessToken, user }
+App -> App : Lưu session
+App --> User : Hiển thị giao diện chính
+
+@enduml

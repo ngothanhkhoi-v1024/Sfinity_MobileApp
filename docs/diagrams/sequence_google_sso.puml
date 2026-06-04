@@ -1,0 +1,39 @@
+@startuml Sequence_Google_SSO
+title Sequence - Đăng nhập Google SSO
+
+actor "Người dùng" as User
+participant "Flutter App" as App
+participant "Google Sign-In" as Google
+participant "Firebase Auth" as Firebase
+participant "Express API" as API
+participant "Firestore" as Firestore
+
+User -> App : Nhấn "Đăng nhập với Google"
+App -> Google : Khởi tạo Google Sign-In\n(GoogleSignIn package)
+Google --> App : Hiển thị Google account picker
+User -> Google : Chọn tài khoản Google
+Google --> App : Trả về Google ID Token
+App -> Firebase : signInWithCredential()\n(Google Auth Provider)
+Firebase --> App : Firebase user session\n{ uid, email, displayName, idToken }
+App -> API : POST /auth/firebase-login\n{ idToken }
+API -> Firebase : Xác thực Firebase ID Token\n(Firebase Admin SDK)
+Firebase --> API : Token hợp lệ\n{ uid, email, provider }
+API -> Firestore : Kiểm tra user đã tồn tại?
+alt User chưa tồn tại (lần đầu đăng nhập)
+    API -> Firestore : Tạo user document\n{ uid, email, name, authProvider: GOOGLE,\nrole: USER, status: ACTIVE }
+    Firestore --> API : User created
+else User đã tồn tại
+    API -> Firestore : Cập nhật thông tin\n(nếu có thay đổi)
+    Firestore --> API : User updated
+end
+API -> API : Tạo JWT token\n{ sub: userId, email, role }
+API --> App : { accessToken, user }
+App -> App : Lưu token vào SQLite (offline support)
+App --> User : Chuyển hướng đến trang chính
+
+note right of Google
+  Không cần mật khẩu backend.
+  Firebase xác thực trực tiếp với Google.
+end note
+
+@enduml

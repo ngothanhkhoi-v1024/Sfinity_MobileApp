@@ -1,0 +1,57 @@
+@startuml Sfinity_UseCase_Guest
+!theme plain
+
+left to right direction
+
+title Sfinity - Use Case Diagram: Khach (Guest)
+
+' ─── Actor ───────────────────────────────────────────────
+actor "Khach\n(Guest)" as Guest
+
+' ─── System ──────────────────────────────────────────────
+rectangle Sfinity_System {
+
+  ' Auth
+  usecase "UC1: Dang ky\ntai khoan" as UC_Register
+  usecase "UC2: Dang nhap\nthuong" as UC_Login
+  usecase "UC3: Dang nhap Firebase\n(Google / Facebook)" as UC_FirebaseLogin
+  usecase "UC4: Quen mat khau" as UC_ForgotPW
+  usecase "UC5: Dat lai mat khau\n(OTP)" as UC_ResetPW
+
+  ' Content - browse
+  usecase "UC10: Duyet tai lieu\n(search, filter, sort)" as UC_BrowseDocs
+  usecase "UC11: Xem chi tiet\ntai lieu" as UC_ViewDoc
+  usecase "UC17: Xem ban do\ndia diem" as UC_ViewMap
+  usecase "UC18: Xem chi tiet\ndia diem" as UC_ViewPlace
+  usecase "UC22: Tim dia diem\ngan day" as UC_StudyNearMe
+}
+
+' ─── Associations ─────────────────────────────────────────
+Guest --> UC_Register
+Guest --> UC_Login
+Guest --> UC_ForgotPW
+Guest --> UC_ResetPW
+Guest --> UC_FirebaseLogin
+Guest --> UC_BrowseDocs
+Guest --> UC_ViewDoc
+Guest --> UC_ViewMap
+Guest --> UC_ViewPlace
+Guest --> UC_StudyNearMe
+
+' ─── Include / Extend ─────────────────────────────────────────
+UC_Login ..> UC_FirebaseLogin : <<extend>>
+UC_ForgotPW ..> UC_ResetPW : <<extend>>
+UC_BrowseDocs ..> UC_ViewDoc : <<include>>
+UC_ViewMap ..> UC_ViewPlace : <<include>>
+
+note right of Guest
+  **Quyen han:**
+  - Xem noi dung cong khai
+  - Dang ky / Dang nhap
+  - Tim kiem dia diem gan
+end note
+
+note bottom of Sfinity_System
+  **10 Use Cases** cho Khach (Guest)
+
+@enduml

@@ -1,0 +1,35 @@
+@startuml Sequence_Approve_Document
+title Sequence - Admin duyệt tài liệu
+
+actor "Admin" as Admin
+participant "Flutter App (Admin)" as App
+participant "Express API" as API
+participant "Firestore" as Firestore
+participant "Notification Service" as Notify
+
+Admin -> App : Mở trang quản lý tài liệu
+App -> API : GET /document?status=PENDING
+API -> Firestore : Truy vấn documents\n{ status: "PENDING" }
+Firestore --> API : Danh sách tài liệu chờ duyệt
+API --> App : { items: [...], total }
+App --> Admin : Hiển thị danh sách tài liệu chờ duyệt
+Admin -> App : Chọn tài liệu để duyệt
+App -> App : Xem chi tiết tài liệu
+Admin -> App : Nhấn "Phê duyệt"
+App -> API : PATCH /document/:id/approve\n(Authorization: Bearer {adminToken})
+API -> Firestore : Cập nhật status = PUBLISHED
+Firestore --> API : Document updated
+API -> Notify : Tạo thông báo cho tác giả\n{ userId: authorId, title: "Tài liệu được duyệt", body }
+Notify -> Firestore : Lưu notification vào\ncollection notifications
+Firestore --> Notify : Notification saved
+Notify --> API : Notification created
+API --> App : 200 OK
+App --> Admin : "Tài liệu đã được phê duyệt"
+
+note right of Notify
+  Thông báo được gửi đến tác giả
+  thông qua Firestore real-time listener
+  trên Flutter App
+end note
+
+@enduml

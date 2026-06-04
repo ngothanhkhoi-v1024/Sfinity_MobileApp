@@ -1,0 +1,53 @@
+@startuml Activity_Join_Leave_Group
+skinparam {
+    dpi 100
+    nodesep 15
+    ranksep 20
+}
+
+title Activity - Tham gia / Rời nhóm
+
+start
+
+:User khám phá danh sách nhóm;
+
+:Nhấn xem chi tiết nhóm;
+
+if (Nhóm công khai?) then (Có)
+    :Nhấn "Tham gia";
+    :Hệ thống thêm vào nhóm;
+    :Chuyển vào trang nhóm;
+    stop
+else (Nhóm riêng tư)
+    :Nhấn "Yêu cầu tham gia";
+    if (Nhóm có mật khẩu?) then (Có)
+        :Nhập mật khẩu;
+    endif
+    :Hệ thống gửi yêu cầu;
+    :Chờ chủ nhóm / admin phê duyệt;
+    if (Được chấp nhận?) then (Có)
+        :Hệ thống thêm vào nhóm;
+        :Gửi thông báo cho user;
+        :Chuyển vào trang nhóm;
+    else (Bị từ chối)
+        :Hiển thị thông báo bị từ chối;
+    endif
+endif
+
+stop
+
+note right
+--- Rời nhóm ---
+end note
+
+:User đã là thành viên nhóm;
+
+:Nhấn "Rời nhóm";
+
+:Hệ thống xác nhận;
+
+:Hệ thống xóa khỏi danh sách thành viên;
+
+stop
+
+@enduml

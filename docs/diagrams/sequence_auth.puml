@@ -1,0 +1,21 @@
+@startuml Sequence_Auth
+title Sequence - Đăng nhập
+
+actor "Người dùng" as User
+participant "Flutter App" as App
+participant "Express API" as API
+participant "Firebase Auth" as Firebase
+participant "PostgreSQL" as DB
+
+User -> App : Nhập email, mật khẩu
+App -> API : POST /auth/login
+API -> Firebase : Xác thực credentials
+Firebase --> API : Xác thực thành công
+API -> DB : Lấy thông tin người dùng
+DB --> API : Trả về user profile
+API -> API : Tạo JWT token
+API --> App : Trả về token + user profile
+App -> App : Lưu token vào storage
+App --> User : Chuyển hướng về trang chính
+
+@enduml

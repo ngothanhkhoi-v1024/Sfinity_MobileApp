@@ -1,0 +1,56 @@
+@startuml Activity_Friend_Request
+skinparam {
+    dpi 100
+    nodesep 15
+    ranksep 20
+}
+
+title Activity - Gửi / Nhận lời mời kết bạn
+
+|Main|
+start
+:Người dùng vào mục tìm kiếm bạn;
+
+:Nhập tên hoặc email để tìm kiếm;
+
+|Hệ thống|
+:Tìm kiếm người dùng trong database;
+
+|Main|
+:Chọn người dùng muốn kết bạn;
+
+:Hiển thị thông tin người dùng;
+
+:Nhấn "Gửi lời mời kết bạn";
+
+|Hệ thống|
+:Tạo bản ghi Friendship, trạng thái PENDING;
+
+:Gửi thông báo cho người nhận;
+
+|Main|
+stop
+
+|BanBe|
+start
+:Người dùng nhận được thông báo;
+
+:Mở danh sách lời mời kết bạn;
+
+:Chọn lời mời;
+
+if (Chấp nhận?) then (Có)
+    :Nhấn "Chấp nhận";
+    |Hệ thống|
+    :Cập nhật trạng thái ACCEPTED;
+    :Gửi thông báo cho người gửi;
+    :Thêm vào danh sách bạn bè;
+else (Không)
+    :Nhấn "Từ chối";
+    |Hệ thống|
+    :Cập nhật trạng thái REJECTED;
+endif
+
+stop
+
+@enduml

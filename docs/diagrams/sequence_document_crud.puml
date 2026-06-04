@@ -1,0 +1,25 @@
+@startuml Sequence_Document_CRUD
+title Sequence - Tạo tài liệu
+
+actor "Người dùng" as User
+participant "Flutter App" as App
+participant "Express API" as API
+participant "PostgreSQL" as DB
+participant "S3 Storage" as S3
+
+User -> App : Tạo tài liệu mới
+App -> App : Nhập thông tin tài liệu
+App -> App : Upload file (nếu có)
+
+alt Có file đính kèm
+    App -> S3 : Upload file
+    S3 --> App : Trả về file URL
+end
+
+App -> API : POST /documents
+API -> DB : Lưu tài liệu vào database
+DB --> API : Trả về document record
+API --> App : Trả về success response
+App --> User : Hiển thị thông báo thành công
+
+@enduml

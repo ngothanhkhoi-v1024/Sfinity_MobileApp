@@ -1,0 +1,32 @@
+@startuml Sequence_Create_Document
+title Sequence - Tạo tài liệu mới
+
+actor "Người dùng" as User
+participant "Flutter App" as App
+participant "Express API" as API
+participant "Local Storage" as Storage
+participant "Firestore" as Firestore
+
+User -> App : Nhấn "Tạo tài liệu mới"
+App -> App : Điền thông tin tài liệu\n{ title, body, categoryId, tags }
+alt Có file đính kèm (PDF/image)
+    App -> App : Chọn file từ thiết bị
+    App -> API : POST /upload/image\n(multipart/form-data)
+    API -> Storage : Lưu file vào ./uploads/\n{uuid}.{ext}
+    Storage --> API : File saved
+    API -> API : Xác thực MIME type & kích thước\n(JPEG/PNG/GIF/WebP, max 5MB)
+    API --> App : { url: "/uploads/{filename}" }
+end
+App -> API : POST /document\n{ title, body, categoryId, tags, fileUrl,\nfileType, fileSize, status }
+API -> Firestore : Tạo document record\n{ type: "document", status: PENDING/DRAFT,\nauthorId, timestamps }
+Firestore --> API : Document created
+alt autoApproveDocuments == true HOẶC user.role == ADMIN
+    API -> Firestore : Cập nhật status = PUBLISHED
+    Firestore --> API : Updated
+else
+    Firestore --> API : status = PENDING
+end
+API --> App : 201 Created\n{ document }
+App --> User : "Tạo tài liệu thành công"\n+ Chuyển về danh sách tài liệu
+
+@enduml

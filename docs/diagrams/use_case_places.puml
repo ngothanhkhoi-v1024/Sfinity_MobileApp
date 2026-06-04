@@ -1,0 +1,39 @@
+@startuml UC_Places
+skinparam {
+    dpi 100
+    nodesep 20
+    ranksep 25
+}
+
+title UC - Địa điểm (Places)
+
+left to right direction
+
+actor "Khách" as Guest
+actor "Người dùng" as User
+actor "Admin" as Admin
+
+rectangle "Địa điểm" {
+    usecase "Xem bản đồ địa điểm" as ViewMap
+    usecase "Xem chi tiết địa điểm" as ViewDetail
+    usecase "Check-in tại địa điểm" as CheckIn
+    usecase "Đánh giá địa điểm" as Review
+    usecase "Tải ảnh địa điểm" as UploadPhoto
+    usecase "Tìm nơi học gần đây" as FindNearMe
+    usecase "Quản lý địa điểm (Admin)" as ManagePlace
+}
+
+Guest --> ViewMap
+Guest --> ViewDetail
+Guest --> FindNearMe
+
+User --> ViewMap
+User --> ViewDetail
+User --> CheckIn
+User --> Review
+User --> UploadPhoto
+User --> FindNearMe
+
+Admin --> ManagePlace
+
+@enduml

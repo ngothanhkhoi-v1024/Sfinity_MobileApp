@@ -1,0 +1,29 @@
+@startuml Sequence_Report_Document
+title Sequence - Báo cáo tài liệu vi phạm
+
+actor "Người dùng" as User
+participant "Flutter App" as App
+participant "Express API" as API
+participant "Firestore" as Firestore
+
+User -> App : Mở chi tiết tài liệu
+App -> API : GET /document/:id
+API -> Firestore : Lấy document + author info
+Firestore --> API : Document data
+API --> App : Document details
+App --> User : Hiển thị nội dung tài liệu
+User -> App : Nhấn "Báo cáo" (icon cờ)
+App -> App : Hiển thị form báo cáo
+User -> App : Chọn lý do + mô tả chi tiết
+App -> API : POST /reports\n{ targetType: "document", targetId,\nreason, description }
+API -> Firestore : Tạo report record\n{ userId, targetType, targetId, reason,\ndescription, status: PENDING }
+Firestore --> API : Report saved
+API --> App : 201 Created
+App --> User : "Đã gửi báo cáo thành công"
+
+note right of Firestore
+  Báo cáo được lưu trong collection
+  reports. Admin sẽ xử lý sau.
+end note
+
+@enduml

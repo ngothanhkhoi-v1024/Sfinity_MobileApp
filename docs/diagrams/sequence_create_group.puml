@@ -1,0 +1,34 @@
+@startuml Sequence_Create_Group
+title Sequence - Tạo nhóm học tập
+
+actor "Người dùng" as User
+participant "Flutter App" as App
+participant "Express API" as API
+participant "Firestore" as Firestore
+
+User -> App : Nhấn "Tạo nhóm mới"
+App -> App : Hiển thị form tạo nhóm\n{ name, description, isPublic, autoApprove }
+User -> App : Nhập thông tin nhóm
+User -> App : Chọn ảnh nhóm (tùy chọn)
+alt Có ảnh nhóm
+    App -> API : POST /upload/image\n(multipart/form-data)
+    API -> Storage : Lưu file vào ./uploads/
+    Storage --> API : { url: "/uploads/{filename}" }
+    API --> App : Avatar URL
+end
+User -> App : Nhấn "Tạo nhóm"
+App -> API : POST /groups\n{ name, description, avatarUrl, isPublic,\nautoApprove }
+API -> Firestore : Tạo group document\n{ name, description, isPublic, creatorId }
+Firestore --> API : Group created
+API -> Firestore : Tạo group_members record\n{ groupId, userId: creatorId, role: OWNER,\nstatus: APPROVED }
+Firestore --> API : Owner added as member
+API --> App : 201 Created\n{ group }
+App --> User : "Tạo nhóm thành công"
+App --> User : Chuyển đến GroupDetailPage
+
+note right of App
+  Người tạo tự động là OWNER
+  và được thêm vào nhóm ngay lập tức
+end note
+
+@enduml

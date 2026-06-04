@@ -1,0 +1,38 @@
+@startuml UC_Social
+skinparam {
+    dpi 100
+    nodesep 20
+    ranksep 25
+}
+
+title UC - Kết bạn & Nhóm (Social)
+
+left to right direction
+
+actor "Người dùng" as User
+
+rectangle "Kết bạn & Nhóm" {
+    usecase "Tìm kiếm người dùng" as Search
+    usecase "Gửi lời mời kết bạn" as SendFriend
+    usecase "Phản hồi lời mời kết bạn" as AcceptFriend
+    usecase "Xem danh sách bạn bè" as ListFriends
+    usecase "Khám phá nhóm công khai" as DiscoverGroup
+    usecase "Tạo nhóm học tập" as CreateGroup
+    usecase "Tham gia nhóm" as JoinGroup
+    usecase "Quản lý nhóm" as ManageGroup
+    usecase "Nhắn tin trong nhóm" as GroupChat
+    usecase "Rời nhóm" as LeaveGroup
+}
+
+User --> Search
+User --> SendFriend
+User --> AcceptFriend
+User --> ListFriends
+User --> DiscoverGroup
+User --> CreateGroup
+User --> JoinGroup
+User --> ManageGroup
+User --> GroupChat
+User --> LeaveGroup
+
+@enduml

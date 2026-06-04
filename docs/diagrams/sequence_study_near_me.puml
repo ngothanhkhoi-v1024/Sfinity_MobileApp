@@ -1,0 +1,30 @@
+@startuml Sequence_Study_Near_Me
+title Sequence - Khám phá nơi học gần đây
+
+actor "Người dùng" as User
+participant "Flutter App" as App
+participant "GPS" as GPS
+participant "Express API" as API
+participant "Firestore" as Firestore
+
+User -> App : Mở tab "Khám phá" / "Study Near Me"
+App -> GPS : Lấy vị trí hiện tại
+GPS --> App : { latitude, longitude }
+App -> App : Hiển thị vị trí user trên bản đồ\n(OpenStreetMap)
+User -> App : Chọn bán kính tìm kiếm\n(mặc định 3km)
+App -> API : GET /study-near-me?lat=X&lng=Y\n&radiusKm=Z&limit=20
+API -> Firestore : Truy vấn places gần tọa độ\n(sắp xếp theo khoảng cách tăng dần)
+Firestore --> API : Danh sách places + documents
+API --> App : { places: [...], documents: [...],\nplaceCount, documentCount }
+App -> App : Hiển thị markers trên bản đồ\n(MarkerClusterLayerWidget)
+App --> User : Danh sách & bản đồ nơi học gần đây
+User -> App : Nhấn vào marker/place card
+App --> User : Mở PlaceDetailPage
+
+note right of App
+  Dùng flutter_map với OpenStreetMap tiles.
+  Khoảng cách tính bằng Haversine formula
+  từ Firestore geo-query.
+end note
+
+@enduml

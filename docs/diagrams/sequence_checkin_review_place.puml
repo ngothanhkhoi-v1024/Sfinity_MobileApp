@@ -1,0 +1,44 @@
+@startuml Sequence_Checkin_Review_Place
+title Sequence - Check-in & đánh giá địa điểm
+
+actor "Người dùng" as User
+participant "Flutter App" as App
+participant "GPS" as GPS
+participant "Express API" as API
+participant "Firestore" as Firestore
+
+User -> App : Mở chi tiết địa điểm (PlaceDetailPage)
+App -> API : GET /document/:id (type: "place")
+API -> Firestore : Lấy place + reviews
+Firestore --> API : Place data
+API --> App : Place details
+App --> User : Hiển thị thông tin địa điểm
+
+== CHECK-IN ==
+User -> App : Nhấn "Check-in"
+App -> GPS : Lấy vị trí hiện tại (geolocator)
+GPS --> App : { latitude, longitude, accuracy }
+App -> App : Tính khoảng cách đến địa điểm\n(allowed radius ~100m)
+alt Ngoài phạm vi / GPS không chính xác
+    App --> User : "Bạn phải ở gần địa điểm\nđể check-in"
+else Trong phạm vi hợp lệ
+    App -> API : POST /places/:placeId/check-ins\n{ latitude, longitude, accuracy }
+    API -> Firestore : Kiểm tra chưa check-in\nvà lưu check-in record\n{ placeId, userId, distanceMeters }
+    Firestore --> API : Check-in saved
+    API --> App : 201 Created
+    App --> User : "Check-in thành công!"
+end
+
+== ĐÁNH GIÁ ==
+User -> App : Nhấn "Viết đánh giá"
+App -> App : Hiển thị form đánh giá\n{ rating 1-5, comment }
+User -> App : Chọn sao + nhập bình luận
+App -> API : POST /places/:placeId/reviews\n{ rating, comment }
+API -> Firestore : Tạo review record\ntrong place_reviews
+Firestore --> API : Review saved
+API -> Firestore : Cập nhật avgRating, reviewCount\ntrên place document
+Firestore --> API : Updated
+API --> App : 201 Created
+App --> User : "Đánh giá đã được lưu"
+
+@enduml

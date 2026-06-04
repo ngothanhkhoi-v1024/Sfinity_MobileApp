@@ -1,0 +1,51 @@
+@startuml Activity_Login
+skinparam {
+    dpi 100
+    nodesep 15
+    ranksep 20
+}
+
+title Activity - Đăng nhập
+
+start
+
+:Mở ứng dụng;
+
+if (Đã có token?) then (Có)
+    :Kiểm tra token hết hạn;
+    if (Token hợp lệ?) then (Có)
+        :Chuyển hướng về trang chính;
+        stop
+    endif
+endif
+
+:Hiển thị màn hình đăng nhập;
+
+:Người dùng chọn phương thức đăng nhập;
+
+if (Đăng nhập thường?) then (Có)
+    :Nhập email và mật khẩu;
+    :Gửi yêu cầu đăng nhập;
+    :Xác thực với Firebase Auth;
+else (Không)
+    :Nhấn "Đăng nhập với Google" / "Facebook";
+    :Mở OAuth flow;
+endif
+
+if (Xác thực thành công?) then (Không)
+    :Hiển thị thông báo lỗi;
+    :Quay lại màn hình đăng nhập;
+    stop
+endif
+
+:Hệ thống lấy thông tin user từ database;
+
+:Tạo JWT token;
+
+:Lưu token vào storage;
+
+:Chuyển hướng về trang chính;
+
+stop
+
+@enduml

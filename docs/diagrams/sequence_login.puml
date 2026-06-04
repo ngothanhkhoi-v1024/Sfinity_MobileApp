@@ -1,0 +1,35 @@
+@startuml Sequence_Login
+title Sequence - Đăng nhập
+
+actor "Người dùng" as User
+participant "Flutter App" as App
+participant "Express API" as API
+participant "Firebase Auth" as Firebase
+participant "Firestore" as Firestore
+
+User -> App : Nhập email, mật khẩu
+App -> API : POST /auth/login\n{ email, password }
+API -> Firestore : Truy vấn user theo email
+Firestore --> API : Trả về user document\n{ passwordHash, emailVerified }
+API -> API : Xác thực mật khẩu (bcrypt)
+alt Sai mật khẩu
+    API --> App : 401 Unauthorized
+    App --> User : Thông báo sai mật khẩu
+else Mật khẩu đúng
+    API -> Firebase : Kiểm tra emailVerified
+    Firebase --> API : Email đã xác thực?
+    alt Email chưa xác thực
+        API --> App : 403 Email chưa xác thực
+        App --> User : Yêu cầu xác thực email
+    else Email đã xác thực
+        API -> API : Tạo JWT token\n{ sub: userId, email, role }
+        API -> App : Trả về { accessToken, user }
+        App -> App : Lưu token vào SQLite (offline support)
+        App -> Firebase : FirebaseAuth.signInWithEmail()
+        Firebase --> App : Firebase user session
+        App -> Firestore : syncUser(user)
+        App --> User : Chuyển hướng đến trang chính
+    end
+end
+
+@enduml

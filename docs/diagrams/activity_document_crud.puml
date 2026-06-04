@@ -1,0 +1,27 @@
+@startuml Activity_Document_CRUD
+skinparam {
+    dpi 100
+    nodesep 15
+    ranksep 20
+}
+
+title Activity - Tài liệu (CRUD)
+
+start
+
+:Người dùng chọn "Tạo tài liệu";
+
+:Nhập tiêu đề, nội dung, danh mục;
+
+if (File đính kèm?) then (Có)
+    :Upload file;
+    :Lưu file vào S3;
+endif
+
+:Người dùng nhấn "Gửi duyệt";
+
+:Hệ thống tạo bản ghi, trạng thái "Chờ duyệt";
+
+stop
+
+@enduml

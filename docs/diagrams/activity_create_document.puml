@@ -1,0 +1,40 @@
+@startuml Activity_Create_Document
+skinparam {
+    dpi 100
+    nodesep 15
+    ranksep 20
+}
+
+title Activity - Tạo tài liệu
+
+start
+
+:Người dùng nhấn "Tạo tài liệu";
+
+:Nhập tiêu đề, nội dung, chọn danh mục;
+
+if (Upload file đính kèm?) then (Có)
+    :Chọn file từ thiết bị;
+    :Upload file lên server;
+    :Lưu file URL;
+endif
+
+:Người dùng chọn hành động;
+
+if (Lưu nháp?) then (Có)
+    :Lưu với trạng thái DRAFT;
+    :Quay về danh sách tài liệu;
+    stop
+else (Không)
+    :Gửi yêu cầu duyệt;
+endif
+
+:Hệ thống tạo bản ghi, trạng thái PENDING;
+
+:Gửi thông báo cho Admin;
+
+:Hiển thị thông báo "Đã gửi duyệt";
+
+stop
+
+@enduml

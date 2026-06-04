@@ -1,0 +1,37 @@
+@startuml Activity_Review_Place
+skinparam {
+    dpi 100
+    nodesep 15
+    ranksep 20
+}
+
+title Activity - Đánh giá địa điểm
+
+start
+
+:Người dùng đang xem chi tiết địa điểm;
+
+:Nhấn "Đánh giá";
+
+:Chọn số sao (1 - 5);
+
+if (Viết bình luận?) then (Có)
+    :Nhập nội dung bình luận;
+endif
+
+if (Upload ảnh?) then (Có)
+    :Chọn ảnh từ thiết bị;
+    :Upload ảnh lên server;
+endif
+
+:Nhấn "Gửi đánh giá";
+
+:Hệ thống lưu đánh giá vào database;
+
+:Cập nhật điểm trung bình của địa điểm;
+
+:Hiển thị thông báo "Đánh giá thành công";
+
+stop
+
+@enduml

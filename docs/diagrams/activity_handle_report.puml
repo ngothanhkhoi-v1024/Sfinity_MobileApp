@@ -1,0 +1,45 @@
+@startuml Activity_Handle_Report
+skinparam {
+    dpi 100
+    nodesep 15
+    ranksep 20
+}
+
+title Activity - Xử lý báo cáo vi phạm (Admin)
+
+start
+
+:Admin đăng nhập;
+
+:Chọn mục "Xử lý báo cáo";
+
+:Hệ thống hiển thị danh sách báo cáo chờ xử lý;
+
+:Admin chọn một báo cáo;
+
+:Xem chi tiết báo cáo và nội dung liên quan;
+
+if (Báo cáo hợp lệ?) then (Không)
+    :Nhấn "Bỏ qua";
+    :Cập nhật trạng thái REJECTED;
+    stop
+endif
+
+:Admin chọn hành động xử lý;
+
+if (Xóa nội dung?) then (Có)
+    :Nhấn "Xóa nội dung";
+    :Hệ thống ẩn / xóa tài liệu liên quan;
+    :Cập nhật trạng thái RESOLVED;
+endif
+
+if (Cảnh cáo người dùng?) then (Có)
+    :Nhấn "Cảnh cáo";
+    :Gửi thông báo cảnh cáo cho người vi phạm;
+endif
+
+:Gửi phản hồi cho người báo cáo;
+
+stop
+
+@enduml

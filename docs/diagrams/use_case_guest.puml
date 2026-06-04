@@ -1,0 +1,41 @@
+@startuml Sfinity_UseCase_Guest
+skinparam {
+    dpi 100
+    nodesep 20
+}
+
+title Sfinity - Use Case: Khách (Guest)
+left to right direction
+
+actor "Khách (Visitor)" as Visitor
+
+rectangle Sfinity_Guest {
+
+    package "Xác thực" <<Auth>> {
+        usecase "Đăng ký tài khoản" as UC_Register
+        usecase "Đăng nhập\n(email / Google / Facebook)" as UC_Login
+        usecase "Quên mật khẩu" as UC_ForgotPW
+    }
+
+    package "Tài liệu" <<Documents>> {
+        usecase "Duyệt & tìm kiếm tài liệu" as UC_BrowseDoc
+        usecase "Xem chi tiết tài liệu" as UC_ViewDoc
+    }
+
+    package "Địa điểm" <<Places>> {
+        usecase "Xem bản đồ địa điểm" as UC_ViewMap
+        usecase "Xem chi tiết địa điểm" as UC_ViewPlace
+        usecase "Tìm nơi học gần đây" as UC_StudyNearMe
+    }
+}
+
+Visitor --> UC_Register
+Visitor --> UC_Login
+Visitor --> UC_ForgotPW
+Visitor --> UC_BrowseDoc
+Visitor --> UC_ViewDoc
+Visitor --> UC_ViewMap
+Visitor --> UC_ViewPlace
+Visitor --> UC_StudyNearMe
+
+@enduml

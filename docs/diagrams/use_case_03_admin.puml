@@ -1,0 +1,70 @@
+@startuml UC_Places
+skinparam {
+    dpi 100
+    nodesep 20
+    ranksep 25
+}
+
+title UC - Địa điểm (Places)
+
+left to right direction
+
+actor "Khách" as Guest
+actor "Người dùng" as User
+actor "Admin" as Admin
+
+rectangle "Địa điểm" {
+    usecase "UC-01 Xem bản đồ địa điểm" as ViewMap
+    usecase "UC-02 Xem chi tiết địa điểm" as ViewDetail
+    usecase "UC-03 Check-in tại địa điểm" as CheckIn
+    usecase "UC-04 Đánh giá địa điểm" as Review
+    usecase "UC-05 Tải ảnh địa điểm" as UploadPhoto
+    usecase "UC-06 Tìm nơi học gần đây" as FindNearMe
+    usecase "UC-07 Quản lý địa điểm (Admin)" as ManagePlace
+}
+
+Guest --> ViewMap
+Guest --> ViewDetail
+Guest --> FindNearMe
+
+User --> ViewMap
+User --> ViewDetail
+User --> CheckIn
+User --> Review
+User --> UploadPhoto
+User --> FindNearMe
+
+Admin --> ManagePlace
+
+note right of ViewMap
+Mô tả: Xem bản đồ với các địa điểm
+1. Mở bản đồ
+2. Hiển thị marker các địa điểm
+3. Lọc theo loại địa điểm
+4. Nhấn marker xem thông tin nhanh
+end note
+
+note right of CheckIn
+Mô tả: Check-in tại địa điểm
+1. Chọn địa điểm
+2. Xác nhận check-in (GPS)
+3. Hệ thống ghi nhận check-in
+4. Cập nhật lịch sử hoạt động
+end note
+
+note right of FindNearMe
+Mô tả: Tìm nơi học gần vị trí hiện tại
+1. Lấy vị trí hiện tại (GPS)
+2. Tìm các địa điểm trong bán kính
+3. Sắp xếp theo khoảng cách
+4. Hiển thị danh sách kèm đánh giá
+end note
+
+note right of ManagePlace
+Mô tả: Admin quản lý địa điểm
+1. Thêm / sửa / xóa địa điểm
+2. Cập nhật thông tin, hình ảnh
+3. Phê duyệt địa điểm do người dùng thêm
+end note
+
+@enduml

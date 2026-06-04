@@ -1,0 +1,37 @@
+@startuml Activity_Study_Near_Me
+skinparam {
+    dpi 100
+    nodesep 15
+    ranksep 20
+}
+
+title Activity - Khám phá nơi học gần đây
+
+start
+
+:Người dùng mở mục "Học gần đây";
+
+:Bật GPS để lấy vị trí hiện tại;
+
+:Nhập bán kính tìm kiếm;
+
+:Hệ thống lấy danh sách địa điểm trong bán kính;
+
+if (Có địa điểm nào?) then (Không)
+    :Hiển thị "Không tìm thấy địa điểm nào";
+    stop
+endif
+
+:Sắp xếp theo khoảng cách;
+
+:Hiển thị danh sách địa điểm kèm thông tin;
+
+:Người dùng chọn địa điểm;
+
+:Xem chi tiết địa điểm;
+
+:Nhấn "Check-in" hoặc "Xem đánh giá";
+
+stop
+
+@enduml

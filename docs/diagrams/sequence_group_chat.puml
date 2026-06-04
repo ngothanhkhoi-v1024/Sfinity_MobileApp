@@ -1,0 +1,58 @@
+@startuml Sequence_Group_Chat
+title Sequence - Nhắn tin nhóm real-time (Firestore)
+
+actor "Người dùng" as User
+participant "Flutter App" as App
+participant "Firestore" as Firestore
+participant "Firebase Storage" as Storage
+participant "Express API" as API
+
+note across: Tất cả tin nhắn dùng Firestore real-time (không qua Express API)
+
+== KHỞI TẠO CHAT ==
+User -> App : Mở GroupChatPage
+App -> Firestore : messagesStream(groupId)\n(Lắng nghe real-time)
+Firestore --> App : Tin nhắn hiện có + lắng nghe thay đổi
+App --> User : Hiển thị danh sách tin nhắn
+
+== GỬI TIN NHẮN TEXT ==
+User -> App : Nhập tin nhắn + nhấn gửi
+App -> Firestore : Thêm tin nhắn\ncollection: messages\n{ groupId, senderId, type: "text", content }
+Firestore --> App : Message sent (real-time broadcast)
+Firestore --> AppO : Tin nhắn đến thành viên khác\n(real-time listener)
+App --> User : Hiển thị tin nhắn đã gửi
+
+== GỬI HÌNH ẢNH ==
+User -> App : Chọn ảnh từ thiết bị
+App -> Storage : Upload ảnh lên\nFirebase Storage\n(path: /chat/{groupId}/{msgId}.{ext})
+Storage --> App : Download URL
+App -> Firestore : Thêm tin nhắn\n{ groupId, senderId, type: "image", imageUrl }
+Firestore --> App : Message sent
+App --> User : Hiển thị ảnh đã gửi
+
+== GỬI FILE TÀI LIỆU ==
+User -> App : Chọn tài liệu Sfinity
+App -> Firestore : Thêm tin nhắn\n{ groupId, senderId, type: "document", documentId }
+Firestore --> App : Message sent
+App --> User : Hiển thị card tài liệu đã chia sẻ
+
+== GỬI VỊ TRÍ ==
+User -> App : Nhấn "Gửi vị trí"
+App -> App : Lấy GPS hiện tại
+App -> Firestore : Thêm tin nhắn\n{ groupId, senderId, type: "location", latitude, longitude }
+Firestore --> App : Message sent
+App --> User : Hiển thị vị trí trên bản đồ nhỏ
+
+== PHẢN HỒI TIN NHẮN (Reaction) ==
+User -> App : Nhấn emoji phản hồi tin nhắn
+App -> Firestore : Cập nhật reactions\ntrên tin nhắn\n{ [emoji]: [userId, ...] }
+Firestore --> App : Reaction added
+App --> User : Hiển thị emoji trên tin nhắn
+
+note right of Firestore
+  Firestore listener tự động cập nhật
+  UI cho tất cả thành viên trong nhóm.
+  Không cần polling hoặc API calls.
+end note
+
+@enduml

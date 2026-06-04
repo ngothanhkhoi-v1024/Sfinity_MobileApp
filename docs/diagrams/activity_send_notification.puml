@@ -1,0 +1,41 @@
+@startuml Activity_Send_Notification
+skinparam {
+    dpi 100
+    nodesep 15
+    ranksep 20
+}
+
+title Activity - Gửi thông báo hệ thống (Admin)
+
+start
+
+:Admin đăng nhập;
+
+:Chọn mục "Gửi thông báo";
+
+:Soạn nội dung thông báo;
+
+:Chọn đối tượng nhận;
+
+if (Tất cả người dùng?) then (Có)
+    :Chọn gửi toàn bộ hệ thống;
+else (Một nhóm cụ thể)
+    :Chọn nhóm người dùng cụ thể;
+endif
+
+if (Upload ảnh đính kèm?) then (Có)
+    :Chọn ảnh từ thiết bị;
+    :Upload ảnh lên server;
+endif
+
+:Nhấn "Gửi";
+
+:Hệ thống tạo bản ghi thông báo cho từng người dùng;
+
+:Gửi thông báo đẩy (push notification);
+
+:Hiển thị "Đã gửi thông báo thành công";
+
+stop
+
+@enduml

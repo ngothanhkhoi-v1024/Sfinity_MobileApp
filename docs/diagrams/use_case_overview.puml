@@ -1,0 +1,95 @@
+@startuml Sfinity_UseCase_Overview
+skinparam {
+    dpi 100
+    nodesep 15
+    ranksep 20
+}
+
+title Sfinity - Sơ đồ Use Case Tổng quát
+left to right direction
+
+:Administrator:
+:User:
+:Visitor:
+
+rectangle Sfinity {
+
+    package "Xác thực" <<Auth>> {
+        usecase "Đăng ký" as UC_Register
+        usecase "Đăng nhập" as UC_Login
+    }
+
+    package "Hồ sơ" <<Profile>> {
+        usecase "Quản lý hồ sơ" as UC_Profile
+        usecase "Đổi mật khẩu" as UC_ChangePW
+    }
+
+    package "Tài liệu" <<Documents>> {
+        usecase "Duyệt tài liệu" as UC_BrowseDoc
+        usecase "Tạo / Sửa / Xóa tài liệu" as UC_ManageDoc
+        usecase "Tải tài liệu" as UC_DownloadDoc
+        usecase "Đánh giá tài liệu" as UC_ReviewDoc
+    }
+
+    package "Địa điểm" <<Places>> {
+        usecase "Xem bản đồ" as UC_ViewMap
+        usecase "Xem chi tiết địa điểm" as UC_ViewPlace
+        usecase "Check-in" as UC_CheckIn
+        usecase "Đánh giá địa điểm" as UC_ReviewPlace
+        usecase "Tìm nơi học gần đây" as UC_StudyNearMe
+    }
+
+    package "Kết bạn & Nhóm" <<Social>> {
+        usecase "Tìm & kết bạn" as UC_Friends
+        usecase "Tạo / Tham gia nhóm" as UC_Groups
+        usecase "Quản lý nhóm" as UC_ManageGroup
+        usecase "Nhắn tin nhóm" as UC_Chat
+    }
+
+    package "Tương tác" <<Interactions>> {
+        usecase "Yêu thích" as UC_Favorites
+        usecase "Gửi phản hồi" as UC_Feedback
+        usecase "Báo cáo vi phạm" as UC_Report
+        usecase "Xem thông báo" as UC_Notifs
+    }
+
+    package "Quản trị" <<Admin>> {
+        usecase "Dashboard thống kê" as UC_Dashboard
+        usecase "Quản lý người dùng" as UC_ManageUsers
+        usecase "Kiểm duyệt nội dung" as UC_ModContent
+        usecase "Quản lý danh mục & cài đặt" as UC_Settings
+    }
+}
+
+Visitor --> UC_Register
+Visitor --> UC_Login
+Visitor --> UC_BrowseDoc
+Visitor --> UC_ViewMap
+Visitor --> UC_StudyNearMe
+
+User --> UC_Profile
+User --> UC_ChangePW
+User --> UC_BrowseDoc
+User --> UC_ManageDoc
+User --> UC_DownloadDoc
+User --> UC_ReviewDoc
+User --> UC_ViewMap
+User --> UC_ViewPlace
+User --> UC_CheckIn
+User --> UC_ReviewPlace
+User --> UC_StudyNearMe
+User --> UC_Friends
+User --> UC_Groups
+User --> UC_ManageGroup
+User --> UC_Chat
+User --> UC_Favorites
+User --> UC_Feedback
+User --> UC_Report
+User --> UC_Notifs
+
+Administrator --> UC_Dashboard
+Administrator --> UC_ManageUsers
+Administrator --> UC_ModContent
+Administrator --> UC_Settings
+
+@enduml

@@ -1,0 +1,53 @@
+@startuml Sequence_Friend_Request
+title Sequence - Gửi & phản hồi lời mời kết bạn
+
+actor "Người dùng A" as UserA
+actor "Người dùng B" as UserB
+participant "Flutter App A" as AppA
+participant "Flutter App B" as AppB
+participant "Express API" as API
+participant "Firestore" as Firestore
+
+== TÌM KIẾM NGƯỜI DÙNG ==
+UserA -> AppA : Tìm kiếm bạn bè
+AppA -> API : GET /friends/search?q=nameOrEmail
+API -> Firestore : Tìm users khớp query\n(trừ chính mình)
+Firestore --> API : Danh sách users + friendshipStatus
+API --> AppA : Kết quả tìm kiếm
+AppA --> UserA : Hiển thị danh sách người dùng
+
+== GỬI LỜI MỜI ==
+UserA -> AppA : Nhấn "Kết bạn" với UserB
+AppA -> API : POST /friends/request\n{ addresseeId: UserB.id }
+API -> Firestore : Tạo friendship record\n{ requesterId, addresseeId, status: PENDING }
+Firestore --> API : Friendship created
+API --> AppA : 201 Created
+AppA --> UserA : "Đã gửi lời mời kết bạn"
+
+== NHẬN THÔNG BÁO ==
+note over UserB
+  UserB nhận notification từ Firestore
+  real-time listener trên app
+end note
+UserB -> AppB : Mở mục "Lời mời kết bạn"
+AppB -> API : GET /friends/pending
+API -> Firestore : Lấy pending requests\n(gửi đến UserB)
+Firestore --> API : Danh sách pending requests
+API --> AppB : Danh sách lời mời
+AppB --> UserB : Hiển thị lời mời từ UserA
+
+== CHẤP NHẬN ==
+UserB -> AppB : Nhấn "Chấp nhận"
+AppB -> API : PATCH /friends/:id/respond\n{ accept: true }
+API -> Firestore : Cập nhật status = ACCEPTED
+Firestore --> API : Friendship updated
+API --> AppB : 200 OK
+AppB --> UserB : "Đã trở thành bạn bè"
+AppB --> UserA : (UserA nhận notification)
+
+note over UserA, UserB
+  Cả hai đều có thể thấy nhau
+  trong danh sách bạn bè (GET /friends)
+end note
+
+@enduml

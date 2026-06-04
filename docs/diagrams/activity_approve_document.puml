@@ -1,0 +1,35 @@
+@startuml Activity_Approve_Document
+skinparam {
+    dpi 100
+    nodesep 15
+    ranksep 20
+}
+
+title Activity - Duyệt tài liệu (Admin)
+
+start
+
+:Admin đăng nhập vào hệ thống;
+
+:Chọn mục "Duyệt tài liệu";
+
+:Hệ thống hiển thị danh sách tài liệu chờ duyệt;
+
+:Admin chọn một tài liệu;
+
+:Xem chi tiết nội dung tài liệu;
+
+if (Nội dung phù hợp?) then (Có)
+    :Nhấn "Duyệt";
+    :Cập nhật trạng thái thành PUBLISHED;
+    :Gửi thông báo cho người tạo;
+else (Không)
+    :Nhấn "Từ chối";
+    :Nhập lý do từ chối;
+    :Cập nhật trạng thái REJECTED;
+    :Gửi thông báo cho người tạo;
+endif
+
+stop
+
+@enduml

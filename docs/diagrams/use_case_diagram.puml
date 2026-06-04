@@ -1,0 +1,150 @@
+@startuml Sfinity_UseCase_Diagram
+skinparam {
+    dpi 100
+    nodesep 20
+    ranksep 25
+}
+
+title Sfinity - So do Use Case Tong hop
+left to right direction
+
+:Administrator:
+:User:
+:Visitor:
+
+rectangle Sfinity {
+
+    package "Xac thuc" <<Auth>> {
+        usecase "Dang ky" as UC_Register
+        usecase "Dang nhap" as UC_Login
+        usecase "Dang xuat" as UC_Logout
+        usecase "Doi mat khau" as UC_ChangePW
+        usecase "Xac thuc Google" as UC_GoogleAuth
+        usecase "Xac thuc Facebook" as UC_FB_Auth
+    }
+
+    package "Ho so" <<Profile>> {
+        usecase "Xem / Chinh sua ho so" as UC_Profile
+        usecase "Cai dat thong bao" as UC_NotifPrefs
+    }
+
+    package "Tai lieu" <<Documents>> {
+        usecase "Duyet tai lieu" as UC_BrowseDoc
+        usecase "Xem chi tiet tai lieu" as UC_ViewDoc
+        usecase "Tao tai lieu" as UC_CreateDoc
+        usecase "Sua tai lieu" as UC_EditDoc
+        usecase "Xoa tai lieu" as UC_DeleteDoc
+        usecase "Tai tai lieu" as UC_DownloadDoc
+        usecase "Danh gia tai lieu" as UC_ReviewDoc
+        usecase "Bao cao tai lieu" as UC_ReportDoc
+        usecase "Duyet tai lieu (Admin)" as UC_ApproveDoc
+    }
+
+    package "Dia diem" <<Places>> {
+        usecase "Xem ban do" as UC_ViewMap
+        usecase "Xem chi tiet dia diem" as UC_ViewPlace
+        usecase "Check-in" as UC_CheckIn
+        usecase "Danh gia dia diem" as UC_ReviewPlace
+        usecase "Tai anh dia diem" as UC_UploadPhoto
+        usecase "Tim noi hoc gan day" as UC_StudyNearMe
+        usecase "Quan ly dia diem (Admin)" as UC_ManagePlace
+    }
+
+    package "Ket ban & Nhom" <<Social>> {
+        usecase "Tim kiem nguoi dung" as UC_SearchUsers
+        usecase "Gui loi moi ket ban" as UC_SendFriend
+        usecase "Phan hoi loi moi ket ban" as UC_AcceptFriend
+        usecase "Xem danh sach ban be" as UC_ListFriends
+        usecase "Kham pha nhom" as UC_DiscoverGroup
+        usecase "Tao nhom hoc tap" as UC_CreateGroup
+        usecase "Tham gia nhom" as UC_JoinGroup
+        usecase "Quan ly nhom" as UC_ManageGroup
+        usecase "Nhan tin nhom" as UC_GroupChat
+        usecase "Roi nhom" as UC_LeaveGroup
+    }
+
+    package "Tuong tac" <<Interactions>> {
+        usecase "Yeu thich" as UC_Favorites
+        usecase "Xem lich su hoat dong" as UC_History
+        usecase "Xem thong bao" as UC_Notifs
+        usecase "Gui phan hoi" as UC_Feedback
+        usecase "Bao cao vi pham" as UC_Report
+        usecase "Upload hinh anh" as UC_UploadMedia
+    }
+
+    package "Quan tri" <<Admin>> {
+        usecase "Dashboard thong ke" as UC_Dashboard
+        usecase "Quan ly nguoi dung" as UC_ManageUsers
+        usecase "Kiem duyet binh luan" as UC_ModComment
+        usecase "Xu ly bao cao" as UC_HandleReport
+        usecase "Quan ly danh muc" as UC_ManageCats
+        usecase "Cau hinh he thong" as UC_SystemSettings
+        usecase "Gui thong bao" as UC_SendNotif
+        usecase "Tao tai khoan Admin" as UC_CreateAdmin
+        usecase "Xem log hoat dong" as UC_ViewLogs
+    }
+}
+
+Visitor --> UC_Register
+Visitor --> UC_Login
+Visitor --> UC_GoogleAuth
+Visitor --> UC_FB_Auth
+Visitor --> UC_BrowseDoc
+Visitor --> UC_ViewDoc
+Visitor --> UC_ViewMap
+Visitor --> UC_ViewPlace
+Visitor --> UC_StudyNearMe
+Visitor --> UC_DiscoverGroup
+
+User --> UC_Logout
+User --> UC_ChangePW
+User --> UC_Profile
+User --> UC_NotifPrefs
+User --> UC_BrowseDoc
+User --> UC_ViewDoc
+User --> UC_CreateDoc
+User --> UC_EditDoc
+User --> UC_DeleteDoc
+User --> UC_DownloadDoc
+User --> UC_ReviewDoc
+User --> UC_ReportDoc
+User --> UC_ViewMap
+User --> UC_ViewPlace
+User --> UC_CheckIn
+User --> UC_ReviewPlace
+User --> UC_UploadPhoto
+User --> UC_StudyNearMe
+User --> UC_SearchUsers
+User --> UC_SendFriend
+User --> UC_AcceptFriend
+User --> UC_ListFriends
+User --> UC_DiscoverGroup
+User --> UC_CreateGroup
+User --> UC_JoinGroup
+User --> UC_ManageGroup
+User --> UC_GroupChat
+User --> UC_LeaveGroup
+User --> UC_Favorites
+User --> UC_History
+User --> UC_Notifs
+User --> UC_Feedback
+User --> UC_Report
+User --> UC_UploadMedia
+
+Administrator --> UC_Dashboard
+Administrator --> UC_ManageUsers
+Administrator --> UC_ApproveDoc
+Administrator --> UC_ModComment
+Administrator --> UC_HandleReport
+Administrator --> UC_ManageCats
+Administrator --> UC_SystemSettings
+Administrator --> UC_SendNotif
+Administrator --> UC_CreateAdmin
+Administrator --> UC_ViewLogs
+Administrator --> UC_ManagePlace
+
+note bottom of Sfinity
+Ghi chu: Visitor = Khach (chua dang nhap) | User = Nguoi dung (da dang nhap) | Administrator = Quan tri vien
+end note
+
+@enduml

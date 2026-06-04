@@ -1,0 +1,74 @@
+@startuml Sequence_Join_Group
+title Sequence - Tham gia nhóm & phê duyệt
+
+actor "Người dùng" as User
+actor "Chủ nhóm/Admin" as Owner
+participant "Flutter App User" as AppU
+participant "Flutter App Owner" as AppO
+participant "Express API" as API
+participant "Firestore" as Firestore
+participant "Notification Service" as Notify
+
+== KHÁM PHÁ NHÓM ==
+User -> AppU : Mở trang khám phá nhóm
+AppU -> API : GET /groups/discover
+API -> Firestore : Lấy nhóm công khai\nmà user chưa tham gia
+Firestore --> API : Danh sách public groups
+API --> AppU : { items: [...] }
+AppU --> User : Hiển thị danh sách nhóm
+
+== THAM GIA NHÓM CÔNG KHAI ==
+User -> AppU : Chọn nhóm → Nhấn "Tham gia"
+alt autoApprove == true
+    AppU -> API : POST /groups/:id/join
+    API -> Firestore : Tạo group_members\n{ role: MEMBER, status: APPROVED }
+    Firestore --> API : Member added
+    API --> AppU : 201 Created
+    AppU --> User : "Đã tham gia nhóm thành công"
+else autoApprove == false
+    AppU -> API : POST /groups/:id/join
+    API -> Firestore : Tạo group_members\n{ role: MEMBER, status: PENDING }
+    Firestore --> API : Join request pending
+    API --> AppU : 201 PENDING
+    AppU --> User : "Yêu cầu đang chờ phê duyệt"
+    API -> Notify : Thông báo cho OWNER/ADMIN\n{ userId: ownerId, title, body }
+    Notify -> Firestore : Lưu notification
+    Firestore --> Notify : Notification saved
+end
+
+== MỜI THÀNH VIÊN (Qua lời mời) ==
+Owner -> AppO : Mở nhóm → Quản lý thành viên
+Owner -> AppO : Nhấn "Mời thành viên"
+AppO -> API : POST /groups/:id/invite\n{ inviteeId: UserB.id }
+API -> Firestore : Tạo group_invitations record\n{ groupId, inviterId, inviteeId, status: PENDING }
+Firestore --> API : Invitation created
+API -> Notify : Gửi notification đến invitee
+Notify -> Firestore : Notification saved
+Notify --> API : Notification sent
+API --> AppO : 201 Created
+AppO --> Owner : "Đã gửi lời mời"
+
+note over User, Owner
+  User có thể tham gia qua:
+  1) Tự đăng ký (join request → approve)
+  2) Được mời trực tiếp (invite → respond)
+end note
+
+== PHÊ DUYỆT THÀNH VIÊN ==
+Owner -> AppO : Xem danh sách chờ duyệt
+AppO -> API : GET /groups/:id/members?status=PENDING
+API -> Firestore : Lấy PENDING members
+Firestore --> API : Pending members list
+API --> AppO : Danh sách
+AppO --> Owner : Hiển thị danh sách
+Owner -> AppO : Nhấn "Phê duyệt" member
+AppO -> API : POST /groups/:id/members/:uid/approve
+API -> Firestore : Cập nhật status = APPROVED
+Firestore --> API : Approved
+API -> Notify : Thông báo cho user
+Notify -> Firestore : Lưu notification
+Notify --> API : Notification sent
+API --> AppO : 200 OK
+AppO --> Owner : "Đã phê duyệt thành viên"
+
+@enduml
