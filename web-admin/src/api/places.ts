@@ -16,7 +16,7 @@ export interface PlaceItem {
   createdAt: string;
   updatedAt: string;
   author?: { id: string; name: string; email: string };
-  category?: { id: string; name: string; slug: string } | null;
+  category?: { id: string; name: string; slug?: string } | null;
 }
 
 export interface PlaceListResponse {

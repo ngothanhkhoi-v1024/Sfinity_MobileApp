@@ -10,16 +10,13 @@ export class CreateCategoryDto {
   @MinLength(2)
   name!: string;
 
-  @IsString()
-  @MinLength(2)
-  slug!: string;
-
   @IsOptional()
   @IsString()
   description?: string;
 
+  @IsOptional()
   @IsEnum(CategoryType)
-  type!: CategoryType;
+  type?: CategoryType;
 }
 
 export class UpdateCategoryDto {
@@ -30,10 +27,6 @@ export class UpdateCategoryDto {
 
   @IsOptional()
   @IsString()
-  @MinLength(2)
-  slug?: string;
-
-  @IsOptional()
-  @IsString()
   description?: string;
 }
+

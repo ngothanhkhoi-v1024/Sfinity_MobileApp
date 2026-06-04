@@ -169,7 +169,7 @@ export const documentService = {
           const categoryDoc = await getDb().collection('categories').doc(item.categoryId).get();
           if (categoryDoc.exists) {
             const c = categoryDoc.data() as any;
-            category = { id: categoryDoc.id, name: c.name, slug: c.slug };
+            category = { id: categoryDoc.id, name: c.name };
           }
         }
 
@@ -209,7 +209,7 @@ export const documentService = {
       const categoryDoc = await getDb().collection('categories').doc(item.categoryId).get();
       if (categoryDoc.exists) {
         const c = categoryDoc.data() as any;
-        category = { id: categoryDoc.id, name: c.name, slug: c.slug };
+        category = { id: categoryDoc.id, name: c.name };
       }
     }
 
