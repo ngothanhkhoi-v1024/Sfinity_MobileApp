@@ -4,7 +4,7 @@ export interface DocumentItem {
   id: string;
   title: string;
   body: string;
-  status: 'DRAFT' | 'PUBLISHED';
+  status: 'DRAFT' | 'PENDING' | 'PUBLISHED' | 'REJECTED' | 'HIDDEN';
   authorId: string;
   categoryId: string | null;
   type: 'document';
@@ -106,5 +106,15 @@ export async function adminDeleteDocument(id: string, reason: string): Promise<v
 
 export async function adminUnhideDocument(id: string, note?: string): Promise<DocumentItem> {
   const { data } = await apiClient.patch<DocumentItem>(`/document/${id}/admin-unhide`, { note });
+  return data;
+}
+
+export async function adminApproveDocument(id: string, note?: string): Promise<DocumentItem> {
+  const { data } = await apiClient.patch<DocumentItem>(`/document/${id}/approve`, { note });
+  return data;
+}
+
+export async function adminRejectDocument(id: string, reason: string): Promise<DocumentItem> {
+  const { data } = await apiClient.patch<DocumentItem>(`/document/${id}/reject`, { reason });
   return data;
 }

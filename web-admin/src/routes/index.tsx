@@ -10,6 +10,7 @@ import { FeedbackPage } from '@/pages/feedback/FeedbackPage';
 import { LoginPage } from '@/pages/login/LoginPage';
 import { NotificationsPage } from '@/pages/notifications/NotificationsPage';
 import { PlaceholderPage } from '@/pages/placeholder/PlaceholderPage';
+import { SettingsPage } from '@/pages/settings/SettingsPage';
 import { ReportsPage } from '@/pages/reports/ReportsPage';
 import { UsersPage } from '@/pages/users/UsersPage';
 
@@ -33,7 +34,7 @@ export function AppRoutes() {
             <Route path="notifications" element={<NotificationsPage />} />
             <Route path="admins" element={<AdminsPage />} />
             <Route path="media" element={<PlaceholderPage title="Media" />} />
-            <Route path="settings" element={<PlaceholderPage title="Cài đặt" />} />
+            <Route path="settings" element={<SettingsPage />} />
           </Route>
         </Route>
 
