@@ -171,6 +171,7 @@ class AppLocalizations {
       'publicApproved': 'Công khai (Mọi người đều thấy)',
       'publicPending': 'Công khai',
       'onlyMeDraft': 'Chỉ mình tôi (Bản nháp)',
+      'onlyMe': 'Chỉ mình tôi',
       'statusDraft': 'Bản nháp',
       'statusPending': 'Chờ duyệt',
       'statusRejected': 'Từ chối',
@@ -188,7 +189,7 @@ class AppLocalizations {
       'description': 'Mô tả',
       'documentDescriptionHint': 'Mô tả chi tiết về tài liệu này...',
       'documentDescriptionMin': 'Mô tả cần ít nhất 2 ký tự',
-      'subjectCode': 'Mã môn học',
+      'subjectCode': 'Môn học',
       'downloads': 'Lượt tải',
       'categoryLecture': 'Bài giảng',
       'categoryExam': 'Đề thi',
@@ -671,6 +672,7 @@ class AppLocalizations {
       'publicApproved': 'Public (Everyone can see)',
       'publicPending': 'Public (Submit for approval)',
       'onlyMeDraft': 'Only me (Draft)',
+      'onlyMe': 'Only me',
       'statusDraft': 'Draft',
       'statusPending': 'Pending',
       'statusRejected': 'Rejected',
@@ -688,7 +690,7 @@ class AppLocalizations {
       'description': 'Description',
       'documentDescriptionHint': 'Detailed description of this document...',
       'documentDescriptionMin': 'Description must be at least 2 characters',
-      'subjectCode': 'Subject code',
+      'subjectCode': 'Subject',
       'downloads': 'Downloads',
       'categoryLecture': 'Lecture',
       'categoryExam': 'Exam',
@@ -1180,6 +1182,7 @@ class AppLocalizations {
   String get publicApproved => _text('publicApproved');
   String get publicPending => _text('publicPending');
   String get onlyMeDraft => _text('onlyMeDraft');
+  String get onlyMe => _text('onlyMe');
   String get statusDraft => _text('statusDraft');
   String get statusPending => _text('statusPending');
   String get statusRejected => _text('statusRejected');

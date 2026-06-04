@@ -32,7 +32,7 @@ class DocumentListController extends ChangeNotifier {
     try {
       final currentUserId = SfinityApp.auth.user?['id']?.toString();
       final res = await SfinityApp.documentRepository.getDocuments(
-        publishedOnly: true,
+        publishedOnly: communityMode ? true : null,
         authorId: communityMode ? null : currentUserId,
         limit: 50,
       );

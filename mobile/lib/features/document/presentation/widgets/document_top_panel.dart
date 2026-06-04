@@ -50,13 +50,6 @@ class DocumentTopPanel extends StatelessWidget {
           ),
           const SizedBox(height: 4),
         ],
-        Text(
-          communityMode
-              ? l10n.documentsCategory
-              : l10n.yourUploadedDocuments,
-          style: TextStyle(fontSize: embedded ? 13 : 14, color: AppColors.subtitle(context), height: 1.35),
-        ),
-        const SizedBox(height: 10),
         DocumentModeToggle(
           communityMode: communityMode,
           onChanged: onModeChanged,

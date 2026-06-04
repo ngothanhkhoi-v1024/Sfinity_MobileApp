@@ -249,8 +249,6 @@ class _ExplorePageState extends State<ExplorePage> {
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
                   ExploreTopPanel(
-                    title: l10n.explore,
-                    subtitle: l10n.studyNearMe,
                     searchController: _searchController,
                     searchHint: l10n.searchHint,
                     filter: _filter,

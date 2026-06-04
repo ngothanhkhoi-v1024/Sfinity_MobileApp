@@ -82,6 +82,21 @@ abstract final class AppTheme {
           elevation: 0,
           surfaceTintColor: Colors.transparent,
         ),
+        popupMenuTheme: PopupMenuThemeData(
+          color: Colors.white,
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          elevation: 4,
+        ),
+        dialogTheme: DialogThemeData(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+        ),
      );
   }
 
@@ -168,6 +183,21 @@ abstract final class AppTheme {
           color: Color(0xFF1A1A1A),
           elevation: 0,
           surfaceTintColor: Colors.transparent,
+        ),
+        popupMenuTheme: PopupMenuThemeData(
+          color: const Color(0xFF1F1F1F),
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          elevation: 4,
+        ),
+        dialogTheme: DialogThemeData(
+          backgroundColor: const Color(0xFF1E1E1E),
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
         ),
      );
    }

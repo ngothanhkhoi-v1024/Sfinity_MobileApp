@@ -6,9 +6,9 @@ export class CreateDocumentDto {
   @MinLength(2)
   title!: string;
 
+  @IsOptional()
   @IsString()
-  @MinLength(2)
-  body!: string;
+  body?: string;
 
   @IsOptional()
   @IsEnum(ContentStatus)
@@ -84,8 +84,7 @@ export class UpdateDocumentDto {
 
   @IsOptional()
   @IsString()
-  @MinLength(2)
-  body?: string;
+  body?: string | null;
 
   @IsOptional()
   @IsEnum(ContentStatus)

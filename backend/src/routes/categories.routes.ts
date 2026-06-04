@@ -15,8 +15,7 @@ export const categoriesRouter = Router();
 categoriesRouter.get(
   '/',
   asyncHandler(async (req, res) => {
-    const type = req.query.type as string | undefined;
-    res.json(await categoriesService.findAll(type));
+    res.json(await categoriesService.findAll());
   }),
 );
 
