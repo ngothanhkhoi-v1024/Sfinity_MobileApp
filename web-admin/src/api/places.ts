@@ -48,8 +48,8 @@ export async function fetchPlaces(params?: {
   page?: number;
   limit?: number;
 }): Promise<PlaceListResponse> {
-  const { data } = await apiClient.get<PlaceListResponse>('/document', {
-    params: { ...params, type: 'place' },
+  const { data } = await apiClient.get<PlaceListResponse>('/places', {
+    params,
   });
   return data;
 }
@@ -65,7 +65,7 @@ export async function createPlace(payload: {
   zone?: string;
   tags?: string[];
 }): Promise<PlaceItem> {
-  const { data } = await apiClient.post<PlaceItem>('/document', { ...payload, type: 'place' });
+  const { data } = await apiClient.post<PlaceItem>('/places', payload);
   return data;
 }
 
@@ -83,44 +83,44 @@ export async function updatePlace(
     tags: string[];
   }>,
 ): Promise<PlaceItem> {
-  const { data } = await apiClient.patch<PlaceItem>(`/document/${id}`, payload);
+  const { data } = await apiClient.patch<PlaceItem>(`/places/${id}`, payload);
   return data;
 }
 
 export async function deletePlace(id: string): Promise<void> {
-  await apiClient.delete(`/document/${id}`);
+  await apiClient.delete(`/places/${id}`);
 }
 
 export async function publishPlace(id: string): Promise<PlaceItem> {
-  const { data } = await apiClient.patch<PlaceItem>(`/document/${id}/publish`);
+  const { data } = await apiClient.patch<PlaceItem>(`/places/${id}/publish`);
   return data;
 }
 
 export async function unpublishPlace(id: string): Promise<PlaceItem> {
-  const { data } = await apiClient.patch<PlaceItem>(`/document/${id}/unpublish`);
+  const { data } = await apiClient.patch<PlaceItem>(`/places/${id}/unpublish`);
   return data;
 }
 
 export async function adminHidePlace(id: string, reason: string): Promise<PlaceItem> {
-  const { data } = await apiClient.patch<PlaceItem>(`/document/${id}/admin-hide`, { reason });
+  const { data } = await apiClient.patch<PlaceItem>(`/places/${id}/admin-hide`, { reason });
   return data;
 }
 
 export async function adminDeletePlace(id: string, reason: string): Promise<void> {
-  await apiClient.delete(`/document/${id}/admin-delete`, { data: { reason } });
+  await apiClient.delete(`/places/${id}/admin-delete`, { data: { reason } });
 }
 
 export async function adminUnhidePlace(id: string, note?: string): Promise<PlaceItem> {
-  const { data } = await apiClient.patch<PlaceItem>(`/document/${id}/admin-unhide`, { note });
+  const { data } = await apiClient.patch<PlaceItem>(`/places/${id}/admin-unhide`, { note });
   return data;
 }
 
 export async function adminApprovePlace(id: string, note?: string): Promise<PlaceItem> {
-  const { data } = await apiClient.patch<PlaceItem>(`/document/${id}/approve`, { note });
+  const { data } = await apiClient.patch<PlaceItem>(`/places/${id}/approve`, { note });
   return data;
 }
 
 export async function adminRejectPlace(id: string, reason: string): Promise<PlaceItem> {
-  const { data } = await apiClient.patch<PlaceItem>(`/document/${id}/reject`, { reason });
+  const { data } = await apiClient.patch<PlaceItem>(`/places/${id}/reject`, { reason });
   return data;
 }

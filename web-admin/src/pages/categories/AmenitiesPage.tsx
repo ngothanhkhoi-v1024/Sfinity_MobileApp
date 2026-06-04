@@ -53,7 +53,6 @@ export function AmenitiesPage() {
     setEditing(item);
     form.setFieldsValue({
       name: item.name,
-      slug: item.slug,
       description: item.description,
     });
     setModalOpen(true);
@@ -78,7 +77,6 @@ export function AmenitiesPage() {
 
   const columns: ColumnsType<AmenityItem> = [
     { title: 'Tên tiện ích', dataIndex: 'name' },
-    { title: 'Slug', dataIndex: 'slug' },
     { title: 'Mô tả', dataIndex: 'description', ellipsis: true },
     {
       title: 'Thao tác',
@@ -135,9 +133,7 @@ export function AmenitiesPage() {
           <Form.Item name="name" label="Tên tiện ích" rules={[{ required: true }]}>
             <Input placeholder="VD: WiFi, Điều hòa, Ổ cắm..." />
           </Form.Item>
-          <Form.Item name="slug" label="Slug" rules={[{ required: true }]}>
-            <Input placeholder="VD: wifi, dieu-hoa, o-cam..." />
-          </Form.Item>
+
           <Form.Item name="description" label="Mô tả">
             <Input.TextArea rows={2} placeholder="Mô tả ngắn về tiện ích này..." />
           </Form.Item>

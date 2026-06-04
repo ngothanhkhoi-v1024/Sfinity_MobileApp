@@ -36,16 +36,7 @@ class DocumentListController extends ChangeNotifier {
         authorId: communityMode ? null : currentUserId,
         limit: 50,
       );
-      final raw = res['items'] as List? ?? [];
-      allItems = raw.where((e) {
-        final itemMap = e as Map<String, dynamic>;
-        final type = itemMap['type']?.toString();
-        if (type != null) {
-          return type == 'document';
-        }
-        final body = itemMap['body']?.toString() ?? '';
-        return !body.contains('type:place');
-      }).toList();
+      allItems = res['items'] as List? ?? [];
       filterItems();
     } on DioException catch (e) {
       error = ApiClient.instance.errorMessage(e);

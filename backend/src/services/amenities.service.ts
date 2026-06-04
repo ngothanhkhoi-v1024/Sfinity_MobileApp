@@ -9,12 +9,12 @@ const toDate = (val: any): Date => {
 };
 
 const DEFAULT_AMENITIES = [
-  { name: 'WiFi', slug: 'wifi', description: 'Có kết nối WiFi miễn phí' },
-  { name: 'Điều hòa', slug: 'dieu-hoa', description: 'Có điều hòa không khí' },
-  { name: 'Ổ cắm', slug: 'o-cam', description: 'Có ổ cắm sạc thiết bị' },
-  { name: 'Yên tĩnh', slug: 'yen-tinh', description: 'Khu vực yên tĩnh, phù hợp học tập' },
-  { name: 'Mở muộn', slug: 'mo-muon', description: 'Mở cửa đến giờ muộn' },
-  { name: 'Giữ xe', slug: 'giu-xe', description: 'Có khu vực giữ xe' },
+  { name: 'WiFi', description: 'Có kết nối WiFi miễn phí' },
+  { name: 'Điều hòa', description: 'Có điều hòa không khí' },
+  { name: 'Ổ cắm', description: 'Có ổ cắm sạc thiết bị' },
+  { name: 'Yên tĩnh', description: 'Khu vực yên tĩnh, phù hợp học tập' },
+  { name: 'Mở muộn', description: 'Mở cửa đến giờ muộn' },
+  { name: 'Giữ xe', description: 'Có khu vực giữ xe' },
 ];
 
 async function seedAmenities() {
@@ -24,11 +24,10 @@ async function seedAmenities() {
 
   const batch = getDb().batch();
   for (const amenity of DEFAULT_AMENITIES) {
-    const docRef = getDb().collection('amenities').doc(amenity.slug);
+    const docRef = getDb().collection('amenities').doc();
     batch.set(docRef, {
-      id: amenity.slug,
+      id: docRef.id,
       name: amenity.name,
-      slug: amenity.slug,
       description: amenity.description,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -53,7 +52,6 @@ export const amenitiesService = {
       return {
         id: doc.id,
         name: data.name,
-        slug: data.slug,
         description: data.description ?? null,
         createdAt: toDate(data.createdAt),
         updatedAt: toDate(data.updatedAt),
@@ -72,24 +70,27 @@ export const amenitiesService = {
     return {
       id: doc.id,
       name: data.name,
-      slug: data.slug,
       description: data.description ?? null,
       createdAt: toDate(data.createdAt),
       updatedAt: toDate(data.updatedAt),
     };
   },
 
-  async create(payload: { name: string; slug: string; description?: string }) {
-    const docRef = getDb().collection('amenities').doc(payload.slug);
-    const existing = await docRef.get();
-    if (existing.exists) {
-      throw new HttpError(409, 'Slug đã tồn tại', 'Conflict');
+  async create(payload: { name: string; description?: string }) {
+    const snapshot = await getDb()
+      .collection('amenities')
+      .where('name', '==', payload.name)
+      .limit(1)
+      .get();
+
+    if (!snapshot.empty) {
+      throw new HttpError(409, 'Tiện ích đã tồn tại', 'Conflict');
     }
 
+    const docRef = getDb().collection('amenities').doc();
     const newItem = {
-      id: payload.slug,
+      id: docRef.id,
       name: payload.name,
-      slug: payload.slug,
       description: payload.description ?? null,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -99,7 +100,7 @@ export const amenitiesService = {
     return newItem;
   },
 
-  async update(id: string, payload: { name?: string; slug?: string; description?: string }) {
+  async update(id: string, payload: { name?: string; description?: string }) {
     await this.findOne(id);
 
     const docRef = getDb().collection('amenities').doc(id);
@@ -116,7 +117,6 @@ export const amenitiesService = {
     return {
       id: doc.id,
       name: data.name,
-      slug: data.slug,
       description: data.description ?? null,
       createdAt: toDate(data.createdAt),
       updatedAt: toDate(data.updatedAt),

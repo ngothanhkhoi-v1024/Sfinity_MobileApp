@@ -1,10 +1,10 @@
-import '../../../../features/document/data/services/document_api_service.dart';
+import '../../../../core/network/api_client.dart';
 
-/// API địa điểm — bọc document API với `type=place`.
+/// API địa điểm.
 class PlaceApiService {
-  PlaceApiService(this._documents);
+  PlaceApiService(this._api);
 
-  final DocumentApiService _documents;
+  final ApiClient _api;
 
   Future<Map<String, dynamic>> listPlaces({
     String? search,
@@ -17,42 +17,40 @@ class PlaceApiService {
     bool publishedOnly = false,
     int limit = 50,
   }) {
-    return _documents.getDocuments(
-      type: 'place',
-      search: search,
-      tags: tags,
-      lat: lat,
-      lng: lng,
-      radiusKm: radiusKm,
-      zone: zone,
-      authorId: authorId,
-      publishedOnly: publishedOnly,
-      limit: limit,
-    );
+    return _api.get('/places', query: {
+      if (search != null) 'search': search,
+      if (tags != null && tags.isNotEmpty) 'tags': tags,
+      if (lat != null) 'lat': lat.toString(),
+      if (lng != null) 'lng': lng.toString(),
+      if (radiusKm != null) 'radiusKm': radiusKm.toString(),
+      if (zone != null && zone.isNotEmpty) 'zone': zone,
+      if (authorId != null) 'authorId': authorId,
+      'publishedOnly': publishedOnly.toString(),
+      'limit': limit.toString(),
+    });
   }
 
   Future<Map<String, dynamic>> getPlace(String id) {
-    return _documents.getDocument(id);
+    return _api.get('/places/$id');
   }
 
   Future<Map<String, dynamic>> createPlace(Map<String, dynamic> payload) {
-    return _documents.createDocument(payload);
+    return _api.post('/places', payload);
   }
 
   Future<Map<String, dynamic>> updatePlace(String id, Map<String, dynamic> payload) {
-    return _documents.updateDocument(id, payload);
+    return _api.patch('/places/$id', payload);
   }
 
   Future<void> deletePlace(String id) {
-    return _documents.deleteDocument(id);
+    return _api.delete('/places/$id');
   }
 
   Future<Map<String, dynamic>> listDocumentsAtPlace(String placeId) {
-    return _documents.getDocuments(
-      type: 'document',
-      placeId: placeId,
-      publishedOnly: true,
-      limit: 50,
-    );
+    return _api.get('/document', query: {
+      'placeId': placeId,
+      'publishedOnly': 'true',
+      'limit': '50',
+    });
   }
 }
