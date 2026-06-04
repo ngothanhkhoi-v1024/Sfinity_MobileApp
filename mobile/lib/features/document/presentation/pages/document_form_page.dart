@@ -253,29 +253,29 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
                             ? [
                                 DropdownMenuItem<String>(
                                   value: 'PUBLISHED',
-                                  child: Text(l10n.publicApproved),
+                                  child: Text(l10n.publicBadge),
                                 ),
                                 DropdownMenuItem<String>(
                                   value: 'DRAFT',
-                                  child: Text(l10n.onlyMeDraft),
+                                  child: Text(l10n.onlyMe),
                                 ),
                               ]
                             : [
                                 DropdownMenuItem<String>(
                                   value: 'PENDING',
-                                  child: Text(l10n.publicPending),
+                                  child: Text(l10n.publicBadge),
                                 ),
                                 DropdownMenuItem<String>(
                                   value: 'DRAFT',
-                                  child: Text(l10n.onlyMeDraft),
+                                  child: Text(l10n.onlyMe),
                                 ),
                               ];
                         final hasSelected = allowedItems.any((item) => item.value == _controller.selectedStatus);
                         if (!hasSelected && _controller.selectedStatus.isNotEmpty) {
                           String label = _controller.selectedStatus;
-                          if (_controller.selectedStatus == 'PENDING') label = l10n.publicPending;
-                          if (_controller.selectedStatus == 'PUBLISHED') label = l10n.publicApproved;
-                          if (_controller.selectedStatus == 'DRAFT') label = l10n.onlyMeDraft;
+                          if (_controller.selectedStatus == 'PENDING') label = l10n.publicBadge;
+                          if (_controller.selectedStatus == 'PUBLISHED') label = l10n.publicBadge;
+                          if (_controller.selectedStatus == 'DRAFT') label = l10n.onlyMe;
                           if (_controller.selectedStatus == 'REJECTED') label = l10n.statusRejected;
                           if (_controller.selectedStatus == 'HIDDEN') label = l10n.statusHidden;
                           allowedItems.add(

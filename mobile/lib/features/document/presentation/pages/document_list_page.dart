@@ -57,7 +57,7 @@ class _DocumentListPageState extends State<DocumentListPage> {
                 final item = _controller.filteredItems[i] as Map<String, dynamic>;
                 return DocumentCard(
                   item: item,
-                  showStatus: false, // Bỏ luôn tag ở đây
+                  showStatus: !_controller.communityMode,
                   onTap: () => context.push('/document/${item['id']}'),
                 );
               },

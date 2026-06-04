@@ -171,6 +171,7 @@ class AppLocalizations {
       'publicApproved': 'Công khai (Mọi người đều thấy)',
       'publicPending': 'Công khai (Gửi yêu cầu xét duyệt)',
       'onlyMeDraft': 'Chỉ mình tôi (Bản nháp)',
+      'onlyMe': 'Chỉ mình tôi',
       'statusDraft': 'Bản nháp',
       'statusPending': 'Chờ duyệt',
       'statusRejected': 'Từ chối',
@@ -671,6 +672,7 @@ class AppLocalizations {
       'publicApproved': 'Public (Everyone can see)',
       'publicPending': 'Public (Submit for approval)',
       'onlyMeDraft': 'Only me (Draft)',
+      'onlyMe': 'Only me',
       'statusDraft': 'Draft',
       'statusPending': 'Pending',
       'statusRejected': 'Rejected',
@@ -1180,6 +1182,7 @@ class AppLocalizations {
   String get publicApproved => _text('publicApproved');
   String get publicPending => _text('publicPending');
   String get onlyMeDraft => _text('onlyMeDraft');
+  String get onlyMe => _text('onlyMe');
   String get statusDraft => _text('statusDraft');
   String get statusPending => _text('statusPending');
   String get statusRejected => _text('statusRejected');
