@@ -2,7 +2,6 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   DeleteOutlined,
-  EnvironmentOutlined,
   EyeInvisibleOutlined,
   EyeOutlined,
   RetweetOutlined,
@@ -28,24 +27,11 @@ import {
   adminRejectPlace,
   adminUnhidePlace,
   fetchPlaces,
-  PLACE_ZONES,
   type PlaceItem,
 } from '@/api/places';
 import { useSettings } from '@/contexts/SettingsContext';
 import { PageHeader } from '@/components/common/PageHeader';
 import { PageShell } from '@/components/common/PageShell';
-
-const ZONE_COLORS: Record<string, string> = {
-  khu_a: 'blue',
-  khu_b: 'cyan',
-  library: 'purple',
-  dorm: 'orange',
-  cafeteria: 'gold',
-  sports: 'green',
-  faculty_it: 'red',
-  faculty_biz: 'magenta',
-  other: 'default',
-};
 
 type ContentStatus = 'DRAFT' | 'PENDING' | 'PUBLISHED' | 'REJECTED' | 'HIDDEN';
 
@@ -184,11 +170,6 @@ export function PlacesPage() {
     }
   };
 
-  const getZoneLabel = (zoneId: string | null) => {
-    if (!zoneId) return null;
-    return PLACE_ZONES.find((z) => z.id === zoneId)?.label;
-  };
-
   const columns: ColumnsType<PlaceItem> = [
     { title: 'Tên địa điểm', dataIndex: 'title', width: 200, ellipsis: true },
     {
@@ -200,16 +181,6 @@ export function PlacesPage() {
           {STATUS_LABELS[s as ContentStatus] ?? s}
         </Tag>
       ),
-    },
-    {
-      title: 'Khu vực',
-      dataIndex: 'zone',
-      width: 130,
-      render: (zone: string | null) => {
-        const label = getZoneLabel(zone);
-        if (!label) return '-';
-        return <Tag color={ZONE_COLORS[zone] ?? 'default'}>{label}</Tag>;
-      },
     },
     { title: 'Địa chỉ', dataIndex: 'address', ellipsis: true, width: 200 },
     {
@@ -329,7 +300,7 @@ export function PlacesPage() {
         columns={columns}
         dataSource={data}
         pagination={{ pageSize: 10 }}
-        scroll={{ x: 1000 }}
+        scroll={{ x: 900 }}
       />
 
       {/* View Detail Modal */}
@@ -351,16 +322,6 @@ export function PlacesPage() {
               <Tag color={STATUS_COLORS[viewModal.status as ContentStatus] ?? 'default'}>
                 {STATUS_LABELS[viewModal.status as ContentStatus] ?? viewModal.status}
               </Tag>
-            </Descriptions.Item>
-            <Descriptions.Item label="Khu vực">
-              {(() => {
-                const label = getZoneLabel(viewModal.zone);
-                return label ? (
-                  <Tag color={ZONE_COLORS[viewModal.zone!] ?? 'default'}>{label}</Tag>
-                ) : (
-                  '-'
-                );
-              })()}
             </Descriptions.Item>
             <Descriptions.Item label="Địa chỉ">{viewModal.address ?? '-'}</Descriptions.Item>
             <Descriptions.Item label="Vĩ độ">{viewModal.latitude ?? '-'}</Descriptions.Item>
