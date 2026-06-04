@@ -7,6 +7,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../app.dart';
 import '../../../../core/constants/route_names.dart';
 import '../../../../core/i18n/app_text.dart';
+import '../../../friendships/data/models/friend_model.dart';
+import '../../../friendships/presentation/controllers/friendship_controller.dart';
 
 final Map<String, Uint8List> _avatarCache = {};
 
@@ -29,23 +31,38 @@ Future<Uint8List?> _tryFetchAvatar(String url) async {
 }
 
 class ViewProfilePage extends StatelessWidget {
-  const ViewProfilePage({super.key});
+  const ViewProfilePage({super.key, this.profileUser});
+
+  final FriendUser? profileUser;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final isViewingFriend = profileUser != null;
 
     return AnimatedBuilder(
       animation: SfinityApp.auth,
       builder: (context, _) {
         final user = SfinityApp.auth.user;
-        final avatarUrl = user?['avatar']?.toString();
-        final displayName = user?['name']?.toString() ?? '';
-        final email = user?['email']?.toString() ?? '';
-        final gender = user?['gender']?.toString();
-        final birthDate = user?['birthDate']?.toString();
-        final address = user?['address']?.toString();
+        final avatarUrl = isViewingFriend
+            ? profileUser!.avatar
+            : user?['avatar']?.toString();
+        final displayName = isViewingFriend
+            ? profileUser!.name
+            : user?['name']?.toString() ?? '';
+        final email = isViewingFriend
+            ? profileUser!.email?.toString() ?? ''
+            : user?['email']?.toString() ?? '';
+        final gender = isViewingFriend
+            ? profileUser!.gender?.toString()
+            : user?['gender']?.toString();
+        final birthDate = isViewingFriend
+            ? profileUser!.birthDate?.toString()
+            : user?['birthDate']?.toString();
+        final address = isViewingFriend
+            ? profileUser!.address?.toString()
+            : user?['address']?.toString();
 
         String formattedBirthDate;
         if (birthDate != null && birthDate.isNotEmpty) {
@@ -62,13 +79,15 @@ class ViewProfilePage extends StatelessWidget {
         return Scaffold(
           appBar: AppBar(
             title: Text(AppLocalizations.of(context).viewProfile),
-            actions: [
-              IconButton(
-                onPressed: () => context.push(RouteNames.editProfile),
-                icon: const Icon(Icons.edit_rounded),
-                tooltip: AppLocalizations.of(context).editProfile,
-              ),
-            ],
+            actions: isViewingFriend
+                ? null
+                : [
+                    IconButton(
+                      onPressed: () => context.push(RouteNames.editProfile),
+                      icon: const Icon(Icons.edit_rounded),
+                      tooltip: AppLocalizations.of(context).editProfile,
+                    ),
+                  ],
           ),
           body: ListView(
             padding: const EdgeInsets.all(24),
@@ -129,6 +148,10 @@ class ViewProfilePage extends StatelessWidget {
                   isDark: isDark,
                 ),
               ]),
+              if (isViewingFriend) ...[
+                const SizedBox(height: 24),
+                _FriendActionSection(user: profileUser!),
+              ],
             ],
           ),
         );
@@ -318,5 +341,237 @@ class _InfoCard extends StatelessWidget {
         children: children,
       ),
     );
+  }
+}
+
+class _FriendActionSection extends StatefulWidget {
+  const _FriendActionSection({required this.user});
+
+  final FriendUser user;
+
+  @override
+  State<_FriendActionSection> createState() => _FriendActionSectionState();
+}
+
+class _FriendActionSectionState extends State<_FriendActionSection> {
+  late final FriendshipController _ctrl;
+  bool _isLoading = false;
+  String? _friendshipStatus;
+  String? _friendshipId;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = SfinityApp.friendshipController;
+    _ctrl.addListener(_syncFriendshipState);
+    _primeData();
+    _syncFriendshipState();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.removeListener(_syncFriendshipState);
+    super.dispose();
+  }
+
+  void _primeData() {
+    _ctrl.loadFriends();
+    _ctrl.loadPendingRequests();
+    _ctrl.loadSentRequests();
+  }
+
+  void _syncFriendshipState() {
+    String? nextStatus = widget.user.friendshipStatus;
+    String? nextId = widget.user.friendshipId;
+
+    final friendMatch = _ctrl.friends.where((f) => f.user.id == widget.user.id);
+    if (friendMatch.isNotEmpty) {
+      final friend = friendMatch.first;
+      nextStatus = 'ACCEPTED';
+      nextId = friend.friendshipId;
+    } else {
+      final incoming = _ctrl.pendingRequests.where(
+        (r) => r.requester.id == widget.user.id,
+      );
+      if (incoming.isNotEmpty) {
+        nextStatus = 'PENDING_INCOMING';
+        nextId = incoming.first.id;
+      } else {
+        final sent = _ctrl.sentRequests.where(
+          (r) => r.addressee.id == widget.user.id,
+        );
+        if (sent.isNotEmpty) {
+          nextStatus = 'PENDING';
+          nextId = sent.first.id;
+        } else {
+          nextStatus = null;
+          nextId = null;
+        }
+      }
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _friendshipStatus = nextStatus;
+      _friendshipId = nextId;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_friendshipStatus == 'ACCEPTED') {
+      return SizedBox(
+        width: double.infinity,
+        child: OutlinedButton.icon(
+          onPressed: _unfriend,
+          icon: Icon(Icons.person_remove_outlined, color: cs.error),
+          label: Text(
+            context.l10n.unfriend,
+            style: TextStyle(color: cs.error),
+          ),
+          style: OutlinedButton.styleFrom(
+            side: BorderSide(color: cs.error.withValues(alpha: 0.5)),
+            padding: const EdgeInsets.symmetric(vertical: 14),
+          ),
+        ),
+      );
+    }
+
+    if (_friendshipStatus == 'PENDING') {
+      return SizedBox(
+        width: double.infinity,
+        child: OutlinedButton.icon(
+          onPressed: _cancelRequest,
+          icon: Icon(Icons.close, color: cs.error),
+          label: Text(
+            context.l10n.cancel,
+            style: TextStyle(color: cs.error),
+          ),
+          style: OutlinedButton.styleFrom(
+            side: BorderSide(color: cs.error.withValues(alpha: 0.5)),
+            padding: const EdgeInsets.symmetric(vertical: 14),
+          ),
+        ),
+      );
+    }
+
+    if (_friendshipStatus == 'PENDING_INCOMING') {
+      return Row(
+        children: [
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: _declineIncoming,
+              icon: Icon(Icons.close, color: cs.error),
+              label: Text(
+                context.l10n.cancelRequest,
+                style: TextStyle(color: cs.error),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: cs.error.withValues(alpha: 0.5)),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: FilledButton.icon(
+              onPressed: _acceptIncoming,
+              icon: const Icon(Icons.check),
+              label: Text(context.l10n.accept),
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return SizedBox(
+      width: double.infinity,
+      child: FilledButton.icon(
+        onPressed: _sendRequest,
+        icon: const Icon(Icons.person_add_alt_1_rounded),
+        label: Text(context.l10n.addFriends),
+        style: FilledButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _sendRequest() async {
+    setState(() => _isLoading = true);
+    final ok = await _ctrl.sendRequest(widget.user.id);
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+    if (ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.friendRequestSent)),
+      );
+      _syncFriendshipState();
+    }
+  }
+
+  Future<void> _cancelRequest() async {
+    final target = _friendshipId ?? widget.user.id;
+    setState(() => _isLoading = true);
+    final ok = await _ctrl.unfriend(target);
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+    if (ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.cancelRequest)),
+      );
+      _syncFriendshipState();
+    }
+  }
+
+  Future<void> _unfriend() async {
+    if (_friendshipId == null) return;
+    setState(() => _isLoading = true);
+    final ok = await _ctrl.unfriend(_friendshipId!);
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+    if (ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.unfriend)),
+      );
+      _syncFriendshipState();
+    }
+  }
+
+  Future<void> _declineIncoming() async {
+    if (_friendshipId == null) return;
+    setState(() => _isLoading = true);
+    final ok = await _ctrl.respondRequest(_friendshipId!, false);
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+    if (ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.declineInvite)),
+      );
+      _syncFriendshipState();
+    }
+  }
+
+  Future<void> _acceptIncoming() async {
+    if (_friendshipId == null) return;
+    setState(() => _isLoading = true);
+    final ok = await _ctrl.respondRequest(_friendshipId!, true);
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+    if (ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.friendRequestSuccess)),
+      );
+      _syncFriendshipState();
+    }
   }
 }

@@ -187,6 +187,7 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
   Widget build(BuildContext context) {
     final primary = AppColors.primaryOf(context);
     final l10n = context.l10n;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: AppColors.scaffold(context),
@@ -197,15 +198,49 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
         ),
         elevation: 0,
         actions: [
-          IconButton(
-            icon: Icon(Icons.add_circle_outline, color: primary, size: 26),
-            onPressed: () async {
-              await context.push(
-                RouteNames.documentCreate,
-                extra: const {'contentType': 'document'},
-              );
-              _loadDocuments();
-            },
+          Padding(
+            padding: const EdgeInsets.only(right: 10),
+            child: Tooltip(
+              message: l10n.uploadDocument,
+              child: Material(
+                color: Colors.transparent,
+                child: Ink(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: primary.withValues(alpha: isDark ? 0.22 : 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: primary.withValues(alpha: isDark ? 0.24 : 0.18),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: isDark ? 0.16 : 0.04),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () async {
+                      await context.push(
+                        RouteNames.documentCreate,
+                        extra: const {'contentType': 'document'},
+                      );
+                      _loadDocuments();
+                    },
+                    child: Center(
+                      child: Icon(
+                        Icons.add_rounded,
+                        color: primary,
+                        size: 19,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),

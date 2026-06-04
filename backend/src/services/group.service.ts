@@ -96,6 +96,9 @@ export const groupService = {
             name: uData?.name ?? 'Unknown',
             avatar: uData?.avatar ?? null,
             email: uData?.email ?? '',
+            gender: uData?.gender ?? '',
+            birthDate: uData?.birthDate ?? '',
+            address: uData?.address ?? '',
           },
         };
       })

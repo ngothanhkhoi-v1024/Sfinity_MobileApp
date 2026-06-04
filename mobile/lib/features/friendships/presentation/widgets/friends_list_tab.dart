@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../../core/i18n/app_text.dart';
 import '../../../../core/constants/route_names.dart';
 import '../controllers/friendship_controller.dart';
 import '../../../places/presentation/widgets/places_search_field.dart';
 import 'friend_tile.dart';
-import 'user_profile_bottom_sheet.dart';
 import 'friendships_empty_state.dart';
 
 class FriendsListTab extends StatefulWidget {
@@ -123,10 +123,9 @@ class _FriendsListTabState extends State<FriendsListTab> {
                       final friend = filteredFriends[i];
                       return FriendTile(
                         friend: friend,
-                        onTap: () => UserProfileBottomSheet.show(
-                          context,
-                          friend.user,
-                          ctrl,
+                        onTap: () => context.push(
+                          RouteNames.viewProfile,
+                          extra: friend.user,
                         ),
                         trailing: PopupMenuButton<String>(
                           icon: Icon(
@@ -135,10 +134,9 @@ class _FriendsListTabState extends State<FriendsListTab> {
                           ),
                           onSelected: (val) async {
                             if (val == 'view_profile') {
-                              UserProfileBottomSheet.show(
-                                context,
-                                friend.user,
-                                ctrl,
+                              context.push(
+                                RouteNames.viewProfile,
+                                extra: friend.user,
                               );
                             } else if (val == 'unfriend') {
                               final messenger = ScaffoldMessenger.of(context);

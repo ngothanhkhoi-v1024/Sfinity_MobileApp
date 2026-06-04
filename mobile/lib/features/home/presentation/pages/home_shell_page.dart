@@ -55,6 +55,8 @@ class _HomeShellPageState extends State<HomeShellPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final navItems = [
       PillNavItem(label: l10n.explore, icon: Icons.explore_outlined, selectedIcon: Icons.explore),
       PillNavItem(label: l10n.places, icon: Icons.map_outlined, selectedIcon: Icons.map),
@@ -131,11 +133,45 @@ class _HomeShellPageState extends State<HomeShellPage> {
               automaticallyImplyLeading: _navIndex == 0,
               actions: [
                 if (_navIndex == 2)
-                  IconButton(
-                    icon: Icon(Icons.add_circle_outline, color: Theme.of(context).colorScheme.primary, size: 26),
-                    onPressed: () => context.push(
-                      RouteNames.documentCreate,
-                      extra: const {'contentType': 'document'},
+                  Padding(
+                    padding: const EdgeInsets.only(right: 10),
+                    child: Tooltip(
+                      message: l10n.uploadDocument,
+                      child: Material(
+                        color: Colors.transparent,
+                        child: Ink(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: cs.primary.withValues(alpha: isDark ? 0.22 : 0.12),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: cs.primary.withValues(alpha: isDark ? 0.24 : 0.18),
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: isDark ? 0.16 : 0.04),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () => context.push(
+                              RouteNames.documentCreate,
+                              extra: const {'contentType': 'document'},
+                            ),
+                            child: Center(
+                              child: Icon(
+                                Icons.add_rounded,
+                                color: cs.primary,
+                                size: 19,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
               ],

@@ -35,6 +35,7 @@ class DocumentTopPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final primary = AppColors.primaryOf(context);
     final l10n = context.l10n;
+    final isDark = AppColors.isDark(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -57,8 +58,19 @@ class DocumentTopPanel extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         Container(
-          padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
-          decoration: AppColors.panel(context),
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+          decoration: BoxDecoration(
+            color: AppColors.card(context),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.border(context)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.04),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -74,13 +86,15 @@ class DocumentTopPanel extends StatelessWidget {
                   const SizedBox(width: 8),
                   // Nút Lọc bên phải thanh tìm kiếm
                   Material(
-                    color: showFilters ? primary.withValues(alpha: 0.1) : AppColors.chipBg(context),
-                    borderRadius: BorderRadius.circular(10),
+                    color: showFilters
+                        ? primary.withValues(alpha: 0.14)
+                        : AppColors.chipBg(context),
+                    borderRadius: BorderRadius.circular(14),
                     child: InkWell(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(14),
                       onTap: onToggleFilters,
                       child: Padding(
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(14),
                         child: Icon(
                           Icons.filter_list_rounded,
                           color: showFilters ? primary : AppColors.muted(context),
@@ -92,9 +106,11 @@ class DocumentTopPanel extends StatelessWidget {
                 ],
               ),
               if (showFilters) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
+                Divider(height: 1, color: AppColors.divider(context)),
+                const SizedBox(height: 10),
                 SizedBox(
-                  height: 36,
+                  height: 38,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: categories.length,
@@ -139,12 +155,12 @@ class _CategoryChip extends StatelessWidget {
 
     return Material(
       color: selected ? primary : AppColors.chipBg(context),
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
           child: Text(
             label,
             style: TextStyle(

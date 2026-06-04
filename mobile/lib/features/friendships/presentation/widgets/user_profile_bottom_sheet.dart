@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../../core/constants/route_names.dart';
 import '../../../../core/i18n/app_text.dart';
 import '../../data/models/friend_model.dart';
 import '../controllers/friendship_controller.dart';
@@ -77,6 +80,21 @@ class _UserProfileBottomSheetState extends State<UserProfileBottomSheet> {
     if (requestMatch.requester.id.isNotEmpty) {
       _friendshipStatus = 'PENDING_INCOMING';
       _friendshipId = requestMatch.id;
+      return;
+    }
+
+    final sentRequests = widget.ctrl.sentRequests;
+    final sentMatch = sentRequests.firstWhere(
+      (r) => r.addressee.id == widget.user.id,
+      orElse: () => SentRequest(
+        id: '',
+        addressee: const FriendUser(id: '', name: ''),
+        createdAt: DateTime.now(),
+      ),
+    );
+    if (sentMatch.addressee.id.isNotEmpty) {
+      _friendshipStatus = 'PENDING';
+      _friendshipId = sentMatch.id;
       return;
     }
   }
@@ -186,6 +204,8 @@ class _UserProfileBottomSheetState extends State<UserProfileBottomSheet> {
             ),
           ),
           const SizedBox(height: 24),
+          _ProfileInfoCard(user: user),
+          const SizedBox(height: 20),
 
           // Action buttons based on Friendship status
           _isLoading
@@ -203,36 +223,50 @@ class _UserProfileBottomSheetState extends State<UserProfileBottomSheet> {
     final l10n = context.l10n;
 
     if (_friendshipStatus == 'ACCEPTED') {
-      return OutlinedButton.icon(
-        onPressed: () async {
-          if (_friendshipId == null) return;
-          setState(() => _isLoading = true);
-          final success = await widget.ctrl.unfriend(_friendshipId!);
-          if (mounted) setState(() => _isLoading = false);
-          if (success) {
-            setState(() {
-              _friendshipStatus = null;
-              _friendshipId = null;
-            });
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(l10n.friendRequestSuccess)),
-              );
-            }
-          }
-        },
-        icon: Icon(Icons.person_remove_outlined, color: cs.error),
-        label: Text(l10n.unfriend, style: TextStyle(color: cs.error)),
-        style: OutlinedButton.styleFrom(
-          side: BorderSide(color: cs.error.withValues(alpha: 0.5)),
-          padding: const EdgeInsets.symmetric(vertical: 14),
-        ),
+      return Row(
+        children: [
+          Expanded(
+            child: _buildViewProfileButton(cs),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: () async {
+                if (_friendshipId == null) return;
+                setState(() => _isLoading = true);
+                final success = await widget.ctrl.unfriend(_friendshipId!);
+                if (mounted) setState(() => _isLoading = false);
+                if (success) {
+                  setState(() {
+                    _friendshipStatus = null;
+                    _friendshipId = null;
+                  });
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(l10n.friendRequestSuccess)),
+                    );
+                  }
+                }
+              },
+              icon: Icon(Icons.person_remove_outlined, color: cs.error),
+              label: Text(l10n.unfriend, style: TextStyle(color: cs.error)),
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: cs.error.withValues(alpha: 0.5)),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+            ),
+          ),
+        ],
       );
     }
 
     if (_friendshipStatus == 'PENDING_INCOMING') {
       return Row(
         children: [
+          Expanded(
+            child: _buildViewProfileButton(cs),
+          ),
+          const SizedBox(width: 10),
           Expanded(
             child: OutlinedButton.icon(
               onPressed: () async {
@@ -258,14 +292,14 @@ class _UserProfileBottomSheetState extends State<UserProfileBottomSheet> {
                 }
               },
               icon: Icon(Icons.close, color: cs.error),
-              label: Text(l10n.cancelRequest, style: TextStyle(color: cs.error)),
+              label: Text(l10n.decline, style: TextStyle(color: cs.error)),
               style: OutlinedButton.styleFrom(
                 side: BorderSide(color: cs.error.withValues(alpha: 0.5)),
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: FilledButton.icon(
               onPressed: () async {
@@ -301,55 +335,201 @@ class _UserProfileBottomSheetState extends State<UserProfileBottomSheet> {
     }
 
     if (_friendshipStatus == 'PENDING') {
-      return OutlinedButton.icon(
-        onPressed: () async {
-          setState(() => _isLoading = true);
-          final target = _friendshipId ?? widget.user.id;
-          final success = await widget.ctrl.unfriend(target);
-          if (mounted) setState(() => _isLoading = false);
-          if (success) {
-            setState(() {
-              _friendshipStatus = null;
-              _friendshipId = null;
-            });
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(l10n.cancelRequest)),
-              );
-            }
-          }
-        },
-        icon: Icon(Icons.close, color: cs.error),
-        label: Text(l10n.cancel, style: TextStyle(color: cs.error)),
-        style: OutlinedButton.styleFrom(
-          side: BorderSide(color: cs.error.withValues(alpha: 0.5)),
-          padding: const EdgeInsets.symmetric(vertical: 14),
-        ),
+      return Row(
+        children: [
+          Expanded(
+            child: _buildViewProfileButton(cs),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: () async {
+                setState(() => _isLoading = true);
+                final target = _friendshipId ?? widget.user.id;
+                final success = await widget.ctrl.unfriend(target);
+                if (mounted) setState(() => _isLoading = false);
+                if (success) {
+                  setState(() {
+                    _friendshipStatus = null;
+                    _friendshipId = null;
+                  });
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(l10n.cancelRequest)),
+                    );
+                  }
+                }
+              },
+              icon: Icon(Icons.close, color: cs.error),
+              label: Text(l10n.cancel, style: TextStyle(color: cs.error)),
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: cs.error.withValues(alpha: 0.5)),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+            ),
+          ),
+        ],
       );
     }
 
     // Default: Not friends yet
-    return FilledButton.icon(
-      onPressed: () async {
-        setState(() => _isLoading = true);
-        final success = await widget.ctrl.sendRequest(widget.user.id);
-        if (mounted) setState(() => _isLoading = false);
-        if (success) {
-          setState(() {
-            _friendshipStatus = 'PENDING';
-          });
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(l10n.friendRequestSent)),
-            );
-          }
-        }
+    return Row(
+      children: [
+        Expanded(
+          child: _buildViewProfileButton(cs),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: FilledButton.icon(
+            onPressed: () async {
+              setState(() => _isLoading = true);
+              final success = await widget.ctrl.sendRequest(widget.user.id);
+              if (mounted) setState(() => _isLoading = false);
+              if (success) {
+                setState(() {
+                  _friendshipStatus = 'PENDING';
+                });
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(l10n.friendRequestSent)),
+                  );
+                }
+              }
+            },
+            icon: const Icon(Icons.person_add_alt_1_rounded),
+            label: Text(l10n.addFriends),
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildViewProfileButton(ColorScheme cs) {
+    return OutlinedButton.icon(
+      onPressed: () {
+        Navigator.of(context).pop();
+        context.push(
+          RouteNames.viewProfile,
+          extra: widget.user,
+        );
       },
-      icon: const Icon(Icons.person_add_alt_1_rounded),
-      label: Text(l10n.addFriends),
-      style: FilledButton.styleFrom(
+      icon: const Icon(Icons.visibility_outlined),
+      label: Text(context.l10n.viewProfile),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: cs.primary,
+        side: BorderSide(color: cs.primary.withValues(alpha: 0.35)),
         padding: const EdgeInsets.symmetric(vertical: 14),
       ),
+    );
+  }
+}
+
+class _ProfileInfoCard extends StatelessWidget {
+  const _ProfileInfoCard({required this.user});
+
+  final FriendUser user;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1A1A1A) : Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _ProfileInfoRow(
+            icon: Icons.wc_outlined,
+            label: context.l10n.gender,
+            value: _displayValue(user.gender),
+          ),
+          const SizedBox(height: 14),
+          _ProfileInfoRow(
+            icon: Icons.cake_outlined,
+            label: context.l10n.dateOfBirth,
+            value: _formatBirthDate(user.birthDate),
+          ),
+          const SizedBox(height: 14),
+          _ProfileInfoRow(
+            icon: Icons.location_on_outlined,
+            label: context.l10n.address,
+            value: _displayValue(user.address),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _displayValue(String? value) {
+    final trimmed = value?.trim() ?? '';
+    return trimmed.isEmpty ? '—' : trimmed;
+  }
+
+  String _formatBirthDate(String? value) {
+    final trimmed = value?.trim() ?? '';
+    if (trimmed.isEmpty) return '—';
+    final parts = trimmed.split('-');
+    if (parts.length == 3) {
+      return '${parts[2]}/${parts[1]}/${parts[0]}';
+    }
+    return trimmed;
+  }
+}
+
+class _ProfileInfoRow extends StatelessWidget {
+  const _ProfileInfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 20, color: theme.colorScheme.primary),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: value != '—'
+                      ? (isDark ? const Color(0xFFF2F2F2) : const Color(0xFF1F2937))
+                      : theme.colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

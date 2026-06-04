@@ -46,6 +46,10 @@ class _DocumentListPageState extends State<DocumentListPage> {
           ? DocumentEmptyState(
               hasSearchQuery: _controller.searchQuery.isNotEmpty,
               onClearSearch: _controller.clearSearch,
+              onPrimaryAction: () => context.push(
+                RouteNames.documentCreate,
+                extra: const {'contentType': 'document'},
+              ),
             )
           : ListView.builder(
               physics: const AlwaysScrollableScrollPhysics(
@@ -106,6 +110,7 @@ class _DocumentListPageState extends State<DocumentListPage> {
         }
 
         final l10n = context.l10n;
+        final isDark = Theme.of(context).brightness == Brightness.dark;
 
         return Scaffold(
           backgroundColor: AppColors.scaffold(context),
@@ -116,11 +121,51 @@ class _DocumentListPageState extends State<DocumentListPage> {
             ),
             elevation: 0,
             actions: [
-              IconButton(
-                icon: Icon(Icons.add_circle_outline, color: AppColors.primaryOf(context), size: 26),
-                onPressed: () => context.push(
-                  RouteNames.documentCreate,
-                  extra: const {'contentType': 'document'},
+              Padding(
+                padding: const EdgeInsets.only(right: 10),
+                child: Tooltip(
+                  message: l10n.uploadDocument,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: Ink(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryOf(context).withValues(
+                          alpha: isDark ? 0.22 : 0.12,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.primaryOf(context).withValues(
+                            alpha: isDark ? 0.24 : 0.18,
+                          ),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(
+                              alpha: isDark ? 0.16 : 0.04,
+                            ),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () => context.push(
+                          RouteNames.documentCreate,
+                          extra: const {'contentType': 'document'},
+                        ),
+                        child: Center(
+                          child: Icon(
+                            Icons.add_rounded,
+                            color: AppColors.primaryOf(context),
+                            size: 19,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ],

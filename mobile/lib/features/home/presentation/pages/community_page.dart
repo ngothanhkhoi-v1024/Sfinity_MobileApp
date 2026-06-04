@@ -27,7 +27,9 @@ class _CommunityPageState extends State<CommunityPage>
   late final TabController _tabController;
   late final GroupController _groupCtrl;
   late final FriendshipController _friendCtrl;
+  String _groupSearch = '';
   String _discoverSearch = '';
+  late final TextEditingController _groupSearchCtrl;
   late final TextEditingController _discoverSearchCtrl;
   bool _isFriendRequestsExpanded = true;
   bool _isSentRequestsExpanded = true;
@@ -40,6 +42,10 @@ class _CommunityPageState extends State<CommunityPage>
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
     _tabController.addListener(() => setState(() {}));
+    _groupSearchCtrl = TextEditingController();
+    _groupSearchCtrl.addListener(() {
+      setState(() => _groupSearch = _groupSearchCtrl.text.trim());
+    });
     _discoverSearchCtrl = TextEditingController();
     _discoverSearchCtrl.addListener(() {
       setState(() => _discoverSearch = _discoverSearchCtrl.text.trim());
@@ -59,6 +65,7 @@ class _CommunityPageState extends State<CommunityPage>
   @override
   void dispose() {
     _tabController.dispose();
+    _groupSearchCtrl.dispose();
     _discoverSearchCtrl.dispose();
     super.dispose();
   }
@@ -89,12 +96,7 @@ class _CommunityPageState extends State<CommunityPage>
             ),
             actions: [
               if (_tabController.index == _kTabGroups)
-                IconButton.filledTonal(
-                  icon: const Icon(Icons.add_rounded, size: 22),
-                  tooltip: l10n.createGroup,
-                  onPressed: () => context.push(RouteNames.groupCreate),
-                ),
-              const SizedBox(width: 4),
+                _buildCreateGroupButton(context, cs),
             ],
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(52),
@@ -138,6 +140,8 @@ class _CommunityPageState extends State<CommunityPage>
   }
 
   Widget _buildMyGroupsTab(BuildContext context, ColorScheme cs, bool isDark) {
+    final l10n = context.l10n;
+
     if (_groupCtrl.isLoading && _groupCtrl.groups.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -157,16 +161,99 @@ class _CommunityPageState extends State<CommunityPage>
       );
     }
 
+    final query = _groupSearch.toLowerCase();
+    final filteredGroups = query.isEmpty
+        ? myGroups
+        : myGroups.where((group) {
+            return group.name.toLowerCase().contains(query) ||
+                (group.description ?? '').toLowerCase().contains(query);
+          }).toList();
+
     return RefreshIndicator(
       color: cs.primary,
       onRefresh: _groupCtrl.loadMyGroups,
-      child: ListView.builder(
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(0, 8, 0, 100),
-        itemCount: myGroups.length,
-        itemBuilder: (_, i) => GroupCard(
-          group: myGroups[i],
-          onTap: () => context.push(
-            RouteNames.groupDetail.replaceFirst(':id', myGroups[i].id),
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
+            child: PlacesSearchField(
+              controller: _groupSearchCtrl,
+              hint: l10n.searchGroupHint,
+              onChanged: (_) {},
+            ),
+          ),
+          if (filteredGroups.isEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(32, 80, 32, 0),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.search_off_rounded,
+                    size: 46,
+                    color: cs.outline,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    l10n.noGroupsFound,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: cs.onSurfaceVariant),
+                  ),
+                ],
+              ),
+            )
+          else
+            ...filteredGroups.map(
+              (group) => GroupCard(
+                group: group,
+                onTap: () => context.push(
+                  RouteNames.groupDetail.replaceFirst(':id', group.id),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCreateGroupButton(BuildContext context, ColorScheme cs) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 10),
+      child: Tooltip(
+        message: context.l10n.createGroup,
+        child: Material(
+          color: Colors.transparent,
+          child: Ink(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: cs.primary.withValues(alpha: isDark ? 0.22 : 0.12),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: cs.primary.withValues(alpha: isDark ? 0.24 : 0.18),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.16 : 0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () => context.push(RouteNames.groupCreate),
+              child: Center(
+                child: Icon(
+                  Icons.add_rounded,
+                  size: 19,
+                  color: cs.primary,
+                ),
+              ),
+            ),
           ),
         ),
       ),
