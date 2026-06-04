@@ -36,6 +36,7 @@ function sanitizeUser(user: {
   birthDate?: string;
   gender?: string;
   address?: string;
+  passwordHash?: string;
 }) {
   return {
     id: user.id,
@@ -50,6 +51,7 @@ function sanitizeUser(user: {
     birthDate: user.birthDate ?? undefined,
     gender: user.gender ?? undefined,
     address: user.address ?? undefined,
+    hasPassword: !!user.passwordHash,
   };
 }
 
@@ -355,20 +357,29 @@ export const authService = {
 
     const user = doc.data() as any;
 
-    if (!user.passwordHash) {
-      throw new HttpError(
-        400,
-        'Tài khoản mạng xã hội chưa thiết lập mật khẩu',
-        'Bad Request',
-      );
-    }
-
-    const valid = await bcrypt.compare(dto.currentPassword, user.passwordHash);
-    if (!valid) {
-      throw new HttpError(401, 'Mật khẩu hiện tại không đúng', 'Unauthorized');
+    if (user.passwordHash) {
+      if (!dto.currentPassword) {
+        throw new HttpError(400, 'Mật khẩu hiện tại là bắt buộc', 'Bad Request');
+      }
+      const valid = await bcrypt.compare(dto.currentPassword, user.passwordHash);
+      if (!valid) {
+        throw new HttpError(401, 'Mật khẩu hiện tại không đúng', 'Unauthorized');
+      }
     }
 
     const passwordHash = await bcrypt.hash(dto.newPassword, 10);
+
+    // Đồng bộ mật khẩu mới sang Firebase Auth để đảm bảo đồng bộ đăng nhập
+    try {
+      const firebaseUser = await getFirebaseAuth().getUserByEmail(user.email);
+      await getFirebaseAuth().updateUser(firebaseUser.uid, {
+        password: dto.newPassword,
+      });
+      console.log(`Đã đồng bộ cập nhật mật khẩu mới sang Firebase Auth cho: ${user.email}`);
+    } catch (err) {
+      console.error('Không thể đồng bộ cập nhật mật khẩu sang Firebase Auth:', err);
+    }
+
     await userRef.update({
       passwordHash,
       authProvider: AuthProvider.LOCAL,

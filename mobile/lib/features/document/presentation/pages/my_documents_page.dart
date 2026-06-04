@@ -530,7 +530,7 @@ class _MyDocumentCard extends StatelessWidget {
                             const SizedBox(width: 6),
                           ],
                           _Badge(
-                            text: l10n.translateCategory(
+                            text:   l10n.translateCategory(
                               (doc['category'] as Map?)?['name']?.toString() ?? 'Tài liệu',
                             ),
                             color: AppColors.muted(context),

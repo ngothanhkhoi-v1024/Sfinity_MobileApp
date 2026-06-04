@@ -2,8 +2,10 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../app.dart';
+import '../../../../core/constants/route_names.dart';
 import '../../../../core/i18n/app_text.dart';
 
 final Map<String, Uint8List> _avatarCache = {};
@@ -60,6 +62,13 @@ class ViewProfilePage extends StatelessWidget {
         return Scaffold(
           appBar: AppBar(
             title: Text(AppLocalizations.of(context).viewProfile),
+            actions: [
+              IconButton(
+                onPressed: () => context.push(RouteNames.editProfile),
+                icon: const Icon(Icons.edit_rounded),
+                tooltip: AppLocalizations.of(context).editProfile,
+              ),
+            ],
           ),
           body: ListView(
             padding: const EdgeInsets.all(24),
