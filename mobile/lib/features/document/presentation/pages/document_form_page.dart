@@ -223,7 +223,9 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
                     const SizedBox(height: 16),
 
                     DropdownButtonFormField<String>(
-                      value: _controller.selectedCategoryId,
+                      value: _controller.categories.any((cat) => cat['id']?.toString() == _controller.selectedCategoryId)
+                          ? _controller.selectedCategoryId
+                          : null,
                       decoration: InputDecoration(
                         labelText: l10n.category,
                         prefixIcon: const Icon(Icons.category_outlined),
@@ -246,27 +248,45 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
                         labelText: l10n.displayMode,
                         prefixIcon: const Icon(Icons.visibility_outlined),
                       ),
-                      items: SfinityApp.auth.user?['role']?.toString() == 'admin'
-                          ? [
-                              DropdownMenuItem<String>(
-                                value: 'PUBLISHED',
-                                child: Text(l10n.publicApproved),
-                              ),
-                              DropdownMenuItem<String>(
-                                value: 'DRAFT',
-                                child: Text(l10n.onlyMeDraft),
-                              ),
-                            ]
-                          : [
-                              DropdownMenuItem<String>(
-                                value: 'PENDING',
-                                child: Text(l10n.publicPending),
-                              ),
-                              DropdownMenuItem<String>(
-                                value: 'DRAFT',
-                                child: Text(l10n.onlyMeDraft),
-                              ),
-                            ],
+                      items: () {
+                        final allowedItems = SfinityApp.auth.user?['role']?.toString() == 'admin'
+                            ? [
+                                DropdownMenuItem<String>(
+                                  value: 'PUBLISHED',
+                                  child: Text(l10n.publicApproved),
+                                ),
+                                DropdownMenuItem<String>(
+                                  value: 'DRAFT',
+                                  child: Text(l10n.onlyMeDraft),
+                                ),
+                              ]
+                            : [
+                                DropdownMenuItem<String>(
+                                  value: 'PENDING',
+                                  child: Text(l10n.publicPending),
+                                ),
+                                DropdownMenuItem<String>(
+                                  value: 'DRAFT',
+                                  child: Text(l10n.onlyMeDraft),
+                                ),
+                              ];
+                        final hasSelected = allowedItems.any((item) => item.value == _controller.selectedStatus);
+                        if (!hasSelected && _controller.selectedStatus.isNotEmpty) {
+                          String label = _controller.selectedStatus;
+                          if (_controller.selectedStatus == 'PENDING') label = l10n.publicPending;
+                          if (_controller.selectedStatus == 'PUBLISHED') label = l10n.publicApproved;
+                          if (_controller.selectedStatus == 'DRAFT') label = l10n.onlyMeDraft;
+                          if (_controller.selectedStatus == 'REJECTED') label = l10n.statusRejected;
+                          if (_controller.selectedStatus == 'HIDDEN') label = l10n.statusHidden;
+                          allowedItems.add(
+                            DropdownMenuItem<String>(
+                              value: _controller.selectedStatus,
+                              child: Text(label),
+                            ),
+                          );
+                        }
+                        return allowedItems;
+                      }(),
                       onChanged: _controller.selectStatus,
                     ),
                     const SizedBox(height: 16),

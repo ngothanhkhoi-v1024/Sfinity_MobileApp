@@ -133,17 +133,30 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Xóa tài liệu'),
-        content: const Text('Bạn có chắc chắn muốn xóa tài liệu này không? Hành động này không thể hoàn tác.'),
+        icon: const Icon(Icons.delete_forever_rounded, color: Colors.red, size: 36),
+        title: const Text('Xóa tài liệu', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: const Text(
+          'Bạn có chắc chắn muốn xóa tài liệu này không?\nHành động này không thể hoàn tác.',
+          textAlign: TextAlign.center,
+        ),
+        actionsAlignment: MainAxisAlignment.spaceEvenly,
         actions: [
-          TextButton(
+          OutlinedButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Hủy'),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Hủy', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
           ),
-          TextButton(
+          FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Xóa'),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.red,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Xóa', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -485,7 +498,7 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                         children: [
                           const Icon(Icons.delete_outline, size: 20, color: Colors.red),
                           const SizedBox(width: 8),
-                          Text(l10n.deleteDocument, style: const TextStyle(color: Colors.red)),
+                          Text(l10n.delete, style: const TextStyle(color: Colors.red)),
                         ],
                       ),
                     ),

@@ -146,17 +146,30 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(l10n.delete),
-        content: Text(l10n.deleteDocumentConfirm),
+        icon: const Icon(Icons.delete_forever_rounded, color: Colors.red, size: 36),
+        title: Text(l10n.delete, style: const TextStyle(fontWeight: FontWeight.bold)),
+        content: Text(
+          l10n.deleteDocumentConfirm,
+          textAlign: TextAlign.center,
+        ),
+        actionsAlignment: MainAxisAlignment.spaceEvenly,
         actions: [
-          TextButton(
+          OutlinedButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.cancelBtn2),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: Text(l10n.cancelBtn2, style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
           ),
-          TextButton(
+          FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: Text(l10n.delete),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.red,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: Text(l10n.delete, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
