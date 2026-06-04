@@ -1,6 +1,6 @@
 import { getDb } from '../lib/firebase';
 import { HttpError } from '../lib/http-error';
-import { documentService } from './document.service';
+import { placeService } from './place.service';
 import type { CreatePlaceReviewDto } from '../dto/place-review.dto';
 
 const toDate = (val: unknown): Date => {
@@ -13,10 +13,7 @@ const toDate = (val: unknown): Date => {
 };
 
 async function assertPlaceExists(placeId: string): Promise<void> {
-  const place = await documentService.findOne(placeId);
-  if ((place.type ?? 'document') !== 'place') {
-    throw new HttpError(400, 'placeId không hợp lệ', 'Bad Request');
-  }
+  await placeService.findOne(placeId);
 }
 
 export const placeReviewService = {

@@ -41,7 +41,7 @@ export async function fetchDocuments(params?: {
   limit?: number;
 }): Promise<DocumentListResponse> {
   const { data } = await apiClient.get<DocumentListResponse>('/document', {
-    params: { ...params, type: 'document' },
+    params,
   });
   return data;
 }
@@ -58,7 +58,7 @@ export async function createDocument(payload: {
   tags?: string[];
   placeId?: string;
 }): Promise<DocumentItem> {
-  const { data } = await apiClient.post<DocumentItem>('/document', { ...payload, type: 'document' });
+  const { data } = await apiClient.post<DocumentItem>('/document', payload);
   return data;
 }
 

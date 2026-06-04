@@ -6,7 +6,7 @@ import {
   isWithinCheckInRadius,
   PLACE_CHECKIN_MAX_ACCURACY_M,
 } from '../lib/place-checkin-geo';
-import { documentService } from './document.service';
+import { placeService } from './place.service';
 import type { CreatePlaceCheckInDto } from '../dto/place-checkin.dto';
 
 const toDate = (val: unknown): Date => {
@@ -26,10 +26,7 @@ async function assertPlaceWithCoords(placeId: string): Promise<{
   latitude: number;
   longitude: number;
 }> {
-  const place = await documentService.findOne(placeId);
-  if ((place.type ?? 'document') !== 'place') {
-    throw new HttpError(400, 'placeId không hợp lệ', 'Bad Request');
-  }
+  const place = await placeService.findOne(placeId);
   const lat = place.latitude;
   const lng = place.longitude;
   if (typeof lat !== 'number' || typeof lng !== 'number') {

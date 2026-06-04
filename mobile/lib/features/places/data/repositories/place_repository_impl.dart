@@ -1,7 +1,6 @@
 import 'package:latlong2/latlong.dart';
 
 import '../../../../core/constants/place_tags.dart';
-import '../../../../core/i18n/app_text.dart';
 import '../mappers/place_mapper.dart';
 import '../models/place_model.dart';
 import '../services/place_api_service.dart';

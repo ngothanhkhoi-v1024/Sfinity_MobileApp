@@ -43,7 +43,7 @@ export async function deleteCategory(id: string): Promise<void> {
 export interface AmenityItem {
   id: string;
   name: string;
-  slug: string;
+  slug?: string;
   description?: string;
   type: 'PLACE';
 }
@@ -53,14 +53,14 @@ export async function fetchAmenities(): Promise<AmenityItem[]> {
   return data;
 }
 
-export async function createAmenity(payload: Omit<AmenityItem, 'type'>): Promise<AmenityItem> {
+export async function createAmenity(payload: Omit<AmenityItem, 'type' | 'slug'>): Promise<AmenityItem> {
   const { data } = await apiClient.post<AmenityItem>('/amenities', payload);
   return data;
 }
 
 export async function updateAmenity(
   id: string,
-  payload: Partial<{ name: string; slug: string; description: string }>,
+  payload: Partial<{ name: string; slug?: string; description: string }>,
 ): Promise<AmenityItem> {
   const { data } = await apiClient.patch<AmenityItem>(`/amenities/${id}`, payload);
   return data;

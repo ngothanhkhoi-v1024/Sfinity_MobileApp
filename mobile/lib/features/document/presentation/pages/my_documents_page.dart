@@ -68,18 +68,7 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
         authorId: currentUserId,
         limit: 100,
       );
-      final rawList = res['items'] as List? ?? [];
-      
-      // Filter out only document-type items
-      _allDocuments = rawList.where((e) {
-        final itemMap = e as Map<String, dynamic>;
-        final type = itemMap['type']?.toString();
-        if (type != null) {
-          return type == 'document';
-        }
-        final body = itemMap['body']?.toString() ?? '';
-        return !body.contains('type:place');
-      }).toList();
+      _allDocuments = res['items'] as List? ?? [];
 
       _calculateStats();
     } on DioException catch (e) {

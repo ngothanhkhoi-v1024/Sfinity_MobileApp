@@ -68,7 +68,7 @@ class _SfinityAppState extends State<SfinityApp> {
     final docApiService = DocumentApiService(ApiClient.instance);
     SfinityApp.documentRepository = DocumentRepositoryImpl(docApiService);
     SfinityApp.placeRepository = PlaceRepositoryImpl(
-      PlaceApiService(docApiService),
+      PlaceApiService(ApiClient.instance),
       PlaceLocationService(),
     );
     SfinityApp.studyNearMeRepository = StudyNearMeRepositoryImpl(

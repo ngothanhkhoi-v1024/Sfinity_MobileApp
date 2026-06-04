@@ -30,16 +30,15 @@ amenitiesRouter.post(
   '/',
   ...adminOnly,
   asyncHandler(async (req, res) => {
-    const { name, slug, description } = req.body as {
+    const { name, description } = req.body as {
       name: string;
-      slug: string;
       description?: string;
     };
-    if (!name || !slug) {
-      res.status(400).json({ error: 'name và slug là bắt buộc' });
+    if (!name) {
+      res.status(400).json({ error: 'name là bắt buộc' });
       return;
     }
-    res.status(201).json(await amenitiesService.create({ name, slug, description }));
+    res.status(201).json(await amenitiesService.create({ name, description }));
   }),
 );
 
@@ -47,12 +46,11 @@ amenitiesRouter.patch(
   '/:id',
   ...adminOnly,
   asyncHandler(async (req, res) => {
-    const { name, slug, description } = req.body as {
+    const { name, description } = req.body as {
       name?: string;
-      slug?: string;
       description?: string;
     };
-    res.json(await amenitiesService.update(req.params.id, { name, slug, description }));
+    res.json(await amenitiesService.update(req.params.id, { name, description }));
   }),
 );
 
