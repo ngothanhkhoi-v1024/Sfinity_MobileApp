@@ -7,6 +7,7 @@ import '../../../../core/i18n/app_text.dart';
 import '../../../../core/constants/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/error_view.dart';
+import '../utils/document_state.dart';
 import '../widgets/document_list_skeleton.dart';
 
 class MyDocumentsPage extends StatefulWidget {
@@ -29,10 +30,10 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
   int _pendingCount = 0;
   int _publishedCount = 0;
   int _rejectedCount = 0;
-  int _draftCount = 0;
+  int _privateCount = 0;
   int _hiddenCount = 0;
 
-  final List<String> _statuses = ['ALL', 'PENDING', 'PUBLISHED', 'REJECTED', 'DRAFT', 'HIDDEN'];
+  final List<String> _statuses = ['ALL', 'PRIVATE', 'PENDING', 'PUBLISHED', 'REJECTED', 'HIDDEN'];
 
   @override
   void initState() {
@@ -89,25 +90,45 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
     _pendingCount = 0;
     _publishedCount = 0;
     _rejectedCount = 0;
-    _draftCount = 0;
+    _privateCount = 0;
     _hiddenCount = 0;
 
     for (final doc in _allDocuments) {
-      final status = doc['status']?.toString();
-      if (status == 'PENDING') _pendingCount++;
-      if (status == 'PUBLISHED') _publishedCount++;
-      if (status == 'REJECTED') _rejectedCount++;
-      if (status == 'DRAFT') _draftCount++;
-      if (status == 'HIDDEN') _hiddenCount++;
+      final item = Map<String, dynamic>.from(doc as Map);
+      final visibility = documentVisibilityOf(item);
+      final moderation = documentModerationStatusOf(item);
+
+      if (visibility == documentVisibilityPrivate) {
+        _privateCount++;
+      } else if (moderation == documentModerationPending) {
+        _pendingCount++;
+      } else if (moderation == documentModerationApproved) {
+        _publishedCount++;
+      } else if (moderation == documentModerationRejected) {
+        _rejectedCount++;
+      } else if (moderation == documentModerationHidden) {
+        _hiddenCount++;
+      }
     }
   }
 
   List<dynamic> _getFilteredDocuments(String status) {
     return _allDocuments.where((doc) {
-      final docStatus = doc['status']?.toString() ?? 'DRAFT';
-      
-      // Filter by tab status
-      if (status != 'ALL' && docStatus != status) {
+      final item = Map<String, dynamic>.from(doc as Map);
+      final visibility = documentVisibilityOf(item);
+      final moderation = documentModerationStatusOf(item);
+
+      final matchesTab = switch (status) {
+        'ALL' => true,
+        'PRIVATE' => visibility == documentVisibilityPrivate,
+        'PENDING' => visibility == documentVisibilityPublic && moderation == documentModerationPending,
+        'PUBLISHED' => visibility == documentVisibilityPublic && moderation == documentModerationApproved,
+        'REJECTED' => visibility == documentVisibilityPublic && moderation == documentModerationRejected,
+        'HIDDEN' => visibility == documentVisibilityPublic && moderation == documentModerationHidden,
+        _ => false,
+      };
+
+      if (!matchesTab) {
         return false;
       }
 
@@ -378,12 +399,21 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
           ),
           const SizedBox(width: 8),
           _buildStatItem(
+            title: l10n.onlyMe,
+            value: '$_privateCount',
+            icon: Icons.lock_outline_rounded,
+            color: Colors.orange.shade700,
+            isSelected: _tabController.index == 1,
+            onTap: () => _tabController.animateTo(1),
+          ),
+          const SizedBox(width: 8),
+          _buildStatItem(
             title: l10n.statusPending,
             value: '$_pendingCount',
             icon: Icons.hourglass_empty_rounded,
             color: Colors.blue.shade700,
-            isSelected: _tabController.index == 1,
-            onTap: () => _tabController.animateTo(1),
+            isSelected: _tabController.index == 2,
+            onTap: () => _tabController.animateTo(2),
           ),
           const SizedBox(width: 8),
           _buildStatItem(
@@ -391,8 +421,8 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
             value: '$_publishedCount',
             icon: Icons.check_circle_outline_rounded,
             color: Colors.green.shade700,
-            isSelected: _tabController.index == 2,
-            onTap: () => _tabController.animateTo(2),
+            isSelected: _tabController.index == 3,
+            onTap: () => _tabController.animateTo(3),
           ),
           const SizedBox(width: 8),
           _buildStatItem(
@@ -400,15 +430,6 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
             value: '$_rejectedCount',
             icon: Icons.cancel_outlined,
             color: Colors.red.shade700,
-            isSelected: _tabController.index == 3,
-            onTap: () => _tabController.animateTo(3),
-          ),
-          const SizedBox(width: 8),
-          _buildStatItem(
-            title: l10n.statusDraft,
-            value: '$_draftCount',
-            icon: Icons.edit_note_rounded,
-            color: Colors.orange.shade700,
             isSelected: _tabController.index == 4,
             onTap: () => _tabController.animateTo(4),
           ),
@@ -524,7 +545,8 @@ class _MyDocumentCard extends StatelessWidget {
     final fileType = (doc['fileType']?.toString() ?? 'pdf').toLowerCase();
     final subjectCode = doc['subjectCode']?.toString() ?? '';
     final downloads = doc['downloadsCount'] ?? 0;
-    final status = doc['status']?.toString() ?? 'DRAFT';
+    final visibility = documentVisibilityOf(doc);
+    final moderation = documentModerationStatusOf(doc);
 
     final (fileIcon, iconColor) = _resolveFileIcon(fileType, theme);
 
@@ -598,7 +620,7 @@ class _MyDocumentCard extends StatelessWidget {
                             ),
                           ),
                           const Spacer(),
-                          _buildStatusBadge(context, status),
+                          _buildStatusBadge(context, visibility, moderation),
                         ],
                       ),
                       const SizedBox(height: 8),
@@ -667,34 +689,40 @@ class _MyDocumentCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusBadge(BuildContext context, String status) {
+  Widget _buildStatusBadge(
+    BuildContext context,
+    String visibility,
+    String moderation,
+  ) {
     final l10n = context.l10n;
-    switch (status) {
-      case 'DRAFT':
-        return _Badge(
-          text: l10n.statusDraft,
+    if (visibility == documentVisibilityPrivate) {
+      return _Badge(
+          text: l10n.onlyMe,
           color: Colors.orange,
           bgOpacity: 0.1,
         );
-      case 'PENDING':
+    }
+
+    switch (moderation) {
+      case documentModerationPending:
         return _Badge(
           text: l10n.statusPending,
           color: Colors.blue,
           bgOpacity: 0.1,
         );
-      case 'REJECTED':
+      case documentModerationRejected:
         return _Badge(
           text: l10n.statusRejected,
           color: Colors.red,
           bgOpacity: 0.1,
         );
-      case 'HIDDEN':
+      case documentModerationHidden:
         return _Badge(
           text: l10n.statusHidden,
           color: Colors.grey,
           bgOpacity: 0.1,
         );
-      case 'PUBLISHED':
+      case documentModerationApproved:
         return _Badge(
           text: l10n.statusPublished,
           color: Colors.green,

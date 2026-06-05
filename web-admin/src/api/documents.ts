@@ -1,10 +1,16 @@
 import { apiClient } from './client';
 
+export type DocumentVisibility = 'PRIVATE' | 'PUBLIC';
+export type DocumentModerationStatus = 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'HIDDEN';
+
 export interface DocumentItem {
   id: string;
   title: string;
   body: string;
-  status: 'DRAFT' | 'PENDING' | 'PUBLISHED' | 'REJECTED' | 'HIDDEN';
+  /** @deprecated use visibility + moderationStatus */
+  status?: string;
+  visibility: DocumentVisibility;
+  moderationStatus: DocumentModerationStatus;
   authorId: string;
   categoryId: string | null;
   type: 'document';
@@ -12,10 +18,8 @@ export interface DocumentItem {
   fileType: string | null;
   fileSize: number | null;
   subjectCode: string | null;
-  tags: string[];
   downloadsCount: number;
   likesCount: number;
-  placeId: string | null;
   createdAt: string;
   updatedAt: string;
   author?: { id: string; name: string; email: string };

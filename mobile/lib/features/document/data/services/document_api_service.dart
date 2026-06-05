@@ -11,7 +11,7 @@ class DocumentApiService {
     String? type,
     String? authorId,
     String? placeId,
-    String? tags,
+
     double? lat,
     double? lng,
     double? radiusKm,
@@ -25,7 +25,7 @@ class DocumentApiService {
       if (type != null) 'type': type,
       if (authorId != null) 'authorId': authorId,
       if (placeId != null) 'placeId': placeId,
-      if (tags != null && tags.isNotEmpty) 'tags': tags,
+
       if (lat != null) 'lat': lat.toString(),
       if (lng != null) 'lng': lng.toString(),
       if (radiusKm != null) 'radiusKm': radiusKm.toString(),

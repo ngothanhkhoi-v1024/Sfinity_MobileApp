@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../app.dart';
 import '../../../../core/i18n/app_text.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/utils/validators.dart';
 import '../controllers/document_form_controller.dart';
+import '../utils/document_state.dart';
 import '../widgets/document_upload_section.dart';
 
 class DocumentFormPage extends StatefulWidget {
@@ -77,10 +77,9 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
         _controller.uploadedFileType = data['fileType']?.toString() ?? 'pdf';
         _controller.uploadedFileSize = data['fileSize'] as int?;
       }
-      final status = data['status']?.toString();
-      if (status != null) {
-        _controller.selectStatus(status);
-      }
+      _controller.selectVisibility(
+        documentVisibilityOf(Map<String, dynamic>.from(data)),
+      );
       await _controller.loadCategories(categoryId, widget.isEdit);
     } catch (_) {}
   }
@@ -110,7 +109,7 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
         title: _title.text.trim(),
         body: _body.text.trim(),
         subjectCode: _subjectCode.text.trim(),
-        tagsText: '',
+
         externalUrl: '',
         placeId: widget.placeId,
       );
@@ -240,51 +239,22 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
                     const SizedBox(height: 16),
 
                     DropdownButtonFormField<String>(
-                      value: _controller.selectedStatus,
+                      value: _controller.selectedVisibility,
                       decoration: InputDecoration(
                         labelText: l10n.displayMode,
                         prefixIcon: const Icon(Icons.visibility_outlined),
                       ),
-                      items: () {
-                        final allowedItems = SfinityApp.auth.user?['role']?.toString() == 'admin'
-                            ? [
-                                DropdownMenuItem<String>(
-                                  value: 'PUBLISHED',
-                                  child: Text(l10n.publicBadge),
-                                ),
-                                DropdownMenuItem<String>(
-                                  value: 'DRAFT',
-                                  child: Text(l10n.onlyMe),
-                                ),
-                              ]
-                            : [
-                                DropdownMenuItem<String>(
-                                  value: 'PENDING',
-                                  child: Text(l10n.publicBadge),
-                                ),
-                                DropdownMenuItem<String>(
-                                  value: 'DRAFT',
-                                  child: Text(l10n.onlyMe),
-                                ),
-                              ];
-                        final hasSelected = allowedItems.any((item) => item.value == _controller.selectedStatus);
-                        if (!hasSelected && _controller.selectedStatus.isNotEmpty) {
-                          String label = _controller.selectedStatus;
-                          if (_controller.selectedStatus == 'PENDING') label = l10n.publicBadge;
-                          if (_controller.selectedStatus == 'PUBLISHED') label = l10n.publicBadge;
-                          if (_controller.selectedStatus == 'DRAFT') label = l10n.onlyMe;
-                          if (_controller.selectedStatus == 'REJECTED') label = l10n.statusRejected;
-                          if (_controller.selectedStatus == 'HIDDEN') label = l10n.statusHidden;
-                          allowedItems.add(
-                            DropdownMenuItem<String>(
-                              value: _controller.selectedStatus,
-                              child: Text(label),
-                            ),
-                          );
-                        }
-                        return allowedItems;
-                      }(),
-                      onChanged: _controller.selectStatus,
+                      items: [
+                        DropdownMenuItem<String>(
+                          value: documentVisibilityPublic,
+                          child: Text(l10n.publicBadge),
+                        ),
+                        DropdownMenuItem<String>(
+                          value: documentVisibilityPrivate,
+                          child: Text(l10n.onlyMe),
+                        ),
+                      ],
+                      onChanged: _controller.selectVisibility,
                     ),
                     const SizedBox(height: 16),
                   ],
