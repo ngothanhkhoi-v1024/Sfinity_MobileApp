@@ -27,6 +27,7 @@ class _GroupMembersTabState extends State<GroupMembersTab> {
   bool _isApprovedExpanded = true;
 
   Future<void> _removeMember(BuildContext context, GroupMemberModel member) async {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final isDark = cs.brightness == Brightness.dark;
@@ -57,7 +58,6 @@ class _GroupMembersTabState extends State<GroupMembersTab> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Icon Warning
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -71,26 +71,23 @@ class _GroupMembersTabState extends State<GroupMembersTab> {
                 ),
               ),
               const SizedBox(height: 20),
-              // Title
-              const Text(
-                'Xóa thành viên',
-                style: TextStyle(
+              Text(
+                l10n.deleteMemberConfirm,
+                style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
                 ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
-              // Content description
               Text(
-                'Bạn có chắc chắn muốn xóa thành viên "${member.user.name}" khỏi nhóm học tập này không?',
+                l10n.memberRemoved,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: cs.onSurfaceVariant.withValues(alpha: 0.8),
                 ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
-              // Actions
               Row(
                 children: [
                   Expanded(
@@ -104,7 +101,7 @@ class _GroupMembersTabState extends State<GroupMembersTab> {
                         side: BorderSide(color: cs.outline),
                       ),
                       child: Text(
-                        'Hủy',
+                        l10n.cancelBtn,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: cs.outline,
@@ -125,9 +122,9 @@ class _GroupMembersTabState extends State<GroupMembersTab> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text(
-                        'Xóa',
-                        style: TextStyle(
+                      child: Text(
+                        l10n.delete,
+                        style: const TextStyle(
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -147,14 +144,14 @@ class _GroupMembersTabState extends State<GroupMembersTab> {
         if (success) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Đã xóa thành viên "${member.user.name}" khỏi nhóm.'),
+              content: Text(l10n.memberRemoved),
               backgroundColor: cs.primary,
             ),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(widget.groupCtrl.error ?? 'Không thể xóa thành viên.'),
+              content: Text(widget.groupCtrl.error ?? l10n.cannotRemoveMember),
               backgroundColor: Colors.red,
             ),
           );
@@ -210,9 +207,7 @@ class _GroupMembersTabState extends State<GroupMembersTab> {
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(ok
-                        ? (l10n.language == 'Vietnamese' ? 'Đã từ chối yêu cầu.' : 'Request declined.')
-                        : (widget.groupCtrl.error ?? 'Lỗi')),
+                    content: Text(ok ? l10n.decline : (widget.groupCtrl.error ?? l10n.error)),
                   ),
                 );
               }
@@ -235,9 +230,7 @@ class _GroupMembersTabState extends State<GroupMembersTab> {
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(ok
-                        ? (l10n.language == 'Vietnamese' ? 'Phê duyệt thành công!' : 'Request approved!')
-                        : (widget.groupCtrl.error ?? 'Lỗi')),
+                    content: Text(ok ? l10n.success : (widget.groupCtrl.error ?? l10n.error)),
                     backgroundColor: ok ? Colors.green.shade700 : null,
                   ),
                 );
@@ -300,7 +293,7 @@ class _GroupMembersTabState extends State<GroupMembersTab> {
                   ),
                 ),
                 title: Text(
-                  'Thêm thành viên',
+                  l10n.addMembers,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: isDark ? Colors.white : Colors.black87,
@@ -308,7 +301,7 @@ class _GroupMembersTabState extends State<GroupMembersTab> {
                   ),
                 ),
                 subtitle: Text(
-                  'Mời bạn bè vào nhóm học tập này',
+                  l10n.inviteToGroup,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: cs.onSurfaceVariant.withValues(alpha: 0.6),
                     fontSize: 11,
@@ -374,7 +367,7 @@ class _GroupMembersTabState extends State<GroupMembersTab> {
                 children: [
                   Expanded(
                     child: Text(
-                      'Thành viên nhóm (${approvedMembers.length})',
+                      l10n.groupMembers(approvedMembers.length),
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: isDark ? Colors.white : cs.onSurface,

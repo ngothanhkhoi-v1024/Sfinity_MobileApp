@@ -90,6 +90,9 @@ class FriendshipController extends ChangeNotifier {
           name: oldUser.name,
           avatar: oldUser.avatar,
           email: oldUser.email,
+          gender: oldUser.gender,
+          birthDate: oldUser.birthDate,
+          address: oldUser.address,
           friendshipStatus: 'PENDING',
           friendshipId: oldUser.friendshipId,
         );
@@ -133,6 +136,9 @@ class FriendshipController extends ChangeNotifier {
           name: oldUser.name,
           avatar: oldUser.avatar,
           email: oldUser.email,
+          gender: oldUser.gender,
+          birthDate: oldUser.birthDate,
+          address: oldUser.address,
           friendshipStatus: null,
           friendshipId: null,
         );

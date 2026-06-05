@@ -4,6 +4,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../../app.dart';
 import '../../../../core/constants/map_config.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../../../../core/network/api_client.dart';
 import '../../data/models/place_model.dart';
 import '../../data/services/place_location_service.dart';
@@ -31,19 +32,35 @@ class PlacesMapController extends ChangeNotifier {
   List<PlaceModel> publicPlaces = [];
   List<PlaceModel> myPlaces = [];
 
+  /// Địa điểm luôn hiển thị trên map khi đang focus (kể cả bị lọc ẩn).
+  PlaceModel? mapFocusPlace;
+
   List<PlaceModel> get activePlaces => communityMode ? publicPlaces : myPlaces;
+
+  List<PlaceModel> get placesForMap {
+    final base = activePlaces;
+    final focus = mapFocusPlace;
+    if (focus == null || focus.point == null) return base;
+    if (base.any((p) => p.id == focus.id)) return base;
+    return [...base, focus];
+  }
+
+  bool get hasActiveFilters => filterTags.isNotEmpty || searchQuery.trim().isNotEmpty;
+
+  bool isPlaceInCurrentResults(String placeId) =>
+      activePlaces.any((p) => p.id == placeId);
 
   List<PlaceModel> sortedActivePlaces() {
     return _location.sortByDistance(activePlaces, myLocation);
   }
 
-  String distanceLabelFor(PlaceModel place) {
+  String distanceLabelFor(PlaceModel place, {String Function()? noLocationYet}) {
     if (place.distanceMeters != null) {
       return _location.formatDistanceMeters(place.distanceMeters);
     }
     final point = place.point;
     final me = myLocation;
-    if (point == null || me == null) return 'Chưa có vị trí của bạn';
+    if (point == null || me == null) return noLocationYet?.call() ?? 'No location yet';
     return _location.distanceLabel(me, point);
   }
 
@@ -69,7 +86,7 @@ class PlacesMapController extends ChangeNotifier {
     await initLocation();
   }
 
-  Future<void> initLocation() async {
+  Future<void> initLocation({String Function()? enableGPSHint, String Function()? cannotGetLocation}) async {
     if (locating) return;
     locating = true;
     locationHint = null;
@@ -79,7 +96,7 @@ class PlacesMapController extends ChangeNotifier {
       final here = await SfinityApp.placeRepository.getCurrentLocation();
       if (here == null) {
         locating = false;
-        locationHint = 'Bật GPS/quyền vị trí để xem khoảng cách gần xa';
+        locationHint = enableGPSHint?.call() ?? 'Enable GPS/location permission to see distances';
         notifyListeners();
         return;
       }
@@ -90,7 +107,7 @@ class PlacesMapController extends ChangeNotifier {
       await loadPlaces();
     } catch (_) {
       locating = false;
-      locationHint = 'Không lấy được vị trí hiện tại';
+      locationHint = cannotGetLocation?.call() ?? 'Cannot get current location';
       notifyListeners();
     }
   }
@@ -152,6 +169,17 @@ class PlacesMapController extends ChangeNotifier {
 
   void setFilterTags(Set<String> tags) {
     filterTags = tags;
+    notifyListeners();
+  }
+
+  void setMapFocusPlace(PlaceModel? place) {
+    mapFocusPlace = place;
+    notifyListeners();
+  }
+
+  void clearMapFocusPlace() {
+    if (mapFocusPlace == null) return;
+    mapFocusPlace = null;
     notifyListeners();
   }
 

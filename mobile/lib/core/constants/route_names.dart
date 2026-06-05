@@ -19,12 +19,14 @@ abstract final class RouteNames {
   static const profile = '/profile';
 
   // Places
+  static const myPlaces = '/places/my';
   static const placeDetail = '/places/:id';
   static const placeEdit = '/places/:id/edit';
   static const placeShare = '/places/share';
 
   // Document
   static const documentList = '/document';
+  static const myDocuments = '/document/my';
   static const documentDetail = '/document/:id';
   static const documentCreate = '/document/create';
   static const documentEdit = '/document/:id/edit';
@@ -33,8 +35,6 @@ abstract final class RouteNames {
   static const notifications = '/notifications';
   static const notificationSettings = '/notifications/settings';
   static const settings = '/settings';
-  static const languageSettings = '/settings/language';
-  static const themeSettings = '/settings/theme';
 
   // Profile & security
   static const viewProfile = '/profile/view';

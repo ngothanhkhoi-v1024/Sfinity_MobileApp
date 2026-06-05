@@ -1,10 +1,16 @@
 import { apiClient } from './client';
 
+export type DocumentVisibility = 'PRIVATE' | 'PUBLIC';
+export type DocumentModerationStatus = 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'HIDDEN';
+
 export interface DocumentItem {
   id: string;
   title: string;
   body: string;
-  status: 'DRAFT' | 'PUBLISHED';
+  /** @deprecated use visibility + moderationStatus */
+  status?: string;
+  visibility: DocumentVisibility;
+  moderationStatus: DocumentModerationStatus;
   authorId: string;
   categoryId: string | null;
   type: 'document';
@@ -12,14 +18,12 @@ export interface DocumentItem {
   fileType: string | null;
   fileSize: number | null;
   subjectCode: string | null;
-  tags: string[];
   downloadsCount: number;
   likesCount: number;
-  placeId: string | null;
   createdAt: string;
   updatedAt: string;
   author?: { id: string; name: string; email: string };
-  category?: { id: string; name: string; slug: string } | null;
+  category?: { id: string; name: string; slug?: string } | null;
 }
 
 export interface DocumentListResponse {
@@ -41,7 +45,7 @@ export async function fetchDocuments(params?: {
   limit?: number;
 }): Promise<DocumentListResponse> {
   const { data } = await apiClient.get<DocumentListResponse>('/document', {
-    params: { ...params, type: 'document' },
+    params,
   });
   return data;
 }
@@ -58,7 +62,7 @@ export async function createDocument(payload: {
   tags?: string[];
   placeId?: string;
 }): Promise<DocumentItem> {
-  const { data } = await apiClient.post<DocumentItem>('/document', { ...payload, type: 'document' });
+  const { data } = await apiClient.post<DocumentItem>('/document', payload);
   return data;
 }
 
@@ -106,5 +110,15 @@ export async function adminDeleteDocument(id: string, reason: string): Promise<v
 
 export async function adminUnhideDocument(id: string, note?: string): Promise<DocumentItem> {
   const { data } = await apiClient.patch<DocumentItem>(`/document/${id}/admin-unhide`, { note });
+  return data;
+}
+
+export async function adminApproveDocument(id: string, note?: string): Promise<DocumentItem> {
+  const { data } = await apiClient.patch<DocumentItem>(`/document/${id}/approve`, { note });
+  return data;
+}
+
+export async function adminRejectDocument(id: string, reason: string): Promise<DocumentItem> {
+  const { data } = await apiClient.patch<DocumentItem>(`/document/${id}/reject`, { reason });
   return data;
 }

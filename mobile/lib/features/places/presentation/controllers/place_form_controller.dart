@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
@@ -27,13 +29,18 @@ class PlaceFormController extends ChangeNotifier {
   bool loadingPlace = false;
   bool geocodingAddress = false;
   List<GeocodingResult> searchResults = [];
+  File? pickedCoverImage;
+  String? coverPreviewUrl;
 
   Future<void> loadForEdit(String placeId) async {
     loadingPlace = true;
     notifyListeners();
 
     try {
-      final place = await SfinityApp.placeRepository.getPlace(placeId);
+      final place = await SfinityApp.placeRepository.getPlace(
+        placeId,
+        placeNotFound: () => 'Place not found',
+      );
       if (place.point != null) picked = place.point!;
       nameController.text = place.title;
       descriptionController.text = place.body;
@@ -43,6 +50,7 @@ class PlaceFormController extends ChangeNotifier {
       if (address == null || address!.isEmpty) {
         await resolveAddress(picked);
       }
+      await _loadCoverPreview(placeId);
     } on DioException catch (e) {
       throw ApiClient.instance.errorMessage(e);
     } finally {
@@ -56,6 +64,29 @@ class PlaceFormController extends ChangeNotifier {
     if (point == null) return;
     picked = point;
     resolveAddress(point);
+    notifyListeners();
+  }
+
+  Future<void> _loadCoverPreview(String placeId) async {
+    try {
+      final result = await SfinityApp.placeEngagementRepository.getPhotos(placeId);
+      if (result.photos.isNotEmpty) {
+        coverPreviewUrl = result.photos.first.imageUrl;
+      }
+    } catch (_) {}
+  }
+
+  void setPickedCover(File? file) {
+    pickedCoverImage = file;
+    if (file != null) {
+      coverPreviewUrl = null;
+    }
+    notifyListeners();
+  }
+
+  void clearCover() {
+    pickedCoverImage = null;
+    coverPreviewUrl = null;
     notifyListeners();
   }
 
@@ -93,22 +124,28 @@ class PlaceFormController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> submit({String? editPlaceId}) async {
+  Future<void> submit({
+    String? editPlaceId,
+    required String Function() nameRequired,
+    required String Function() invalidCoordinates,
+  }) async {
     if (nameController.text.trim().isEmpty) {
-      throw 'Nhập tên địa điểm';
+      throw nameRequired();
     }
     if (!MapConfig.isValidLatLng(picked)) {
-      throw 'Chọn vị trí hợp lệ trên bản đồ';
+      throw invalidCoordinates();
     }
 
     loading = true;
     notifyListeners();
 
     try {
+      late final String resultingPlaceId;
+
       final payload = PlaceUpsertPayload(
         title: nameController.text.trim(),
         body: descriptionController.text.trim().isEmpty
-            ? 'Địa điểm học tập do người dùng chia sẻ.'
+            ? 'Study place shared by user.'
             : descriptionController.text.trim(),
         latitude: picked.latitude,
         longitude: picked.longitude,
@@ -119,9 +156,25 @@ class PlaceFormController extends ChangeNotifier {
       );
 
       if (editPlaceId != null && editPlaceId.isNotEmpty) {
-        await SfinityApp.placeRepository.updatePlace(editPlaceId, payload);
+        await SfinityApp.placeRepository.updatePlace(
+          editPlaceId,
+          payload,
+          errorMsg: () => 'Cannot update place',
+        );
+        resultingPlaceId = editPlaceId;
       } else {
-        await SfinityApp.placeRepository.createPlace(payload);
+        final place = await SfinityApp.placeRepository.createPlace(
+          payload,
+          errorMsg: () => 'Cannot create place',
+        );
+        resultingPlaceId = place.id;
+      }
+
+      if (pickedCoverImage != null) {
+        await SfinityApp.placeEngagementRepository.uploadAndAddPhoto(
+          resultingPlaceId,
+          imageFile: pickedCoverImage!,
+        );
       }
     } on DioException catch (e) {
       throw ApiClient.instance.errorMessage(e);

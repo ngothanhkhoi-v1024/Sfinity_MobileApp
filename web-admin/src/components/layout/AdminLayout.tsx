@@ -4,78 +4,68 @@ import {
   CrownOutlined,
   DashboardOutlined,
   LogoutOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
+  MenuOutlined,
   MessageOutlined,
-  PictureOutlined,
   SettingOutlined,
   TagsOutlined,
   TeamOutlined,
+  ToolOutlined,
   UserOutlined,
   WarningOutlined,
 } from '@ant-design/icons';
+import type { MenuProps } from 'antd';
 import { Avatar, Button, Dropdown, Layout, Menu, Typography } from 'antd';
 import { useMemo, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { config } from '@/config';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTranslation } from '@/i18n';
 
 const { Header, Sider, Content } = Layout;
 
-const menuItems = [
-  {
-    type: 'group' as const,
-    label: 'Tổng quan',
-    children: [{ key: '/', icon: <DashboardOutlined />, label: 'Dashboard' }],
-  },
-  {
-    type: 'group' as const,
-    label: 'Quản lý',
-    children: [
-      { key: '/users', icon: <TeamOutlined />, label: 'Người dùng' },
-      { key: '/content', icon: <AppstoreOutlined />, label: 'Nội dung' },
-      { key: '/categories', icon: <TagsOutlined />, label: 'Danh mục' },
-    ],
-  },
-  {
-    type: 'group' as const,
-    label: 'Hỗ trợ',
-    children: [
-      { key: '/feedback', icon: <MessageOutlined />, label: 'Phản hồi' },
-      { key: '/reports', icon: <WarningOutlined />, label: 'Báo cáo' },
-      { key: '/notifications', icon: <BellOutlined />, label: 'Thông báo' },
-    ],
-  },
-  {
-    type: 'group' as const,
-    label: 'Hệ thống',
-    children: [
-      { key: '/admins', icon: <CrownOutlined />, label: 'Admin' },
-      { key: '/media', icon: <PictureOutlined />, label: 'Media' },
-      { key: '/settings', icon: <SettingOutlined />, label: 'Cài đặt' },
-    ],
-  },
-];
+const COLLAPSED_WIDTH = 72;
+const EXPANDED_WIDTH = 260;
 
 export function AdminLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const { user, logout } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const selectedKey = useMemo(() => {
-    const flat = menuItems.flatMap((g) => g.children ?? []);
-    const match = flat.find((item) => item.key !== '/' && location.pathname.startsWith(item.key));
-    return match?.key ?? '/';
-  }, [location.pathname]);
+  const menuItems: MenuProps['items'] = useMemo(
+    () => [
+      { key: '/', icon: <DashboardOutlined />, label: t('menu.dashboard') },
+      { type: 'divider' },
+      { key: '/users', icon: <TeamOutlined />, label: t('menu.users') },
+      { key: '/content', icon: <AppstoreOutlined />, label: t('menu.content') },
+      { key: '/categories', icon: <TagsOutlined />, label: t('menu.categories') },
+      { key: '/amenities', icon: <ToolOutlined />, label: t('menu.amenities') },
+      { type: 'divider' },
+      { key: '/feedback', icon: <MessageOutlined />, label: t('menu.feedback') },
+      { key: '/reports', icon: <WarningOutlined />, label: t('menu.reports') },
+      { key: '/notifications', icon: <BellOutlined />, label: t('menu.notifications') },
+      { type: 'divider' },
+      { key: '/admins', icon: <CrownOutlined />, label: t('menu.admins') },
+      { key: '/settings', icon: <SettingOutlined />, label: t('menu.settings') },
+    ],
+    [t],
+  );
+
+  const flatKeys = (menuItems ?? [])
+    .filter((item): item is { key: string } => !!item && 'key' in item && typeof item.key === 'string')
+    .map((item) => item.key);
+
+  const selectedKey =
+    flatKeys.find((key) => key !== '/' && location.pathname.startsWith(key)) ?? '/';
 
   const userMenu = {
     items: [
       {
         key: 'logout',
         icon: <LogoutOutlined />,
-        label: 'Đăng xuất',
+        label: t('logout'),
         danger: true,
         onClick: () => {
           logout();
@@ -85,7 +75,7 @@ export function AdminLayout() {
     ],
   };
 
-  const siderWidth = collapsed ? 80 : 260;
+  const siderWidth = collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH;
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
@@ -95,8 +85,8 @@ export function AdminLayout() {
         collapsed={collapsed}
         onCollapse={setCollapsed}
         trigger={null}
-        width={260}
-        collapsedWidth={80}
+        width={EXPANDED_WIDTH}
+        collapsedWidth={COLLAPSED_WIDTH}
         theme="dark"
         style={{
           overflow: 'auto',
@@ -107,12 +97,18 @@ export function AdminLayout() {
           bottom: 0,
         }}
       >
-        <div className="admin-logo" style={{ justifyContent: collapsed ? 'center' : 'flex-start', padding: collapsed ? 0 : '0 20px' }}>
+        <div
+          className="admin-logo"
+          style={{
+            justifyContent: collapsed ? 'center' : 'flex-start',
+            padding: collapsed ? '0 12px' : '0 20px',
+          }}
+        >
           <div className="admin-logo-mark">S</div>
           {!collapsed && (
             <div>
               <div className="admin-logo-text">{config.appName}</div>
-              <div className="admin-logo-sub">Control Panel</div>
+              <div className="admin-logo-sub">{t('control.panel')}</div>
             </div>
           )}
         </div>
@@ -121,9 +117,10 @@ export function AdminLayout() {
           className="admin-menu"
           theme="dark"
           mode="inline"
+          inlineCollapsed={collapsed}
           selectedKeys={[selectedKey]}
           items={menuItems}
-          onClick={({ key }) => navigate(key)}
+          onClick={({ key }) => navigate(String(key))}
         />
       </Sider>
 
@@ -140,7 +137,7 @@ export function AdminLayout() {
         >
           <Button
             type="text"
-            icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+            icon={<MenuOutlined />}
             onClick={() => setCollapsed((v) => !v)}
             style={{ fontSize: 16 }}
           />
@@ -167,7 +164,7 @@ export function AdminLayout() {
                   {user?.name ?? 'Admin'}
                 </Typography.Text>
                 <Typography.Text type="secondary" style={{ fontSize: 11 }}>
-                  Quản trị viên
+                  {t('profile.role')}
                 </Typography.Text>
               </div>
             </Button>

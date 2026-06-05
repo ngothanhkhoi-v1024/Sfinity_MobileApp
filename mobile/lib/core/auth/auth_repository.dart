@@ -14,4 +14,11 @@ abstract class AuthRepository {
     required String code,
     required String newPassword,
   });
+  Future<void> updateCachedProfile({
+    String? name,
+    String? avatar,
+    String? birthDate,
+    String? gender,
+    String? address,
+  });
 }

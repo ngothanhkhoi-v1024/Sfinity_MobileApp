@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../app.dart';
+import '../../../../core/i18n/app_text.dart';
 
 class ShareDocumentSheet extends StatefulWidget {
   const ShareDocumentSheet({super.key, required this.onShare});
@@ -59,14 +60,17 @@ class _ShareDocumentSheetState extends State<ShareDocumentSheet> {
       });
     } catch (e) {
       setState(() {
-        _error = 'Không thể tải danh sách tài liệu. Vui lòng thử lại.';
+        _error = l10n.loadDocumentListFailed;
         _loading = false;
       });
     }
   }
 
+  AppLocalizations get l10n => context.l10n;
+
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
@@ -98,7 +102,7 @@ class _ShareDocumentSheetState extends State<ShareDocumentSheet> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Chia sẻ tài liệu',
+                l10n.documentSheet,
                 style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
               ),
               TextButton.icon(
@@ -108,7 +112,7 @@ class _ShareDocumentSheetState extends State<ShareDocumentSheet> {
                   });
                 },
                 icon: Icon(_manualMode ? Icons.list_alt_rounded : Icons.edit_note_rounded),
-                label: Text(_manualMode ? 'Chọn từ danh sách' : 'Nhập ID thủ công'),
+                label: Text(_manualMode ? l10n.selectFromList : l10n.manualInput),
               ),
             ],
           ),
@@ -122,7 +126,7 @@ class _ShareDocumentSheetState extends State<ShareDocumentSheet> {
                     TextField(
                       controller: _idCtrl,
                       decoration: InputDecoration(
-                        labelText: 'ID tài liệu',
+                        labelText: l10n.documentId,
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                         prefixIcon: const Icon(Icons.link),
                       ),
@@ -131,7 +135,7 @@ class _ShareDocumentSheetState extends State<ShareDocumentSheet> {
                     TextField(
                       controller: _titleCtrl,
                       decoration: InputDecoration(
-                        labelText: 'Tên tài liệu',
+                        labelText: l10n.documentName,
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                         prefixIcon: const Icon(Icons.picture_as_pdf_rounded),
                       ),
@@ -151,7 +155,7 @@ class _ShareDocumentSheetState extends State<ShareDocumentSheet> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         ),
                         icon: const Icon(Icons.share_rounded),
-                        label: const Text('Chia sẻ vào nhóm'),
+                        label: Text(l10n.shareAndToGroup),
                       ),
                     ),
                   ],
@@ -162,7 +166,7 @@ class _ShareDocumentSheetState extends State<ShareDocumentSheet> {
             TextField(
               controller: _searchCtrl,
               decoration: InputDecoration(
-                hintText: 'Tìm kiếm tài liệu học tập...',
+                hintText: l10n.searchDocumentHint,
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
@@ -202,7 +206,7 @@ class _ShareDocumentSheetState extends State<ShareDocumentSheet> {
                               const SizedBox(height: 8),
                               ElevatedButton(
                                 onPressed: _loadDocs,
-                                child: const Text('Thử lại'),
+                                child: Text(l10n.retry),
                               ),
                             ],
                           ),
@@ -215,7 +219,7 @@ class _ShareDocumentSheetState extends State<ShareDocumentSheet> {
                                   Icon(Icons.folder_open_outlined, size: 64, color: cs.onSurfaceVariant.withValues(alpha: 0.3)),
                                   const SizedBox(height: 12),
                                   Text(
-                                    'Không tìm thấy tài liệu nào',
+                                    l10n.noDocumentsFound,
                                     style: TextStyle(color: cs.onSurfaceVariant),
                                   ),
                                 ],
@@ -226,9 +230,9 @@ class _ShareDocumentSheetState extends State<ShareDocumentSheet> {
                               itemBuilder: (ctx, i) {
                                 final doc = _docs[i] as Map<String, dynamic>;
                                 final docId = doc['id']?.toString() ?? '';
-                                final docTitle = doc['title']?.toString() ?? 'Tài liệu không tên';
+                                final docTitle = doc['title']?.toString() ?? l10n.untitledDocument;
                                 final subjectCode = doc['subjectCode']?.toString();
-                                final category = (doc['category'] as Map?)?['name']?.toString() ?? 'Tài liệu';
+                                final category = (doc['category'] as Map?)?['name']?.toString() ?? l10n.documents;
 
                                 return Card(
                                   elevation: 0,
@@ -266,7 +270,7 @@ class _ShareDocumentSheetState extends State<ShareDocumentSheet> {
                                         await widget.onShare(docId, docTitle);
                                       },
                                       icon: const Icon(Icons.send_rounded, size: 14),
-                                      label: const Text('Chia sẻ'),
+                                      label: Text(l10n.share),
                                     ),
                                   ),
                                 );

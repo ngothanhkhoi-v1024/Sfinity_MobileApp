@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/i18n/app_text.dart';
 import '../../data/models/place_photo_model.dart';
 import '../controllers/place_engagement_controller.dart';
 
@@ -19,6 +20,7 @@ class PlacePhotoGallery extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final l10n = context.l10n;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -26,7 +28,7 @@ class PlacePhotoGallery extends StatelessWidget {
         Row(
           children: [
             Text(
-              'Ảnh thực tế',
+              l10n.images,
               style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
             const Spacer(),
@@ -35,7 +37,7 @@ class PlacePhotoGallery extends StatelessWidget {
                   ? null
                   : () => controller.pickAndUploadPhoto(placeId),
               icon: const Icon(Icons.add_photo_alternate_outlined, size: 20),
-              label: const Text('Thêm ảnh'),
+              label: Text(l10n.addPhotos),
             ),
           ],
         ),
@@ -57,7 +59,7 @@ class PlacePhotoGallery extends StatelessWidget {
                     size: 36, color: Colors.grey.shade500),
                 const SizedBox(height: 8),
                 Text(
-                  'Chưa có ảnh. Thêm ảnh thật để mọi người tin tưởng hơn.',
+                  l10n.noPhotos,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,

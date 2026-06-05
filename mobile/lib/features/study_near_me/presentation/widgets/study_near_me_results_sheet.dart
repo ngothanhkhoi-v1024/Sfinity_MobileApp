@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/i18n/app_text.dart';
 import '../../data/models/study_near_me_result.dart';
 
-/// Bottom sheet kết quả Học gần tôi.
 class StudyNearMeResultsSheet extends StatelessWidget {
   const StudyNearMeResultsSheet({
     super.key,
@@ -42,6 +42,7 @@ class StudyNearMeResultsSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final l10n = context.l10n;
 
     return SafeArea(
       child: Column(
@@ -67,14 +68,14 @@ class StudyNearMeResultsSheet extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Học gần tôi',
+                        l10n.studyNearMe,
                         style: theme.textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w700,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${result.places.length} địa điểm · ${result.documents.length} tài liệu · trong ${result.radiusKm.toStringAsFixed(0)} km',
+                        '${result.places.length} ${l10n.places} · ${result.documents.length} ${l10n.documents} · ${result.radiusKm.toStringAsFixed(0)} km',
                         style: TextStyle(
                           fontSize: 13,
                           color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
@@ -86,7 +87,7 @@ class StudyNearMeResultsSheet extends StatelessWidget {
                 IconButton(
                   onPressed: onRetry,
                   icon: const Icon(Icons.refresh_rounded),
-                  tooltip: 'Tìm lại',
+                  tooltip: l10n.findAgain,
                 ),
               ],
             ),
@@ -106,8 +107,8 @@ class StudyNearMeResultsSheet extends StatelessWidget {
                             color: Colors.grey.shade400,
                           ),
                           const SizedBox(height: 12),
-                          const Text(
-                            'Chưa có địa điểm hoặc tài liệu trong bán kính này.',
+                          Text(
+                            l10n.noPlaceFoundInArea,
                             textAlign: TextAlign.center,
                           ),
                         ],
@@ -120,13 +121,13 @@ class StudyNearMeResultsSheet extends StatelessWidget {
                       if (result.places.isNotEmpty) ...[
                         _SectionTitle(
                           icon: Icons.place_outlined,
-                          title: 'Địa điểm',
+                          title: l10n.places,
                           count: result.places.length,
                         ),
                         ...result.places.map(
                           (p) => _ResultTile(
                             icon: Icons.place_rounded,
-                            title: p['title']?.toString() ?? 'Địa điểm',
+                            title: p['title']?.toString() ?? l10n.places,
                             subtitle: _distanceLabel(p),
                             onTap: () {
                               final id = p['id']?.toString();
@@ -141,13 +142,13 @@ class StudyNearMeResultsSheet extends StatelessWidget {
                         const SizedBox(height: 16),
                         _SectionTitle(
                           icon: Icons.menu_book_outlined,
-                          title: 'Tài liệu',
+                          title: l10n.documents,
                           count: result.documents.length,
                         ),
                         ...result.documents.map(
                           (d) => _ResultTile(
                             icon: Icons.description_outlined,
-                            title: d['title']?.toString() ?? 'Tài liệu',
+                            title: d['title']?.toString() ?? l10n.documents,
                             subtitle: _distanceLabel(d),
                             onTap: () {
                               final id = d['id']?.toString();

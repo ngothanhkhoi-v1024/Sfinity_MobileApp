@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import '../../../../core/i18n/app_text.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../data/models/friend_model.dart';
 
 class FriendTile extends StatelessWidget {
@@ -17,11 +20,12 @@ class FriendTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
+    final l10n = context.l10n;
     final user = friend.user;
 
     return ListTile(
       onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
       leading: _Avatar(name: user.name, avatarUrl: user.avatar, size: 46),
       title: Text(
         user.name,
@@ -38,7 +42,7 @@ class FriendTile extends StatelessWidget {
             icon: Icon(Icons.more_horiz, color: cs.onSurfaceVariant),
             onSelected: (_) {},
             itemBuilder: (_) => [
-              const PopupMenuItem(value: 'unfriend', child: Text('Hủy kết bạn')),
+              PopupMenuItem(value: 'unfriend', child: Text(l10n.unfriend)),
             ],
           ),
     );
@@ -53,21 +57,21 @@ class _Avatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     if (avatarUrl != null && avatarUrl!.isNotEmpty) {
       return CircleAvatar(
         radius: size / 2,
         backgroundImage: NetworkImage(avatarUrl!),
       );
     }
+    final primary = AppColors.primaryOf(context);
     return CircleAvatar(
       radius: size / 2,
-      backgroundColor: cs.primaryContainer,
+      backgroundColor: primary.withValues(alpha: 0.08),
       child: Text(
         name.isNotEmpty ? name[0].toUpperCase() : '?',
         style: TextStyle(
-          color: cs.onPrimaryContainer,
-          fontWeight: FontWeight.bold,
+          color: primary,
+          fontWeight: FontWeight.w700,
           fontSize: size * 0.38,
         ),
       ),

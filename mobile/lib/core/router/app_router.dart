@@ -7,13 +7,16 @@ import '../../features/auth/presentation/pages/register_page.dart';
 import '../../features/document/presentation/pages/document_detail_page.dart';
 import '../../features/document/presentation/pages/document_form_page.dart';
 import '../../features/document/presentation/pages/document_list_page.dart';
+import '../../features/document/presentation/pages/my_documents_page.dart';
 import '../../features/feedback/presentation/pages/feedback_page.dart';
 import '../../features/friendships/presentation/pages/friends_page.dart';
 import '../../features/groups/presentation/pages/group_chat_page.dart';
 import '../../features/groups/presentation/pages/group_detail_page.dart';
 import '../../features/groups/presentation/pages/group_list_page.dart';
 import '../../features/groups/presentation/pages/group_form_page.dart';
+import '../../features/friendships/data/models/friend_model.dart';
 import '../../features/home/presentation/pages/home_shell_page.dart';
+import '../../features/places/presentation/pages/my_places_page.dart';
 import '../../features/places/presentation/pages/place_detail_page.dart';
 import '../../features/places/presentation/pages/place_share_page.dart';
 import '../../features/search/presentation/pages/search_page.dart';
@@ -26,7 +29,6 @@ import '../../features/profile/presentation/pages/edit_profile_page.dart';
 import '../../features/profile/presentation/pages/view_profile_page.dart';
 import '../../features/report/presentation/pages/report_page.dart';
 import '../../features/security/presentation/pages/change_password_page.dart';
-import '../../features/settings/presentation/pages/language_settings_page.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
 import '../auth/auth_state.dart';
 import '../constants/route_names.dart';
@@ -82,7 +84,7 @@ GoRouter createAppRouter(AuthState auth) {
         builder: (_, state) {
           final tabStr = state.uri.queryParameters['tab'];
           final initialTab = tabStr != null ? (int.tryParse(tabStr) ?? 0) : 0;
-          return HomeShellPage(initialTab: initialTab);
+          return HomeShellPage(key: homeShellKey, initialTab: initialTab);
         },
       ),
       GoRoute(path: RouteNames.search, builder: (_, __) => const SearchPage()),
@@ -90,7 +92,11 @@ GoRouter createAppRouter(AuthState auth) {
         path: RouteNames.favorites,
         builder: (_, __) => const FavoritesPage(),
       ),
-      // /places/share phải đứng trước /places/:id, nếu không "share" bị match nhầm thành id.
+      // /places/share và /places/my phải đứng trước /places/:id.
+      GoRoute(
+        path: RouteNames.myPlaces,
+        builder: (_, __) => const MyPlacesPage(),
+      ),
       GoRoute(
         path: RouteNames.placeShare,
         builder: (_, __) => const PlaceSharePage(),
@@ -109,6 +115,10 @@ GoRouter createAppRouter(AuthState auth) {
         path: RouteNames.documentList,
         builder: (_, __) => const DocumentListPage(),
         routes: [
+          GoRoute(
+            path: 'my',
+            builder: (_, __) => const MyDocumentsPage(),
+          ),
           GoRoute(
             path: 'create',
             builder: (_, state) {
@@ -141,10 +151,6 @@ GoRouter createAppRouter(AuthState auth) {
         builder: (_, __) => const SettingsPage(),
       ),
       GoRoute(
-        path: RouteNames.languageSettings,
-        builder: (_, __) => const LanguageSettingsPage(),
-      ),
-      GoRoute(
         path: RouteNames.notificationSettings,
         builder: (_, __) => const NotificationSettingsPage(),
       ),
@@ -152,14 +158,27 @@ GoRouter createAppRouter(AuthState auth) {
         path: RouteNames.feedback,
         builder: (_, __) => const FeedbackPage(),
       ),
-      GoRoute(path: RouteNames.report, builder: (_, __) => const ReportPage()),
+      GoRoute(
+        path: RouteNames.report,
+        builder: (_, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final targetType = extra?['targetType'] ?? state.uri.queryParameters['targetType'];
+          final targetId = extra?['targetId'] ?? state.uri.queryParameters['targetId'];
+          return ReportPage(
+            targetType: targetType?.toString(),
+            targetId: targetId?.toString(),
+          );
+        },
+      ),
       GoRoute(
         path: RouteNames.notifications,
         builder: (_, __) => const NotificationsPage(),
       ),
       GoRoute(
         path: RouteNames.viewProfile,
-        builder: (_, __) => const ViewProfilePage(),
+        builder: (_, state) => ViewProfilePage(
+          profileUser: state.extra is FriendUser ? state.extra as FriendUser : null,
+        ),
       ),
       GoRoute(
         path: RouteNames.editProfile,

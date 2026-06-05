@@ -11,19 +11,28 @@ class PlaceDetailController extends ChangeNotifier {
   bool loading = true;
   String? error;
 
-  Future<void> load(String placeId) async {
+  Future<void> load(String placeId, {String Function()? placeNotFound}) async {
     loading = true;
     error = null;
+    documents = [];
     notifyListeners();
 
     try {
-      place = await SfinityApp.placeRepository.getPlace(placeId);
+      place = await SfinityApp.placeRepository.getPlace(
+        placeId,
+        placeNotFound: placeNotFound,
+      );
+      loading = false;
+      notifyListeners();
+
       documents = await SfinityApp.placeRepository.listDocumentsAtPlace(placeId);
+      notifyListeners();
     } on DioException catch (e) {
       error = ApiClient.instance.errorMessage(e);
+      loading = false;
+      notifyListeners();
     } catch (e) {
       error = e.toString();
-    } finally {
       loading = false;
       notifyListeners();
     }

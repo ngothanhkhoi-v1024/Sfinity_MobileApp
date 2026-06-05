@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:dio/dio.dart';
 import 'package:sfinity/features/document/presentation/pages/pdf_full_screen_page.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../../data/models/group_message_model.dart';
 import '../../data/services/group_chat_service.dart';
 
@@ -26,8 +27,6 @@ class ChatBubble extends StatelessWidget {
   final bool showName;
   final String currentUserId;
   final String groupId;
-  /// Called when the user confirms deleting this message.
-  /// Only provided for messages sent by [isMe].
   final VoidCallback? onDelete;
 
   bool _isImageFile(String? fileName) {
@@ -189,6 +188,7 @@ class _BubbleWrapper extends StatelessWidget {
   final Widget child;
 
   void _showMenu(BuildContext context) {
+    final l10n = context.l10n;
     final cs = Theme.of(context).colorScheme;
     final isDark = cs.brightness == Brightness.dark;
     final chatService = GroupChatService();
@@ -225,7 +225,7 @@ class _BubbleWrapper extends StatelessWidget {
               ),
             ),
             Text(
-              'Thả cảm xúc',
+              l10n.reactToMessage,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 14,
@@ -294,14 +294,14 @@ class _BubbleWrapper extends StatelessWidget {
                   child: Icon(Icons.delete_outline_rounded, color: cs.error, size: 22),
                 ),
                 title: Text(
-                  'Xóa tin nhắn',
+                  l10n.deleteMessage,
                   style: TextStyle(
                     color: cs.error,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 subtitle: Text(
-                  'Tin nhắn sẽ bị xóa với tất cả mọi người',
+                  l10n.messageWillDeleteAll,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: cs.onSurfaceVariant.withValues(alpha: 0.7),
                       ),
@@ -313,6 +313,7 @@ class _BubbleWrapper extends StatelessWidget {
                     context: context,
                     barrierColor: Colors.black.withValues(alpha: 0.4),
                     builder: (ctx) {
+                      final l10n = ctx.l10n;
                       final dialogTheme = Theme.of(ctx);
                       final dialogIsDark = dialogTheme.brightness == Brightness.dark;
 
@@ -344,7 +345,7 @@ class _BubbleWrapper extends StatelessWidget {
                               ),
                               const SizedBox(height: 16),
                               Text(
-                                'Xóa tin nhắn?',
+                                l10n.deleteMessageConfirm,
                                 style: dialogTheme.textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.w700,
                                   fontSize: 18,
@@ -354,7 +355,7 @@ class _BubbleWrapper extends StatelessWidget {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'Tin nhắn này sẽ bị xóa vĩnh viễn với tất cả thành viên trong nhóm.',
+                                l10n.deleteMessageConfirmDesc,
                                 style: dialogTheme.textTheme.bodyMedium?.copyWith(
                                   color: dialogIsDark ? const Color(0xFFB0B3B8) : const Color(0xFF65676B),
                                   fontSize: 13,
@@ -380,7 +381,7 @@ class _BubbleWrapper extends StatelessWidget {
                                         ),
                                         onPressed: () => Navigator.pop(ctx),
                                         child: Text(
-                                          'Hủy',
+                                          l10n.cancel,
                                           style: TextStyle(
                                             color: dialogIsDark ? Colors.white70 : const Color(0xFF65676B),
                                             fontWeight: FontWeight.w600,
@@ -407,9 +408,9 @@ class _BubbleWrapper extends StatelessWidget {
                                           Navigator.pop(ctx);
                                           onDelete!();
                                         },
-                                        child: const Text(
-                                          'Xóa',
-                                          style: TextStyle(
+                                        child: Text(
+                                          l10n.delete,
+                                          style: const TextStyle(
                                             fontWeight: FontWeight.w600,
                                             fontSize: 14.5,
                                           ),
@@ -458,6 +459,7 @@ class _DeletedBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -514,7 +516,7 @@ class _DeletedBubble extends StatelessWidget {
                     ),
                   ),
                   child: Text(
-                    'Tin nhắn đã bị thu hồi',
+                    l10n.messageDeleted,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: isDark ? Colors.white60 : Colors.black45,
                       fontStyle: FontStyle.italic,
@@ -554,6 +556,7 @@ class _TextBubbleState extends State<_TextBubble> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final isDark = cs.brightness == Brightness.dark;
@@ -662,7 +665,7 @@ class _TextBubbleState extends State<_TextBubble> {
               ),
               child: Text(
                 widget.isMe
-                    ? '${_formatMessageTime(widget.message.createdAt, _showTime)} • Đã xem'
+                    ? '${_formatMessageTime(widget.message.createdAt, _showTime)} • ${l10n.seen}'
                     : _formatMessageTime(widget.message.createdAt, _showTime),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: isDark ? const Color(0xFF65676B) : const Color(0xFF8A8D91),
@@ -697,6 +700,7 @@ class _DocumentBubbleState extends State<_DocumentBubble> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final isDark = cs.brightness == Brightness.dark;
@@ -797,7 +801,7 @@ class _DocumentBubbleState extends State<_DocumentBubble> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
-                                    widget.isMe ? 'Bạn đã chia sẻ' : '${widget.message.senderName} chia sẻ',
+                                    widget.isMe ? l10n.youShared : l10n.sharedDocument(widget.message.senderName),
                                     style: TextStyle(
                                       fontSize: 10,
                                       color: (widget.isMe
@@ -810,7 +814,7 @@ class _DocumentBubbleState extends State<_DocumentBubble> {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    widget.message.sharedDocumentTitle ?? 'Tài liệu',
+                                    widget.message.sharedDocumentTitle ?? l10n.documentLabel,
                                     style: TextStyle(
                                       fontWeight: FontWeight.w700,
                                       color: widget.isMe
@@ -861,7 +865,7 @@ class _DocumentBubbleState extends State<_DocumentBubble> {
               ),
               child: Text(
                 widget.isMe
-                    ? '${_formatMessageTime(widget.message.createdAt, _showTime)} • Đã xem'
+                    ? '${_formatMessageTime(widget.message.createdAt, _showTime)} • ${l10n.seen}'
                     : _formatMessageTime(widget.message.createdAt, _showTime),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: isDark ? const Color(0xFF65676B) : const Color(0xFF8A8D91),
@@ -1001,6 +1005,7 @@ class _ImageBubbleState extends State<_ImageBubble> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final isDark = cs.brightness == Brightness.dark;
@@ -1160,7 +1165,7 @@ class _ImageBubbleState extends State<_ImageBubble> {
               ),
               child: Text(
                 widget.isMe
-                    ? '${_formatMessageTime(widget.message.createdAt, _showTime)} • Đã xem'
+                    ? '${_formatMessageTime(widget.message.createdAt, _showTime)} • ${l10n.seen}'
                     : _formatMessageTime(widget.message.createdAt, _showTime),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: isDark ? const Color(0xFF65676B) : const Color(0xFF8A8D91),
@@ -1226,6 +1231,7 @@ class _FileBubbleState extends State<_FileBubble> {
   }
 
   Future<void> _downloadFile() async {
+    final l10n = context.l10n;
     final fileUrl = widget.message.fileUrl;
     if (fileUrl == null || fileUrl.isEmpty || _localPath == null) return;
 
@@ -1254,7 +1260,7 @@ class _FileBubbleState extends State<_FileBubble> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Đã tải xong: ${widget.message.fileName}'),
+            content: Text(l10n.fileUploadedSuccess(widget.message.fileName ?? '')),
             backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
@@ -1266,7 +1272,7 @@ class _FileBubbleState extends State<_FileBubble> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Tải file thất bại: $e'),
+            content: Text(l10n.fileUploadFailed(e.toString())),
             backgroundColor: Colors.red,
           ),
         );
@@ -1295,10 +1301,11 @@ class _FileBubbleState extends State<_FileBubble> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final isDark = cs.brightness == Brightness.dark;
-    final fileName = widget.message.fileName ?? 'File';
+    final fileName = widget.message.fileName ?? l10n.sharedFile;
     final fileUrl = widget.message.fileUrl ?? '';
 
     return Padding(
@@ -1354,7 +1361,7 @@ class _FileBubbleState extends State<_FileBubble> {
                               MaterialPageRoute(
                                 builder: (context) => PdfFullScreenPage(
                                   pdfBytes: bytes,
-                                  title: widget.message.fileName ?? 'Tài liệu',
+                                  title: widget.message.fileName ?? l10n.documentLabel,
                                 ),
                               ),
                             );
@@ -1363,7 +1370,7 @@ class _FileBubbleState extends State<_FileBubble> {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('Không thể mở tệp tin PDF: $e'),
+                                content: Text(l10n.cannotOpenPDF(e.toString())),
                                 backgroundColor: Colors.red,
                               ),
                             );
@@ -1520,7 +1527,7 @@ class _FileBubbleState extends State<_FileBubble> {
               ),
               child: Text(
                 widget.isMe
-                    ? '${_formatMessageTime(widget.message.createdAt, _showTime)} • Đã xem'
+                    ? '${_formatMessageTime(widget.message.createdAt, _showTime)} • ${l10n.seen}'
                     : _formatMessageTime(widget.message.createdAt, _showTime),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: isDark ? const Color(0xFF65676B) : const Color(0xFF8A8D91),
@@ -1560,6 +1567,7 @@ class _ImageCardBubbleState extends State<_ImageCardBubble> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final isDark = cs.brightness == Brightness.dark;
@@ -1715,7 +1723,7 @@ class _ImageCardBubbleState extends State<_ImageCardBubble> {
               ),
               child: Text(
                 widget.isMe
-                    ? '${_formatMessageTime(widget.message.createdAt, _showTime)} • Đã xem'
+                    ? '${_formatMessageTime(widget.message.createdAt, _showTime)} • ${l10n.seen}'
                     : _formatMessageTime(widget.message.createdAt, _showTime),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: isDark ? const Color(0xFF65676B) : const Color(0xFF8A8D91),
@@ -1850,10 +1858,11 @@ class _LocationBubbleState extends State<_LocationBubble> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final isDark = cs.brightness == Brightness.dark;
-    final address = widget.message.fileName ?? 'Địa điểm';
+    final address = widget.message.fileName ?? l10n.locationPlaceholder;
     final fileUrl = widget.message.fileUrl ?? '';
 
     return Padding(
@@ -1967,7 +1976,7 @@ class _LocationBubbleState extends State<_LocationBubble> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                'Địa điểm chia sẻ',
+                                l10n.locationShared,
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
@@ -2000,7 +2009,7 @@ class _LocationBubbleState extends State<_LocationBubble> {
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    'Nhấn để xem bản đồ',
+                                    l10n.tapToViewMap,
                                     style: TextStyle(
                                       fontSize: 10.5,
                                       fontWeight: FontWeight.w600,
@@ -2040,7 +2049,7 @@ class _LocationBubbleState extends State<_LocationBubble> {
               ),
               child: Text(
                 widget.isMe
-                    ? '${_formatMessageTime(widget.message.createdAt, _showTime)} • Đã xem'
+                    ? '${_formatMessageTime(widget.message.createdAt, _showTime)} • ${l10n.seen}'
                     : _formatMessageTime(widget.message.createdAt, _showTime),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: isDark ? const Color(0xFF65676B) : const Color(0xFF8A8D91),

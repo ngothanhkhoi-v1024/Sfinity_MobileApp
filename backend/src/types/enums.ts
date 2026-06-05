@@ -16,7 +16,23 @@ export enum UserStatus {
 
 export enum ContentStatus {
   DRAFT = 'DRAFT',
+  PENDING = 'PENDING',
   PUBLISHED = 'PUBLISHED',
+  REJECTED = 'REJECTED',
+  HIDDEN = 'HIDDEN',
+}
+
+export enum ContentVisibility {
+  PRIVATE = 'PRIVATE',
+  PUBLIC = 'PUBLIC',
+}
+
+export enum ContentModerationStatus {
+  NONE = 'NONE',
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  HIDDEN = 'HIDDEN',
 }
 
 export enum ReportStatus {

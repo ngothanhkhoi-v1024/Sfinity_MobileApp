@@ -1,6 +1,7 @@
 import { getDb } from '../lib/firebase';
 import { HttpError } from '../lib/http-error';
 import { documentService } from './document.service';
+import { placeService } from './place.service';
 
 const toDate = (val: any): Date => {
   if (!val) return new Date();
@@ -21,31 +22,40 @@ export const favoritesService = {
     // Sort by createdAt desc in memory
     list.sort((a, b) => toDate(b.createdAt).getTime() - toDate(a.createdAt).getTime());
 
-    // Resolve documents for the favorite items
+    // Resolve documents or places for the favorite items
     const resolvedList = await Promise.all(
       list.map(async (fav) => {
-        let document = null;
+        let item = null;
         try {
-          document = await documentService.findOne(fav.documentId);
+          item = await documentService.findOne(fav.documentId, userId);
         } catch (err) {
-          // Document might have been deleted, ignore
+          try {
+            item = await placeService.findOne(fav.documentId, userId);
+          } catch (placeErr) {
+            // Item might have been deleted, ignore
+          }
         }
         return {
           id: fav.id,
           userId: fav.userId,
           documentId: fav.documentId,
           createdAt: toDate(fav.createdAt),
-          document,
+          document: item,
         };
       }),
     );
 
-    // Filter out deleted documents
+    // Filter out deleted items
     return resolvedList.filter((item) => item.document !== null);
   },
 
   async add(userId: string, documentId: string) {
-    const document = await documentService.findOne(documentId); // Throws 404 if document not found
+    let item = null;
+    try {
+      item = await documentService.findOne(documentId, userId);
+    } catch (err) {
+      item = await placeService.findOne(documentId, userId);
+    }
 
     const favId = `${userId}_${documentId}`;
     const favRef = getDb().collection('favorites').doc(favId);
@@ -66,7 +76,7 @@ export const favoritesService = {
 
     return {
       ...newFav,
-      document,
+      document: item,
     };
   },
 

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 
-import { CreateGroupDto, UpdateGroupDto, AddGroupMemberDto } from '../dto/group.dto';
+import { CreateGroupDto, UpdateGroupDto, AddGroupMemberDto, UpdateGroupMemberLocationDto } from '../dto/group.dto';
 import { asyncHandler } from '../lib/async-handler';
 import { validateBody } from '../lib/validate';
 import { jwtAuthMiddleware } from '../middleware/jwt.middleware';
@@ -84,6 +84,31 @@ groupRouter.post(
   asyncHandler(async (req, res) => {
     const dto = await validateBody(AddGroupMemberDto, req.body);
     res.status(201).json(await groupService.addMember(req.params.id, req.user!.sub, dto.userId));
+  }),
+);
+
+/** Vị trí thành viên trên bản đồ nhóm */
+groupRouter.get(
+  '/:id/members/locations',
+  asyncHandler(async (req, res) => {
+    res.json(await groupService.getMemberLocations(req.params.id, req.user!.sub));
+  }),
+);
+
+/** Cập nhật vị trí của tôi trên bản đồ nhóm */
+groupRouter.post(
+  '/:id/location',
+  asyncHandler(async (req, res) => {
+    const dto = await validateBody(UpdateGroupMemberLocationDto, req.body);
+    res.json(await groupService.updateMemberLocation(req.params.id, req.user!.sub, dto));
+  }),
+);
+
+/** Ngừng chia sẻ vị trí trên bản đồ nhóm */
+groupRouter.delete(
+  '/:id/location',
+  asyncHandler(async (req, res) => {
+    res.json(await groupService.clearMemberLocation(req.params.id, req.user!.sub));
   }),
 );
 

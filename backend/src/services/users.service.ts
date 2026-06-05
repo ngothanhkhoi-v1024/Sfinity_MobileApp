@@ -21,6 +21,9 @@ export const usersService = {
     role: UserRole;
     status: string;
     notificationsEnabled?: boolean;
+    gender?: string;
+    birthDate?: string;
+    address?: string;
     createdAt: any;
     updatedAt: any;
   }) {
@@ -32,6 +35,9 @@ export const usersService = {
       role: (user.role ?? 'USER').toLowerCase(),
       status: user.status ?? 'ACTIVE',
       notificationsEnabled: user.notificationsEnabled ?? true,
+      gender: user.gender ?? '',
+      birthDate: user.birthDate ?? '',
+      address: user.address ?? '',
       createdAt: toDate(user.createdAt),
       updatedAt: toDate(user.updatedAt),
     };

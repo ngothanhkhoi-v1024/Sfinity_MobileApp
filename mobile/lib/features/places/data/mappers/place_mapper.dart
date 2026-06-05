@@ -27,7 +27,9 @@ abstract final class PlaceMapper {
       distanceMeters: dist is num ? dist.round() : null,
       avgRating: (json['avgRating'] as num?)?.toDouble(),
       reviewCount: (json['reviewCount'] as num?)?.toInt(),
-      status: json['status']?.toString(),
+      visibility: json['visibility']?.toString(),
+      moderationStatus: json['moderationStatus']?.toString(),
+      legacyStatus: json['status']?.toString(),
     );
   }
 

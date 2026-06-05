@@ -1,202 +1,174 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+
+import '../../../../core/theme/app_colors.dart';
+import '../../data/models/group_message_model.dart';
 import '../../data/models/group_model.dart';
 
 class GroupCard extends StatelessWidget {
-  const GroupCard({
-    super.key,
+  const GroupCard({super.key, required this.group, this.onTap});
+
+  final GroupModel group;
+  final VoidCallback? onTap;
+
+  Stream<GroupMessageModel?> get _latestMessageStream {
+    return FirebaseFirestore.instance
+        .collection('groups')
+        .doc(group.id)
+        .collection('messages')
+        .orderBy('createdAt', descending: true)
+        .limit(1)
+        .snapshots()
+        .map((snap) {
+      if (snap.docs.isEmpty) return null;
+      return GroupMessageModel.fromFirestore(snap.docs.first);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<GroupMessageModel?>(
+      stream: _latestMessageStream,
+      builder: (context, snapshot) {
+        final message = snapshot.hasError ? null : snapshot.data;
+        return _GroupCardBody(
+          group: group,
+          message: message,
+          onTap: onTap,
+        );
+      },
+    );
+  }
+}
+
+class _GroupCardBody extends StatelessWidget {
+  const _GroupCardBody({
     required this.group,
+    required this.message,
     required this.onTap,
   });
 
   final GroupModel group;
-  final VoidCallback onTap;
+  final GroupMessageModel? message;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
+    final preview = _messagePreview(message);
+    final sender = message?.senderName.trim() ?? '';
+    final time = message == null ? '' : DateFormat('HH:mm').format(message!.createdAt);
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1F1F1F) : Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isDark ? const Color(0xFF2D2D2D) : const Color(0xFFE5E7EB),
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              _GroupAvatar(group: group),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            group.name,
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 15,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (group.isPublic)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: cs.tertiaryContainer,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: Material(
+        color: AppColors.card(context),
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.border(context)),
+            ),
+            child: Row(
+              children: [
+                _GroupAvatar(group: group),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
                             child: Text(
-                              'Công khai',
+                              group.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                fontSize: 10,
-                                color: cs.onTertiaryContainer,
                                 fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                                color: AppColors.title(context),
                               ),
                             ),
                           ),
-                      ],
-                    ),
-                    if (group.description != null && group.description!.isNotEmpty) ...[
-                      const SizedBox(height: 3),
-                      Text(
-                        group.description!,
-                        style: theme.textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                          if (time.isNotEmpty)
+                            Text(
+                              time,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppColors.muted(context),
+                              ),
+                            ),
+                        ],
                       ),
-                    ],
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        Icon(Icons.people_outline, size: 14, color: cs.primary),
-                        const SizedBox(width: 4),
+                      if (preview.isNotEmpty) ...[
+                        const SizedBox(height: 4),
                         Text(
-                          '${group.memberCount} thành viên',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: cs.primary,
-                            fontWeight: FontWeight.w500,
+                          sender.isNotEmpty ? '$sender: $preview' : preview,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.muted(context),
                           ),
                         ),
-                        const SizedBox(width: 10),
-                        _RoleBadge(role: group.myRole ?? 'MEMBER', cs: cs),
                       ],
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
+  }
+
+  String _messagePreview(GroupMessageModel? message) {
+    if (message == null) return '';
+    final text = message.text?.trim();
+    if (text != null && text.isNotEmpty) return text;
+
+    final documentTitle = message.sharedDocumentTitle?.trim();
+    if (documentTitle != null && documentTitle.isNotEmpty) return documentTitle;
+
+    final fileName = message.fileName?.trim();
+    if (fileName != null && fileName.isNotEmpty) return fileName;
+
+    return '';
   }
 }
 
 class _GroupAvatar extends StatelessWidget {
   const _GroupAvatar({required this.group});
+
   final GroupModel group;
 
   @override
   Widget build(BuildContext context) {
-    if (group.avatarUrl != null && group.avatarUrl!.isNotEmpty) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(14),
-        child: Image.network(
-          group.avatarUrl!,
-          width: 54,
-          height: 54,
-          fit: BoxFit.cover,
-        ),
-      );
-    }
+    final primary = AppColors.primaryOf(context);
+    final avatarUrl = group.avatarUrl?.trim();
 
-    // Generate gradient avatar from initials
-    final colors = _gradientForName(group.name);
-    final initials = _initials(group.name);
-
-    return Container(
-      width: 54,
-      height: 54,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        gradient: LinearGradient(
-          colors: colors,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Center(
-        child: Text(
-          initials,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
+    return CircleAvatar(
+      radius: 22,
+      backgroundColor: primary.withValues(alpha: 0.08),
+      backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
+          ? NetworkImage(avatarUrl)
+          : null,
+      child: avatarUrl == null || avatarUrl.isEmpty
+          ? Text(
+              group.name.isNotEmpty ? group.name[0].toUpperCase() : 'G',
+              style: TextStyle(
+                color: primary,
+                fontWeight: FontWeight.w700,
+                fontSize: 16,
+              ),
+            )
+          : null,
     );
-  }
-
-  String _initials(String name) {
-    final parts = name.trim().split(' ');
-    if (parts.length >= 2) return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    return name.isNotEmpty ? name[0].toUpperCase() : 'G';
-  }
-
-  List<Color> _gradientForName(String name) {
-    final palettes = [
-      [const Color(0xFF6366F1), const Color(0xFF8B5CF6)],
-      [const Color(0xFFEC4899), const Color(0xFFF97316)],
-      [const Color(0xFF0EA5E9), const Color(0xFF06B6D4)],
-      [const Color(0xFF10B981), const Color(0xFF34D399)],
-      [const Color(0xFFEF4444), const Color(0xFFF97316)],
-      [const Color(0xFFF59E0B), const Color(0xFFEAB308)],
-    ];
-    final idx = name.codeUnitAt(0) % palettes.length;
-    return palettes[idx];
-  }
-}
-
-class _RoleBadge extends StatelessWidget {
-  const _RoleBadge({required this.role, required this.cs});
-  final String role;
-  final ColorScheme cs;
-
-  @override
-  Widget build(BuildContext context) {
-    if (role == 'OWNER') {
-      return Row(
-        children: [
-          Icon(Icons.star, size: 12, color: Colors.amber.shade600),
-          const SizedBox(width: 3),
-          Text('Chủ nhóm', style: TextStyle(fontSize: 11, color: Colors.amber.shade700, fontWeight: FontWeight.w600)),
-        ],
-      );
-    }
-    if (role == 'ADMIN') {
-      return Row(
-        children: [
-          Icon(Icons.shield_outlined, size: 12, color: cs.primary),
-          const SizedBox(width: 3),
-          Text('Admin', style: TextStyle(fontSize: 11, color: cs.primary, fontWeight: FontWeight.w600)),
-        ],
-      );
-    }
-    return const SizedBox.shrink();
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-/// Thanh lọc + chuyển chế độ xem cho tab Địa điểm.
+import '../../../../core/i18n/app_text.dart';
+
 class PlacesHeaderPanel extends StatelessWidget {
   const PlacesHeaderPanel({
     super.key,
@@ -19,6 +20,7 @@ class PlacesHeaderPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final primary = theme.colorScheme.primary;
@@ -31,7 +33,7 @@ class PlacesHeaderPanel extends StatelessWidget {
             isDark: isDark,
             children: [
               _SegmentTab(
-                label: 'Cộng đồng',
+                label: l10n.communityContent,
                 icon: Icons.groups_rounded,
                 selected: communityMode,
                 primary: primary,
@@ -39,7 +41,7 @@ class PlacesHeaderPanel extends StatelessWidget {
                 onTap: () => onCommunityChanged(true),
               ),
               _SegmentTab(
-                label: 'Của tôi',
+                label: l10n.personal,
                 icon: Icons.bookmark_rounded,
                 selected: !communityMode,
                 primary: primary,
@@ -56,7 +58,7 @@ class PlacesHeaderPanel extends StatelessWidget {
             isDark: isDark,
             children: [
               _SegmentTab(
-                label: 'Bản đồ',
+                label: l10n.map,
                 icon: Icons.map_rounded,
                 selected: !listView,
                 primary: primary,
@@ -65,7 +67,7 @@ class PlacesHeaderPanel extends StatelessWidget {
                 compact: true,
               ),
               _SegmentTab(
-                label: 'Danh sách',
+                label: l10n.list,
                 icon: Icons.view_list_rounded,
                 selected: listView,
                 primary: primary,

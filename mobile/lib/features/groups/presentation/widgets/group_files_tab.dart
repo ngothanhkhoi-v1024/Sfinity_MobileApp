@@ -5,6 +5,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:dio/dio.dart';
 import 'package:sfinity/features/document/presentation/pages/pdf_full_screen_page.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../../data/models/group_message_model.dart';
 import '../../data/services/group_chat_service.dart';
 import '../../data/models/group_model.dart';
@@ -27,12 +29,12 @@ class GroupFilesTab extends StatefulWidget {
 
 class _GroupFilesTabState extends State<GroupFilesTab> {
   final _chatService = GroupChatService();
-  String _selectedCategory = 'Tất cả';
+  String _selectedCategory = '';
   String _searchQuery = '';
   String _selectedMemberId = 'all';
   final _searchController = TextEditingController();
 
-  final List<String> _categories = ['Tất cả', 'Tài liệu', 'Hình ảnh', 'Tập tin', 'Địa điểm'];
+  List<String> _categories = [];
 
   @override
   void initState() {
@@ -42,6 +44,22 @@ class _GroupFilesTabState extends State<GroupFilesTab> {
         _searchQuery = _searchController.text.trim();
       });
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final l10n = context.l10n;
+    _categories = [
+      l10n.allFiles,
+      l10n.documents,
+      l10n.images,
+      l10n.files,
+      l10n.location,
+    ];
+    if (_selectedCategory.isEmpty) {
+      _selectedCategory = l10n.allFiles;
+    }
   }
 
   @override
@@ -61,8 +79,25 @@ class _GroupFilesTabState extends State<GroupFilesTab> {
     return '${dt.day}/${dt.month}/${dt.year}';
   }
 
+  String _friendlyDisplayName(String? raw, String fallback) {
+    if (raw == null || raw.trim().isEmpty) return fallback;
+    var name = raw.trim();
+    if (name.startsWith('scaled_')) {
+      name = name.substring(7);
+    }
+    final dotIndex = name.lastIndexOf('.');
+    final base = dotIndex > 0 ? name.substring(0, dotIndex) : name;
+    final looksLikeUuid = RegExp(
+      r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+      caseSensitive: false,
+    ).hasMatch(base);
+    if (looksLikeUuid || base.length < 2) return fallback;
+    return name;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final isDark = cs.brightness == Brightness.dark;
@@ -76,7 +111,7 @@ class _GroupFilesTabState extends State<GroupFilesTab> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snap.hasError) {
-            return Center(child: Text('Lỗi: ${snap.error}'));
+            return Center(child: Text(l10n.groupChatError(snap.error.toString())));
           }
 
           final allResources = snap.data ?? [];
@@ -84,11 +119,11 @@ class _GroupFilesTabState extends State<GroupFilesTab> {
           // Filter resources locally based on selected category, search query & member selection
           final filteredResources = allResources.where((msg) {
             // Category filter
-            if (_selectedCategory != 'Tất cả') {
-              if (_selectedCategory == 'Tài liệu' && msg.type != MessageType.document) return false;
-              if (_selectedCategory == 'Địa điểm' && msg.type != MessageType.location) return false;
-              if (_selectedCategory == 'Tập tin' && msg.type != MessageType.file) return false;
-              if (_selectedCategory == 'Hình ảnh' && msg.type != MessageType.image) return false;
+            if (_selectedCategory != l10n.allFiles) {
+              if (_selectedCategory == l10n.documents && msg.type != MessageType.document) return false;
+              if (_selectedCategory == l10n.location && msg.type != MessageType.location) return false;
+              if (_selectedCategory == l10n.files && msg.type != MessageType.file) return false;
+              if (_selectedCategory == l10n.images && msg.type != MessageType.image) return false;
             }
 
             // Member selection filter
@@ -116,7 +151,7 @@ class _GroupFilesTabState extends State<GroupFilesTab> {
                 child: Row(
                   children: [
                     Text(
-                      'Kho lưu trữ nhóm (${filteredResources.length})',
+                      l10n.groupStorage(filteredResources.length),
                       style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                     ),
                   ],
@@ -131,7 +166,7 @@ class _GroupFilesTabState extends State<GroupFilesTab> {
                   child: TextField(
                     controller: _searchController,
                     decoration: InputDecoration(
-                      hintText: 'Tìm kiếm theo tên file hoặc thành viên đăng...',
+                      hintText: l10n.searchFileByName,
                       prefixIcon: const Icon(Icons.search_rounded),
                       suffixIcon: _searchQuery.isNotEmpty
                           ? IconButton(
@@ -169,13 +204,13 @@ class _GroupFilesTabState extends State<GroupFilesTab> {
                       icon: Icon(Icons.arrow_drop_down_rounded, color: cs.primary),
                       selectedItemBuilder: (context) {
                         return [
-                          const DropdownMenuItem<String>(
+                          DropdownMenuItem<String>(
                             value: 'all',
                             child: Row(
                               children: [
-                                Icon(Icons.people_alt_rounded, size: 20),
-                                SizedBox(width: 8),
-                                Text('Tất cả thành viên', style: TextStyle(fontWeight: FontWeight.w500)),
+                                const Icon(Icons.people_alt_rounded, size: 20),
+                                const SizedBox(width: 8),
+                                Text(l10n.allMembers, style: const TextStyle(fontWeight: FontWeight.w500)),
                               ],
                             ),
                           ),
@@ -205,13 +240,13 @@ class _GroupFilesTabState extends State<GroupFilesTab> {
                         ];
                       },
                       items: [
-                        const DropdownMenuItem<String>(
+                        DropdownMenuItem<String>(
                           value: 'all',
                           child: Row(
                             children: [
-                              Icon(Icons.people_alt_rounded, size: 20),
-                              SizedBox(width: 8),
-                              Text('Tất cả thành viên'),
+                              const Icon(Icons.people_alt_rounded, size: 20),
+                              const SizedBox(width: 8),
+                              Text(l10n.allMembers),
                             ],
                           ),
                         ),
@@ -297,9 +332,9 @@ class _GroupFilesTabState extends State<GroupFilesTab> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              _selectedCategory == 'Địa điểm'
+                              _selectedCategory == l10n.location
                                   ? Icons.place_rounded
-                                  : _selectedCategory == 'Hình ảnh'
+                                  : _selectedCategory == l10n.images
                                       ? Icons.image_rounded
                                       : Icons.folder_open_rounded,
                               size: 64,
@@ -307,14 +342,14 @@ class _GroupFilesTabState extends State<GroupFilesTab> {
                             ),
                             const SizedBox(height: 12),
                             Text(
-                              'Không tìm thấy tài nguyên nào',
+                              l10n.noResourceFound,
                               style: TextStyle(color: cs.onSurfaceVariant, fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               _searchQuery.isNotEmpty
-                                  ? 'Thử thay đổi từ khóa tìm kiếm khác.'
-                                  : 'Hãy chia sẻ các tài nguyên bổ ích vào nhóm chat nhé!',
+                                  ? l10n.tryDifferentKeyword
+                                  : l10n.shareResources,
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: cs.onSurfaceVariant.withValues(alpha: 0.7),
                               ),
@@ -331,7 +366,11 @@ class _GroupFilesTabState extends State<GroupFilesTab> {
 
                           // Xử lý riêng dạng Hình ảnh: Hiển thị hình ảnh giống bên chat nhưng nhỏ hơn
                           if (msg.type == MessageType.image) {
-                            return _ImageResourceItem(message: msg);
+                            return _ImageResourceItem(
+                              message: msg,
+                              formatDate: _formatDate,
+                              displayName: _friendlyDisplayName(msg.fileName, l10n.imageLabel),
+                            );
                           }
 
                           // Xử lý Tài liệu học tập và Tệp đính kèm: Cơ chế tải và mở giống bên chat
@@ -345,88 +384,10 @@ class _GroupFilesTabState extends State<GroupFilesTab> {
 
                           // Xử lý dạng Địa điểm: Hiện dạng thẻ List tiện dụng
                           if (msg.type == MessageType.location) {
-                            final title = msg.fileName ?? 'Vị trí địa lý';
-                            final subtitle = 'Địa điểm chia sẻ • Gửi bởi ${msg.senderName}';
-                            final leading = Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: Colors.green.shade50,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Icon(Icons.place_rounded, color: Colors.green.shade700),
-                            );
-                            final onTap = () async {
-                              final placeId = msg.sharedPlaceId;
-                              if (placeId != null && placeId.isNotEmpty) {
-                                context.push('/places/$placeId');
-                              } else if (msg.fileUrl != null && msg.fileUrl!.isNotEmpty) {
-                                final uri = Uri.parse(msg.fileUrl!);
-                                try {
-                                  await launchUrl(uri, mode: LaunchMode.externalApplication);
-                                } catch (_) {}
-                              }
-                            };
-
-                            return Card(
-                              elevation: 0,
-                              color: cs.surfaceContainerLowest,
-                              margin: const EdgeInsets.only(bottom: 10),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                side: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3)),
-                              ),
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(16),
-                                onTap: onTap,
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                  child: Row(
-                                    children: [
-                                      leading,
-                                      const SizedBox(width: 14),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              title,
-                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              subtitle,
-                                              style: theme.textTheme.bodySmall?.copyWith(
-                                                color: cs.onSurfaceVariant,
-                                                fontSize: 11,
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Column(
-                                        crossAxisAlignment: CrossAxisAlignment.end,
-                                        children: [
-                                          Icon(Icons.arrow_forward_ios_rounded, size: 14, color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
-                                          const SizedBox(height: 6),
-                                          Text(
-                                            _formatDate(msg.createdAt),
-                                            style: TextStyle(
-                                              fontSize: 9.5,
-                                              color: cs.onSurfaceVariant.withValues(alpha: 0.6),
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
+                            return _LocationResourceItem(
+                              message: msg,
+                              formatDate: _formatDate,
+                              title: msg.fileName ?? l10n.locationPlaceholder,
                             );
                           }
 
@@ -442,72 +403,198 @@ class _GroupFilesTabState extends State<GroupFilesTab> {
   }
 }
 
-class _ImageResourceItem extends StatelessWidget {
-  const _ImageResourceItem({required this.message});
-  final GroupMessageModel message;
+class _StorageResourceCard extends StatelessWidget {
+  const _StorageResourceCard({
+    required this.leading,
+    required this.title,
+    required this.subtitle,
+    required this.date,
+    required this.trailing,
+    required this.onTap,
+  });
+
+  final Widget leading;
+  final String title;
+  final String subtitle;
+  final String date;
+  final Widget trailing;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    final imageUrl = message.fileUrl ?? '';
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          GestureDetector(
-            onTap: () async {
-              if (imageUrl.isNotEmpty) {
-                final uri = Uri.parse(imageUrl);
-                try {
-                  await launchUrl(uri, mode: LaunchMode.externalApplication);
-                } catch (_) {}
-              }
-            },
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Container(
-                color: cs.surfaceContainerHigh,
-                width: 180,
-                height: 120,
-                child: imageUrl.isNotEmpty
-                    ? Image.network(
-                        imageUrl,
-                        fit: BoxFit.cover,
-                        loadingBuilder: (_, child, progress) {
-                          if (progress == null) return child;
-                          return Center(
-                            child: CircularProgressIndicator(
-                              value: progress.expectedTotalBytes != null
-                                  ? progress.cumulativeBytesLoaded /
-                                      progress.expectedTotalBytes!
-                                  : null,
-                            ),
-                          );
-                        },
-                        errorBuilder: (_, __, ___) => const Center(
-                          child: Icon(Icons.broken_image_rounded, size: 36),
-                        ),
-                      )
-                    : const Center(child: Icon(Icons.image_rounded, size: 36)),
-              ),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Padding(
-            padding: const EdgeInsets.only(left: 4),
-            child: Text(
-              '${message.fileName ?? "Hình ảnh"} • Đăng bởi ${message.senderName}',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: cs.onSurfaceVariant.withValues(alpha: 0.8),
-                fontSize: 11,
-              ),
-            ),
-          ),
-        ],
+    return Card(
+      elevation: 0,
+      color: AppColors.card(context),
+      margin: const EdgeInsets.only(bottom: 10),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: AppColors.border(context)),
       ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
+            children: [
+              leading,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.muted(context),
+                        fontSize: 11.5,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  trailing,
+                  const SizedBox(height: 6),
+                  Text(
+                    date,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: cs.onSurfaceVariant.withValues(alpha: 0.65),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LocationResourceItem extends StatelessWidget {
+  const _LocationResourceItem({
+    required this.message,
+    required this.formatDate,
+    required this.title,
+  });
+
+  final GroupMessageModel message;
+  final String Function(DateTime) formatDate;
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final isDark = AppColors.isDark(context);
+    const accent = Color(0xFF10B981);
+
+    return _StorageResourceCard(
+      title: title,
+      subtitle: l10n.resourceSharedBy(message.senderName),
+      date: formatDate(message.createdAt),
+      leading: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          color: accent.withValues(alpha: isDark ? 0.18 : 0.1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Icon(Icons.place_rounded, color: accent, size: 22),
+      ),
+      trailing: Icon(
+        Icons.chevron_right_rounded,
+        size: 18,
+        color: AppColors.muted(context),
+      ),
+      onTap: () async {
+        final placeId = message.sharedPlaceId;
+        if (placeId != null && placeId.isNotEmpty) {
+          context.push('/places/$placeId');
+        } else if (message.fileUrl != null && message.fileUrl!.isNotEmpty) {
+          final uri = Uri.parse(message.fileUrl!);
+          try {
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+          } catch (_) {}
+        }
+      },
+    );
+  }
+}
+
+class _ImageResourceItem extends StatelessWidget {
+  const _ImageResourceItem({
+    required this.message,
+    required this.formatDate,
+    required this.displayName,
+  });
+
+  final GroupMessageModel message;
+  final String Function(DateTime) formatDate;
+  final String displayName;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final cs = Theme.of(context).colorScheme;
+    final imageUrl = message.fileUrl ?? '';
+    const accent = Color(0xFF3B82F6);
+
+    return _StorageResourceCard(
+      title: displayName,
+      subtitle: l10n.resourceSharedBy(message.senderName),
+      date: formatDate(message.createdAt),
+      leading: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          width: 48,
+          height: 48,
+          color: cs.surfaceContainerHighest,
+          child: imageUrl.isNotEmpty
+              ? Image.network(
+                  imageUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Icon(
+                    Icons.image_rounded,
+                    color: accent.withValues(alpha: 0.8),
+                  ),
+                )
+              : Icon(Icons.image_rounded, color: accent.withValues(alpha: 0.8)),
+        ),
+      ),
+      trailing: Icon(
+        Icons.chevron_right_rounded,
+        size: 18,
+        color: AppColors.muted(context),
+      ),
+      onTap: () async {
+        if (imageUrl.isNotEmpty) {
+          final uri = Uri.parse(imageUrl);
+          try {
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+          } catch (_) {}
+        }
+      },
     );
   }
 }
@@ -559,6 +646,7 @@ class _FileResourceItemState extends State<_FileResourceItem> {
   }
 
   Future<void> _downloadFile() async {
+    final l10n = context.l10n;
     final fileUrl = widget.message.fileUrl;
     if (fileUrl == null || fileUrl.isEmpty || _localPath == null) return;
 
@@ -587,7 +675,7 @@ class _FileResourceItemState extends State<_FileResourceItem> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Đã tải xong: ${widget.message.fileName}'),
+            content: Text(l10n.fileUploadedSuccess(widget.message.fileName ?? '')),
             backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
@@ -599,7 +687,7 @@ class _FileResourceItemState extends State<_FileResourceItem> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Tải file thất bại: $e'),
+            content: Text(l10n.fileUploadFailed(e.toString())),
             backgroundColor: Colors.red,
           ),
         );
@@ -633,6 +721,7 @@ class _FileResourceItemState extends State<_FileResourceItem> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final isDark = cs.brightness == Brightness.dark;
@@ -647,42 +736,67 @@ class _FileResourceItemState extends State<_FileResourceItem> {
     String subtitle = '';
 
     if (isDoc) {
-      title = msg.sharedDocumentTitle ?? 'Tài liệu không tên';
-      subtitle = 'Tài liệu học tập • Chia sẻ bởi ${msg.senderName}';
+      title = msg.sharedDocumentTitle ?? l10n.untitledDocument;
+      subtitle = l10n.resourceSharedBy(msg.senderName);
       leading = Container(
-        padding: const EdgeInsets.all(10),
+        width: 48,
+        height: 48,
         decoration: BoxDecoration(
-          color: Colors.red.shade50,
+          color: Colors.red.withValues(alpha: isDark ? 0.18 : 0.1),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Icon(Icons.picture_as_pdf_rounded, color: Colors.red.shade700),
+        child: Icon(Icons.picture_as_pdf_rounded, color: Colors.red.shade700, size: 22),
       );
     } else {
-      title = msg.fileName ?? 'Tệp đính kèm';
+      title = _friendlyFileTitle(msg.fileName, l10n.sharedFile);
       final sizeStr = widget.formatSize(msg.fileSize);
-      subtitle = '${sizeStr.isNotEmpty ? "$sizeStr • " : ""}Tập tin • Gửi bởi ${msg.senderName}';
+      subtitle = '${sizeStr.isNotEmpty ? "$sizeStr • " : ""}${l10n.resourceSharedBy(msg.senderName)}';
       final extColor = _colorForFile(title);
       leading = Container(
-        padding: const EdgeInsets.all(10),
+        width: 48,
+        height: 48,
         decoration: BoxDecoration(
-          color: extColor.withValues(alpha: 0.1),
+          color: extColor.withValues(alpha: isDark ? 0.18 : 0.1),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Icon(_iconForFile(title), color: extColor.withValues(alpha: 0.9)),
+        child: Icon(_iconForFile(title), color: extColor.withValues(alpha: 0.9), size: 22),
       );
     }
 
-    return Card(
-      elevation: 0,
-      color: cs.surfaceContainerLowest,
-      margin: const EdgeInsets.only(bottom: 10),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3)),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () async {
+    Widget trailing;
+    if (isDoc) {
+      trailing = Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.muted(context));
+    } else if (_isDownloading) {
+      trailing = SizedBox(
+        width: 18,
+        height: 18,
+        child: CircularProgressIndicator(
+          value: _downloadProgress > 0 ? _downloadProgress : null,
+          strokeWidth: 2,
+          valueColor: AlwaysStoppedAnimation<Color>(cs.primary),
+        ),
+      );
+    } else if (_fileExists) {
+      trailing = Icon(
+        Icons.check_circle_rounded,
+        size: 18,
+        color: isDark ? Colors.greenAccent : Colors.green,
+      );
+    } else {
+      trailing = Icon(
+        Icons.download_rounded,
+        size: 18,
+        color: cs.primary.withValues(alpha: 0.85),
+      );
+    }
+
+    return _StorageResourceCard(
+      leading: leading,
+      title: title,
+      subtitle: subtitle,
+      date: widget.formatDate(msg.createdAt),
+      trailing: trailing,
+      onTap: () async {
           if (isDoc) {
             final docId = msg.sharedDocumentId ?? '';
             context.push('/document/$docId');
@@ -699,7 +813,7 @@ class _FileResourceItemState extends State<_FileResourceItem> {
                       MaterialPageRoute(
                         builder: (context) => PdfFullScreenPage(
                           pdfBytes: bytes,
-                          title: msg.fileName ?? 'Tài liệu',
+                          title: msg.fileName ?? l10n.documentLabel,
                         ),
                       ),
                     );
@@ -708,7 +822,7 @@ class _FileResourceItemState extends State<_FileResourceItem> {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Không thể mở tệp tin PDF: $e'),
+                        content: Text(l10n.cannotOpenPDF(e.toString())),
                         backgroundColor: Colors.red,
                       ),
                     );
@@ -731,80 +845,21 @@ class _FileResourceItemState extends State<_FileResourceItem> {
               await _downloadFile();
             }
           }
-        },
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              leading,
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: cs.onSurfaceVariant,
-                        fontSize: 11,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  // Action indicator: downloading (progress), checked (checkmark), or download button
-                  if (isDoc)
-                    Icon(Icons.arrow_forward_ios_rounded, size: 14, color: cs.onSurfaceVariant.withValues(alpha: 0.5))
-                  else if (_isDownloading)
-                    SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        value: _downloadProgress > 0 ? _downloadProgress : null,
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(cs.primary),
-                      ),
-                    )
-                  else if (_fileExists)
-                    Icon(
-                      Icons.check_circle_rounded,
-                      size: 18,
-                      color: isDark ? Colors.greenAccent : Colors.green,
-                    )
-                  else
-                    Icon(
-                      Icons.download_rounded,
-                      size: 18,
-                      color: cs.primary.withValues(alpha: 0.8),
-                    ),
-                  const SizedBox(height: 6),
-                  Text(
-                    widget.formatDate(msg.createdAt),
-                    style: TextStyle(
-                      fontSize: 9.5,
-                      color: cs.onSurfaceVariant.withValues(alpha: 0.6),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
+      },
     );
+  }
+
+  String _friendlyFileTitle(String? raw, String fallback) {
+    if (raw == null || raw.trim().isEmpty) return fallback;
+    var name = raw.trim();
+    if (name.startsWith('scaled_')) name = name.substring(7);
+    final dotIndex = name.lastIndexOf('.');
+    final base = dotIndex > 0 ? name.substring(0, dotIndex) : name;
+    final looksLikeUuid = RegExp(
+      r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+      caseSensitive: false,
+    ).hasMatch(base);
+    if (looksLikeUuid || base.length < 2) return fallback;
+    return name;
   }
 }

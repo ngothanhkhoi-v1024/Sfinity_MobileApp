@@ -26,6 +26,9 @@ class FriendUser {
   final String name;
   final String? avatar;
   final String? email;
+  final String? gender;
+  final String? birthDate;
+  final String? address;
   final String? friendshipStatus;
   final String? friendshipId;
 
@@ -34,6 +37,9 @@ class FriendUser {
     required this.name,
     this.avatar,
     this.email,
+    this.gender,
+    this.birthDate,
+    this.address,
     this.friendshipStatus,
     this.friendshipId,
   });
@@ -44,6 +50,9 @@ class FriendUser {
       name: json['name']?.toString() ?? '',
       avatar: json['avatar']?.toString(),
       email: json['email']?.toString(),
+      gender: json['gender']?.toString(),
+      birthDate: json['birthDate']?.toString(),
+      address: json['address']?.toString(),
       friendshipStatus: json['friendshipStatus']?.toString(),
       friendshipId: json['friendshipId']?.toString(),
     );

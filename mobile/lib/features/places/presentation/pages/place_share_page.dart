@@ -4,11 +4,15 @@ import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../core/constants/map_config.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../../../../core/services/geocoding_service.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../data/services/place_location_service.dart';
 import '../controllers/place_form_controller.dart';
+import '../widgets/place_cover_image_picker.dart';
 import '../widgets/place_tag_chips.dart';
+import '../widgets/places_map_zoom_controls.dart';
 
-/// Chọn vị trí trên OSM và đăng / sửa địa điểm.
 class PlaceSharePage extends StatefulWidget {
   const PlaceSharePage({super.key, this.editPlaceId});
 
@@ -20,9 +24,12 @@ class PlaceSharePage extends StatefulWidget {
 
 class _PlaceSharePageState extends State<PlaceSharePage> {
   final _mapController = MapController();
+  final _locationService = PlaceLocationService();
   late final PlaceFormController _ctrl;
   bool _pickedFromRoute = false;
   bool _mapReady = false;
+  bool _locating = false;
+  bool _autoLocated = false;
 
   bool get _isEdit => widget.editPlaceId != null && widget.editPlaceId!.isNotEmpty;
 
@@ -34,7 +41,9 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
       if (mounted) setState(() {});
     });
     if (_isEdit) {
-      _ctrl.loadForEdit(widget.editPlaceId!).catchError((e) {
+      _ctrl.loadForEdit(widget.editPlaceId!).then((_) {
+        if (mounted && _mapReady) _moveMapTo(_ctrl.picked, 15);
+      }).catchError((e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(e.toString())),
@@ -55,7 +64,17 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
       if (lat is num && lng is num) {
         _ctrl.setPickedFromCoords(lat.toDouble(), lng.toDouble());
         _pickedFromRoute = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _moveMapTo(_ctrl.picked, 16);
+        });
+        return;
       }
+    }
+    if (!_autoLocated) {
+      _autoLocated = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _goToCurrentLocation(silent: true);
+      });
     }
   }
 
@@ -65,31 +84,65 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
     super.dispose();
   }
 
+  void _moveMapTo(LatLng point, double zoom) {
+    if (!_mapReady || !MapConfig.isValidLatLng(point)) return;
+    try {
+      _mapController.move(point, zoom);
+    } catch (_) {}
+  }
+
+  void _zoomBy(double delta) {
+    if (!_mapReady) return;
+    try {
+      final camera = _mapController.camera;
+      final newZoom = (camera.zoom + delta).clamp(3.0, 18.0);
+      _mapController.move(camera.center, newZoom);
+    } catch (_) {}
+  }
+
+  Future<void> _goToCurrentLocation({bool silent = false}) async {
+    if (_locating) return;
+    setState(() => _locating = true);
+    final l10n = context.l10n;
+    try {
+      final point = await _locationService.getCurrentLocation();
+      if (!mounted) return;
+      if (point == null) {
+        if (!silent) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.cannotGetCurrentLocation)),
+          );
+        }
+        return;
+      }
+      _ctrl.onMapTap(point);
+      _moveMapTo(point, 16);
+    } finally {
+      if (mounted) setState(() => _locating = false);
+    }
+  }
+
   void _onMapTap(LatLng point) {
     _ctrl.onMapTap(point);
-    if (_mapReady) {
-      try {
-        _mapController.move(point, _mapController.camera.zoom);
-      } catch (_) {}
-    }
+    _moveMapTo(point, _mapReady ? _mapController.camera.zoom : 15);
   }
 
   void _selectSearchResult(GeocodingResult result) {
     _ctrl.selectSearchResult(result);
-    final point = _ctrl.picked;
-    if (_mapReady) {
-      try {
-        _mapController.move(point, 16);
-      } catch (_) {}
-    }
+    _moveMapTo(_ctrl.picked, 16);
   }
 
   Future<void> _submit() async {
+    final l10n = context.l10n;
     try {
-      await _ctrl.submit(editPlaceId: widget.editPlaceId);
+      await _ctrl.submit(
+        editPlaceId: widget.editPlaceId,
+        nameRequired: () => l10n.placeNameRequired,
+        invalidCoordinates: () => l10n.invalidCoordinates,
+      );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_isEdit ? 'Đã cập nhật địa điểm' : 'Đã lưu địa điểm')),
+          SnackBar(content: Text(_isEdit ? l10n.updatePlace : l10n.savedPlace)),
         );
         context.pop();
       }
@@ -104,9 +157,10 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     if (_ctrl.loadingPlace) {
       return Scaffold(
-        appBar: AppBar(title: Text(_isEdit ? 'Sửa địa điểm' : 'Lưu địa điểm')),
+        appBar: AppBar(title: Text(_isEdit ? l10n.editPlace : l10n.saveNewPlace)),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -114,7 +168,7 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
     final picked = MapConfig.sanitize(_ctrl.picked);
 
     return Scaffold(
-      appBar: AppBar(title: Text(_isEdit ? 'Sửa địa điểm' : 'Lưu địa điểm')),
+      appBar: AppBar(title: Text(_isEdit ? l10n.editPlace : l10n.saveNewPlace)),
       body: Column(
         children: [
           Padding(
@@ -125,7 +179,7 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
                   child: TextField(
                     controller: _ctrl.searchController,
                     decoration: InputDecoration(
-                      hintText: 'Tìm theo tên hoặc địa chỉ…',
+                      hintText: l10n.searchPlaceByName,
                       prefixIcon: const Icon(Icons.search),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       isDense: true,
@@ -165,29 +219,84 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
               ),
             ),
           SizedBox(
-            height: 200,
-            child: FlutterMap(
-              mapController: _mapController,
-              options: MapOptions(
-                initialCenter: picked,
-                initialZoom: 15,
-                onMapReady: () => _mapReady = true,
-                onTap: (_, point) => _onMapTap(point),
-              ),
+            height: 220,
+            child: Stack(
               children: [
-                TileLayer(
-                  urlTemplate: MapConfig.tileUrlTemplate,
-                  userAgentPackageName: MapConfig.userAgentPackageName,
-                ),
-                MarkerLayer(
-                  markers: [
-                    Marker(
-                      point: picked,
-                      width: 40,
-                      height: 40,
-                      child: const Icon(Icons.place, color: Color(0xFFE53935), size: 40),
+                FlutterMap(
+                  mapController: _mapController,
+                  options: MapOptions(
+                    initialCenter: picked,
+                    initialZoom: 15,
+                    onMapReady: () {
+                      _mapReady = true;
+                      _moveMapTo(_ctrl.picked, _isEdit ? 15 : 16);
+                    },
+                    onTap: (_, point) => _onMapTap(point),
+                  ),
+                  children: [
+                    TileLayer(
+                      urlTemplate: MapConfig.tileUrlTemplate,
+                      userAgentPackageName: MapConfig.userAgentPackageName,
+                    ),
+                    MarkerLayer(
+                      markers: [
+                        Marker(
+                          point: picked,
+                          width: 40,
+                          height: 40,
+                          child: const Icon(
+                            Icons.place,
+                            color: Color(0xFFE53935),
+                            size: 40,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
+                ),
+                Positioned(
+                  left: 10,
+                  bottom: 10,
+                  child: PlacesMapZoomControls(
+                    onZoomIn: () => _zoomBy(1),
+                    onZoomOut: () => _zoomBy(-1),
+                  ),
+                ),
+                Positioned(
+                  right: 10,
+                  bottom: 10,
+                  child: Tooltip(
+                    message: l10n.groupMapCenterMe,
+                    child: Material(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? const Color(0xFF242424)
+                          : Colors.white,
+                      elevation: 2,
+                      shadowColor: Colors.black26,
+                      shape: const CircleBorder(),
+                      child: InkWell(
+                        customBorder: const CircleBorder(),
+                        onTap: _locating ? null : () => _goToCurrentLocation(),
+                        child: SizedBox(
+                          width: 40,
+                          height: 40,
+                          child: _locating
+                              ? Padding(
+                                  padding: const EdgeInsets.all(10),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppColors.primaryOf(context),
+                                  ),
+                                )
+                              : Icon(
+                                  Icons.my_location_rounded,
+                                  size: 22,
+                                  color: AppColors.primaryOf(context),
+                                ),
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -198,7 +307,7 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (_ctrl.geocodingAddress)
-                  const Text('Đang lấy địa chỉ…', style: TextStyle(fontSize: 12))
+                  Text(l10n.loading, style: const TextStyle(fontSize: 12))
                 else if (_ctrl.address != null && _ctrl.address!.isNotEmpty)
                   Text(
                     _ctrl.address!,
@@ -206,7 +315,7 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
                   )
                 else
                   Text(
-                    'Chạm bản đồ để chọn vị trí · ${picked.latitude.toStringAsFixed(5)}, ${picked.longitude.toStringAsFixed(5)}',
+                    '${l10n.placePickLocationHint} · ${picked.latitude.toStringAsFixed(5)}, ${picked.longitude.toStringAsFixed(5)}',
                     style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                   ),
               ],
@@ -219,18 +328,28 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
                 children: [
                   TextField(
                     controller: _ctrl.nameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Tên địa điểm',
-                      border: OutlineInputBorder(),
-                      hintText: 'VD: Thư viện, quán cà phê học nhóm',
+                    decoration: InputDecoration(
+                      labelText: l10n.placeName,
+                      border: const OutlineInputBorder(),
                     ),
+                  ),
+                  const SizedBox(height: 16),
+                  PlaceCoverImagePicker(
+                    pickedFile: _ctrl.pickedCoverImage,
+                    previewUrl: _ctrl.coverPreviewUrl,
+                    enabled: !_ctrl.loading,
+                    onPick: () async {
+                      final file = await pickPlaceCoverImage(context);
+                      if (file != null) _ctrl.setPickedCover(file);
+                    },
+                    onClear: _ctrl.clearCover,
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: _ctrl.descriptionController,
-                    decoration: const InputDecoration(
-                      labelText: 'Mô tả thêm (ghi chú, giờ mở cửa…)',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: l10n.additionalDescription,
+                      border: const OutlineInputBorder(),
                     ),
                     maxLines: 4,
                   ),
@@ -243,7 +362,7 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
                   Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      'Ai có thể thấy địa điểm này?',
+                      l10n.placeDisplayOnMap,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
@@ -251,16 +370,16 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
                   ),
                   const SizedBox(height: 10),
                   SegmentedButton<bool>(
-                    segments: const [
+                    segments: [
                       ButtonSegment<bool>(
                         value: false,
-                        label: Text('Chỉ mình tôi'),
-                        icon: Icon(Icons.lock_outline, size: 18),
+                        label: Text(l10n.personal),
+                        icon: const Icon(Icons.lock_outline, size: 18),
                       ),
                       ButtonSegment<bool>(
                         value: true,
-                        label: Text('Cộng đồng'),
-                        icon: Icon(Icons.public, size: 18),
+                        label: Text(l10n.communityContent),
+                        icon: const Icon(Icons.public, size: 18),
                       ),
                     ],
                     selected: {_ctrl.isPublic},
@@ -271,8 +390,8 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
                   const SizedBox(height: 8),
                   Text(
                     _ctrl.isPublic
-                        ? 'Địa điểm hiển thị trên bản đồ cộng đồng cho mọi người.'
-                        : 'Chỉ bạn thấy trong tab Của tôi, không hiện trên bản đồ cộng đồng.',
+                        ? l10n.placeWillShowMap
+                        : l10n.noPlaceCommunity,
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey.shade600,
@@ -283,8 +402,8 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
                     onPressed: _ctrl.loading ? null : _submit,
                     child: Text(
                       _ctrl.loading
-                          ? 'Đang lưu…'
-                          : (_isEdit ? 'Cập nhật địa điểm' : 'Lưu địa điểm'),
+                          ? l10n.loading
+                          : (_isEdit ? l10n.updatePlace : l10n.savePlace),
                     ),
                   ),
                 ],

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/i18n/app_text.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../places/presentation/widgets/places_search_field.dart';
 import 'document_mode_toggle.dart';
 
-/// Khối điều khiển gọn: chế độ + tìm kiếm + lọc danh mục.
 class DocumentTopPanel extends StatelessWidget {
   const DocumentTopPanel({
     super.key,
@@ -15,7 +15,8 @@ class DocumentTopPanel extends StatelessWidget {
     required this.categories,
     required this.selectedCategory,
     required this.onCategorySelected,
-    this.resultCount,
+    required this.showFilters,
+    required this.onToggleFilters,
     this.embedded = false,
   });
 
@@ -26,63 +27,77 @@ class DocumentTopPanel extends StatelessWidget {
   final List<String> categories;
   final String selectedCategory;
   final ValueChanged<String> onCategorySelected;
-  final int? resultCount;
+  final bool showFilters;
+  final VoidCallback onToggleFilters;
   final bool embedded;
 
   @override
   Widget build(BuildContext context) {
     final primary = AppColors.primaryOf(context);
+    final l10n = context.l10n;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (!embedded) ...[
-          Text(
-            'Tài liệu học tập',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.5,
-                  height: 1.1,
-                ),
-          ),
-          const SizedBox(height: 4),
-        ],
-        Text(
-          communityMode
-              ? 'Bài giảng, đề thi và ghi chú từ cộng đồng'
-              : 'Tài liệu bạn đã đăng tải',
-          style: TextStyle(fontSize: embedded ? 13 : 14, color: AppColors.subtitle(context), height: 1.35),
-        ),
-        const SizedBox(height: 10),
         DocumentModeToggle(
           communityMode: communityMode,
           onChanged: onModeChanged,
           compact: true,
         ),
         const SizedBox(height: 10),
-        Container(
-          padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
-          decoration: AppColors.panel(context),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              PlacesSearchField(
+        Row(
+          children: [
+            Expanded(
+              child: PlacesSearchField(
                 controller: searchController,
-                hint: 'Tìm tài liệu, mã môn, từ khóa…',
+                hint: l10n.searchDocumentHint,
                 onChanged: onSearchChanged,
               ),
-              const SizedBox(height: 8),
+            ),
+            const SizedBox(width: 8),
+            Material(
+              color: showFilters
+                  ? primary.withValues(alpha: 0.08)
+                  : AppColors.chipBg(context),
+              borderRadius: BorderRadius.circular(12),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: onToggleFilters,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Icon(
+                    Icons.tune_rounded,
+                    color: showFilters ? primary : AppColors.muted(context),
+                    size: 20,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        AnimatedCrossFade(
+          firstCurve: Curves.easeOutCubic,
+          secondCurve: Curves.easeInCubic,
+          sizeCurve: Curves.easeOutCubic,
+          crossFadeState: showFilters
+              ? CrossFadeState.showSecond
+              : CrossFadeState.showFirst,
+          duration: const Duration(milliseconds: 200),
+          firstChild: const SizedBox(width: double.infinity),
+          secondChild: Column(
+            children: [
+              const SizedBox(height: 10),
               SizedBox(
                 height: 36,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: categories.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 6),
+                  separatorBuilder: (context, index) => const SizedBox(width: 6),
                   itemBuilder: (context, index) {
                     final cat = categories[index];
                     final selected = selectedCategory == cat;
                     return _CategoryChip(
-                      label: cat,
+                      label: l10n.translateCategory(cat),
                       selected: selected,
                       primary: primary,
                       onTap: () => onCategorySelected(cat),
@@ -93,10 +108,6 @@ class DocumentTopPanel extends StatelessWidget {
             ],
           ),
         ),
-        if (resultCount != null) ...[
-          const SizedBox(height: 10),
-          _DocumentCountStrip(count: resultCount!, communityMode: communityMode),
-        ],
       ],
     );
   }
@@ -117,67 +128,31 @@ class _CategoryChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = AppColors.isDark(context);
-
     return Material(
-      color: selected ? primary : AppColors.chipBg(context),
-      borderRadius: BorderRadius.circular(10),
+      color: selected ? primary.withValues(alpha: 0.08) : AppColors.card(context),
+      borderRadius: BorderRadius.circular(18),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: selected
+                  ? primary.withValues(alpha: 0.35)
+                  : AppColors.border(context),
+            ),
+          ),
           child: Text(
             label,
             style: TextStyle(
               fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: selected
-                  ? Colors.white
-                  : (isDark ? const Color(0xFF9CA3AF) : const Color(0xFF4B5563)),
+              fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+              color: selected ? primary : AppColors.muted(context),
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _DocumentCountStrip extends StatelessWidget {
-  const _DocumentCountStrip({
-    required this.count,
-    required this.communityMode,
-  });
-
-  final int count;
-  final bool communityMode;
-
-  @override
-  Widget build(BuildContext context) {
-    final primary = AppColors.primaryOf(context);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppColors.primaryTint(context),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: primary.withValues(alpha: 0.15)),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            communityMode ? Icons.public_rounded : Icons.person_rounded,
-            size: 18,
-            color: primary,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            '$count tài liệu',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: primary),
-          ),
-          const Spacer(),
-          Icon(Icons.menu_book_rounded, size: 16, color: primary.withValues(alpha: 0.7)),
-        ],
       ),
     );
   }

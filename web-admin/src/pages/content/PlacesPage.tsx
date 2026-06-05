@@ -1,62 +1,120 @@
 import {
+  CheckCircleOutlined,
+  CloseCircleOutlined,
   DeleteOutlined,
-  EnvironmentOutlined,
   EyeInvisibleOutlined,
   EyeOutlined,
   RetweetOutlined,
+  SearchOutlined,
 } from '@ant-design/icons';
 import {
   Button,
   Descriptions,
   Input,
   Modal,
+  Select,
   Space,
+  Switch,
   Table,
   Tag,
   message,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useCallback, useEffect, useState } from 'react';
+import dayjs from 'dayjs';
 
 import {
+  adminApprovePlace,
   adminDeletePlace,
   adminHidePlace,
+  adminRejectPlace,
   adminUnhidePlace,
   fetchPlaces,
-  PLACE_ZONES,
+  getPlaceModerationStatus,
+  getPlaceVisibility,
   type PlaceItem,
+  type PlaceModerationStatus,
 } from '@/api/places';
+import { reverseGeocode } from '@/utils/geocoding';
+import { useSettings } from '@/contexts/SettingsContext';
 import { PageHeader } from '@/components/common/PageHeader';
 import { PageShell } from '@/components/common/PageShell';
 
-const ZONE_COLORS: Record<string, string> = {
-  khu_a: 'blue',
-  khu_b: 'cyan',
-  library: 'purple',
-  dorm: 'orange',
-  cafeteria: 'gold',
-  sports: 'green',
-  faculty_it: 'red',
-  faculty_biz: 'magenta',
-  other: 'default',
+const MODERATION_LABELS: Record<PlaceModerationStatus, string> = {
+  NONE: 'Nháp',
+  PENDING: 'Chờ duyệt',
+  APPROVED: 'Đã duyệt',
+  REJECTED: 'Từ chối',
+  HIDDEN: 'Ẩn',
+};
+
+const MODERATION_COLORS: Record<PlaceModerationStatus, string> = {
+  NONE: 'default',
+  PENDING: 'gold',
+  APPROVED: 'green',
+  REJECTED: 'red',
+  HIDDEN: 'volcano',
 };
 
 export function PlacesPage() {
+  const { settings, saving, toggleAutoApprove } = useSettings();
   const [data, setData] = useState<PlaceItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [geocoded, setGeocoded] = useState<Record<string, string>>({});
   const [viewModal, setViewModal] = useState<PlaceItem | null>(null);
   const [hideModal, setHideModal] = useState<PlaceItem | null>(null);
   const [deleteModal, setDeleteModal] = useState<PlaceItem | null>(null);
   const [unhideModal, setUnhideModal] = useState<PlaceItem | null>(null);
+  const [approveModal, setApproveModal] = useState<PlaceItem | null>(null);
+  const [rejectModal, setRejectModal] = useState<PlaceItem | null>(null);
   const [reason, setReason] = useState('');
+  const [reasonError, setReasonError] = useState(false);
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'APPROVED'>('ALL');
+
+  // Filter list in memory based on search query and status filter
+  const filteredData = data.filter((item) => {
+    const ms = getPlaceModerationStatus(item);
+    if (statusFilter === 'PENDING' && ms !== 'PENDING') return false;
+    if (statusFilter === 'APPROVED' && ms !== 'APPROVED') return false;
+
+    const term = searchQuery.toLowerCase().trim();
+    if (!term) return true;
+    return (
+      item.title?.toLowerCase().includes(term) ||
+      item.address?.toLowerCase().includes(term) ||
+      (geocoded[item.id] ?? '').toLowerCase().includes(term) ||
+      item.author?.name?.toLowerCase().includes(term) ||
+      item.body?.toLowerCase().includes(term) ||
+      item.id?.toLowerCase().includes(term)
+    );
+  });
 
   const load = useCallback(async () => {
     setLoading(true);
+    setGeocoded({});
     try {
       const res = await fetchPlaces();
       setData(res.items);
+
+      const toGeocode = res.items.filter(
+        (p) => (!p.address || !p.address.trim()) && p.latitude != null && p.longitude != null,
+      );
+
+      const results = await Promise.all(
+        toGeocode.map(async (p) => {
+          const addr = await reverseGeocode(p.latitude!, p.longitude!);
+          return addr ? { id: p.id, address: addr } : null;
+        }),
+      );
+
+      const map: Record<string, string> = {};
+      for (const r of results) {
+        if (r) map[r.id] = r.address;
+      }
+      setGeocoded(map);
     } catch {
       message.error('Không tải được địa điểm');
     } finally {
@@ -68,9 +126,57 @@ export function PlacesPage() {
     load();
   }, [load]);
 
+  const handleApprove = async () => {
+    if (!approveModal) return;
+    setSubmitting(true);
+    try {
+      await adminApprovePlace(approveModal.id, note.trim() || undefined);
+      message.success('Đã duyệt địa điểm và thông báo cho tác giả');
+      setApproveModal(null);
+      setNote('');
+      load();
+    } catch {
+      message.error('Thất bại');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!rejectModal) return;
+    if (!reason.trim()) {
+      setReasonError(true);
+      message.error('Lý do từ chối là bắt buộc');
+      return;
+    }
+    if (reason.trim().length < 2) {
+      message.warning('Lý do từ chối phải có ít nhất 2 ký tự');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await adminRejectPlace(rejectModal.id, reason.trim());
+      message.success('Đã từ chối địa điểm và thông báo cho tác giả');
+      setRejectModal(null);
+      setReason('');
+      setReasonError(false);
+      load();
+    } catch {
+      message.error('Thất bại');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleHide = async () => {
-    if (!hideModal || reason.trim().length < 2) {
-      message.warning('Vui lòng nhập lý do (ít nhất 2 ký tự)');
+    if (!hideModal) return;
+    if (!reason.trim()) {
+      setReasonError(true);
+      message.error('Lý do ẩn là bắt buộc');
+      return;
+    }
+    if (reason.trim().length < 2) {
+      message.warning('Lý do ẩn phải có ít nhất 2 ký tự');
       return;
     }
     setSubmitting(true);
@@ -79,6 +185,7 @@ export function PlacesPage() {
       message.success('Đã ẩn địa điểm và thông báo cho tác giả');
       setHideModal(null);
       setReason('');
+      setReasonError(false);
       load();
     } catch {
       message.error('Thất bại');
@@ -104,8 +211,14 @@ export function PlacesPage() {
   };
 
   const handleDelete = async () => {
-    if (!deleteModal || reason.trim().length < 2) {
-      message.warning('Vui lòng nhập lý do (ít nhất 2 ký tự)');
+    if (!deleteModal) return;
+    if (!reason.trim()) {
+      setReasonError(true);
+      message.error('Lý do xóa là bắt buộc');
+      return;
+    }
+    if (reason.trim().length < 2) {
+      message.warning('Lý do xóa phải có ít nhất 2 ký tự');
       return;
     }
     setSubmitting(true);
@@ -114,6 +227,7 @@ export function PlacesPage() {
       message.success('Đã xóa địa điểm và thông báo cho tác giả');
       setDeleteModal(null);
       setReason('');
+      setReasonError(false);
       load();
     } catch {
       message.error('Thất bại');
@@ -122,79 +236,123 @@ export function PlacesPage() {
     }
   };
 
-  const getZoneLabel = (zoneId: string | null) => {
-    if (!zoneId) return null;
-    return PLACE_ZONES.find((z) => z.id === zoneId)?.label;
-  };
-
   const columns: ColumnsType<PlaceItem> = [
-    { title: 'Tên địa điểm', dataIndex: 'title', ellipsis: true },
+    { title: 'Tên địa điểm', dataIndex: 'title', width: 200, ellipsis: true },
     {
-      title: 'Trạng thái',
-      dataIndex: 'status',
-      width: 130,
-      render: (s: string) => (
-        <Tag color={s === 'PUBLISHED' ? 'green' : 'default'}>
-          {s === 'PUBLISHED' ? 'Đã xuất bản' : 'Nháp'}
-        </Tag>
-      ),
-    },
-    {
-      title: 'Khu vực',
-      dataIndex: 'zone',
-      width: 130,
-      render: (zone: string | null) => {
-        const label = getZoneLabel(zone);
-        if (!label) return '-';
-        return <Tag color={ZONE_COLORS[zone] ?? 'default'}>{label}</Tag>;
-      },
-    },
-    { title: 'Địa chỉ', dataIndex: 'address', ellipsis: true, width: 200 },
-    {
-      title: 'Tọa độ',
-      dataIndex: 'latitude',
-      width: 160,
-      render: (_: number | null, record: PlaceItem) => {
-        if (record.latitude && record.longitude) {
-          return `${record.latitude.toFixed(5)}, ${record.longitude.toFixed(5)}`;
-        }
+      title: 'Tên đường',
+      dataIndex: 'address',
+      width: 220,
+      render: (addr: string | null, record: PlaceItem) => {
+        if (addr && addr.trim()) return addr;
+        const geocodedAddr = geocoded[record.id];
+        if (geocodedAddr) return geocodedAddr;
         return '-';
       },
     },
     { title: 'Tác giả', dataIndex: ['author', 'name'], width: 140, ellipsis: true },
     {
+      title: 'Ngày tạo',
+      dataIndex: 'createdAt',
+      width: 150,
+      render: (v: string) => dayjs(v).format('DD/MM/YYYY HH:mm'),
+    },
+    {
+      title: 'Hiển thị',
+      key: 'visibility',
+      width: 110,
+      render: (_: unknown, record: PlaceItem) => (
+        <Tag color={getPlaceVisibility(record) === 'PUBLIC' ? 'blue' : 'default'} style={{ width: 90, textAlign: 'center' }}>
+          {getPlaceVisibility(record) === 'PUBLIC' ? 'Cộng đồng' : 'Chỉ mình'}
+        </Tag>
+      ),
+    },
+    {
+      title: 'Kiểm duyệt',
+      key: 'moderationStatus',
+      width: 130,
+      render: (_: unknown, record: PlaceItem) => {
+        const ms = getPlaceModerationStatus(record);
+        return (
+          <Tag color={MODERATION_COLORS[ms]} style={{ width: 90, textAlign: 'center' }}>
+            {MODERATION_LABELS[ms]}
+          </Tag>
+        );
+      },
+    },
+
+    {
       title: 'Thao tác',
       key: 'actions',
-      width: 280,
+      width: 360,
       render: (_, record) => (
         <Space>
           <Button size="small" icon={<EyeOutlined />} onClick={() => setViewModal(record)}>
             Xem
           </Button>
-          {record.status === 'PUBLISHED' ? (
-            <Button
-              size="small"
-              icon={<EyeInvisibleOutlined />}
-              onClick={() => {
-                setHideModal(record);
-                setReason('');
-              }}
-            >
-              Ẩn
-            </Button>
-          ) : (
-            <Button
-              size="small"
-              type="default"
-              icon={<RetweetOutlined />}
-              onClick={() => {
-                setUnhideModal(record);
-                setNote('');
-              }}
-            >
-              Bỏ ẩn
-            </Button>
+
+          {getPlaceVisibility(record) === 'PUBLIC' && (
+            <>
+              {getPlaceModerationStatus(record) === 'PENDING' && (
+                <>
+                  <Button
+                    size="small"
+                    type="primary"
+                    icon={<CheckCircleOutlined />}
+                    onClick={() => {
+                      setApproveModal(record);
+                      setNote('');
+                    }}
+                  >
+                    Duyệt
+                  </Button>
+                  <Button
+                    size="small"
+                    danger
+                    type="default"
+                    icon={<CloseCircleOutlined />}
+                    onClick={() => {
+                      setRejectModal(record);
+                      setReason('');
+                    }}
+                  >
+                    Từ chối
+                  </Button>
+                </>
+              )}
+
+              {getPlaceModerationStatus(record) === 'APPROVED' && (
+                <Button
+                  size="small"
+                  icon={<EyeInvisibleOutlined />}
+                  style={{ width: 80, justifyContent: 'flex-start' }}
+                  onClick={() => {
+                    setHideModal(record);
+                    setReason('');
+                  }}
+                >
+                  Ẩn
+                </Button>
+              )}
+
+              {(['HIDDEN', 'NONE', 'REJECTED'] as PlaceModerationStatus[]).includes(
+                getPlaceModerationStatus(record),
+              ) && (
+                <Button
+                  size="small"
+                  type="default"
+                  icon={<RetweetOutlined />}
+                  style={{ width: 80, justifyContent: 'flex-start' }}
+                  onClick={() => {
+                    setUnhideModal(record);
+                    setNote('');
+                  }}
+                >
+                  Bỏ ẩn
+                </Button>
+              )}
+            </>
           )}
+
           <Button
             size="small"
             danger
@@ -203,7 +361,9 @@ export function PlacesPage() {
               setDeleteModal(record);
               setReason('');
             }}
-          />
+          >
+            Xóa
+          </Button>
         </Space>
       ),
     },
@@ -213,16 +373,50 @@ export function PlacesPage() {
     <PageShell>
       <PageHeader
         title="Quản lý địa điểm"
-        description="Xem chi tiết, ẩn hoặc xóa địa điểm trên campus. Thao tác sẽ gửi thông báo lý do cho tác giả."
+        extra={
+          <Space size="middle">
+            <Space>
+              <span style={{ fontSize: 13, color: '#64748b' }}>Duyệt tự động</span>
+              <Switch
+                checked={settings?.autoApprovePlaces ?? false}
+                onChange={(checked) => toggleAutoApprove('autoApprovePlaces', checked)}
+                loading={saving}
+                checkedChildren="Bật"
+                unCheckedChildren="Tắt"
+              />
+            </Space>
+            <Select
+              value={statusFilter}
+              onChange={setStatusFilter}
+              style={{ width: 140 }}
+              options={[
+                { value: 'ALL', label: 'Tất cả' },
+                { value: 'PENDING', label: 'Chờ duyệt' },
+                { value: 'APPROVED', label: 'Đã duyệt' },
+              ]}
+            />
+            <Input
+              placeholder="Tìm kiếm tên địa điểm, địa chỉ, tác giả..."
+              prefix={<SearchOutlined />}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ width: 280 }}
+              allowClear
+            />
+          </Space>
+        }
       />
+
+      <div style={{ marginBottom: 16 }} />
 
       <Table
         className="admin-table"
         rowKey="id"
         loading={loading}
         columns={columns}
-        dataSource={data}
+        dataSource={filteredData}
         pagination={{ pageSize: 10 }}
+        scroll={{ x: 900 }}
       />
 
       {/* View Detail Modal */}
@@ -230,30 +424,21 @@ export function PlacesPage() {
         title="Chi tiết địa điểm"
         open={!!viewModal}
         onCancel={() => setViewModal(null)}
-        footer={[
-          <Button key="close" onClick={() => setViewModal(null)}>
-            Đóng
-          </Button>,
-        ]}
+        footer={null}
         width={560}
       >
         {viewModal && (
           <Descriptions column={1} bordered size="small">
             <Descriptions.Item label="Tên địa điểm">{viewModal.title}</Descriptions.Item>
-            <Descriptions.Item label="Trạng thái">
-              <Tag color={viewModal.status === 'PUBLISHED' ? 'green' : 'default'}>
-                {viewModal.status === 'PUBLISHED' ? 'Đã xuất bản' : 'Nháp'}
+            <Descriptions.Item label="Hiển thị">
+              <Tag color={getPlaceVisibility(viewModal) === 'PUBLIC' ? 'blue' : 'default'}>
+                {getPlaceVisibility(viewModal) === 'PUBLIC' ? 'Cộng đồng' : 'Chỉ mình'}
               </Tag>
             </Descriptions.Item>
-            <Descriptions.Item label="Khu vực">
-              {(() => {
-                const label = getZoneLabel(viewModal.zone);
-                return label ? (
-                  <Tag color={ZONE_COLORS[viewModal.zone!] ?? 'default'}>{label}</Tag>
-                ) : (
-                  '-'
-                );
-              })()}
+            <Descriptions.Item label="Kiểm duyệt">
+              <Tag color={MODERATION_COLORS[getPlaceModerationStatus(viewModal)]}>
+                {MODERATION_LABELS[getPlaceModerationStatus(viewModal)]}
+              </Tag>
             </Descriptions.Item>
             <Descriptions.Item label="Địa chỉ">{viewModal.address ?? '-'}</Descriptions.Item>
             <Descriptions.Item label="Vĩ độ">{viewModal.latitude ?? '-'}</Descriptions.Item>
@@ -268,7 +453,60 @@ export function PlacesPage() {
               {viewModal.author?.name ?? viewModal.authorId ?? '-'}
             </Descriptions.Item>
             <Descriptions.Item label="Mô tả">{viewModal.body || '-'}</Descriptions.Item>
+            <Descriptions.Item label="Ngày tạo">
+              {dayjs(viewModal.createdAt).format('DD/MM/YYYY HH:mm')}
+            </Descriptions.Item>
+            {viewModal.updatedAt && dayjs(viewModal.updatedAt).format('DD/MM/YYYY HH:mm') !== dayjs(viewModal.createdAt).format('DD/MM/YYYY HH:mm') && (
+              <Descriptions.Item label="Ngày cập nhật">
+                {dayjs(viewModal.updatedAt).format('DD/MM/YYYY HH:mm')}
+              </Descriptions.Item>
+            )}
           </Descriptions>
+        )}
+      </Modal>
+
+      {/* Approve Modal */}
+      <Modal
+        title={`Duyệt địa điểm: "${approveModal?.title}"`}
+        open={!!approveModal}
+        onCancel={() => { setApproveModal(null); setNote(''); }}
+        onOk={handleApprove}
+        okText="Duyệt và xuất bản"
+        okButtonProps={{ loading: submitting }}
+        width={520}
+      >
+        <p>Địa điểm sẽ được xuất bản ngay lập tức và tác giả sẽ được thông báo.</p>
+        <Input.TextArea
+          rows={3}
+          placeholder="Ghi chú cho tác giả (tùy chọn)..."
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+        />
+      </Modal>
+
+      {/* Reject Modal */}
+      <Modal
+        title={`Từ chối địa điểm: "${rejectModal?.title}"`}
+        open={!!rejectModal}
+        onCancel={() => { setRejectModal(null); setReason(''); setReasonError(false); }}
+        onOk={handleReject}
+        okText="Từ chối và thông báo"
+        okButtonProps={{ danger: true, loading: submitting }}
+        width={520}
+      >
+        <p>Địa điểm sẽ bị từ chối và tác giả sẽ nhận được thông báo kèm lý do.</p>
+        <Input.TextArea
+          rows={3}
+          placeholder="Nhập lý do từ chối..."
+          value={reason}
+          status={reasonError ? 'error' : undefined}
+          onChange={(e) => {
+            setReason(e.target.value);
+            if (e.target.value.trim()) setReasonError(false);
+          }}
+        />
+        {reasonError && (
+          <div style={{ color: '#ff4d4f', marginTop: 4 }}>Lý do từ chối là bắt buộc</div>
         )}
       </Modal>
 
@@ -276,7 +514,7 @@ export function PlacesPage() {
       <Modal
         title={`Ẩn địa điểm: "${hideModal?.title}"`}
         open={!!hideModal}
-        onCancel={() => { setHideModal(null); setReason(''); }}
+        onCancel={() => { setHideModal(null); setReason(''); setReasonError(false); }}
         onOk={handleHide}
         okText="Ẩn và thông báo"
         okButtonProps={{ danger: true, loading: submitting }}
@@ -287,8 +525,15 @@ export function PlacesPage() {
           rows={3}
           placeholder="Nhập lý do ẩn địa điểm..."
           value={reason}
-          onChange={(e) => setReason(e.target.value)}
+          status={reasonError ? 'error' : undefined}
+          onChange={(e) => {
+            setReason(e.target.value);
+            if (e.target.value.trim()) setReasonError(false);
+          }}
         />
+        {reasonError && (
+          <div style={{ color: '#ff4d4f', marginTop: 4 }}>Lý do ẩn là bắt buộc</div>
+        )}
       </Modal>
 
       {/* Unhide Modal */}
@@ -314,7 +559,7 @@ export function PlacesPage() {
       <Modal
         title={`Xóa địa điểm: "${deleteModal?.title}"`}
         open={!!deleteModal}
-        onCancel={() => { setDeleteModal(null); setReason(''); }}
+        onCancel={() => { setDeleteModal(null); setReason(''); setReasonError(false); }}
         onOk={handleDelete}
         okText="Xóa và thông báo"
         okButtonProps={{ danger: true, loading: submitting }}
@@ -325,8 +570,15 @@ export function PlacesPage() {
           rows={3}
           placeholder="Nhập lý do xóa địa điểm..."
           value={reason}
-          onChange={(e) => setReason(e.target.value)}
+          status={reasonError ? 'error' : undefined}
+          onChange={(e) => {
+            setReason(e.target.value);
+            if (e.target.value.trim()) setReasonError(false);
+          }}
         />
+        {reasonError && (
+          <div style={{ color: '#ff4d4f', marginTop: 4 }}>Lý do xóa là bắt buộc</div>
+        )}
       </Modal>
     </PageShell>
   );

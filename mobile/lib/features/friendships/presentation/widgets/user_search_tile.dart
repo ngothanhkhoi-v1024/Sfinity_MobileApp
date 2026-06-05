@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../../data/models/friend_model.dart';
 
 class UserSearchTile extends StatelessWidget {
@@ -22,6 +23,7 @@ class UserSearchTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l10n = context.l10n;
 
     return ListTile(
       onTap: onTap,
@@ -52,7 +54,7 @@ class UserSearchTile extends StatelessWidget {
                   Icon(Icons.check, size: 12, color: cs.onPrimaryContainer),
                   const SizedBox(width: 4),
                   Text(
-                    'Bạn bè',
+                    l10n.friend,
                     style: TextStyle(fontSize: 12, color: cs.onPrimaryContainer, fontWeight: FontWeight.bold),
                   ),
                 ],
@@ -69,7 +71,7 @@ class UserSearchTile extends StatelessWidget {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                   child: Text(
-                    'Hủy',
+                    l10n.cancel,
                     style: TextStyle(fontSize: 12, color: cs.error, fontWeight: FontWeight.bold),
                   ),
                 )
@@ -81,7 +83,7 @@ class UserSearchTile extends StatelessWidget {
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
-                  child: const Text('Kết bạn', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  child: Text(l10n.addFriends, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                 ),
     );
   }

@@ -1,8 +1,11 @@
 import { Router } from 'express';
 
+import { assistantRouter } from './assistant.routes';
+import { amenitiesRouter } from './amenities.routes';
 import { authRouter } from './auth.routes';
 import { categoriesRouter } from './categories.routes';
 import { documentRouter } from './document.routes';
+import { exploreRouter } from './explore.routes';
 import { dashboardRouter } from './dashboard.routes';
 import { favoritesRouter } from './favorites.routes';
 import { feedbackRouter } from './feedback.routes';
@@ -11,7 +14,9 @@ import { groupRouter } from './group.routes';
 import { notificationsRouter } from './notifications.routes';
 import { placesRouter } from './places.routes';
 import { reportsRouter } from './reports.routes';
+import { settingsRouter } from './settings.routes';
 import { studyNearMeRouter } from './study-near-me.routes';
+import { uploadRouter } from './upload.routes';
 import { usersRouter } from './users.routes';
 
 export const apiRouter = Router();
@@ -20,13 +25,17 @@ apiRouter.use('/auth', authRouter);
 apiRouter.use('/users', usersRouter);
 apiRouter.use('/categories', categoriesRouter);
 apiRouter.use('/document', documentRouter);
+apiRouter.use('/explore', exploreRouter);
 apiRouter.use('/places', placesRouter);
 apiRouter.use('/study-near-me', studyNearMeRouter);
 apiRouter.use('/favorites', favoritesRouter);
+apiRouter.use('/assistant', assistantRouter);
 apiRouter.use('/feedback', feedbackRouter);
 apiRouter.use('/reports', reportsRouter);
 apiRouter.use('/notifications', notificationsRouter);
 apiRouter.use('/admin/dashboard', dashboardRouter);
 apiRouter.use('/friends', friendshipRouter);
 apiRouter.use('/groups', groupRouter);
-
+apiRouter.use('/amenities', amenitiesRouter);
+apiRouter.use('/upload', uploadRouter);
+apiRouter.use('/settings', settingsRouter);

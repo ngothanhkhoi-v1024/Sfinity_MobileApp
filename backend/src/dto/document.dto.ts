@@ -1,4 +1,4 @@
-import { ContentStatus } from '../types/enums';
+import { ContentModerationStatus, ContentVisibility } from '../types/enums';
 import { IsEnum, IsOptional, IsString, MinLength, IsNumber, IsArray } from 'class-validator';
 
 export class CreateDocumentDto {
@@ -6,21 +6,25 @@ export class CreateDocumentDto {
   @MinLength(2)
   title!: string;
 
+  @IsOptional()
   @IsString()
-  @MinLength(2)
-  body!: string;
+  body?: string;
+
+
 
   @IsOptional()
-  @IsEnum(ContentStatus)
-  status?: ContentStatus;
+  @IsEnum(ContentVisibility)
+  visibility?: ContentVisibility;
+
+  @IsOptional()
+  @IsEnum(ContentModerationStatus)
+  moderationStatus?: ContentModerationStatus;
 
   @IsOptional()
   @IsString()
   categoryId?: string;
 
-  @IsOptional()
-  @IsString()
-  type?: string;
+
 
   // Document fields
   @IsOptional()
@@ -42,7 +46,7 @@ export class CreateDocumentDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  tags?: string[];
+
 
   @IsOptional()
   @IsNumber()
@@ -52,25 +56,7 @@ export class CreateDocumentDto {
   @IsNumber()
   likesCount?: number;
 
-  // Place fields
-  @IsOptional()
-  @IsNumber()
-  latitude?: number;
-
-  @IsOptional()
-  @IsNumber()
-  longitude?: number;
-
-  @IsOptional()
-  @IsString()
-  address?: string;
-
-  /** Khu vực campus (chỉ type=place). */
-  @IsOptional()
-  @IsString()
-  zone?: string;
-
-  /** Liên kết tài liệu với địa điểm (id document type=place). */
+  /** Liên kết tài liệu với địa điểm (id place). */
   @IsOptional()
   @IsString()
   placeId?: string;
@@ -84,20 +70,23 @@ export class UpdateDocumentDto {
 
   @IsOptional()
   @IsString()
-  @MinLength(2)
-  body?: string;
+  body?: string | null;
+
+
 
   @IsOptional()
-  @IsEnum(ContentStatus)
-  status?: ContentStatus;
+  @IsEnum(ContentVisibility)
+  visibility?: ContentVisibility;
+
+  @IsOptional()
+  @IsEnum(ContentModerationStatus)
+  moderationStatus?: ContentModerationStatus;
 
   @IsOptional()
   @IsString()
   categoryId?: string | null;
 
-  @IsOptional()
-  @IsString()
-  type?: string;
+
 
   // Document fields
   @IsOptional()
@@ -119,7 +108,7 @@ export class UpdateDocumentDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  tags?: string[];
+
 
   @IsOptional()
   @IsNumber()
@@ -129,23 +118,7 @@ export class UpdateDocumentDto {
   @IsNumber()
   likesCount?: number;
 
-  // Place fields
-  @IsOptional()
-  @IsNumber()
-  latitude?: number | null;
-
-  @IsOptional()
-  @IsNumber()
-  longitude?: number | null;
-
-  @IsOptional()
-  @IsString()
-  address?: string | null;
-
-  @IsOptional()
-  @IsString()
-  zone?: string | null;
-
+  /** Liên kết tài liệu với địa điểm. */
   @IsOptional()
   @IsString()
   placeId?: string | null;

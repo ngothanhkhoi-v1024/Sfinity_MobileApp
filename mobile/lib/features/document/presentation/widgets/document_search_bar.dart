@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-/// Thanh tìm kiếm tài liệu với style bo tròn 18dp.
+import '../../../../core/i18n/app_text.dart';
+
 class DocumentSearchBar extends StatelessWidget {
   const DocumentSearchBar({
     super.key,
@@ -16,13 +17,14 @@ class DocumentSearchBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
       child: TextField(
         controller: controller,
         onChanged: onChanged,
         decoration: InputDecoration(
-          hintText: 'Tìm tài liệu, mã môn học, từ khóa...',
+          hintText: l10n.searchDocumentHint,
           prefixIcon: Icon(Icons.search, color: theme.colorScheme.primary),
           suffixIcon: controller.text.isNotEmpty
               ? IconButton(

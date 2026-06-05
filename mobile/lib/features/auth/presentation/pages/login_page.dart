@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sfinity/features/auth/presentation/widgets/letter_badge.dart';
 
 import '../../../../core/constants/route_names.dart';
 import '../../../../core/i18n/app_text.dart';
@@ -245,15 +246,17 @@ class _LoginPageState extends State<LoginPage> {
                             color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF9FAFB),
                             borderColor: cardBorderColor,
                             textColor: onSurfaceColor,
-                            icon: const _LetterBadge(
-                              letter: 'G',
-                              background: Color(0xFFEA4335),
+                            icon: Image.asset(
+                              'assets/icons/google_logo.png',
+                              width: 18,
+                              height:18,
+                              fit: BoxFit.contain,
                             ),
                             onPressed: _controller.isLoading ? null : _loginWithGoogle,
                           ),
                           const SizedBox(height: 12),
                           // SocialLoginButton(
-                          //   label: 'Đăng nhập với Facebook',
+                          //   label: l10n.continueWithFacebook,
                           //   color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF9FAFB),
                           //   borderColor: cardBorderColor,
                           //   textColor: onSurfaceColor,
@@ -289,28 +292,3 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
-class _LetterBadge extends StatelessWidget {
-  const _LetterBadge({
-    required this.letter,
-    required this.background,
-  });
-
-  final String letter;
-  final Color background;
-
-  @override
-  Widget build(BuildContext context) {
-    return CircleAvatar(
-      radius: 12,
-      backgroundColor: background,
-      child: Text(
-        letter,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 12,
-          fontWeight: FontWeight.w800,
-        ),
-      ),
-    );
-  }
-}

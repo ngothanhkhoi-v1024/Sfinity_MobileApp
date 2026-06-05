@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app.dart';
 import '../../../../core/constants/route_names.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../place_reviews/presentation/controllers/place_engagement_controller.dart';
 import '../../../place_reviews/presentation/widgets/place_checkin_section.dart';
@@ -11,9 +12,11 @@ import '../../../place_reviews/presentation/widgets/place_photo_gallery.dart';
 import '../../../place_reviews/presentation/widgets/place_rating_section.dart';
 import '../../data/models/place_model.dart';
 import '../controllers/place_detail_controller.dart';
-import '../places_map_focus.dart';
+import '../places_map_focus.dart' show PlacesMapFocus, PlacesMapFocusSource;
+import '../widgets/place_detail_photo_carousel.dart';
 import '../widgets/place_directions_section.dart';
 import '../widgets/place_tag_chips.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class PlaceDetailPage extends StatefulWidget {
   const PlaceDetailPage({super.key, required this.placeId});
@@ -42,12 +45,16 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
     _engagementCtrl.addListener(() {
       if (mounted) setState(() {});
     });
-    _loadAll();
+    // Defer _loadAll sau frame đầu tiên để context.l10n khả dụng
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _loadAll();
+    });
   }
 
   Future<void> _loadAll() async {
     await Future.wait([
-      _ctrl.load(widget.placeId),
+      // Truy cập context.l10n lazily bên trong callback — an toàn vì lúc này widget đã mounted
+      _ctrl.load(widget.placeId, placeNotFound: () => context.l10n.placeNotFound),
       _engagementCtrl.load(widget.placeId),
       _checkFavorite(),
     ]);
@@ -68,10 +75,11 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
   }
 
   Future<void> _toggleFavorite() async {
+    final l10n = context.l10n;
     if (!SfinityApp.auth.isAuthenticated) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đăng nhập để lưu địa điểm')),
+          SnackBar(content: Text(l10n.loginToSavePlace)),
         );
       }
       return;
@@ -87,9 +95,7 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            _isFavorite
-                ? 'Đã lưu địa điểm vào danh sách của bạn'
-                : 'Đã bỏ lưu địa điểm',
+            _isFavorite ? l10n.favoritePlaceCommunity : l10n.unfavoritePlaceCommunity,
           ),
         ),
       );
@@ -127,6 +133,24 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
     if (mounted) _loadAll();
   }
 
+  void _openReport() {
+    final l10n = context.l10n;
+    if (!SfinityApp.auth.isAuthenticated) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.pleaseLogin)),
+      );
+      context.push(RouteNames.login);
+      return;
+    }
+    context.push(
+      RouteNames.report,
+      extra: {
+        'targetType': 'place',
+        'targetId': widget.placeId,
+      },
+    );
+  }
+
   void _viewOnMap() {
     final place = _ctrl.place;
     final point = place?.point;
@@ -136,24 +160,28 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
       placeId: place.id,
       lat: point.latitude,
       lng: point.longitude,
+      place: place,
+      openSheet: true,
+      zoom: 16,
+      focusSource: PlacesMapFocusSource.detail,
+      pulse: true,
     );
     context.go(RouteNames.home);
   }
 
   Future<void> _deletePlace() async {
+    final l10n = context.l10n;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Xóa địa điểm?'),
-        content: const Text(
-          'Địa điểm và liên kết trên bản đồ sẽ bị xóa. Tài liệu đã đăng vẫn giữ trên hệ thống.',
-        ),
+        title: Text(l10n.deletePlace),
+        content: Text(l10n.deletePlaceDesc),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Hủy')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancelBtn2)),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Xóa'),
+            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -163,7 +191,7 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
       await _ctrl.deletePlace(widget.placeId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đã xóa địa điểm')),
+          SnackBar(content: Text(l10n.placeDeleted)),
         );
         context.pop();
       }
@@ -178,26 +206,27 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     if (_ctrl.loading) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Chi tiết địa điểm')),
+        appBar: AppBar(title: Text(l10n.placeDetail)),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
     if (_ctrl.error != null || _ctrl.place == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Chi tiết địa điểm')),
+        appBar: AppBar(title: Text(l10n.placeDetail)),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(_ctrl.error ?? 'Không tải được địa điểm', textAlign: TextAlign.center),
+                Text(_ctrl.error ?? l10n.placeNotFound, textAlign: TextAlign.center),
                 const SizedBox(height: 16),
                 FilledButton(
                   onPressed: _loadAll,
-                  child: const Text('Thử lại'),
+                  child: Text(l10n.pleaseTryAgain),
                 ),
               ],
             ),
@@ -213,9 +242,16 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
     final primary = theme.colorScheme.primary;
     final showCommunitySave = !isMine;
 
+    final photos = _engagementCtrl.photoResult?.photos ?? [];
+
     return Scaffold(
+      backgroundColor: isDark ? null : Colors.white,
       appBar: AppBar(
-        title: const Text('Chi tiết địa điểm'),
+        title: Text(
+          l10n.placeDetail,
+          overflow: TextOverflow.ellipsis,
+        ),
+        centerTitle: true,
         actions: [
           if (!_loadingFavorite)
             IconButton(
@@ -223,19 +259,25 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
                 _isFavorite ? Icons.bookmark : Icons.bookmark_border,
                 color: _isFavorite ? primary : null,
               ),
-              tooltip: _isFavorite ? 'Bỏ lưu địa điểm' : 'Lưu địa điểm',
+              tooltip: _isFavorite ? l10n.unfavoritePlace : l10n.favoritePlace,
               onPressed: _toggleFavorite,
             ),
           if (isMine) ...[
             IconButton(
               icon: const Icon(Icons.edit_outlined),
-              tooltip: 'Sửa địa điểm',
+              tooltip: l10n.editPlace,
               onPressed: _editPlace,
             ),
             IconButton(
               icon: const Icon(Icons.delete_outline),
-              tooltip: 'Xóa địa điểm',
+              tooltip: l10n.deletePlace,
               onPressed: _deletePlace,
+            ),
+          ] else ...[
+            IconButton(
+              icon: Icon(Icons.flag_outlined, color: theme.colorScheme.error),
+              tooltip: l10n.reportViolation,
+              onPressed: _openReport,
             ),
           ],
         ],
@@ -245,6 +287,7 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: [
+            PlaceDetailPhotoCarousel(photos: photos),
             _PlaceInfoCard(
               place: place,
               theme: theme,
@@ -260,34 +303,33 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
                 primary: primary,
               ),
               const SizedBox(height: 12),
-            ],
-            if (place.hasPoint) ...[
-              const _SectionTitle(
-                icon: Icons.navigation_outlined,
-                title: 'Di chuyển',
-              ),
-              const SizedBox(height: 8),
-              PlaceDirectionsSection(
-                destination: place.point!,
-                accentColor: primary,
-              ),
-              const SizedBox(height: 10),
               OutlinedButton.icon(
-                onPressed: _viewOnMap,
+                onPressed: _openReport,
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size.fromHeight(48),
+                  foregroundColor: theme.colorScheme.error,
+                  side: BorderSide(
+                    color: theme.colorScheme.error.withValues(alpha: 0.45),
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-                icon: Icon(Icons.map_outlined, color: primary),
+                icon: const Icon(Icons.report_problem_outlined),
                 label: Text(
-                  'Xem trên bản đồ',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: primary,
-                  ),
+                  l10n.reportViolation,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
+              ),
+              const SizedBox(height: 12),
+            ],
+            if (place.hasPoint) ...[
+              PlaceDirectionsSection(
+                destination: place.point!,
+                accentColor: primary,
+                compact: true,
+                onViewOnMap: _viewOnMap,
+                mapPinHighlighted: true,
               ),
               const SizedBox(height: 20),
             ],
@@ -302,9 +344,9 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
               if (place.hasPoint &&
                   place.latitude != null &&
                   place.longitude != null) ...[
-                const _SectionTitle(
+                _SectionTitle(
                   icon: Icons.how_to_reg_outlined,
-                  title: 'Check-in',
+                  title: l10n.interactionCheckin,
                 ),
                 const SizedBox(height: 8),
                 PlaceCheckInSection(
@@ -316,9 +358,9 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
                 const SizedBox(height: 20),
               ],
               if (_engagementCtrl.reviewSummary != null) ...[
-                const _SectionTitle(
+                _SectionTitle(
                   icon: Icons.groups_outlined,
-                  title: 'Cộng đồng',
+                  title: l10n.communityContent,
                 ),
                 const SizedBox(height: 8),
                 PlaceRatingSection(
@@ -326,19 +368,21 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
                   placeId: widget.placeId,
                   summary: _engagementCtrl.reviewSummary!,
                 ),
-                const SizedBox(height: 16),
-                PlacePhotoGallery(
-                  controller: _engagementCtrl,
-                  placeId: widget.placeId,
-                  photos: _engagementCtrl.photoResult?.photos ?? [],
-                ),
+                if (photos.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  PlacePhotoGallery(
+                    controller: _engagementCtrl,
+                    placeId: widget.placeId,
+                    photos: photos,
+                  ),
+                ],
                 const SizedBox(height: 20),
               ],
             ],
             if (isMine) ...[
-              const _SectionTitle(
+              _SectionTitle(
                 icon: Icons.upload_file_outlined,
-                title: 'Quản lý địa điểm',
+                title: l10n.managePlace,
               ),
               const SizedBox(height: 8),
               Container(
@@ -360,9 +404,9 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
                     ),
                   ),
                   icon: const Icon(Icons.upload_file_rounded, color: Colors.white),
-                  label: const Text(
-                    'Tải tài liệu cho địa điểm này',
-                    style: TextStyle(
+                  label: Text(
+                    l10n.loadDocForPlace,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
                     ),
@@ -371,7 +415,7 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
               ),
               const SizedBox(height: 6),
               Text(
-                'Chỉ bạn — chủ địa điểm — mới có thể đăng tài liệu tại đây.',
+                l10n.holdMapOrButton,
                 style: TextStyle(
                   fontSize: 12,
                   color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
@@ -379,9 +423,9 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
               ),
               const SizedBox(height: 20),
             ],
-            const _SectionTitle(
+            _SectionTitle(
               icon: Icons.menu_book_outlined,
-              title: 'Tài liệu tại địa điểm',
+              title: l10n.documentsAtPlace,
             ),
             const SizedBox(height: 10),
             if (_ctrl.documents.isEmpty)
@@ -404,9 +448,7 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      isMine
-                          ? 'Chưa có tài liệu. Bấm nút phía trên để tải lên.'
-                          : 'Chưa có tài liệu công khai ở địa điểm này.',
+                      isMine ? l10n.noDocuments : l10n.noDocumentsPlace,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
@@ -447,9 +489,9 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
                                     style: const TextStyle(fontWeight: FontWeight.w600),
                                   ),
                                   const SizedBox(height: 2),
-                                  const Text(
-                                    'Nhấn để xem và tải',
-                                    style: TextStyle(fontSize: 12),
+                                  Text(
+                                    l10n.tapToViewMap,
+                                    style: const TextStyle(fontSize: 12),
                                   ),
                                 ],
                               ),
@@ -484,6 +526,7 @@ class _SaveCommunityPlaceButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     if (loading) {
       return const SizedBox(
         height: 48,
@@ -505,7 +548,7 @@ class _SaveCommunityPlaceButton extends StatelessWidget {
         size: 22,
       ),
       label: Text(
-        isSaved ? 'Đã lưu địa điểm cộng đồng' : 'Lưu địa điểm cộng đồng',
+        isSaved ? l10n.savedPlace : l10n.savePlace,
         style: const TextStyle(fontWeight: FontWeight.w600),
       ),
     );
@@ -520,14 +563,16 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Row(
       children: [
-        Icon(icon, size: 20, color: theme.colorScheme.primary),
+        Icon(icon, size: 22, color: AppColors.primary),
         const SizedBox(width: 8),
         Text(
           title,
-          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: AppColors.primary,
+              ),
         ),
       ],
     );
@@ -547,43 +592,35 @@ class _PlaceInfoCard extends StatelessWidget {
   final bool isDark;
   final Color primary;
 
+  static const _beigeLight = Color(0xFFF8F4EE);
+  static const _beigeDark = Color(0xFF2A2824);
+
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            primary.withValues(alpha: isDark ? 0.35 : 0.12),
-            theme.colorScheme.secondary.withValues(alpha: isDark ? 0.2 : 0.08),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
+        color: isDark ? _beigeDark : _beigeLight,
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: isDark ? Colors.white12 : primary.withValues(alpha: 0.15),
+          color: isDark ? Colors.white10 : const Color(0xFFE8E0D4),
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: primary.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(Icons.place_rounded, color: primary, size: 28),
-              ),
-              const SizedBox(width: 12),
+              Icon(Icons.place_rounded, color: AppColors.primary, size: 26),
+              const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   place.title,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    height: 1.3,
                   ),
                 ),
               ),
@@ -592,36 +629,36 @@ class _PlaceInfoCard extends StatelessWidget {
           const SizedBox(height: 14),
           _InfoRow(
             icon: Icons.person_outline,
-            label: 'Chủ địa điểm',
-            value: place.authorName ?? 'Người dùng',
+            label: l10n.sharedAccount,
+            value: place.authorName ?? l10n.anonymous,
             isDark: isDark,
           ),
           if (place.address != null && place.address!.isNotEmpty) ...[
             const SizedBox(height: 10),
             _InfoRow(
               icon: Icons.location_on_outlined,
-              label: 'Địa chỉ',
+              label: l10n.address,
               value: place.address!,
               isDark: isDark,
             ),
           ],
           if (place.tags.isNotEmpty) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             Text(
-              'Tiện ích học tập',
+              l10n.filterAmenities,
               style: theme.textTheme.labelLarge?.copyWith(
                 fontWeight: FontWeight.w600,
-                color: isDark ? Colors.grey.shade300 : Colors.grey.shade800,
+                color: isDark ? Colors.grey.shade300 : const Color(0xFF374151),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             PlaceTagDisplay(tagIds: place.tags),
           ],
           if (place.body.isNotEmpty) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             _InfoRow(
-              icon: Icons.notes_outlined,
-              label: 'Mô tả',
+              icon: Icons.format_align_left_rounded,
+              label: l10n.placeDescription,
               value: place.body,
               isDark: isDark,
             ),

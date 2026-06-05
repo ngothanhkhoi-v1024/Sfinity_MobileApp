@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/i18n/app_text.dart';
 
 class GroupEmptyState extends StatelessWidget {
   const GroupEmptyState({super.key, required this.onCreateGroup});
@@ -6,6 +7,7 @@ class GroupEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final cs = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
@@ -26,10 +28,10 @@ class GroupEmptyState extends StatelessWidget {
               child: Icon(Icons.group_outlined, size: 56, color: cs.primary),
             ),
             const SizedBox(height: 20),
-            Text('Chưa có nhóm nào', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+            Text(l10n.noGroupsYet, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Text(
-              'Tạo nhóm học tập hoặc chuyển sang Tab Khám phá để tham gia các nhóm học tập công khai ngay!',
+              l10n.createGroupHint,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
               textAlign: TextAlign.center,
             ),
@@ -37,7 +39,7 @@ class GroupEmptyState extends StatelessWidget {
             FilledButton.icon(
               onPressed: onCreateGroup,
               icon: const Icon(Icons.add),
-              label: const Text('Tạo nhóm mới'),
+              label: Text(l10n.createGroupBtn),
             ),
           ],
         ),

@@ -6,6 +6,10 @@ import 'core/auth/auth_state.dart';
 import 'core/network/api_client.dart';
 import 'core/i18n/app_text.dart';
 import 'core/router/app_router.dart';
+import 'features/assistant/data/services/assistant_api_service.dart';
+import 'features/assistant/presentation/controllers/assistant_controller.dart';
+import 'core/services/assistant_fab_position_manager.dart';
+import 'core/services/assistant_hint_manager.dart';
 import 'core/services/locale_manager.dart';
 import 'core/services/notification_manager.dart';
 import 'core/services/theme_manager.dart';
@@ -19,6 +23,9 @@ import 'features/auth/data/services/social_auth_service.dart';
 import 'features/document/data/repositories/document_repository.dart';
 import 'features/document/data/repositories/document_repository_impl.dart';
 import 'features/document/data/services/document_api_service.dart';
+import 'features/favorites/data/repositories/favorites_repository.dart';
+import 'features/favorites/data/repositories/favorites_repository_impl.dart';
+import 'features/favorites/data/services/favorites_api_service.dart';
 import 'features/friendships/data/repositories/friendship_repository_impl.dart';
 import 'features/groups/data/repositories/group_repository_impl.dart';
 import 'features/friendships/data/services/friendship_api_service.dart';
@@ -42,6 +49,7 @@ class SfinityApp extends StatefulWidget {
   static AuthState get auth => _SfinityAppState.auth;
   static late final DocumentRepository documentRepository;
   static late final PlaceRepository placeRepository;
+  static late final FavoritesRepository favoritesRepository;
   static late final StudyNearMeRepository studyNearMeRepository;
   static late final PlaceEngagementRepository placeEngagementRepository;
   static late final FriendshipController friendshipController;
@@ -49,6 +57,10 @@ class SfinityApp extends StatefulWidget {
   static LocaleManager get localeManager => _SfinityAppState.localeManager;
   static NotificationManager get notificationManager => _SfinityAppState.notificationManager;
   static ThemeManager get themeManager => _SfinityAppState.themeManager;
+  static AssistantController get assistantController => _SfinityAppState.assistantController;
+  static AssistantHintManager get assistantHintManager => _SfinityAppState.assistantHintManager;
+  static AssistantFabPositionManager get assistantFabPositionManager =>
+      _SfinityAppState.assistantFabPositionManager;
 
   @override
   State<SfinityApp> createState() => _SfinityAppState();
@@ -59,6 +71,9 @@ class _SfinityAppState extends State<SfinityApp> {
   static late final LocaleManager localeManager;
   static late final NotificationManager notificationManager;
   static late final ThemeManager themeManager;
+  static late final AssistantController assistantController;
+  static late final AssistantHintManager assistantHintManager;
+  static late final AssistantFabPositionManager assistantFabPositionManager;
   late final GoRouter _router = createAppRouter(auth);
 
   @override
@@ -68,7 +83,7 @@ class _SfinityAppState extends State<SfinityApp> {
     final docApiService = DocumentApiService(ApiClient.instance);
     SfinityApp.documentRepository = DocumentRepositoryImpl(docApiService);
     SfinityApp.placeRepository = PlaceRepositoryImpl(
-      PlaceApiService(docApiService),
+      PlaceApiService(ApiClient.instance),
       PlaceLocationService(),
     );
     SfinityApp.studyNearMeRepository = StudyNearMeRepositoryImpl(
@@ -77,6 +92,9 @@ class _SfinityAppState extends State<SfinityApp> {
     );
     SfinityApp.placeEngagementRepository = PlaceEngagementRepositoryImpl(
       PlaceEngagementApiService(ApiClient.instance),
+    );
+    SfinityApp.favoritesRepository = FavoritesRepositoryImpl(
+      FavoritesApiService(ApiClient.instance),
     );
 
     // Group feature
@@ -113,6 +131,13 @@ class _SfinityAppState extends State<SfinityApp> {
 
     themeManager = ThemeManager();
     themeManager.init();
+
+    assistantController = AssistantController(AssistantApiService(ApiClient.instance));
+    assistantHintManager = AssistantHintManager();
+    assistantHintManager.init();
+
+    assistantFabPositionManager = AssistantFabPositionManager();
+    assistantFabPositionManager.init();
   }
 
   @override

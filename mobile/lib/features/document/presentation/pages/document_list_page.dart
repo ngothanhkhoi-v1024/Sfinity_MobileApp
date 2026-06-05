@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/route_names.dart';
 import '../../../../core/i18n/app_text.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../shared/widgets/app_bar_add_button.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../controllers/document_list_controller.dart';
 import '../widgets/document_card.dart';
@@ -23,6 +24,7 @@ class DocumentListPage extends StatefulWidget {
 
 class _DocumentListPageState extends State<DocumentListPage> {
   late final DocumentListController _controller;
+  bool _showFilters = false;
 
   @override
   void initState() {
@@ -45,6 +47,10 @@ class _DocumentListPageState extends State<DocumentListPage> {
           ? DocumentEmptyState(
               hasSearchQuery: _controller.searchQuery.isNotEmpty,
               onClearSearch: _controller.clearSearch,
+              onPrimaryAction: () => context.push(
+                RouteNames.documentCreate,
+                extra: const {'contentType': 'document'},
+              ),
             )
           : ListView.builder(
               physics: const AlwaysScrollableScrollPhysics(
@@ -56,6 +62,7 @@ class _DocumentListPageState extends State<DocumentListPage> {
                 final item = _controller.filteredItems[i] as Map<String, dynamic>;
                 return DocumentCard(
                   item: item,
+                  showStatus: !_controller.communityMode,
                   onTap: () => context.push('/document/${item['id']}'),
                 );
               },
@@ -93,7 +100,8 @@ class _DocumentListPageState extends State<DocumentListPage> {
                   categories: _controller.categories,
                   selectedCategory: _controller.selectedCategory,
                   onCategorySelected: _controller.changeCategory,
-                  resultCount: _controller.loading ? null : _controller.filteredItems.length,
+                  showFilters: _showFilters,
+                  onToggleFilters: () => setState(() => _showFilters = !_showFilters),
                 ),
               ),
               const SizedBox(height: 4),
@@ -103,18 +111,17 @@ class _DocumentListPageState extends State<DocumentListPage> {
         }
 
         final l10n = context.l10n;
-
         return Scaffold(
           backgroundColor: AppColors.scaffold(context),
           appBar: AppBar(
             title: Text(
               l10n.documents,
-              style: const TextStyle(fontWeight: FontWeight.w800, letterSpacing: -0.3),
+              style: const TextStyle(fontWeight: FontWeight.w600, letterSpacing: -0.2),
             ),
             elevation: 0,
             actions: [
-              IconButton(
-                icon: Icon(Icons.add_circle_outline, color: AppColors.primaryOf(context), size: 26),
+              AppBarAddButton(
+                tooltip: l10n.uploadDocument,
                 onPressed: () => context.push(
                   RouteNames.documentCreate,
                   extra: const {'contentType': 'document'},
@@ -134,7 +141,8 @@ class _DocumentListPageState extends State<DocumentListPage> {
                   categories: _controller.categories,
                   selectedCategory: _controller.selectedCategory,
                   onCategorySelected: _controller.changeCategory,
-                  resultCount: _controller.loading ? null : _controller.filteredItems.length,
+                  showFilters: _showFilters,
+                  onToggleFilters: () => setState(() => _showFilters = !_showFilters),
                 ),
               ),
               Expanded(child: _buildContent()),

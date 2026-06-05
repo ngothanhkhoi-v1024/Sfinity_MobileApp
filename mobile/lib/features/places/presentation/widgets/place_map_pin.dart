@@ -8,10 +8,10 @@ enum PlaceMapPinVariant {
   /// Đã lưu (bookmark) hoặc tab Của tôi.
   saved,
 
-  /// Đang chọn — địa điểm cộng đồng.
+  /// Đang chọn / xem chi tiết — cộng đồng.
   highlightedCommunity,
 
-  /// Đang chọn — địa điểm đã lưu.
+  /// Đang chọn / xem chi tiết — đã lưu.
   highlightedSaved,
 }
 
@@ -26,21 +26,31 @@ class PlaceMapPin extends StatelessWidget {
   final PlaceMapPinVariant variant;
   final double size;
 
-  static const _primary = Color(0xFFE53935);
-  static const _saved = Color(0xFFF59E0B);
-  static const _highlight = Color(0xFFFF6F00);
+  static const communityColor = Color(0xFFE53935);
+  static const savedColor = Color(0xFFF59E0B);
+
+  /// Xanh lá — địa điểm đang được chọn / xem chi tiết.
+  static const selectedColor = Color(0xFF22C55E);
+
+  bool get _isSelected => switch (variant) {
+        PlaceMapPinVariant.highlightedCommunity ||
+        PlaceMapPinVariant.highlightedSaved =>
+          true,
+        _ => false,
+      };
 
   @override
   Widget build(BuildContext context) {
-    final (color, icon, ring) = switch (variant) {
-      PlaceMapPinVariant.community => (_primary, Icons.school_rounded, false),
-      PlaceMapPinVariant.saved => (_saved, Icons.bookmark_rounded, false),
-      PlaceMapPinVariant.highlightedCommunity => (_highlight, Icons.school_rounded, true),
-      PlaceMapPinVariant.highlightedSaved => (_highlight, Icons.bookmark_rounded, true),
+    final (color, icon) = switch (variant) {
+      PlaceMapPinVariant.community => (communityColor, Icons.location_on_rounded),
+      PlaceMapPinVariant.saved => (savedColor, Icons.bookmark_rounded),
+      PlaceMapPinVariant.highlightedCommunity => (selectedColor, Icons.location_on_rounded),
+      PlaceMapPinVariant.highlightedSaved => (selectedColor, Icons.location_on_rounded),
     };
 
-    final head = size * 0.72;
-    final tail = size * 0.28;
+    final head = size * 0.68;
+    final tail = size * 0.32;
+    final ringColor = _isSelected ? selectedColor : color;
 
     return SizedBox(
       width: size,
@@ -49,18 +59,18 @@ class PlaceMapPin extends StatelessWidget {
         alignment: Alignment.topCenter,
         clipBehavior: Clip.none,
         children: [
-          if (ring)
+          if (_isSelected)
             Positioned(
-              top: -4,
+              top: -2,
               child: Container(
-                width: head + 12,
-                height: head + 12,
+                width: head + 14,
+                height: head + 14,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: _highlight, width: 2.5),
+                  border: Border.all(color: selectedColor, width: 2.5),
                   boxShadow: [
                     BoxShadow(
-                      color: _highlight.withValues(alpha: 0.4),
+                      color: selectedColor.withValues(alpha: 0.45),
                       blurRadius: 10,
                       spreadRadius: 1,
                     ),
@@ -77,19 +87,19 @@ class PlaceMapPin extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: color,
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
+                  border: Border.all(color: Colors.white, width: 2.5),
                   boxShadow: [
                     BoxShadow(
-                      color: color.withValues(alpha: 0.45),
+                      color: ringColor.withValues(alpha: 0.4),
                       blurRadius: 8,
                       offset: const Offset(0, 3),
                     ),
                   ],
                 ),
-                child: Icon(icon, color: Colors.white, size: head * 0.48),
+                child: Icon(icon, color: Colors.white, size: head * 0.5),
               ),
               CustomPaint(
-                size: Size(tail * 1.4, tail),
+                size: Size(tail * 1.5, tail),
                 painter: _PinTailPainter(color: color),
               ),
             ],

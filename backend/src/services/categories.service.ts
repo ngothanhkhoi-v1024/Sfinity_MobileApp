@@ -9,35 +9,38 @@ const toDate = (val: any): Date => {
   return new Date(val);
 };
 
+// Danh mục tài liệu mặc định (DOCUMENT)
+const DOCUMENT_CATEGORIES = [
+  { name: 'Bài giảng', description: 'Slide bài giảng, tài liệu lý thuyết' },
+  { name: 'Đề thi', description: 'Đề thi ôn tập, đề kiểm tra các kỳ' },
+  { name: 'Ghi chú', description: 'Ghi chú cá nhân, tóm tắt môn học' },
+  { name: 'Khác', description: 'Tài liệu học tập khác' },
+];
+
+async function seedCategories() {
+  const snapshot = await getDb().collection('categories').get();
+  // Chỉ chạy seed nếu collection trống hoàn toàn
+  if (!snapshot.empty) return;
+
+  const seedBatch = getDb().batch();
+  for (const cat of DOCUMENT_CATEGORIES) {
+    const docRef = getDb().collection('categories').doc();
+    seedBatch.set(docRef, {
+      id: docRef.id,
+      name: cat.name,
+      description: cat.description,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+  }
+  await seedBatch.commit();
+}
+
 export const categoriesService = {
   async findAll() {
-    let snapshot = await getDb().collection('categories').get();
+    await seedCategories();
 
-    // Tự động seed các danh mục mặc định nếu Firestore đang trống
-    if (snapshot.empty) {
-      const defaultCategories = [
-        { name: 'Bài giảng', slug: 'bai-giang', description: 'Slide bài giảng, tài liệu lý thuyết' },
-        { name: 'Đề thi', slug: 'de-thi', description: 'Đề thi ôn tập, đề kiểm tra các kỳ' },
-        { name: 'Ghi chú', slug: 'ghi-chu', description: 'Ghi chú cá nhân, tóm tắt môn học' },
-        { name: 'Khác', slug: 'khac', description: 'Tài liệu học tập khác' },
-      ];
-
-      const batch = getDb().batch();
-      for (const cat of defaultCategories) {
-        const docRef = getDb().collection('categories').doc();
-        batch.set(docRef, {
-          id: docRef.id,
-          ...cat,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        });
-      }
-      await batch.commit();
-
-      // Lấy lại danh sách sau khi đã seed
-      snapshot = await getDb().collection('categories').get();
-    }
-
+    const snapshot = await getDb().collection('categories').get();
     const categories = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as any));
 
     const categoriesWithCount = await Promise.all(
@@ -51,7 +54,6 @@ export const categoriesService = {
         return {
           id: cat.id,
           name: cat.name,
-          slug: cat.slug,
           description: cat.description ?? null,
           createdAt: toDate(cat.createdAt),
           updatedAt: toDate(cat.updatedAt),
@@ -62,10 +64,9 @@ export const categoriesService = {
       }),
     );
 
-    // Sort by name ascending
-    categoriesWithCount.sort((a, b) => a.name.localeCompare(b.name));
+    const sorted = categoriesWithCount.sort((a, b) => a.name.localeCompare(b.name));
 
-    return categoriesWithCount;
+    return sorted;
   },
 
   async findOne(id: string) {
@@ -74,7 +75,7 @@ export const categoriesService = {
       throw new HttpError(404, 'Không tìm thấy danh mục', 'Not Found');
     }
     const cat = { id: doc.id, ...doc.data() } as any;
-    
+
     const countSnapshot = await getDb()
       .collection('documents')
       .where('categoryId', '==', cat.id)
@@ -84,7 +85,6 @@ export const categoriesService = {
     return {
       id: cat.id,
       name: cat.name,
-      slug: cat.slug,
       description: cat.description ?? null,
       createdAt: toDate(cat.createdAt),
       updatedAt: toDate(cat.updatedAt),
@@ -97,19 +97,18 @@ export const categoriesService = {
   async create(dto: CreateCategoryDto) {
     const snapshot = await getDb()
       .collection('categories')
-      .where('slug', '==', dto.slug)
+      .where('name', '==', dto.name)
       .limit(1)
       .get();
 
     if (!snapshot.empty) {
-      throw new HttpError(409, 'Slug đã tồn tại', 'Conflict');
+      throw new HttpError(409, 'Tên danh mục đã tồn tại', 'Conflict');
     }
 
     const docRef = getDb().collection('categories').doc();
     const newCat = {
       id: docRef.id,
       name: dto.name,
-      slug: dto.slug,
       description: dto.description ?? null,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -120,7 +119,7 @@ export const categoriesService = {
   },
 
   async update(id: string, dto: UpdateCategoryDto) {
-    await categoriesService.findOne(id); // Throws if not found
+    await categoriesService.findOne(id);
     const catRef = getDb().collection('categories').doc(id);
 
     const updateData: any = {
@@ -135,7 +134,6 @@ export const categoriesService = {
     return {
       id: updated.id,
       name: updated.name,
-      slug: updated.slug,
       description: updated.description ?? null,
       createdAt: toDate(updated.createdAt),
       updatedAt: toDate(updated.updatedAt),
@@ -143,7 +141,7 @@ export const categoriesService = {
   },
 
   async remove(id: string) {
-    await categoriesService.findOne(id); // Throws if not found
+    await categoriesService.findOne(id);
     await getDb().collection('categories').doc(id).delete();
     return { success: true };
   },
