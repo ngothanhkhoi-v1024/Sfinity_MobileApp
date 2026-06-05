@@ -281,6 +281,7 @@ export const groupService = {
     if (targetMember.role === 'OWNER') throw new HttpError(403, 'Không thể xóa chủ nhóm.', 'Forbidden');
 
     await db.collection('group_members').doc(targetMember.id).delete();
+    await db.collection('group_member_locations').doc(`${groupId}_${targetUserId}`).delete();
     return { success: true };
   },
 
@@ -316,12 +317,14 @@ export const groupService = {
 
       // Delete the leaving owner's membership
       batch.delete(db.collection('group_members').doc(memberId));
+      batch.delete(db.collection('group_member_locations').doc(memberId));
 
       await batch.commit();
       return { success: true };
     }
 
     await db.collection('group_members').doc(memberId).delete();
+    await db.collection('group_member_locations').doc(memberId).delete();
     return { success: true };
   },
 
@@ -677,5 +680,114 @@ export const groupService = {
     });
 
     return { success: true };
+  },
+
+  async _requireApprovedMember(groupId: string, userId: string) {
+    const db = getDb();
+    const memberId = `${groupId}_${userId}`;
+    const memberDoc = await db.collection('group_members').doc(memberId).get();
+
+    if (!memberDoc.exists) {
+      throw new HttpError(403, 'Bạn không phải thành viên nhóm này.', 'Forbidden');
+    }
+
+    const memberData = memberDoc.data()!;
+    if ((memberData.status ?? 'APPROVED') === 'PENDING') {
+      throw new HttpError(403, 'Thành viên chưa được phê duyệt.', 'Forbidden');
+    }
+
+    return memberData;
+  },
+
+  /** Cập nhật vị trí của thành viên trên bản đồ nhóm */
+  async updateMemberLocation(
+    groupId: string,
+    userId: string,
+    dto: { latitude: number; longitude: number; accuracy?: number },
+  ) {
+    if (
+      !Number.isFinite(dto.latitude) ||
+      !Number.isFinite(dto.longitude) ||
+      dto.latitude < -90 ||
+      dto.latitude > 90 ||
+      dto.longitude < -180 ||
+      dto.longitude > 180
+    ) {
+      throw new HttpError(400, 'Tọa độ không hợp lệ.', 'Bad Request');
+    }
+
+    await this._requireApprovedMember(groupId, userId);
+
+    const db = getDb();
+    const docId = `${groupId}_${userId}`;
+    const now = new Date();
+
+    await db.collection('group_member_locations').doc(docId).set({
+      id: docId,
+      groupId,
+      userId,
+      latitude: dto.latitude,
+      longitude: dto.longitude,
+      accuracy: dto.accuracy ?? null,
+      updatedAt: now,
+    });
+
+    return { success: true, updatedAt: now.toISOString() };
+  },
+
+  /** Ngừng chia sẻ vị trí trên bản đồ nhóm */
+  async clearMemberLocation(groupId: string, userId: string) {
+    await this._requireApprovedMember(groupId, userId);
+    const db = getDb();
+    await db.collection('group_member_locations').doc(`${groupId}_${userId}`).delete();
+    return { success: true };
+  },
+
+  /** Lấy vị trí các thành viên đang chia sẻ trong nhóm */
+  async getMemberLocations(groupId: string, userId: string) {
+    await this._requireApprovedMember(groupId, userId);
+
+    const db = getDb();
+    const [membersSnap, locationsSnap] = await Promise.all([
+      db.collection('group_members').where('groupId', '==', groupId).get(),
+      db.collection('group_member_locations').where('groupId', '==', groupId).get(),
+    ]);
+
+    const approvedUserIds = new Set(
+      membersSnap.docs
+        .map((d) => d.data())
+        .filter((m) => (m.status ?? 'APPROVED') !== 'PENDING')
+        .map((m) => m.userId as string),
+    );
+
+    const locations = (
+      await Promise.all(
+        locationsSnap.docs.map(async (doc) => {
+          const data = doc.data();
+          const memberUserId = data.userId as string;
+          if (!approvedUserIds.has(memberUserId)) return null;
+
+          const userDoc = await db.collection('users').doc(memberUserId).get();
+          const userData = userDoc.exists ? userDoc.data() : null;
+
+          return {
+            userId: memberUserId,
+            name: userData?.name ?? 'Unknown',
+            avatar: userData?.avatar ?? null,
+            latitude: data.latitude as number,
+            longitude: data.longitude as number,
+            accuracy: data.accuracy ?? null,
+            updatedAt: toDate(data.updatedAt).toISOString(),
+          };
+        }),
+      )
+    ).filter(Boolean);
+
+    locations.sort(
+      (a: any, b: any) =>
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+    );
+
+    return { locations };
   },
 };

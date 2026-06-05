@@ -1,55 +1,62 @@
 # Sfinity — Mobile
 
-App **Flutter** cho người dùng cuối (Android & iOS).
+Ứng dụng **Flutter** cho người dùng cuối (Android, iOS, Web).
 
-## Phạm vi
+## Tính năng
 
-- Authentication, profile, onboarding
-- Danh sách / chi tiết nội dung, tìm kiếm, CRUD, bookmark
-- Thông báo, cài đặt, feedback, media, chia sẻ, lịch sử
+- **Khám phá** — tìm kiếm, nội dung nổi bật, hoạt động tuần, bảng xếp hạng người dùng
+- **Địa điểm** — bản đồ OSM, check-in, review, Học gần tôi, địa điểm của tôi
+- **Tài liệu** — xem, tải, tạo/sửa, quản lý tài liệu cá nhân
+- **Cộng đồng** — bạn bè, nhóm học (chat, lưu trữ, thành viên, **bản đồ vị trí thành viên**)
+- **Cá nhân** — hồ sơ, yêu thích, thông báo, phản hồi, cài đặt
+- **Auth** — email/password, Google, OTP, quên mật khẩu
 
 ## Cấu trúc `lib/`
 
-| Thư mục | Nội dung (PDF) |
-|---------|----------------|
-| `core/` | Config, theme, routes, API client |
-| `features/auth/` | Login, Register, Forgot password, OTP |
-| `features/onboarding/` | Welcome, giới thiệu, xin quyền |
-| `features/home/` | Shell: BottomNav, Drawer, FAB |
-| `features/document/` | List, detail, CRUD form |
-| `features/search/` | Tìm kiếm, filter, sort |
-| `features/profile/` | Profile, edit, avatar |
+| Thư mục | Nội dung |
+|---------|----------|
+| `core/` | Config, theme, routes, API client, i18n |
+| `features/auth/` | Đăng nhập, đăng ký, OTP |
+| `features/home/` | Shell 5 tab, Khám phá, Cộng đồng |
+| `features/places/` | Bản đồ, chi tiết, CRUD địa điểm |
+| `features/document/` | Tài liệu CRUD & chi tiết |
+| `features/groups/` | Nhóm học, chat, bản đồ thành viên |
+| `features/friendships/` | Bạn bè, lời mời |
+| `features/study_near_me/` | Gợi ý địa điểm gần bạn |
+| `features/profile/` | Hồ sơ, chỉnh sửa |
 | `features/favorites/` | Bookmark |
-| `features/history/` | Lịch sử, đã xem |
-| `features/notifications/` | In-app, cài đặt |
-| `features/settings/` | App, ngôn ngữ, theme |
-| `features/feedback/` | Feedback, rate app |
-| `features/security/` | Đổi MK, 2FA, session |
-| `features/media/` | Upload / xem ảnh |
+| `features/notifications/` | Thông báo |
+| `features/settings/` | Ngôn ngữ, theme |
+| `features/feedback/`, `report/` | Phản hồi, báo cáo |
 | `shared/` | Widget dùng chung |
 
-Các file `*_page.dart` hiện là **placeholder** — bổ sung logic sau.
+Một số màn hình phụ vẫn placeholder: lịch sử, 2FA, quản lý phiên, rate app.
 
 ## Chạy
 
-**Chrome (web):**
 ```bash
 cd mobile
 flutter pub get
-flutter run -d chrome
+flutter run              # thiết bị mặc định
+flutter run -d chrome    # web
 ```
 
-**Android / iOS:**
-```bash
-flutter run
-```
+### Cấu hình API
 
-> Base URL backend: chỉnh trong `assets/env/app.env` — file có chú thích từng kiểu run (Chrome, Android emulator, iOS simulator, máy thật / LAN).
+Base URL đọc từ `assets/env/` (qua `flutter_dotenv` trong `main.dart`).
+
+| Môi trường | Gợi ý `API_BASE_URL` |
+|------------|----------------------|
+| Web | `http://127.0.0.1:3000/api` |
+| Android Emulator | `http://10.0.2.2:3000/api` |
+| Thiết bị thật | `http://<IP-LAN>:3000/api` |
+
+Xem [`lib/core/config/app_config.dart`](lib/core/config/app_config.dart).
+
+## Phụ thuộc chính
+
+`go_router`, `dio`, `flutter_map`, `geolocator`, `firebase_core`, `cloud_firestore`, `google_sign_in`, `flutter_dotenv`
 
 ## API
 
-Gọi backend tại `backend/`. Base URL và timeout đọc từ `assets/env/app.env` (được load trong `main.dart` qua `flutter_dotenv`). Đọc [AppConfig](lib/core/config/app_config.dart) trong code.
-
-## Gói gợi ý (thêm sau)
-
-`go_router`, `dio`, `flutter_riverpod`, `shared_preferences`, `image_picker`, `firebase_messaging`
+Gọi backend tại [`../backend/`](../backend/). Cần backend chạy trước khi test đầy đủ tính năng.

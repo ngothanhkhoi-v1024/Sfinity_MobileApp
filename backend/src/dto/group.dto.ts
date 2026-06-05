@@ -1,4 +1,4 @@
-import { IsBoolean, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class CreateGroupDto {
   @IsString()
@@ -52,4 +52,16 @@ export class AddGroupMemberDto {
   @IsString()
   @IsNotEmpty()
   userId!: string;
+}
+
+export class UpdateGroupMemberLocationDto {
+  @IsNumber()
+  latitude!: number;
+
+  @IsNumber()
+  longitude!: number;
+
+  @IsOptional()
+  @IsNumber()
+  accuracy?: number;
 }

@@ -8,11 +8,13 @@ import '../../../../core/constants/route_names.dart';
 import '../../../../core/i18n/app_text.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../shared/widgets/error_view.dart';
+import '../../../friendships/data/models/friend_model.dart';
 import '../../../study_near_me/presentation/controllers/study_near_me_controller.dart';
 import '../../../study_near_me/presentation/widgets/study_near_me_results_sheet.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../widgets/explore_featured_section.dart';
 import '../widgets/explore_top_panel.dart';
+import '../widgets/explore_top_users_section.dart';
 import '../widgets/explore_weekly_chart.dart';
 
 class ExplorePage extends StatefulWidget {
@@ -41,6 +43,7 @@ class _ExplorePageState extends State<ExplorePage> {
   List<Map<String, dynamic>> _weeklyDays = [];
   int _weeklyTotalPlaces = 0;
   int _weeklyTotalDownloads = 0;
+  List<Map<String, dynamic>> _topUsers = [];
   bool _loadingExploreMeta = true;
 
   @override
@@ -152,6 +155,13 @@ class _ExplorePageState extends State<ExplorePage> {
       );
       _weeklyTotalPlaces = 0;
       _weeklyTotalDownloads = 0;
+    }
+
+    try {
+      final topUsers = await ApiClient.instance.get('/explore/top-users');
+      _topUsers = (topUsers['users'] as List? ?? []).cast<Map<String, dynamic>>();
+    } on DioException {
+      _topUsers = [];
     } finally {
       if (mounted) setState(() => _loadingExploreMeta = false);
     }
@@ -364,6 +374,24 @@ class _ExplorePageState extends State<ExplorePage> {
                         days: _weeklyDays,
                         totalPlaces: _weeklyTotalPlaces,
                         totalDownloads: _weeklyTotalDownloads,
+                      ),
+                    ],
+                    if (!_loadingExploreMeta && _topUsers.isNotEmpty) ...[
+                      const SizedBox(height: 18),
+                      ExploreTopUsersSection(
+                        users: _topUsers,
+                        onUserTap: (user) {
+                          final id = user['id']?.toString() ?? '';
+                          if (id.isEmpty) return;
+                          context.push(
+                            RouteNames.viewProfile,
+                            extra: FriendUser(
+                              id: id,
+                              name: user['name']?.toString() ?? '',
+                              avatar: user['avatar']?.toString(),
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ],

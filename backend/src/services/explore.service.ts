@@ -1,5 +1,6 @@
 import { getDb } from '../lib/firebase';
 import { isPubliclyVisible } from '../lib/content-state';
+import { UserRole } from '../types/enums';
 import { placeService } from './place.service';
 import { documentService } from './document.service';
 
@@ -144,6 +145,108 @@ export const exploreService = {
         label,
         places: placeBuckets[i],
         downloads: downloadBuckets[i],
+      })),
+    };
+  },
+
+  async getTopUsers(limit = 10) {
+    const [documentsSnap, placesSnap, checkinsSnap] = await Promise.all([
+      getDb().collection('documents').get(),
+      getDb().collection('places').get(),
+      getDb().collection('place_checkins').get(),
+    ]);
+
+    type UserStats = {
+      documentsCount: number;
+      placesCount: number;
+      downloadsCount: number;
+      checkinsCount: number;
+      score: number;
+    };
+
+    const placeAuthors = new Map<string, string>();
+    const userStats = new Map<string, UserStats>();
+
+    const ensureStats = (userId: string): UserStats => {
+      if (!userStats.has(userId)) {
+        userStats.set(userId, {
+          documentsCount: 0,
+          placesCount: 0,
+          downloadsCount: 0,
+          checkinsCount: 0,
+          score: 0,
+        });
+      }
+      return userStats.get(userId)!;
+    };
+
+    for (const doc of placesSnap.docs) {
+      const data = doc.data();
+      if (!isPubliclyVisible(data)) continue;
+      const authorId = data.authorId as string;
+      if (!authorId) continue;
+      placeAuthors.set(doc.id, authorId);
+      ensureStats(authorId).placesCount += 1;
+    }
+
+    for (const doc of documentsSnap.docs) {
+      const data = doc.data();
+      if (!isPubliclyVisible(data)) continue;
+      if (data.type === 'place') continue;
+      const authorId = data.authorId as string;
+      if (!authorId) continue;
+      const stats = ensureStats(authorId);
+      stats.documentsCount += 1;
+      stats.downloadsCount += (data.downloadsCount as number) ?? 0;
+    }
+
+    for (const doc of checkinsSnap.docs) {
+      const placeId = doc.data().placeId as string;
+      if (!placeId) continue;
+      const authorId = placeAuthors.get(placeId);
+      if (!authorId) continue;
+      ensureStats(authorId).checkinsCount += 1;
+    }
+
+    for (const stats of userStats.values()) {
+      stats.score =
+        stats.downloadsCount +
+        stats.checkinsCount +
+        stats.documentsCount * 5 +
+        stats.placesCount * 10;
+    }
+
+    const sorted = [...userStats.entries()]
+      .filter(([, stats]) => stats.score > 0)
+      .sort((a, b) => b[1].score - a[1].score)
+      .slice(0, limit);
+
+    const users = (
+      await Promise.all(
+        sorted.map(async ([userId, stats]) => {
+          const userDoc = await getDb().collection('users').doc(userId).get();
+          if (!userDoc.exists) return null;
+          const user = userDoc.data()!;
+          if (user.role === UserRole.ADMIN) return null;
+
+          return {
+            id: userId,
+            name: (user.name as string) ?? 'User',
+            avatar: (user.avatar as string) ?? null,
+            documentsCount: stats.documentsCount,
+            placesCount: stats.placesCount,
+            downloadsCount: stats.downloadsCount,
+            checkinsCount: stats.checkinsCount,
+            score: stats.score,
+          };
+        }),
+      )
+    ).filter(Boolean);
+
+    return {
+      users: users.map((user, index) => ({
+        ...user,
+        rank: index + 1,
       })),
     };
   },
