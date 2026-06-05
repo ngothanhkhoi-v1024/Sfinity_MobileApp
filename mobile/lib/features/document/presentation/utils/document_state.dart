@@ -1,69 +1,18 @@
-const String documentVisibilityPrivate = 'PRIVATE';
-const String documentVisibilityPublic = 'PUBLIC';
+import 'content_state.dart';
 
-const String documentModerationNone = 'NONE';
-const String documentModerationPending = 'PENDING';
-const String documentModerationApproved = 'APPROVED';
-const String documentModerationRejected = 'REJECTED';
-const String documentModerationHidden = 'HIDDEN';
+const String documentVisibilityPrivate = contentVisibilityPrivate;
+const String documentVisibilityPublic = contentVisibilityPublic;
 
-String documentVisibilityOf(Map<String, dynamic> item) {
-  final visibility = item['visibility']?.toString().toUpperCase();
-  if (visibility == documentVisibilityPrivate || visibility == documentVisibilityPublic) {
-    return visibility!;
-  }
+const String documentModerationNone = contentModerationNone;
+const String documentModerationPending = contentModerationPending;
+const String documentModerationApproved = contentModerationApproved;
+const String documentModerationRejected = contentModerationRejected;
+const String documentModerationHidden = contentModerationHidden;
 
-  final status = item['status']?.toString().toUpperCase();
-  if (status == 'DRAFT') {
-    return documentVisibilityPrivate;
-  }
-  return documentVisibilityPublic;
-}
+String documentVisibilityOf(Map<String, dynamic> item) => contentVisibilityOf(item);
 
-String documentModerationStatusOf(Map<String, dynamic> item) {
-  final moderation = item['moderationStatus']?.toString().toUpperCase();
-  if (moderation == documentModerationNone ||
-      moderation == documentModerationPending ||
-      moderation == documentModerationApproved ||
-      moderation == documentModerationRejected ||
-      moderation == documentModerationHidden) {
-    return moderation!;
-  }
+String documentModerationStatusOf(Map<String, dynamic> item) =>
+    contentModerationStatusOf(item);
 
-  final status = item['status']?.toString().toUpperCase();
-  switch (status) {
-    case 'PENDING':
-      return documentModerationPending;
-    case 'REJECTED':
-      return documentModerationRejected;
-    case 'HIDDEN':
-      return documentModerationHidden;
-    case 'PUBLISHED':
-      return documentModerationApproved;
-    case 'DRAFT':
-    default:
-      return documentModerationNone;
-  }
-}
-
-String documentLegacyStatusOf(Map<String, dynamic> item) {
-  final visibility = documentVisibilityOf(item);
-  final moderation = documentModerationStatusOf(item);
-
-  if (visibility == documentVisibilityPrivate) {
-    return 'DRAFT';
-  }
-
-  switch (moderation) {
-    case documentModerationPending:
-      return 'PENDING';
-    case documentModerationRejected:
-      return 'REJECTED';
-    case documentModerationHidden:
-      return 'HIDDEN';
-    case documentModerationApproved:
-      return 'PUBLISHED';
-    default:
-      return 'DRAFT';
-  }
-}
+String documentLegacyStatusOf(Map<String, dynamic> item) =>
+    contentLegacyStatusOf(item);

@@ -27,10 +27,10 @@ export const favoritesService = {
       list.map(async (fav) => {
         let item = null;
         try {
-          item = await documentService.findOne(fav.documentId);
+          item = await documentService.findOne(fav.documentId, userId);
         } catch (err) {
           try {
-            item = await placeService.findOne(fav.documentId);
+            item = await placeService.findOne(fav.documentId, userId);
           } catch (placeErr) {
             // Item might have been deleted, ignore
           }
@@ -52,9 +52,9 @@ export const favoritesService = {
   async add(userId: string, documentId: string) {
     let item = null;
     try {
-      item = await documentService.findOne(documentId);
+      item = await documentService.findOne(documentId, userId);
     } catch (err) {
-      item = await placeService.findOne(documentId); // Throws 404 if not found in places either
+      item = await placeService.findOne(documentId, userId);
     }
 
     const favId = `${userId}_${documentId}`;

@@ -27,27 +27,28 @@ import {
   adminRejectPlace,
   adminUnhidePlace,
   fetchPlaces,
+  getPlaceModerationStatus,
+  getPlaceVisibility,
   type PlaceItem,
+  type PlaceModerationStatus,
 } from '@/api/places';
 import { reverseGeocode } from '@/utils/geocoding';
 import { useSettings } from '@/contexts/SettingsContext';
 import { PageHeader } from '@/components/common/PageHeader';
 import { PageShell } from '@/components/common/PageShell';
 
-type ContentStatus = 'DRAFT' | 'PENDING' | 'PUBLISHED' | 'REJECTED' | 'HIDDEN';
-
-const STATUS_LABELS: Record<ContentStatus, string> = {
-  DRAFT: 'Nháp',
+const MODERATION_LABELS: Record<PlaceModerationStatus, string> = {
+  NONE: 'Nháp',
   PENDING: 'Chờ duyệt',
-  PUBLISHED: 'Đã xuất bản',
+  APPROVED: 'Đã duyệt',
   REJECTED: 'Từ chối',
   HIDDEN: 'Ẩn',
 };
 
-const STATUS_COLORS: Record<ContentStatus, string> = {
-  DRAFT: 'default',
+const MODERATION_COLORS: Record<PlaceModerationStatus, string> = {
+  NONE: 'default',
   PENDING: 'gold',
-  PUBLISHED: 'green',
+  APPROVED: 'green',
   REJECTED: 'red',
   HIDDEN: 'volcano',
 };
@@ -193,14 +194,27 @@ export function PlacesPage() {
   const columns: ColumnsType<PlaceItem> = [
     { title: 'Tên địa điểm', dataIndex: 'title', width: 200, ellipsis: true },
     {
-      title: 'Trạng thái',
-      dataIndex: 'status',
-      width: 130,
-      render: (s: string) => (
-        <Tag color={STATUS_COLORS[s as ContentStatus] ?? 'default'}>
-          {STATUS_LABELS[s as ContentStatus] ?? s}
+      title: 'Hiển thị',
+      key: 'visibility',
+      width: 100,
+      render: (_: unknown, record: PlaceItem) => (
+        <Tag color={getPlaceVisibility(record) === 'PUBLIC' ? 'blue' : 'default'}>
+          {getPlaceVisibility(record) === 'PUBLIC' ? 'Cộng đồng' : 'Chỉ mình'}
         </Tag>
       ),
+    },
+    {
+      title: 'Kiểm duyệt',
+      key: 'moderationStatus',
+      width: 130,
+      render: (_: unknown, record: PlaceItem) => {
+        const ms = getPlaceModerationStatus(record);
+        return (
+          <Tag color={MODERATION_COLORS[ms]}>
+            {MODERATION_LABELS[ms]}
+          </Tag>
+        );
+      },
     },
     {
       title: 'Tên đường',
@@ -252,7 +266,7 @@ export function PlacesPage() {
             </>
           )}
 
-          {record.status === 'PUBLISHED' && (
+          {getPlaceModerationStatus(record) === 'APPROVED' && (
             <Button
               size="small"
               icon={<EyeInvisibleOutlined />}
@@ -265,7 +279,9 @@ export function PlacesPage() {
             </Button>
           )}
 
-          {(record.status === 'HIDDEN' || record.status === 'DRAFT' || record.status === 'REJECTED') && (
+          {(['HIDDEN', 'NONE', 'REJECTED'] as PlaceModerationStatus[]).includes(
+            getPlaceModerationStatus(record),
+          ) && (
             <Button
               size="small"
               type="default"
@@ -337,9 +353,14 @@ export function PlacesPage() {
         {viewModal && (
           <Descriptions column={1} bordered size="small">
             <Descriptions.Item label="Tên địa điểm">{viewModal.title}</Descriptions.Item>
-            <Descriptions.Item label="Trạng thái">
-              <Tag color={STATUS_COLORS[viewModal.status as ContentStatus] ?? 'default'}>
-                {STATUS_LABELS[viewModal.status as ContentStatus] ?? viewModal.status}
+            <Descriptions.Item label="Hiển thị">
+              <Tag color={getPlaceVisibility(viewModal) === 'PUBLIC' ? 'blue' : 'default'}>
+                {getPlaceVisibility(viewModal) === 'PUBLIC' ? 'Cộng đồng' : 'Chỉ mình'}
+              </Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label="Kiểm duyệt">
+              <Tag color={MODERATION_COLORS[getPlaceModerationStatus(viewModal)]}>
+                {MODERATION_LABELS[getPlaceModerationStatus(viewModal)]}
               </Tag>
             </Descriptions.Item>
             <Descriptions.Item label="Địa chỉ">{viewModal.address ?? '-'}</Descriptions.Item>

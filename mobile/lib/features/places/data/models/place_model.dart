@@ -1,6 +1,8 @@
 import 'package:latlong2/latlong.dart';
 
-/// Địa điểm học tập (`type=place` trên API document).
+import '../../../document/presentation/utils/content_state.dart';
+
+/// Địa điểm học tập (`type=place` trên API places).
 class PlaceModel {
   const PlaceModel({
     required this.id,
@@ -17,7 +19,9 @@ class PlaceModel {
     this.distanceMeters,
     this.avgRating,
     this.reviewCount,
-    this.status,
+    this.visibility,
+    this.moderationStatus,
+    this.legacyStatus,
   });
 
   final String id;
@@ -34,10 +38,27 @@ class PlaceModel {
   final int? distanceMeters;
   final double? avgRating;
   final int? reviewCount;
-  final String? status;
+  final String? visibility;
+  final String? moderationStatus;
+  final String? legacyStatus;
 
   bool get hasPoint => point != null;
-  bool get isPublic => status == null || status == 'PUBLISHED';
+
+  Map<String, dynamic> get _stateMap => {
+        if (visibility != null) 'visibility': visibility,
+        if (moderationStatus != null) 'moderationStatus': moderationStatus,
+        if (legacyStatus != null) 'status': legacyStatus,
+      };
+
+  /// User chose to share with community (not necessarily approved yet).
+  bool get isSharedWithCommunity =>
+      contentVisibilityOf(_stateMap) == contentVisibilityPublic;
+
+  /// Visible on public map/feed.
+  bool get isPubliclyVisible => contentIsPubliclyVisible(_stateMap);
+
+  /// Backward-compatible alias used by place form toggle.
+  bool get isPublic => isSharedWithCommunity;
 }
 
 /// Tham số liệt kê địa điểm.
@@ -95,6 +116,6 @@ class PlaceUpsertPayload {
         'address': address,
         if (zone != null && zone!.isNotEmpty) 'zone': zone,
         'tags': tags,
-        'status': isPublic ? 'PUBLISHED' : 'DRAFT',
+        'visibility': isPublic ? contentVisibilityPublic : contentVisibilityPrivate,
       };
 }

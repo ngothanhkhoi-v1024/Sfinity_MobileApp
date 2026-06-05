@@ -366,6 +366,16 @@ class AppLocalizations {
       'noComments': 'Chưa có bình luận',
       'all': 'Tất cả',
       'newest': 'Mới nhất',
+      'featuredHighlights': 'Nổi bật',
+      'featuredPlaces': 'Địa điểm nổi bật',
+      'featuredDocuments': 'Tài liệu nổi bật',
+      'recentCheckins': '{count} check-in gần đây',
+      'totalCheckins': '{count} lượt check-in',
+      'popularDownloads': '{count} lượt tải',
+      'weeklyActivity': 'Hoạt động tuần này',
+      'weeklyActivitySubtitle': 'Theo dõi địa điểm đã ghé và tài liệu đã tải',
+      'weeklyPlacesVisited': 'Địa điểm đã ghé',
+      'weeklyDocsDownloaded': 'Tài liệu đã tải',
       'noCommentsFound': 'Không tìm thấy bình luận',
       'loadMoreComments': 'Tải thêm bình luận',
       'download': 'Tải xuống',
@@ -886,6 +896,16 @@ class AppLocalizations {
       'noComments': 'No comments',
       'all': 'All',
       'newest': 'Newest',
+      'featuredHighlights': 'Highlights',
+      'featuredPlaces': 'Featured places',
+      'featuredDocuments': 'Featured documents',
+      'recentCheckins': '{count} recent check-ins',
+      'totalCheckins': '{count} check-ins',
+      'popularDownloads': '{count} downloads',
+      'weeklyActivity': 'This week',
+      'weeklyActivitySubtitle': 'Places visited and documents downloaded',
+      'weeklyPlacesVisited': 'Places visited',
+      'weeklyDocsDownloaded': 'Documents downloaded',
       'noCommentsFound': 'No comments found',
       'loadMoreComments': 'Load more comments',
       'download': 'Download',
@@ -1444,6 +1464,16 @@ class AppLocalizations {
   String get noComments => _text('noComments');
   String get all => _text('all');
   String get newest => _text('newest');
+  String get featuredHighlights => _text('featuredHighlights');
+  String get featuredPlaces => _text('featuredPlaces');
+  String get featuredDocuments => _text('featuredDocuments');
+  String recentCheckins(int count) => _format('recentCheckins', {'{count}': '$count'});
+  String totalCheckins(int count) => _format('totalCheckins', {'{count}': '$count'});
+  String popularDownloads(int count) => _format('popularDownloads', {'{count}': '$count'});
+  String get weeklyActivity => _text('weeklyActivity');
+  String get weeklyActivitySubtitle => _text('weeklyActivitySubtitle');
+  String get weeklyPlacesVisited => _text('weeklyPlacesVisited');
+  String get weeklyDocsDownloaded => _text('weeklyDocsDownloaded');
   String get noCommentsFound => _text('noCommentsFound');
   String get loadMoreComments => _text('loadMoreComments');
   String get download => _text('download');
