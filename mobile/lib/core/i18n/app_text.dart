@@ -95,6 +95,20 @@ class AppLocalizations {
       'submit': 'Gửi',
       'enterAtLeast5Characters': 'Nhập ít nhất 5 ký tự',
       'thanksForYourFeedback': 'Cảm ơn phản hồi của bạn!',
+      'assistantTitle': 'Hải cẩu Sfinity',
+      'assistantSubtitle': 'Trợ lý hướng dẫn sử dụng app',
+      'assistantPlaceholder': 'Hỏi về cách dùng Sfinity...',
+      'assistantContextHint': 'Bạn cần hải cẩu giúp không?',
+      'assistantDismissHint': 'Đã hiểu',
+      'assistantOpenChat': 'Hỏi hải cẩu',
+      'assistantThinking': 'Hải cẩu đang suy nghĩ...',
+      'assistantWelcome': '🦭 Chào bạn! Mình chỉ hỗ trợ hướng dẫn dùng app Sfinity thôi nhé — không giải bài tập và không xem được dữ liệu riêng tư của bạn. Hỏi mình bất cứ điều gì về app!',
+      'assistantQuickExplore': 'Khám phá dùng thế nào?',
+      'assistantQuickCheckIn': 'Check-in thế nào?',
+      'assistantQuickStudyNearMe': 'Học gần tôi là gì?',
+      'assistantQuickUploadDoc': 'Tải tài liệu thế nào?',
+      'assistantQuickCreateGroup': 'Tạo nhóm học?',
+      'assistantQuickSettings': 'Đổi ngôn ngữ & giao diện',
       'reportSubmitted': 'Đã gửi báo cáo',
       'reportViolationTitle': 'Báo cáo vi phạm',
       'type': 'Loại',
@@ -671,6 +685,20 @@ class AppLocalizations {
       'submit': 'Submit',
       'enterAtLeast5Characters': 'Enter at least 5 characters',
       'thanksForYourFeedback': 'Thanks for your feedback!',
+      'assistantTitle': 'Sfinity Seal',
+      'assistantSubtitle': 'App usage guide assistant',
+      'assistantPlaceholder': 'Ask about using Sfinity...',
+      'assistantContextHint': 'Need help from the seal?',
+      'assistantDismissHint': 'Got it',
+      'assistantOpenChat': 'Ask the seal',
+      'assistantThinking': 'Seal is thinking...',
+      'assistantWelcome': '🦭 Hi! I only help with using the Sfinity app — no homework answers and no access to your private data. Ask me anything about the app!',
+      'assistantQuickExplore': 'How does Explore work?',
+      'assistantQuickCheckIn': 'How to check in?',
+      'assistantQuickStudyNearMe': 'What is Study Near Me?',
+      'assistantQuickUploadDoc': 'How to upload documents?',
+      'assistantQuickCreateGroup': 'How to create a study group?',
+      'assistantQuickSettings': 'Change language & theme',
       'reportSubmitted': 'Report submitted',
       'reportViolationTitle': 'Report violation',
       'type': 'Type',
@@ -1260,6 +1288,20 @@ class AppLocalizations {
   String get submit => _text('submit');
   String get enterAtLeast5Characters => _text('enterAtLeast5Characters');
   String get thanksForYourFeedback => _text('thanksForYourFeedback');
+  String get assistantTitle => _text('assistantTitle');
+  String get assistantSubtitle => _text('assistantSubtitle');
+  String get assistantPlaceholder => _text('assistantPlaceholder');
+  String get assistantContextHint => _text('assistantContextHint');
+  String get assistantDismissHint => _text('assistantDismissHint');
+  String get assistantOpenChat => _text('assistantOpenChat');
+  String get assistantThinking => _text('assistantThinking');
+  String get assistantWelcome => _text('assistantWelcome');
+  String get assistantQuickExplore => _text('assistantQuickExplore');
+  String get assistantQuickCheckIn => _text('assistantQuickCheckIn');
+  String get assistantQuickStudyNearMe => _text('assistantQuickStudyNearMe');
+  String get assistantQuickUploadDoc => _text('assistantQuickUploadDoc');
+  String get assistantQuickCreateGroup => _text('assistantQuickCreateGroup');
+  String get assistantQuickSettings => _text('assistantQuickSettings');
   String get reportSubmitted => _text('reportSubmitted');
   String get reportViolationTitle => _text('reportViolationTitle');
   String get type => _text('type');
