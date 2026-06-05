@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -47,6 +49,81 @@ class _PlaceDirectionsSectionState extends State<PlaceDirectionsSection> {
 
   final _cacheByProfile = <String, PlaceRouteResult>{};
 
+  bool _liveGpsEnabled = false;
+  Timer? _gpsTimer;
+  LatLng? _livePosition;
+
+  @override
+  void dispose() {
+    _stopLiveGps();
+    super.dispose();
+  }
+
+  void _stopLiveGps() {
+    _gpsTimer?.cancel();
+    _gpsTimer = null;
+    _liveGpsEnabled = false;
+    _livePosition = null;
+  }
+
+  void _moveMapTo(LatLng point) {
+    try {
+      _mapController.move(point, _mapController.camera.zoom);
+    } catch (_) {}
+  }
+
+  Future<void> _setLiveGpsEnabled(bool enabled) async {
+    if (enabled) {
+      setState(() => _liveGpsEnabled = true);
+      await _refreshLiveGps();
+      _gpsTimer?.cancel();
+      _gpsTimer = Timer.periodic(const Duration(seconds: 2), (_) => _refreshLiveGps());
+      return;
+    }
+    setState(_stopLiveGps);
+  }
+
+  Future<void> _refreshLiveGps() async {
+    final point = await _locationService.getCurrentLocation();
+    if (!mounted || point == null) return;
+    setState(() {
+      _livePosition = point;
+      _origin = point;
+    });
+    _moveMapTo(point);
+  }
+
+  Widget _buildLiveGpsToggle() {
+    if (_route == null) return const SizedBox.shrink();
+    final l10n = context.l10n;
+
+    return Material(
+      color: _liveGpsEnabled
+          ? widget.accentColor.withValues(alpha: 0.1)
+          : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+      borderRadius: BorderRadius.circular(12),
+      child: SwitchListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+        secondary: Icon(
+          Icons.my_location_rounded,
+          color: _liveGpsEnabled ? widget.accentColor : null,
+          size: 22,
+        ),
+        title: Text(
+          l10n.routeLiveGps,
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+        ),
+        subtitle: Text(
+          l10n.routeLiveGpsHint,
+          style: const TextStyle(fontSize: 12),
+        ),
+        value: _liveGpsEnabled,
+        activeThumbColor: widget.accentColor,
+        onChanged: (value) => _setLiveGpsEnabled(value),
+      ),
+    );
+  }
+
   Color _colorForMode(RouteTravelMode mode) => switch (mode) {
         RouteTravelMode.walking => const Color(0xFF10B981),
         RouteTravelMode.motorcycle => const Color(0xFFF59E0B),
@@ -72,6 +149,7 @@ class _PlaceDirectionsSectionState extends State<PlaceDirectionsSection> {
 
     if (_cacheByProfile.containsKey(profileKey)) {
       final cached = _withMode(_cacheByProfile[profileKey]!, targetMode);
+      _stopLiveGps();
       setState(() {
         _expanded = true;
         _mode = targetMode;
@@ -89,6 +167,7 @@ class _PlaceDirectionsSectionState extends State<PlaceDirectionsSection> {
       _expanded = true;
       _mode = targetMode;
     });
+    _stopLiveGps();
 
     try {
       _origin ??= await _locationService.getCurrentLocation();
@@ -157,6 +236,7 @@ class _PlaceDirectionsSectionState extends State<PlaceDirectionsSection> {
   }
 
   void _collapse() {
+    _stopLiveGps();
     setState(() {
       _expanded = false;
       _route = null;
@@ -279,13 +359,16 @@ class _PlaceDirectionsSectionState extends State<PlaceDirectionsSection> {
             message: _error!,
             onRetry: () => _loadDirections(mode: _mode),
           )
-        else if (_route != null)
+        else if (_route != null) ...[
           _RouteSummary(
             route: _route!,
             locationService: _locationService,
             isDark: isDark,
             accentColor: routeColor,
           ),
+          const SizedBox(height: 10),
+          _buildLiveGpsToggle(),
+        ],
         if (_route != null) ...[
           const SizedBox(height: 12),
           Text(
@@ -344,7 +427,7 @@ class _PlaceDirectionsSectionState extends State<PlaceDirectionsSection> {
           MarkerLayer(
             markers: [
               Marker(
-                point: route.origin,
+                point: _livePosition ?? route.origin,
                 width: 36,
                 height: 36,
                 child: _MapDot(

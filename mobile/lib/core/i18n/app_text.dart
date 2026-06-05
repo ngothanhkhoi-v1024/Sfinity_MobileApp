@@ -62,6 +62,17 @@ class AppLocalizations {
       'deleteAllNotifications': 'Xóa tất cả thông báo',
       'deleteAllNotificationsConfirm': 'Bạn có chắc muốn xóa tất cả thông báo?',
       'deleteNotificationConfirm': 'Bạn có chắc muốn xóa thông báo này?',
+      'notificationDetail': 'Chi tiết thông báo',
+      'unreadNotification': 'Chưa đọc',
+      'backToPlaceDetail': 'Quay lại chi tiết',
+      'routePreview': 'Xem trước',
+      'routeLiveGps': 'Theo GPS',
+      'routeLiveGpsHint': 'Cập nhật vị trí thật trên bản đồ mỗi 2 giây',
+      'routePreviewPlay': 'Phát',
+      'routePreviewPause': 'Tạm dừng',
+      'routePreviewSpeed': 'Tốc độ',
+      'routePreviewSkip': 'Xem hết',
+      'routeStopGuidance': 'Dừng',
       'yesDelete': 'Xóa',
       'cancel': 'Hủy',
       'noFavoritesYet': 'Chưa có mục yêu thích',
@@ -608,6 +619,17 @@ class AppLocalizations {
       'deleteAllNotifications': 'Delete all notifications',
       'deleteAllNotificationsConfirm': 'Are you sure you want to delete all notifications?',
       'deleteNotificationConfirm': 'Are you sure you want to delete this notification?',
+      'notificationDetail': 'Notification detail',
+      'unreadNotification': 'Unread',
+      'backToPlaceDetail': 'Back to detail',
+      'routePreview': 'Preview',
+      'routeLiveGps': 'Live GPS',
+      'routeLiveGpsHint': 'Update your real position on the map every 2 seconds',
+      'routePreviewPlay': 'Play',
+      'routePreviewPause': 'Pause',
+      'routePreviewSpeed': 'Speed',
+      'routePreviewSkip': 'Skip to end',
+      'routeStopGuidance': 'Stop',
       'yesDelete': 'Delete',
       'cancel': 'Cancel',
       'noFavoritesYet': 'No favorites yet',
@@ -1167,6 +1189,17 @@ class AppLocalizations {
   String get deleteAllNotifications => _text('deleteAllNotifications');
   String get deleteAllNotificationsConfirm => _text('deleteAllNotificationsConfirm');
   String get deleteNotificationConfirm => _text('deleteNotificationConfirm');
+  String get notificationDetail => _text('notificationDetail');
+  String get unreadNotification => _text('unreadNotification');
+  String get backToPlaceDetail => _text('backToPlaceDetail');
+  String get routePreview => _text('routePreview');
+  String get routeLiveGps => _text('routeLiveGps');
+  String get routeLiveGpsHint => _text('routeLiveGpsHint');
+  String get routePreviewPlay => _text('routePreviewPlay');
+  String get routePreviewPause => _text('routePreviewPause');
+  String get routePreviewSpeed => _text('routePreviewSpeed');
+  String get routePreviewSkip => _text('routePreviewSkip');
+  String get routeStopGuidance => _text('routeStopGuidance');
   String get yesDelete => _text('yesDelete');
   String get cancel => _text('cancel');
   String get noFavoritesYet => _text('noFavoritesYet');
