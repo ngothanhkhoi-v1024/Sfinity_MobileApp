@@ -35,99 +35,76 @@ class DocumentTopPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final primary = AppColors.primaryOf(context);
     final l10n = context.l10n;
-    final isDark = AppColors.isDark(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (!embedded) ...[
-          Text(
-            l10n.studyMaterials,
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.5,
-                  height: 1.1,
-                ),
-          ),
-          const SizedBox(height: 4),
-        ],
         DocumentModeToggle(
           communityMode: communityMode,
           onChanged: onModeChanged,
           compact: true,
         ),
         const SizedBox(height: 10),
-        Container(
-          padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
-          decoration: BoxDecoration(
-            color: AppColors.card(context),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.border(context)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.04),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
+        Row(
+          children: [
+            Expanded(
+              child: PlacesSearchField(
+                controller: searchController,
+                hint: l10n.searchDocumentHint,
+                onChanged: onSearchChanged,
               ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: PlacesSearchField(
-                      controller: searchController,
-                      hint: l10n.searchDocumentHint,
-                      onChanged: onSearchChanged,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  // Nút Lọc bên phải thanh tìm kiếm
-                  Material(
-                    color: showFilters
-                        ? primary.withValues(alpha: 0.14)
-                        : AppColors.chipBg(context),
-                    borderRadius: BorderRadius.circular(14),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(14),
-                      onTap: onToggleFilters,
-                      child: Padding(
-                        padding: const EdgeInsets.all(14),
-                        child: Icon(
-                          Icons.filter_list_rounded,
-                          color: showFilters ? primary : AppColors.muted(context),
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              if (showFilters) ...[
-                const SizedBox(height: 10),
-                Divider(height: 1, color: AppColors.divider(context)),
-                const SizedBox(height: 10),
-                SizedBox(
-                  height: 38,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: categories.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 6),
-                    itemBuilder: (context, index) {
-                      final cat = categories[index];
-                      final selected = selectedCategory == cat;
-                      return _CategoryChip(
-                        label: l10n.translateCategory(cat),
-                        selected: selected,
-                        primary: primary,
-                        onTap: () => onCategorySelected(cat),
-                      );
-                    },
+            ),
+            const SizedBox(width: 8),
+            Material(
+              color: showFilters
+                  ? primary.withValues(alpha: 0.08)
+                  : AppColors.chipBg(context),
+              borderRadius: BorderRadius.circular(12),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: onToggleFilters,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Icon(
+                    Icons.tune_rounded,
+                    color: showFilters ? primary : AppColors.muted(context),
+                    size: 20,
                   ),
                 ),
-              ],
+              ),
+            ),
+          ],
+        ),
+        AnimatedCrossFade(
+          firstCurve: Curves.easeOutCubic,
+          secondCurve: Curves.easeInCubic,
+          sizeCurve: Curves.easeOutCubic,
+          crossFadeState: showFilters
+              ? CrossFadeState.showSecond
+              : CrossFadeState.showFirst,
+          duration: const Duration(milliseconds: 200),
+          firstChild: const SizedBox(width: double.infinity),
+          secondChild: Column(
+            children: [
+              const SizedBox(height: 10),
+              SizedBox(
+                height: 36,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: categories.length,
+                  separatorBuilder: (context, index) => const SizedBox(width: 6),
+                  itemBuilder: (context, index) {
+                    final cat = categories[index];
+                    final selected = selectedCategory == cat;
+                    return _CategoryChip(
+                      label: l10n.translateCategory(cat),
+                      selected: selected,
+                      primary: primary,
+                      onTap: () => onCategorySelected(cat),
+                    );
+                  },
+                ),
+              ),
             ],
           ),
         ),
@@ -151,24 +128,28 @@ class _CategoryChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = AppColors.isDark(context);
-
     return Material(
-      color: selected ? primary : AppColors.chipBg(context),
-      borderRadius: BorderRadius.circular(12),
+      color: selected ? primary.withValues(alpha: 0.08) : AppColors.card(context),
+      borderRadius: BorderRadius.circular(18),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: selected
+                  ? primary.withValues(alpha: 0.35)
+                  : AppColors.border(context),
+            ),
+          ),
           child: Text(
             label,
             style: TextStyle(
               fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: selected
-                  ? Colors.white
-                  : (isDark ? const Color(0xFF9CA3AF) : const Color(0xFF4B5563)),
+              fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+              color: selected ? primary : AppColors.muted(context),
             ),
           ),
         ),

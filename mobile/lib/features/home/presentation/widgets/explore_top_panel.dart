@@ -32,27 +32,18 @@ class ExploreTopPanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
-          decoration: AppColors.panel(context),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              PlacesSearchField(
-                controller: searchController,
-                hint: searchHint,
-                onChanged: onSearchChanged,
-                onSubmitted: onSearchSubmitted,
-              ),
-              const SizedBox(height: 8),
-              _FilterRow(
-                filter: filter,
-                primary: primary,
-                onChanged: onFilterChanged,
-                l10n: l10n,
-              ),
-            ],
-          ),
+        PlacesSearchField(
+          controller: searchController,
+          hint: searchHint,
+          onChanged: onSearchChanged,
+          onSubmitted: onSearchSubmitted,
+        ),
+        const SizedBox(height: 10),
+        _FilterRow(
+          filter: filter,
+          primary: primary,
+          onChanged: onFilterChanged,
+          l10n: l10n,
         ),
       ],
     );
@@ -75,28 +66,32 @@ class _FilterRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final options = [
-      (ExploreFilter.all, l10n.all, Icons.grid_view_rounded),
-      (ExploreFilter.place, l10n.places, Icons.place_rounded),
-      (ExploreFilter.document, l10n.documents, Icons.menu_book_rounded),
+      (ExploreFilter.all, l10n.all),
+      (ExploreFilter.place, l10n.places),
+      (ExploreFilter.document, l10n.documents),
     ];
 
-    return Row(
-      children: [
-        for (final (f, label, icon) in options) ...[
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(right: f != ExploreFilter.document ? 6 : 0),
-              child: _FilterChip(
-                label: label,
-                icon: icon,
-                selected: filter == f,
-                primary: primary,
-                onTap: () => onChanged(f),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.chipBg(context),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(3),
+        child: Row(
+          children: [
+            for (final (f, label) in options)
+              Expanded(
+                child: _FilterChip(
+                  label: label,
+                  selected: filter == f,
+                  primary: primary,
+                  onTap: () => onChanged(f),
+                ),
               ),
-            ),
-          ),
-        ],
-      ],
+          ],
+        ),
+      ),
     );
   }
 }
@@ -104,49 +99,40 @@ class _FilterRow extends StatelessWidget {
 class _FilterChip extends StatelessWidget {
   const _FilterChip({
     required this.label,
-    required this.icon,
     required this.selected,
     required this.primary,
     required this.onTap,
   });
 
   final String label;
-  final IconData icon;
   final bool selected;
   final Color primary;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final isDark = AppColors.isDark(context);
+
     return Material(
-      color: selected ? primary : AppColors.chipBg(context),
-      borderRadius: BorderRadius.circular(10),
+      color: selected
+          ? (isDark ? const Color(0xFF2A2A2A) : Colors.white)
+          : Colors.transparent,
+      borderRadius: BorderRadius.circular(9),
+      elevation: selected && !isDark ? 0.5 : 0,
+      shadowColor: Colors.black12,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(9),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 14,
-                color: selected ? Colors.white : AppColors.muted(context),
-              ),
-              const SizedBox(width: 4),
-              Flexible(
-                child: Text(
-                  label,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: selected ? Colors.white : AppColors.muted(context),
-                  ),
-                ),
-              ),
-            ],
+          padding: const EdgeInsets.symmetric(vertical: 9),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              color: selected ? primary : AppColors.muted(context),
+            ),
           ),
         ),
       ),

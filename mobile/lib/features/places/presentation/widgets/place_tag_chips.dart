@@ -76,22 +76,37 @@ class PlaceTagDisplay extends StatelessWidget {
     final theme = Theme.of(context);
     final primary = theme.colorScheme.primary;
 
+    final isDark = theme.brightness == Brightness.dark;
+    final pillBg = isDark ? const Color(0xFF2A2A2A) : Colors.white;
+
     return Wrap(
-      spacing: 6,
-      runSpacing: 6,
+      spacing: 8,
+      runSpacing: 8,
       children: [
         for (final id in tagIds)
           if (PlaceTags.byId(id) != null)
-            Chip(
-              visualDensity: VisualDensity.compact,
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              avatar: Icon(PlaceTags.byId(id)!.icon, size: 16, color: primary),
-              label: Text(
-                PlaceTags.byId(id)!.label,
-                style: const TextStyle(fontSize: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: pillBg,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: primary.withValues(alpha: 0.25)),
               ),
-              side: BorderSide(color: primary.withValues(alpha: 0.3)),
-              backgroundColor: primary.withValues(alpha: 0.08),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(PlaceTags.byId(id)!.icon, size: 16, color: primary),
+                  const SizedBox(width: 6),
+                  Text(
+                    PlaceTags.byId(id)!.label,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: isDark ? Colors.grey.shade200 : const Color(0xFF374151),
+                    ),
+                  ),
+                ],
+              ),
             ),
       ],
     );
@@ -103,12 +118,10 @@ class PlaceTagFilterBar extends StatelessWidget {
     super.key,
     required this.selected,
     required this.onChanged,
-    this.onApply,
   });
 
   final Set<String> selected;
   final ValueChanged<Set<String>> onChanged;
-  final VoidCallback? onApply;
 
   void _toggle(String id) {
     final next = Set<String>.from(selected);
@@ -118,7 +131,10 @@ class PlaceTagFilterBar extends StatelessWidget {
       next.add(id);
     }
     onChanged(next);
-    onApply?.call();
+  }
+
+  void _clearAll() {
+    onChanged({});
   }
 
   @override
@@ -139,10 +155,7 @@ class PlaceTagFilterBar extends StatelessWidget {
               child: ActionChip(
                 label: Text(l10n.removeFilter),
                 avatar: const Icon(Icons.clear, size: 16),
-                onPressed: () {
-                  onChanged({});
-                  onApply?.call();
-                },
+                onPressed: _clearAll,
               ),
             ),
           for (final tag in PlaceTags.all)

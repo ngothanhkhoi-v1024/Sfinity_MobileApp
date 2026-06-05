@@ -1,6 +1,6 @@
-/** Check-in geofence: distance <= max(10m, GPS accuracy), accuracy <= 25m. */
-export const PLACE_CHECKIN_MAX_ACCURACY_M = 25;
-export const PLACE_CHECKIN_BASE_RADIUS_M = 10;
+/** Check-in geofence: distance <= max(50m, GPS accuracy), accuracy <= 50m. */
+export const PLACE_CHECKIN_MAX_ACCURACY_M = 50;
+export const PLACE_CHECKIN_BASE_RADIUS_M = 50;
 
 export function checkInAllowedRadiusM(accuracyM: number): number {
   return Math.max(PLACE_CHECKIN_BASE_RADIUS_M, accuracyM);

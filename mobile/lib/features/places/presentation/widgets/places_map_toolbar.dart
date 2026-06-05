@@ -7,7 +7,7 @@ import 'place_tag_chips.dart';
 import 'places_header_panel.dart';
 import 'places_search_field.dart';
 
-class PlacesMapToolbar extends StatelessWidget {
+class PlacesMapToolbar extends StatefulWidget {
   const PlacesMapToolbar({
     super.key,
     required this.communityMode,
@@ -18,12 +18,12 @@ class PlacesMapToolbar extends StatelessWidget {
     required this.onSearchChanged,
     required this.filterTags,
     required this.onFilterChanged,
-    required this.onFilterApply,
     required this.studyNearMeLoading,
     required this.onStudyNearMe,
     this.highlightBanner,
     this.locationHint,
     this.mapOverlay = true,
+    this.filterCount = 0,
   });
 
   final bool communityMode;
@@ -34,30 +34,39 @@ class PlacesMapToolbar extends StatelessWidget {
   final ValueChanged<String> onSearchChanged;
   final Set<String> filterTags;
   final ValueChanged<Set<String>> onFilterChanged;
-  final VoidCallback onFilterApply;
   final bool studyNearMeLoading;
   final VoidCallback onStudyNearMe;
   final Widget? highlightBanner;
   final String? locationHint;
   final bool mapOverlay;
+  final int filterCount;
+
+  @override
+  State<PlacesMapToolbar> createState() => _PlacesMapToolbarState();
+}
+
+class _PlacesMapToolbarState extends State<PlacesMapToolbar> {
+  bool _filtersExpanded = false;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final isDark = AppColors.isDark(context);
-    final surface = AppColors.card(context).withValues(alpha: mapOverlay ? (isDark ? 0.94 : 0.96) : 1);
+    final surface = AppColors.card(context).withValues(alpha: widget.mapOverlay ? (isDark ? 0.94 : 0.96) : 1);
+    final primary = theme.colorScheme.primary;
+    final activeCount = widget.filterCount;
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(12, mapOverlay ? 4 : 0, 12, mapOverlay ? 6 : 0),
+      padding: EdgeInsets.fromLTRB(12, widget.mapOverlay ? 4 : 0, 12, widget.mapOverlay ? 6 : 0),
       child: Material(
         color: surface,
-        elevation: mapOverlay ? (isDark ? 0 : 3) : 0,
+        elevation: widget.mapOverlay ? (isDark ? 0 : 3) : 0,
         shadowColor: Colors.black.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(mapOverlay ? 18 : 0),
+        borderRadius: BorderRadius.circular(widget.mapOverlay ? 18 : 0),
         child: Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(mapOverlay ? 18 : 0),
+            borderRadius: BorderRadius.circular(widget.mapOverlay ? 18 : 0),
             border: Border.all(
               color: AppColors.border(context),
             ),
@@ -67,18 +76,18 @@ class PlacesMapToolbar extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               PlacesHeaderPanel(
-                communityMode: communityMode,
-                listView: listView,
-                onCommunityChanged: onCommunityChanged,
-                onViewChanged: onViewChanged,
+                communityMode: widget.communityMode,
+                listView: widget.listView,
+                onCommunityChanged: widget.onCommunityChanged,
+                onViewChanged: widget.onViewChanged,
                 embedded: true,
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(10, 0, 10, 8),
                 child: PlacesSearchField(
-                  controller: searchController,
-                  onChanged: onSearchChanged,
-                  onSubmitted: onSearchChanged,
+                  controller: widget.searchController,
+                  onChanged: widget.onSearchChanged,
+                  onSubmitted: widget.onSearchChanged,
                 ),
               ),
               Padding(
@@ -87,38 +96,76 @@ class PlacesMapToolbar extends StatelessWidget {
                   children: [
                     StudyNearMeButton(
                       compact: true,
-                      loading: studyNearMeLoading,
-                      onPressed: onStudyNearMe,
+                      loading: widget.studyNearMeLoading,
+                      onPressed: widget.onStudyNearMe,
                     ),
                     const Spacer(),
-                    Icon(
-                      Icons.filter_list_rounded,
-                      size: 16,
-                      color: isDark ? Colors.grey.shade500 : const Color(0xFF9CA3AF),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      l10n.filter,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.grey.shade500 : const Color(0xFF6B7280),
+                    Material(
+                      color: activeCount > 0
+                          ? primary.withValues(alpha: isDark ? 0.22 : 0.1)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(20),
+                      child: InkWell(
+                        onTap: () => setState(() => _filtersExpanded = !_filtersExpanded),
+                        borderRadius: BorderRadius.circular(20),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                _filtersExpanded
+                                    ? Icons.expand_less_rounded
+                                    : Icons.tune_rounded,
+                                size: 18,
+                                color: activeCount > 0 ? primary : AppColors.muted(context),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                activeCount > 0
+                                    ? l10n.activeFilters(activeCount)
+                                    : l10n.filterAmenities,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: activeCount > 0
+                                      ? primary
+                                      : AppColors.muted(context),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-              PlaceTagFilterBar(
-                selected: filterTags,
-                onChanged: onFilterChanged,
-                onApply: onFilterApply,
+              AnimatedCrossFade(
+                firstCurve: Curves.easeOutCubic,
+                secondCurve: Curves.easeInCubic,
+                sizeCurve: Curves.easeOutCubic,
+                crossFadeState: _filtersExpanded
+                    ? CrossFadeState.showSecond
+                    : CrossFadeState.showFirst,
+                duration: const Duration(milliseconds: 220),
+                firstChild: const SizedBox(width: double.infinity),
+                secondChild: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    PlaceTagFilterBar(
+                      selected: widget.filterTags,
+                      onChanged: widget.onFilterChanged,
+                    ),
+                    const SizedBox(height: 6),
+                  ],
+                ),
               ),
-              const SizedBox(height: 6),
-              if (highlightBanner != null) highlightBanner!,
-              if (locationHint != null)
+              if (widget.highlightBanner != null) widget.highlightBanner!,
+              if (widget.locationHint != null)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(10, 0, 10, 8),
-                  child: _LocationHintChip(message: locationHint!),
+                  child: _LocationHintChip(message: widget.locationHint!),
                 ),
             ],
           ),

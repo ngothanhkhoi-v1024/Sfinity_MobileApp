@@ -148,7 +148,12 @@ class AppLocalizations {
       'skip': 'Bỏ qua',
       'getStartedNow': 'Bắt đầu ngay',
       'invitesTab': 'Lời mời',
-      'placeDetail': 'Chi tiết địa điểm',
+      'placeDetail': 'Chi tiết Không gian Học tập',
+      'interactionCheckin': 'Tương tác & Check-in',
+      'checkinsToday': '{count} lượt check-in hôm nay',
+      'checkInNow': 'Check-in ngay',
+      'sharedAccount': 'Tài khoản chia sẻ',
+      'ratingStarsCount': '{rating} sao ({count} đánh giá)',
       'placeUpdated': 'Cập nhật địa điểm',
       'memberRemoved': 'Đã xóa thành viên',
       'gender': 'Giới tính',
@@ -257,6 +262,10 @@ class AppLocalizations {
       'invalidCoordinates': 'Tọa độ không hợp lệ',
       'allZones': 'Tất cả khu vực',
       'filterAmenities': 'Lọc tiện nghi',
+      'activeFilters': '{count} bộ lọc',
+      'placeHiddenByFilters': 'Địa điểm đang bị ẩn bởi bộ lọc',
+      'clearMapSelection': 'Bỏ chọn',
+      'showAllPlaces': 'Hiện tất cả',
       'holdMapOrButton': 'Giữ bản đồ hoặc nhấn nút',
       'holdMapOrPressPlus': 'Giữ bản đồ hoặc nhấn dấu cộng',
       'selectedLocation': 'Vị trí đã chọn',
@@ -644,7 +653,12 @@ class AppLocalizations {
       'skip': 'Skip',
       'getStartedNow': 'Get started',
       'invitesTab': 'Invitations',
-      'placeDetail': 'Place detail',
+      'placeDetail': 'Study space detail',
+      'interactionCheckin': 'Interaction & check-in',
+      'checkinsToday': '{count} check-ins today',
+      'checkInNow': 'Check in now',
+      'sharedAccount': 'Shared by',
+      'ratingStarsCount': '{rating} stars ({count} reviews)',
       'placeUpdated': 'Place updated',
       'memberRemoved': 'Removed member',
       'registerTitle': 'Create account',
@@ -758,6 +772,10 @@ class AppLocalizations {
       'invalidCoordinates': 'Invalid coordinates',
       'allZones': 'All zones',
       'filterAmenities': 'Filter amenities',
+      'activeFilters': '{count} filters',
+      'placeHiddenByFilters': 'Place hidden by active filters',
+      'clearMapSelection': 'Clear selection',
+      'showAllPlaces': 'Show all',
       'holdMapOrButton': 'Hold map or press button',
       'holdMapOrPressPlus': 'Hold map or press plus',
       'selectedLocation': 'Selected location',
@@ -1155,6 +1173,14 @@ class AppLocalizations {
   String get getStartedNow => _text('getStartedNow');
   String get invitesTab => _text('invitesTab');
   String get placeDetail => _text('placeDetail');
+  String get interactionCheckin => _text('interactionCheckin');
+  String checkinsToday(int count) => _format('checkinsToday', {'{count}': '$count'});
+  String get checkInNow => _text('checkInNow');
+  String get sharedAccount => _text('sharedAccount');
+  String ratingStarsCount(double rating, int count) => _format(
+        'ratingStarsCount',
+        {'{rating}': rating.toStringAsFixed(1), '{count}': '$count'},
+      );
   String get placeUpdated => _text('placeUpdated');
   String get memberRemoved => _text('memberRemoved');
   String get registerTitle => _text('registerTitle');
@@ -1269,6 +1295,10 @@ class AppLocalizations {
   String get invalidCoordinates => _text('invalidCoordinates');
   String get allZones => _text('allZones');
   String get filterAmenities => _text('filterAmenities');
+  String activeFilters(int count) => _format('activeFilters', {'{count}': '$count'});
+  String get placeHiddenByFilters => _text('placeHiddenByFilters');
+  String get clearMapSelection => _text('clearMapSelection');
+  String get showAllPlaces => _text('showAllPlaces');
   String get holdMapOrButton => _text('holdMapOrButton');
   String get holdMapOrPressPlus => _text('holdMapOrPressPlus');
   String get selectedLocation => _text('selectedLocation');
