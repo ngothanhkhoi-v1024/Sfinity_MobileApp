@@ -102,7 +102,13 @@ class _ReportPageState extends State<ReportPage> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${_targetType == 'document' ? 'Tài liệu' : _targetType == 'place' ? 'Địa điểm' : _targetType == 'user' ? 'Người dùng' : _targetType}: ${_targetId.text}',
+                      '${_targetType == 'document'
+                          ? l10n.documentType
+                          : _targetType == 'place'
+                              ? l10n.studyPlaceLabel
+                              : _targetType == 'user'
+                                  ? l10n.userType
+                                  : _targetType}: ${_targetId.text}',
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
@@ -117,6 +123,7 @@ class _ReportPageState extends State<ReportPage> {
                 decoration: InputDecoration(labelText: l10n.type, border: const OutlineInputBorder()),
                 items: [
                   DropdownMenuItem(value: 'document', child: Text(l10n.documentType)),
+                  DropdownMenuItem(value: 'place', child: Text(l10n.studyPlaceLabel)),
                   DropdownMenuItem(value: 'user', child: Text(l10n.userType)),
                   DropdownMenuItem(value: 'other', child: Text(l10n.otherType)),
                 ],

@@ -93,6 +93,64 @@ body {
   background: rgba(255, 255, 255, 0.06) !important;
 }
 
+/* Collapsed sidebar — icon-only, centered, tooltips on hover */
+.admin-sider.ant-layout-sider-collapsed .admin-logo {
+  height: 64px;
+  padding: 0 !important;
+  justify-content: center;
+}
+
+.admin-sider.ant-layout-sider-collapsed .admin-logo-mark {
+  width: 38px;
+  height: 38px;
+  font-size: 16px;
+  border-radius: 11px;
+}
+
+.admin-sider.ant-layout-sider-collapsed .admin-menu {
+  padding: 10px 0 20px;
+}
+
+.admin-sider.ant-layout-sider-collapsed .admin-menu .ant-menu-item {
+  margin: 4px auto !important;
+  width: 44px !important;
+  height: 44px !important;
+  padding-inline: 0 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px !important;
+}
+
+.admin-sider.ant-layout-sider-collapsed .admin-menu .ant-menu-item .ant-menu-title-content {
+  display: none !important;
+  width: 0 !important;
+  margin: 0 !important;
+  opacity: 0 !important;
+}
+
+.admin-sider.ant-layout-sider-collapsed .admin-menu .ant-menu-item .anticon {
+  margin: 0 !important;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.admin-sider.ant-layout-sider-collapsed .admin-menu .ant-menu-item-selected {
+  background: rgba(255, 255, 255, 0.14) !important;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.admin-sider.ant-layout-sider-collapsed .admin-menu .ant-menu-item-divider {
+  margin: 6px auto;
+  width: 28px;
+  min-width: 28px;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.admin-sider.ant-layout-sider-collapsed .ant-menu-item-group-title {
+  display: none !important;
+}
+
 .admin-header {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);

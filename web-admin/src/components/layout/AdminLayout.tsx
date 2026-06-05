@@ -13,8 +13,9 @@ import {
   UserOutlined,
   WarningOutlined,
 } from '@ant-design/icons';
+import type { MenuProps } from 'antd';
 import { Avatar, Button, Dropdown, Layout, Menu, Typography } from 'antd';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { config } from '@/config';
@@ -23,7 +24,8 @@ import { useTranslation } from '@/i18n';
 
 const { Header, Sider, Content } = Layout;
 
-// menu items are created inside the component so they respond to language changes
+const COLLAPSED_WIDTH = 72;
+const EXPANDED_WIDTH = 260;
 
 export function AdminLayout() {
   const [collapsed, setCollapsed] = useState(false);
@@ -32,45 +34,31 @@ export function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const menuItems = [
-    {
-      type: 'group' as const,
-      label: t('menu.overview'),
-      children: [{ key: '/', icon: <DashboardOutlined />, label: t('menu.dashboard') }],
-    },
-    {
-      type: 'group' as const,
-      label: t('menu.management') ?? t('menu.overview'),
-      children: [
-        { key: '/users', icon: <TeamOutlined />, label: t('menu.users') },
-        { key: '/content', icon: <AppstoreOutlined />, label: t('menu.content') },
-        { key: '/categories', icon: <TagsOutlined />, label: t('menu.categories') },
-        { key: '/amenities', icon: <ToolOutlined />, label: t('menu.amenities') },
-      ],
-    },
-    {
-      type: 'group' as const,
-      label: t('menu.support') ?? t('menu.overview'),
-      children: [
-        { key: '/feedback', icon: <MessageOutlined />, label: t('menu.feedback') },
-        { key: '/reports', icon: <WarningOutlined />, label: t('menu.reports') },
-        { key: '/notifications', icon: <BellOutlined />, label: t('menu.notifications') },
-      ],
-    },
-    {
-      type: 'group' as const,
-      label: t('menu.system') ?? t('menu.overview'),
-      children: [
-        { key: '/admins', icon: <CrownOutlined />, label: t('menu.admins') },
-        { key: '/settings', icon: <SettingOutlined />, label: t('menu.settings') },
-      ],
-    },
-  ];
+  const menuItems: MenuProps['items'] = useMemo(
+    () => [
+      { key: '/', icon: <DashboardOutlined />, label: t('menu.dashboard') },
+      { type: 'divider' },
+      { key: '/users', icon: <TeamOutlined />, label: t('menu.users') },
+      { key: '/content', icon: <AppstoreOutlined />, label: t('menu.content') },
+      { key: '/categories', icon: <TagsOutlined />, label: t('menu.categories') },
+      { key: '/amenities', icon: <ToolOutlined />, label: t('menu.amenities') },
+      { type: 'divider' },
+      { key: '/feedback', icon: <MessageOutlined />, label: t('menu.feedback') },
+      { key: '/reports', icon: <WarningOutlined />, label: t('menu.reports') },
+      { key: '/notifications', icon: <BellOutlined />, label: t('menu.notifications') },
+      { type: 'divider' },
+      { key: '/admins', icon: <CrownOutlined />, label: t('menu.admins') },
+      { key: '/settings', icon: <SettingOutlined />, label: t('menu.settings') },
+    ],
+    [t],
+  );
 
-  const flatMenuItems = menuItems.flatMap((g) => g.children ?? []);
+  const flatKeys = (menuItems ?? [])
+    .filter((item): item is { key: string } => !!item && 'key' in item && typeof item.key === 'string')
+    .map((item) => item.key);
+
   const selectedKey =
-    flatMenuItems.find((item) => item.key !== '/' && location.pathname.startsWith(item.key))
-      ?.key ?? '/';
+    flatKeys.find((key) => key !== '/' && location.pathname.startsWith(key)) ?? '/';
 
   const userMenu = {
     items: [
@@ -87,7 +75,7 @@ export function AdminLayout() {
     ],
   };
 
-  const siderWidth = collapsed ? 80 : 260;
+  const siderWidth = collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH;
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
@@ -97,8 +85,8 @@ export function AdminLayout() {
         collapsed={collapsed}
         onCollapse={setCollapsed}
         trigger={null}
-        width={260}
-        collapsedWidth={80}
+        width={EXPANDED_WIDTH}
+        collapsedWidth={COLLAPSED_WIDTH}
         theme="dark"
         style={{
           overflow: 'auto',
@@ -109,7 +97,13 @@ export function AdminLayout() {
           bottom: 0,
         }}
       >
-        <div className="admin-logo" style={{ justifyContent: collapsed ? 'center' : 'flex-start', padding: collapsed ? 0 : '0 20px' }}>
+        <div
+          className="admin-logo"
+          style={{
+            justifyContent: collapsed ? 'center' : 'flex-start',
+            padding: collapsed ? '0 12px' : '0 20px',
+          }}
+        >
           <div className="admin-logo-mark">S</div>
           {!collapsed && (
             <div>
@@ -123,9 +117,10 @@ export function AdminLayout() {
           className="admin-menu"
           theme="dark"
           mode="inline"
+          inlineCollapsed={collapsed}
           selectedKeys={[selectedKey]}
           items={menuItems}
-          onClick={({ key }) => navigate(key)}
+          onClick={({ key }) => navigate(String(key))}
         />
       </Sider>
 

@@ -9,8 +9,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/app_bar_add_button.dart';
 import '../../../../shared/widgets/floating_pill_nav_bar.dart';
 import '../../../assistant/presentation/widgets/assistant_chat_sheet.dart';
-import '../../../assistant/presentation/widgets/assistant_context_hint.dart';
-import '../../../assistant/presentation/widgets/assistant_fab.dart';
+import '../../../assistant/presentation/widgets/assistant_draggable_entry.dart';
 import '../../../document/presentation/pages/document_list_page.dart';
 import 'community_page.dart';
 import '../../../places/presentation/pages/places_map_page.dart';
@@ -506,20 +505,12 @@ class HomeShellPageState extends State<HomeShellPage> {
             children: _pages,
           ),
           if (SfinityApp.auth.isAuthenticated)
-            Positioned(
-              right: 16,
-              bottom: 88 + bottomInset,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  if (_showContextHint)
-                    AssistantContextHint(
-                      onOpenChat: _openAssistantChat,
-                      onDismiss: _dismissContextHint,
-                    ),
-                  AssistantFab(onTap: _openAssistantChat),
-                ],
+            Positioned.fill(
+              child: AssistantDraggableEntry(
+                showHint: _showContextHint,
+                onOpenChat: _openAssistantChat,
+                onDismissHint: _dismissContextHint,
+                bottomReserved: 88 + bottomInset,
               ),
             ),
         ],

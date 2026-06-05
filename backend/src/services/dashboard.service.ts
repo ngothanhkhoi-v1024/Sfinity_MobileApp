@@ -42,14 +42,23 @@ export const dashboardService = {
     const pendingFeedback = pendingFeedbackSnap.data().count;
     const pendingReports = pendingReportsSnap.data().count;
 
+    const documentCount = documents.length;
+    const placeCount = places.length;
+    const contents = documentCount + placeCount;
+    const publishedContents = publishedDocuments + publishedPlaces;
+    const draftContents = contents - publishedContents;
+
     return {
       users,
       admins,
-      documents: documents.length,
+      documents: documentCount,
       publishedDocuments,
-      draftDocuments: documents.length - publishedDocuments,
-      places: places.length,
+      draftDocuments: documentCount - publishedDocuments,
+      places: placeCount,
       publishedPlaces,
+      contents,
+      publishedContents,
+      draftContents,
       categories,
       feedback,
       pendingFeedback,

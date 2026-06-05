@@ -133,6 +133,24 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
     if (mounted) _loadAll();
   }
 
+  void _openReport() {
+    final l10n = context.l10n;
+    if (!SfinityApp.auth.isAuthenticated) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.pleaseLogin)),
+      );
+      context.push(RouteNames.login);
+      return;
+    }
+    context.push(
+      RouteNames.report,
+      extra: {
+        'targetType': 'place',
+        'targetId': widget.placeId,
+      },
+    );
+  }
+
   void _viewOnMap() {
     final place = _ctrl.place;
     final point = place?.point;
@@ -255,6 +273,12 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
               tooltip: l10n.deletePlace,
               onPressed: _deletePlace,
             ),
+          ] else ...[
+            IconButton(
+              icon: Icon(Icons.flag_outlined, color: theme.colorScheme.error),
+              tooltip: l10n.reportViolation,
+              onPressed: _openReport,
+            ),
           ],
         ],
       ),
@@ -277,6 +301,25 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
                 loading: _loadingFavorite,
                 onPressed: _toggleFavorite,
                 primary: primary,
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: _openReport,
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                  foregroundColor: theme.colorScheme.error,
+                  side: BorderSide(
+                    color: theme.colorScheme.error.withValues(alpha: 0.45),
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                icon: const Icon(Icons.report_problem_outlined),
+                label: Text(
+                  l10n.reportViolation,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
               ),
               const SizedBox(height: 12),
             ],
