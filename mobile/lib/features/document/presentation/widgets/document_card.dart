@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 import '../../../../core/i18n/app_text.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -26,7 +25,10 @@ class DocumentCard extends StatelessWidget {
     final downloads = item['downloadsCount'] ?? 0;
     final author = item['author'] as Map?;
     final authorName = author?['name']?.toString() ?? l10n.community;
-    final fileUrl = item['fileUrl']?.toString().trim() ?? '';
+    final thumbnailUrl =
+        item['thumbnailUrl']?.toString().trim() ??
+        item['previewImageUrl']?.toString().trim() ??
+        '';
     final categoryName = l10n.translateCategory(
       (item['category'] as Map?)?['name']?.toString() ?? 'Tai lieu',
     );
@@ -61,7 +63,7 @@ class DocumentCard extends StatelessWidget {
             children: [
               _DocumentPreviewThumbnail(
                 fileType: fileType,
-                fileUrl: fileUrl,
+                thumbnailUrl: thumbnailUrl,
                 accentColor: accentColor,
                 icon: fileIcon,
               ),
@@ -224,18 +226,20 @@ class DocumentCard extends StatelessWidget {
 class _DocumentPreviewThumbnail extends StatelessWidget {
   const _DocumentPreviewThumbnail({
     required this.fileType,
-    required this.fileUrl,
+    required this.thumbnailUrl,
     required this.accentColor,
     required this.icon,
   });
 
   final String fileType;
-  final String fileUrl;
+  final String thumbnailUrl;
   final Color accentColor;
   final IconData icon;
 
   @override
   Widget build(BuildContext context) {
+    final hasThumbnail = thumbnailUrl.isNotEmpty;
+
     return Container(
       width: 100,
       height: 118,
@@ -245,7 +249,7 @@ class _DocumentPreviewThumbnail extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          if (fileType == 'pdf' && fileUrl.isNotEmpty)
+          if (hasThumbnail)
             Positioned.fill(
               child: Container(
                 decoration: BoxDecoration(
@@ -264,107 +268,160 @@ class _DocumentPreviewThumbnail extends StatelessWidget {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(18),
-                  child: IgnorePointer(
-                    child: SfPdfViewer.network(
-                      fileUrl,
-                      canShowScrollHead: false,
-                      canShowScrollStatus: false,
+                  child: Image.network(
+                    thumbnailUrl,
+                    fit: BoxFit.cover,
+                    filterQuality: FilterQuality.low,
+                    errorBuilder: (_, __, ___) => _PreviewFallback(
+                      fileType: fileType,
+                      accentColor: accentColor,
+                      icon: icon,
                     ),
+                    loadingBuilder: (context, child, progress) {
+                      if (progress == null) {
+                        return child;
+                      }
+                      return _PreviewFallback(
+                        fileType: fileType,
+                        accentColor: accentColor,
+                        icon: icon,
+                        isLoading: true,
+                      );
+                    },
                   ),
                 ),
               ),
             )
-          else ...[
-            Container(
-              decoration: BoxDecoration(
-                color: AppColors.card(context),
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: AppColors.border(context)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(
-                      alpha: AppColors.isDark(context) ? 0.12 : 0.05,
-                    ),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-            ),
-            Positioned(
-              top: 12,
-              left: 12,
-              right: 18,
-              child: Container(
-                height: 6,
-                decoration: BoxDecoration(
-                  color: accentColor.withValues(alpha: 0.78),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
-            ),
-            Positioned(
-              top: 24,
-              right: 12,
-              child: Container(
-                width: 18,
-                height: 18,
-                decoration: BoxDecoration(
-                  color: AppColors.border(context),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-              ),
-            ),
-            Positioned(
-              top: 40,
-              left: 14,
-              right: 20,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: List.generate(
-                  3,
-                  (index) => Padding(
-                    padding: EdgeInsets.only(bottom: index == 2 ? 0 : 6),
-                    child: Container(
-                      width: index == 1 ? 44 : 56,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: AppColors.border(context),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              left: 14,
-              right: 14,
-              bottom: 14,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  _PreviewBar(height: 38, color: accentColor.withValues(alpha: 0.72)),
-                  const SizedBox(width: 6),
-                  _PreviewBar(height: 28, color: accentColor.withValues(alpha: 0.45)),
-                  const SizedBox(width: 6),
-                  _PreviewBar(height: 48, color: accentColor),
-                ],
-              ),
-            ),
-          ],
-          if (fileType != 'pdf')
-            Positioned(
-              right: 10,
-              bottom: 10,
-              child: Icon(
-                icon,
-                size: 16,
-                color: accentColor.withValues(alpha: 0.85),
+          else
+            Positioned.fill(
+              child: _PreviewFallback(
+                fileType: fileType,
+                accentColor: accentColor,
+                icon: icon,
               ),
             ),
         ],
       ),
+    );
+  }
+}
+
+class _PreviewFallback extends StatelessWidget {
+  const _PreviewFallback({
+    required this.fileType,
+    required this.accentColor,
+    required this.icon,
+    this.isLoading = false,
+  });
+
+  final String fileType;
+  final Color accentColor;
+  final IconData icon;
+  final bool isLoading;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.card(context),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppColors.border(context)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(
+                  alpha: AppColors.isDark(context) ? 0.12 : 0.05,
+                ),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+        ),
+        Positioned(
+          top: 12,
+          left: 12,
+          right: 18,
+          child: Container(
+            height: 6,
+            decoration: BoxDecoration(
+              color: accentColor.withValues(alpha: 0.78),
+              borderRadius: BorderRadius.circular(999),
+            ),
+          ),
+        ),
+        Positioned(
+          top: 24,
+          right: 12,
+          child: Container(
+            width: 18,
+            height: 18,
+            decoration: BoxDecoration(
+              color: AppColors.border(context),
+              borderRadius: BorderRadius.circular(6),
+            ),
+          ),
+        ),
+        Positioned(
+          top: 40,
+          left: 14,
+          right: 20,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: List.generate(
+              3,
+              (index) => Padding(
+                padding: EdgeInsets.only(bottom: index == 2 ? 0 : 6),
+                child: Container(
+                  width: index == 1 ? 44 : 56,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.border(context),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        if (!isLoading)
+          Positioned(
+            left: 14,
+            right: 14,
+            bottom: 14,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                _PreviewBar(height: 38, color: accentColor.withValues(alpha: 0.72)),
+                const SizedBox(width: 6),
+                _PreviewBar(height: 28, color: accentColor.withValues(alpha: 0.45)),
+                const SizedBox(width: 6),
+                _PreviewBar(height: 48, color: accentColor),
+              ],
+            ),
+          )
+        else
+          const Positioned.fill(
+            child: Center(
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2.2),
+              ),
+            ),
+          ),
+        if (fileType != 'pdf' && !isLoading)
+          Positioned(
+            right: 10,
+            bottom: 10,
+            child: Icon(
+              icon,
+              size: 16,
+              color: accentColor.withValues(alpha: 0.85),
+            ),
+          ),
+      ],
     );
   }
 }

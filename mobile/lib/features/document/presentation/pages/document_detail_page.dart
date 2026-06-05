@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -24,6 +25,9 @@ class DocumentDetailPage extends StatefulWidget {
 }
 
 class _DocumentDetailPageState extends State<DocumentDetailPage> {
+  static final LinkedHashMap<String, Uint8List> _pdfCache = LinkedHashMap<String, Uint8List>();
+  static const int _maxPdfCacheEntries = 6;
+
   late final DocumentDetailController _controller;
   bool _isFavorite = false;
   bool _loadingFavorite = true;
@@ -46,10 +50,41 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
   Uint8List? _pdfBytes;
   bool _pdfBytesLoading = false;
   String? _pdfLoadError;
+  String? _cachedPdfUrl;
+
+  Uint8List? _getCachedPdf(String url) {
+    final cached = _pdfCache.remove(url);
+    if (cached == null) {
+      return null;
+    }
+    _pdfCache[url] = cached;
+    return cached;
+  }
+
+  void _storeCachedPdf(String url, Uint8List bytes) {
+    _pdfCache.remove(url);
+    _pdfCache[url] = bytes;
+    while (_pdfCache.length > _maxPdfCacheEntries) {
+      _pdfCache.remove(_pdfCache.keys.first);
+    }
+  }
 
   Future<void> _loadPdfBytes(String url) async {
-    if (_pdfBytes != null || _pdfBytesLoading) return;
+    if (_cachedPdfUrl == url && (_pdfBytes != null || _pdfBytesLoading)) return;
+
+    final cached = _getCachedPdf(url);
+    if (cached != null) {
+      setState(() {
+        _cachedPdfUrl = url;
+        _pdfBytes = cached;
+        _pdfBytesLoading = false;
+        _pdfLoadError = null;
+      });
+      return;
+    }
+
     setState(() {
+      _cachedPdfUrl = url;
       _pdfBytesLoading = true;
       _pdfLoadError = null;
     });
@@ -61,8 +96,10 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
         options: Options(responseType: ResponseType.bytes),
       );
       if (response.data != null) {
+        final bytes = Uint8List.fromList(response.data!);
+        _storeCachedPdf(url, bytes);
         setState(() {
-          _pdfBytes = Uint8List.fromList(response.data!);
+          _pdfBytes = bytes;
           _pdfBytesLoading = false;
         });
       } else {
@@ -359,9 +396,18 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
         final fileUrl = doc['fileUrl']?.toString() ?? '';
         final isAuthor = doc['authorId']?.toString() == currentUserId;
 
-        if (fileUrl.isNotEmpty) {
+        if (_cachedPdfUrl != fileUrl) {
+          _cachedPdfUrl = fileUrl;
+          _pdfBytes = fileUrl.isEmpty ? null : _getCachedPdf(fileUrl);
+          _pdfBytesLoading = false;
+          _pdfLoadError = null;
+        }
+
+        if (fileUrl.isNotEmpty && _pdfBytes == null && !_pdfBytesLoading) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            _loadPdfBytes(fileUrl);
+            if (mounted) {
+              _loadPdfBytes(fileUrl);
+            }
           });
         }
         
