@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../app.dart';
 import '../../../../core/constants/route_names.dart';
 import '../../../../core/i18n/app_text.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/floating_pill_nav_bar.dart';
 import '../../../document/presentation/pages/document_list_page.dart';
 import 'community_page.dart';
@@ -70,52 +72,279 @@ class _HomeShellPageState extends State<HomeShellPage> {
       extendBody: true,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       drawer: Drawer(
-        child: ListView(
-          children: [
-            DrawerHeader(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Text(l10n.appName, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 4),
-                  Text(l10n.shareDescription, style: const TextStyle(fontSize: 13)),
-                ],
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.search),
-              title: Text(l10n.search),
-              onTap: () {
-                Navigator.pop(context);
-                context.push(RouteNames.search);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.bookmark_outline),
-              title: Text(l10n.saved),
-              onTap: () {
-                Navigator.pop(context);
-                context.push(RouteNames.favorites);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.notifications_outlined),
-              title: Text(l10n.notifications),
-              onTap: () {
-                Navigator.pop(context);
-                context.push(RouteNames.notifications);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.settings_outlined),
-              title: Text(l10n.settings),
-              onTap: () {
-                Navigator.pop(context);
-                context.push(RouteNames.settings);
-              },
-            ),
-          ],
+        elevation: 0,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+            topRight: Radius.circular(24),
+            bottomRight: Radius.circular(24),
+          ),
+        ),
+        child: AnimatedBuilder(
+          animation: SfinityApp.auth,
+          builder: (context, _) {
+            final user = SfinityApp.auth.user;
+            final hasUser = user != null;
+            final avatarUrl = user?['avatar']?.toString();
+            final displayName = user?['name']?.toString() ?? '';
+            final email = user?['email']?.toString() ?? '';
+            final hasAvatar = avatarUrl != null && avatarUrl.isNotEmpty;
+            final initial = (displayName.isNotEmpty ? displayName : 'U')[0].toUpperCase();
+
+            return Column(
+              children: [
+                // Brand and Profile Header
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.fromLTRB(20, MediaQuery.paddingOf(context).top + 20, 20, 24),
+                  decoration: BoxDecoration(
+                    gradient: AppColors.brandHeader(context),
+                    borderRadius: const BorderRadius.only(
+                      topRight: Radius.circular(24),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              gradient: AppColors.brandPill(context),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.primaryOf(context).withValues(alpha: 0.25),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.explore_rounded,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            l10n.appName,
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 24,
+                                  letterSpacing: -0.5,
+                                  color: AppColors.title(context),
+                                ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 4),
+                        child: Text(
+                          l10n.shareDescription,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.muted(context),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      if (hasUser) ...[
+                        const SizedBox(height: 20),
+                        Material(
+                          color: AppColors.card(context).withValues(alpha: 0.7),
+                          borderRadius: BorderRadius.circular(16),
+                          clipBehavior: Clip.antiAlias,
+                          child: InkWell(
+                            onTap: () {
+                              Navigator.pop(context);
+                              context.push(RouteNames.viewProfile);
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: AppColors.border(context).withValues(alpha: 0.5),
+                                ),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 20,
+                                    backgroundColor: AppColors.primaryOf(context).withValues(alpha: 0.15),
+                                    backgroundImage: hasAvatar ? NetworkImage(avatarUrl) : null,
+                                    child: hasAvatar
+                                        ? null
+                                        : Text(
+                                            initial,
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                              color: AppColors.primaryOf(context),
+                                            ),
+                                          ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          displayName.isNotEmpty ? displayName : 'User',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        if (email.isNotEmpty) ...[
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            email,
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: AppColors.muted(context),
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                  Icon(
+                                    Icons.chevron_right_rounded,
+                                    size: 18,
+                                    color: AppColors.muted(context),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                
+                // Menu List
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                    children: [
+                      _buildDrawerItem(
+                        context,
+                        icon: Icons.search_rounded,
+                        label: l10n.search,
+                        color: Colors.blue,
+                        onTap: () {
+                          Navigator.pop(context);
+                          context.push(RouteNames.search);
+                        },
+                      ),
+                      _buildDrawerItem(
+                        context,
+                        icon: Icons.bookmark_rounded,
+                        label: l10n.saved,
+                        color: Colors.green,
+                        onTap: () {
+                          Navigator.pop(context);
+                          context.push(RouteNames.favorites);
+                        },
+                      ),
+                      if (hasUser)
+                        _buildDrawerItem(
+                          context,
+                          icon: Icons.article_rounded,
+                          label: l10n.myPosts,
+                          color: Colors.teal,
+                          onTap: () {
+                            Navigator.pop(context);
+                            context.push(RouteNames.myDocuments);
+                          },
+                        ),
+                      _buildDrawerItem(
+                        context,
+                        icon: Icons.settings_rounded,
+                        label: l10n.settings,
+                        color: Colors.indigo,
+                        onTap: () {
+                          Navigator.pop(context);
+                          context.push(RouteNames.settings);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                
+                // Sign Out or Sign In
+                Padding(
+                  padding: EdgeInsets.fromLTRB(16, 8, 16, MediaQuery.paddingOf(context).bottom + 16),
+                  child: hasUser
+                      ? Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () async {
+                              Navigator.pop(context);
+                              await SfinityApp.auth.logout();
+                              if (context.mounted) context.go(RouteNames.login);
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: Theme.of(context).colorScheme.error.withValues(alpha: 0.3),
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.logout_rounded,
+                                    size: 18,
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    l10n.signOut,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Theme.of(context).colorScheme.error,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        )
+                      : Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: FilledButton.icon(
+                            style: FilledButton.styleFrom(
+                              minimumSize: const Size.fromHeight(48),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            icon: const Icon(Icons.login_rounded, size: 18),
+                            label: Text(l10n.login),
+                            onPressed: () {
+                              Navigator.pop(context);
+                              context.go(RouteNames.login);
+                            },
+                          ),
+                        ),
+                ),
+              ],
+            );
+          },
         ),
       ),
       appBar: (_navIndex == 1 || _navIndex == 3)
@@ -132,6 +361,58 @@ class _HomeShellPageState extends State<HomeShellPage> {
                   : null,
               automaticallyImplyLeading: _navIndex == 0,
               actions: [
+                if (_navIndex == 0)
+                  AnimatedBuilder(
+                    animation: SfinityApp.auth,
+                    builder: (context, _) {
+                      final user = SfinityApp.auth.user;
+                      final hasUser = user != null;
+                      final avatarUrl = user?['avatar']?.toString();
+                      final hasAvatar = avatarUrl != null && avatarUrl.isNotEmpty;
+                      final displayName = user?['name']?.toString() ?? '';
+                      final initial = (displayName.isNotEmpty ? displayName : 'U')[0].toUpperCase();
+
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 16),
+                        child: Center(
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(20),
+                            onTap: () {
+                              if (hasUser) {
+                                context.push(RouteNames.viewProfile);
+                              } else {
+                                context.push(RouteNames.login);
+                              }
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: cs.primary.withValues(alpha: 0.2),
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: CircleAvatar(
+                                radius: 16,
+                                backgroundColor: cs.primary.withValues(alpha: 0.15),
+                                backgroundImage: hasAvatar ? NetworkImage(avatarUrl) : null,
+                                child: hasAvatar
+                                    ? null
+                                    : Text(
+                                        initial,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                          color: cs.primary,
+                                        ),
+                                      ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 if (_navIndex == 2)
                   Padding(
                     padding: const EdgeInsets.only(right: 10),
@@ -200,5 +481,61 @@ class _HomeShellPageState extends State<HomeShellPage> {
       4 => l10n.profile,
       _ => l10n.appName,
     };
+  }
+
+  Widget _buildDrawerItem(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    final isDark = AppColors.isDark(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: isDark ? 0.15 : 0.08),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 20,
+                    color: isDark ? color.withValues(alpha: 0.9) : color,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                      color: AppColors.title(context),
+                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 18,
+                  color: AppColors.muted(context).withValues(alpha: 0.5),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

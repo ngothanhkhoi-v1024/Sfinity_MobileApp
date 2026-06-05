@@ -186,7 +186,6 @@ class DocumentFormController extends ChangeNotifier {
         'body': body,
         'status': selectedStatus,
         'categoryId': selectedCategoryId,
-        'type': contentType,
         if (isDocument && placeId != null && placeId.isNotEmpty) 'placeId': placeId,
         if (isDocument) ...{
           'fileUrl': finalFileUrl,

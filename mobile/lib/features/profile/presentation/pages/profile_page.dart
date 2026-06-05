@@ -64,9 +64,16 @@ class ProfilePage extends StatelessWidget {
               children: [
                 _ProfileMenuItem(
                   icon: Icons.notifications_outlined,
-                  iconColor: const Color(0xFFF59E0B),
+                  iconColor: const Color(0xFF3B82F6),
                   title: context.l10n.notifications,
                   onTap: () => context.push(RouteNames.notifications),
+                  isDark: isDark,
+                ),
+                _ProfileMenuItem(
+                  icon: Icons.bookmark_border_rounded,
+                  iconColor: const Color(0xFFF59E0B),
+                  title: context.l10n.saved,
+                  onTap: () => context.push(RouteNames.favorites),
                   isDark: isDark,
                 ),
                 _ProfileMenuItem(
