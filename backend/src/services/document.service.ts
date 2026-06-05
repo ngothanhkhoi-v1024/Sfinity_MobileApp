@@ -13,13 +13,8 @@ const toDate = (val: any): Date => {
   return new Date(val);
 };
 
-const legacyPlaceIdInBody = (body: unknown, placeId: string): boolean => {
-  const text = typeof body === 'string' ? body : '';
-  return text.includes(`placeId:${placeId}`);
-};
-
 const itemMatchesPlaceId = (item: any, placeId: string): boolean =>
-  item.placeId === placeId || legacyPlaceIdInBody(item.body, placeId);
+  item.placeId === placeId;
 
 async function assertPlaceOwnerForDocument(
   placeId: string,
