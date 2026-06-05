@@ -1,50 +1,58 @@
 # Sfinity — Web Admin
 
-Ứng dụng **web** cho quản trị viên (chạy trên trình duyệt).
+Trang **quản trị** React + Vite + Ant Design, kết nối cùng backend với mobile.
 
-## Phạm vi
+## Tính năng
 
-- Đăng nhập admin, quản lý user / admin / role
-- Quản lý nội dung, category, media
-- Thông báo, feedback, báo cáo, dashboard thống kê
+- Dashboard thống kê (Recharts)
+- Quản lý người dùng & admin
+- Nội dung: tài liệu và địa điểm (visibility + moderation)
+- Danh mục tài liệu, tiện ích địa điểm
+- Phản hồi, báo cáo vi phạm, thông báo
+- Cài đặt hệ thống (ngôn ngữ, theme)
 
-## Đã có sẵn
+Trang **Media** hiện là placeholder.
 
-- **Login** (`/login`) — form đăng nhập admin, mock auth khi backend chưa chạy
-- **Layout admin** — sidebar, header, menu điều hướng
-- **Dashboard** (`/`) — trang tổng quan mẫu
+## Chạy dev
 
-### Tài khoản demo (mock)
+```bash
+cd web-admin
+npm install
+cp .env.example .env
+npm run dev
+```
+
+Mặc định: `http://localhost:5173`
+
+Trong `.env`:
+
+```env
+VITE_API_BASE_URL=http://localhost:3000/api
+VITE_USE_MOCK_AUTH=false
+```
+
+## Đăng nhập admin
 
 | Email | Mật khẩu |
 |-------|----------|
 | `admin@sfinity.com` | `admin123` |
 
-Copy `.env.example` → `.env` và chỉnh `VITE_USE_MOCK_AUTH=false` khi backend sẵn sàng.
+Cần backend chạy và tài khoản seed (hoặc mock auth nếu `VITE_USE_MOCK_AUTH=true`).
 
-## Cấu trúc gợi ý
+## Cấu trúc
 
-```
-web-admin/
-├── src/
-│   ├── main.tsx
-│   ├── App.tsx
-│   ├── api/            # axios client → backend
-│   ├── pages/          # dashboard, users, content, ...
-│   ├── components/     # layout, table, form
-│   └── routes/
-├── public/
-└── package.json
+```text
+web-admin/src/
+├── api/           # Axios client → backend
+├── pages/         # Dashboard, users, content, ...
+├── components/    # Layout, table, form
+├── contexts/      # Auth, settings
+└── routes/        # React Router
 ```
 
-## API
-
-Dùng **cùng backend** với `mobile/` — token role `admin`.
-
-## Chạy dev
+## Build production
 
 ```bash
-npm run dev
+npm run build
+npm run preview
 ```
-
-Mở URL hiển thị trong terminal (thường `http://localhost:5173`).

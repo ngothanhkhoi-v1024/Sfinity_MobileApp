@@ -4,8 +4,7 @@ import {
   CrownOutlined,
   DashboardOutlined,
   LogoutOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
+  MenuOutlined,
   MessageOutlined,
   PictureOutlined,
   SettingOutlined,
@@ -146,7 +145,7 @@ export function AdminLayout() {
         >
           <Button
             type="text"
-            icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+            icon={<MenuOutlined />}
             onClick={() => setCollapsed((v) => !v)}
             style={{ fontSize: 16 }}
           />

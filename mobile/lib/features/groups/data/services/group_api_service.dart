@@ -156,4 +156,38 @@ class GroupApiService {
       throw Exception(_client.errorMessage(e));
     }
   }
+
+  Future<List<Map<String, dynamic>>> getMemberLocations(String groupId) async {
+    try {
+      final data = await _client.get('/groups/$groupId/members/locations');
+      return (data['locations'] as List? ?? []).cast<Map<String, dynamic>>();
+    } on DioException catch (e) {
+      throw Exception(_client.errorMessage(e));
+    }
+  }
+
+  Future<void> updateMyLocation(
+    String groupId, {
+    required double latitude,
+    required double longitude,
+    double? accuracy,
+  }) async {
+    try {
+      await _client.post('/groups/$groupId/location', {
+        'latitude': latitude,
+        'longitude': longitude,
+        if (accuracy != null) 'accuracy': accuracy,
+      });
+    } on DioException catch (e) {
+      throw Exception(_client.errorMessage(e));
+    }
+  }
+
+  Future<void> clearMyLocation(String groupId) async {
+    try {
+      await _client.delete('/groups/$groupId/location');
+    } on DioException catch (e) {
+      throw Exception(_client.errorMessage(e));
+    }
+  }
 }

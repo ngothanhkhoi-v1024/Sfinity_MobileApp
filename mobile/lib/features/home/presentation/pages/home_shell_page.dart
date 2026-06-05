@@ -3,8 +3,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app.dart';
 import '../../../../core/constants/route_names.dart';
+import '../../../../core/network/api_client.dart';
 import '../../../../core/i18n/app_text.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../shared/widgets/app_bar_add_button.dart';
 import '../../../../shared/widgets/floating_pill_nav_bar.dart';
 import '../../../document/presentation/pages/document_list_page.dart';
 import 'community_page.dart';
@@ -13,18 +15,21 @@ import '../../../places/presentation/places_map_focus.dart';
 import '../../../profile/presentation/pages/profile_page.dart';
 import 'explore_page.dart';
 
+final GlobalKey<HomeShellPageState> homeShellKey = GlobalKey<HomeShellPageState>();
+
 /// Shell chính: pill nav với 5 tab (Khám phá, Địa điểm, Tài liệu, Cộng đồng, Cá nhân).
 class HomeShellPage extends StatefulWidget {
   const HomeShellPage({super.key, this.initialTab = 0});
   final int initialTab;
 
   @override
-  State<HomeShellPage> createState() => _HomeShellPageState();
+  State<HomeShellPage> createState() => HomeShellPageState();
 }
 
-class _HomeShellPageState extends State<HomeShellPage> {
+class HomeShellPageState extends State<HomeShellPage> {
   /// 0 Khám phá, 1 Địa điểm, 2 Tài liệu, 3 Cộng đồng, 4 Cá nhân.
   late int _navIndex;
+  int _unreadCount = 0;
 
   late final List<Widget> _pages = const [
     ExplorePage(),
@@ -39,12 +44,38 @@ class _HomeShellPageState extends State<HomeShellPage> {
     super.initState();
     _navIndex = widget.initialTab;
     PlacesMapFocus.pending.addListener(_onPlacesMapFocus);
+    SfinityApp.auth.addListener(_onAuthChanged);
+    _loadUnreadCount();
   }
 
   @override
   void dispose() {
+    SfinityApp.auth.removeListener(_onAuthChanged);
     PlacesMapFocus.pending.removeListener(_onPlacesMapFocus);
     super.dispose();
+  }
+
+  void _onAuthChanged() {
+    if (SfinityApp.auth.isAuthenticated) {
+      _loadUnreadCount();
+    } else {
+      if (mounted) setState(() => _unreadCount = 0);
+    }
+  }
+
+  Future<void> _loadUnreadCount() async {
+    if (!SfinityApp.notificationManager.enabled || !SfinityApp.auth.isAuthenticated) return;
+    try {
+      final items = await ApiClient.instance.getList('/notifications');
+      if (!mounted) return;
+      int unread = 0;
+      for (final n in items) {
+        if (n is Map && n['read'] != true) unread++;
+      }
+      setState(() => _unreadCount = unread);
+    } catch (e) {
+      // ignore
+    }
   }
 
   void _onPlacesMapFocus() {
@@ -54,11 +85,16 @@ class _HomeShellPageState extends State<HomeShellPage> {
     }
   }
 
+  void switchTab(int index) {
+    if (_navIndex != index && mounted) {
+      setState(() => _navIndex = index);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final navItems = [
       PillNavItem(label: l10n.explore, icon: Icons.explore_outlined, selectedIcon: Icons.explore),
       PillNavItem(label: l10n.places, icon: Icons.map_outlined, selectedIcon: Icons.map),
@@ -372,87 +408,71 @@ class _HomeShellPageState extends State<HomeShellPage> {
                       final displayName = user?['name']?.toString() ?? '';
                       final initial = (displayName.isNotEmpty ? displayName : 'U')[0].toUpperCase();
 
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 16),
-                        child: Center(
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(20),
-                            onTap: () {
-                              if (hasUser) {
-                                context.push(RouteNames.viewProfile);
-                              } else {
-                                context.push(RouteNames.login);
-                              }
-                            },
-                            child: Container(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: cs.primary.withValues(alpha: 0.2),
-                                  width: 1.5,
-                                ),
+                      return Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (hasUser)
+                            IconButton(
+                              onPressed: () {
+                                context.push(RouteNames.notifications).then((_) {
+                                  _loadUnreadCount();
+                                });
+                              },
+                              icon: Badge(
+                                isLabelVisible: _unreadCount > 0,
+                                label: Text(_unreadCount.toString()),
+                                child: const Icon(Icons.notifications_none_rounded),
                               ),
-                              child: CircleAvatar(
-                                radius: 16,
-                                backgroundColor: cs.primary.withValues(alpha: 0.15),
-                                backgroundImage: hasAvatar ? NetworkImage(avatarUrl) : null,
-                                child: hasAvatar
-                                    ? null
-                                    : Text(
-                                        initial,
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.bold,
-                                          color: cs.primary,
-                                        ),
-                                      ),
+                            ),
+                          Padding(
+                            padding: const EdgeInsets.only(right: 16),
+                            child: Center(
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(20),
+                                onTap: () {
+                                  if (hasUser) {
+                                    context.push(RouteNames.viewProfile);
+                                  } else {
+                                    context.push(RouteNames.login);
+                                  }
+                                },
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: cs.primary.withValues(alpha: 0.2),
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  child: CircleAvatar(
+                                    radius: 16,
+                                    backgroundColor: cs.primary.withValues(alpha: 0.15),
+                                    backgroundImage: hasAvatar ? NetworkImage(avatarUrl) : null,
+                                    child: hasAvatar
+                                        ? null
+                                        : Text(
+                                            initial,
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.bold,
+                                              color: cs.primary,
+                                            ),
+                                          ),
+                                  ),
+                                ),
                               ),
                             ),
                           ),
-                        ),
+                        ],
                       );
                     },
                   ),
                 if (_navIndex == 2)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 10),
-                    child: Tooltip(
-                      message: l10n.uploadDocument,
-                      child: Material(
-                        color: Colors.transparent,
-                        child: Ink(
-                          width: 38,
-                          height: 38,
-                          decoration: BoxDecoration(
-                            color: cs.primary.withValues(alpha: isDark ? 0.22 : 0.12),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: cs.primary.withValues(alpha: isDark ? 0.24 : 0.18),
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: isDark ? 0.16 : 0.04),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(12),
-                            onTap: () => context.push(
-                              RouteNames.documentCreate,
-                              extra: const {'contentType': 'document'},
-                            ),
-                            child: Center(
-                              child: Icon(
-                                Icons.add_rounded,
-                                color: cs.primary,
-                                size: 19,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
+                  AppBarAddButton(
+                    tooltip: l10n.uploadDocument,
+                    onPressed: () => context.push(
+                      RouteNames.documentCreate,
+                      extra: const {'contentType': 'document'},
                     ),
                   ),
               ],

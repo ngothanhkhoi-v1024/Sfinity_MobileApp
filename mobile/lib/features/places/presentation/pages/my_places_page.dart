@@ -1,32 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:dio/dio.dart';
 
 import '../../../../app.dart';
-import '../../../../core/i18n/app_text.dart';
 import '../../../../core/constants/route_names.dart';
+import '../../../../core/i18n/app_text.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../shared/widgets/app_bar_add_button.dart';
 import '../../../../shared/widgets/error_view.dart';
-import '../utils/document_state.dart';
-import '../widgets/document_list_skeleton.dart';
+import '../../../document/presentation/widgets/document_list_skeleton.dart';
+import '../../data/models/place_model.dart';
+import '../utils/place_state.dart';
+import '../widgets/place_mini_map_preview.dart';
 
-class MyDocumentsPage extends StatefulWidget {
-  const MyDocumentsPage({super.key});
+class MyPlacesPage extends StatefulWidget {
+  const MyPlacesPage({super.key});
 
   @override
-  State<MyDocumentsPage> createState() => _MyDocumentsPageState();
+  State<MyPlacesPage> createState() => _MyPlacesPageState();
 }
 
-class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProviderStateMixin {
+class _MyPlacesPageState extends State<MyPlacesPage> with SingleTickerProviderStateMixin {
   late final TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
-  List<dynamic> _allDocuments = [];
+  List<PlaceModel> _allPlaces = [];
   bool _loading = true;
   String? _error;
   String _searchQuery = '';
 
-  // Stats
   int _totalCount = 0;
   int _pendingCount = 0;
   int _publishedCount = 0;
@@ -48,7 +47,7 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
         _searchQuery = _searchController.text.trim().toLowerCase();
       });
     });
-    _loadDocuments();
+    _loadPlaces();
   }
 
   @override
@@ -58,7 +57,13 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
     super.dispose();
   }
 
-  Future<void> _loadDocuments() async {
+  Map<String, dynamic> _stateMap(PlaceModel place) => {
+        if (place.visibility != null) 'visibility': place.visibility,
+        if (place.moderationStatus != null) 'moderationStatus': place.moderationStatus,
+        if (place.legacyStatus != null) 'status': place.legacyStatus,
+      };
+
+  Future<void> _loadPlaces() async {
     setState(() {
       _loading = true;
       _error = null;
@@ -66,85 +71,79 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
 
     try {
       final currentUserId = SfinityApp.auth.user?['id']?.toString();
-      final res = await SfinityApp.documentRepository.getDocuments(
-        authorId: currentUserId,
-        limit: 100,
-      );
-      _allDocuments = res['items'] as List? ?? [];
-
+      if (currentUserId == null || currentUserId.isEmpty) {
+        _allPlaces = [];
+      } else {
+        _allPlaces = await SfinityApp.placeRepository.listPlaces(
+          PlaceListQuery(authorId: currentUserId, limit: 100),
+        );
+      }
       _calculateStats();
-    } on DioException catch (e) {
-      _error = e.message ?? 'Đã xảy ra lỗi kết nối';
     } catch (e) {
       _error = e.toString();
     } finally {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-        });
-      }
+      if (mounted) setState(() => _loading = false);
     }
   }
 
   void _calculateStats() {
-    _totalCount = _allDocuments.length;
+    _totalCount = _allPlaces.length;
     _pendingCount = 0;
     _publishedCount = 0;
     _rejectedCount = 0;
     _privateCount = 0;
     _hiddenCount = 0;
 
-    for (final doc in _allDocuments) {
-      final item = Map<String, dynamic>.from(doc as Map);
-      final visibility = documentVisibilityOf(item);
-      final moderation = documentModerationStatusOf(item);
+    for (final place in _allPlaces) {
+      final map = _stateMap(place);
+      final visibility = placeVisibilityOf(map);
+      final moderation = placeModerationStatusOf(map);
 
-      if (visibility == documentVisibilityPrivate) {
+      if (visibility == placeVisibilityPrivate) {
         _privateCount++;
-      } else if (moderation == documentModerationPending) {
+      } else if (moderation == placeModerationPending) {
         _pendingCount++;
-      } else if (moderation == documentModerationApproved) {
+      } else if (moderation == placeModerationApproved) {
         _publishedCount++;
-      } else if (moderation == documentModerationRejected) {
+      } else if (moderation == placeModerationRejected) {
         _rejectedCount++;
-      } else if (moderation == documentModerationHidden) {
+      } else if (moderation == placeModerationHidden) {
         _hiddenCount++;
       }
     }
   }
 
-  List<dynamic> _getFilteredDocuments(String status) {
-    return _allDocuments.where((doc) {
-      final item = Map<String, dynamic>.from(doc as Map);
-      final visibility = documentVisibilityOf(item);
-      final moderation = documentModerationStatusOf(item);
+  List<PlaceModel> _getFilteredPlaces(String status) {
+    return _allPlaces.where((place) {
+      final map = _stateMap(place);
+      final visibility = placeVisibilityOf(map);
+      final moderation = placeModerationStatusOf(map);
 
       final matchesTab = switch (status) {
         'ALL' => true,
-        'PRIVATE' => visibility == documentVisibilityPrivate,
-        'PENDING' => visibility == documentVisibilityPublic && moderation == documentModerationPending,
-        'PUBLISHED' => visibility == documentVisibilityPublic && moderation == documentModerationApproved,
-        'REJECTED' => visibility == documentVisibilityPublic && moderation == documentModerationRejected,
-        'HIDDEN' => visibility == documentVisibilityPublic && moderation == documentModerationHidden,
+        'PRIVATE' => visibility == placeVisibilityPrivate,
+        'PENDING' =>
+          visibility == placeVisibilityPublic && moderation == placeModerationPending,
+        'PUBLISHED' =>
+          visibility == placeVisibilityPublic && moderation == placeModerationApproved,
+        'REJECTED' =>
+          visibility == placeVisibilityPublic && moderation == placeModerationRejected,
+        'HIDDEN' =>
+          visibility == placeVisibilityPublic && moderation == placeModerationHidden,
         _ => false,
       };
 
-      if (!matchesTab) {
-        return false;
-      }
+      if (!matchesTab) return false;
 
-      // Filter by search query
       if (_searchQuery.isNotEmpty) {
-        final title = (doc['title']?.toString() ?? '').toLowerCase();
-        final body = (doc['body']?.toString() ?? '').toLowerCase();
-        final subjectCode = (doc['subjectCode']?.toString() ?? '').toLowerCase();
-        final category = (doc['category'] as Map?)?['name']?.toString() ?? '';
-        
+        final title = place.title.toLowerCase();
+        final body = place.body.toLowerCase();
+        final address = (place.address ?? '').toLowerCase();
+        final zone = (place.zone ?? '').toLowerCase();
         final matches = title.contains(_searchQuery) ||
             body.contains(_searchQuery) ||
-            subjectCode.contains(_searchQuery) ||
-            category.toLowerCase().contains(_searchQuery);
-        
+            address.contains(_searchQuery) ||
+            zone.contains(_searchQuery);
         if (!matches) return false;
       }
 
@@ -152,15 +151,15 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
     }).toList();
   }
 
-  Future<void> _deleteDocument(String id) async {
+  Future<void> _deletePlace(String id) async {
     final l10n = context.l10n;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         icon: const Icon(Icons.delete_forever_rounded, color: Colors.red, size: 36),
-        title: Text(l10n.delete, style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(l10n.deletePlace, style: const TextStyle(fontWeight: FontWeight.bold)),
         content: Text(
-          l10n.deleteDocumentConfirm,
+          l10n.deletePlaceConfirm,
           textAlign: TextAlign.center,
         ),
         actionsAlignment: MainAxisAlignment.spaceEvenly,
@@ -188,17 +187,17 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
 
     if (confirmed == true && mounted) {
       try {
-        await SfinityApp.documentRepository.deleteDocument(id);
+        await SfinityApp.placeRepository.deletePlace(id);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.deleteDocumentSuccess)),
+            SnackBar(content: Text(l10n.deletePlace)),
           );
-          _loadDocuments();
+          _loadPlaces();
         }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${l10n.deleteDocumentFailed}: $e')),
+            SnackBar(content: Text('${l10n.error}: $e')),
           );
         }
       }
@@ -209,25 +208,53 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
   Widget build(BuildContext context) {
     final primary = AppColors.primaryOf(context);
     final l10n = context.l10n;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: AppColors.scaffold(context),
       appBar: AppBar(
         title: Text(
-          l10n.myPosts,
+          l10n.myPlaces,
           style: const TextStyle(fontWeight: FontWeight.w800, letterSpacing: -0.3),
         ),
         elevation: 0,
         actions: [
-          AppBarAddButton(
-            tooltip: l10n.uploadDocument,
-            onPressed: () async {
-              await context.push(
-                RouteNames.documentCreate,
-                extra: const {'contentType': 'document'},
-              );
-              _loadDocuments();
-            },
+          Padding(
+            padding: const EdgeInsets.only(right: 10),
+            child: Tooltip(
+              message: l10n.sharePlace,
+              child: Material(
+                color: Colors.transparent,
+                child: Ink(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: primary.withValues(alpha: isDark ? 0.22 : 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: primary.withValues(alpha: isDark ? 0.24 : 0.18),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: isDark ? 0.16 : 0.04),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () async {
+                      await context.push(RouteNames.placeShare);
+                      _loadPlaces();
+                    },
+                    child: Center(
+                      child: Icon(Icons.add_rounded, color: primary, size: 19),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -237,7 +264,7 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
               child: DocumentListSkeleton(),
             )
           : _error != null
-              ? ErrorView(message: _error!, onRetry: _loadDocuments)
+              ? ErrorView(message: _error!, onRetry: _loadPlaces)
               : Column(
                   children: [
                     Padding(
@@ -247,7 +274,6 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
                         children: [
                           _buildStatsDashboard(primary),
                           const SizedBox(height: 12),
-                          // Modern Search Bar
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12),
                             decoration: AppColors.panel(context, radius: 12),
@@ -255,7 +281,7 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
                               controller: _searchController,
                               decoration: InputDecoration(
                                 icon: Icon(Icons.search, color: AppColors.muted(context), size: 20),
-                                hintText: 'Tìm kiếm tài liệu học tập...',
+                                hintText: l10n.searchPlaceByName,
                                 hintStyle: TextStyle(fontSize: 14, color: AppColors.muted(context)),
                                 border: InputBorder.none,
                                 isDense: true,
@@ -276,32 +302,33 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
                       child: TabBarView(
                         controller: _tabController,
                         children: _statuses.map((status) {
-                          final docs = _getFilteredDocuments(status);
+                          final places = _getFilteredPlaces(status);
                           return RefreshIndicator(
                             color: primary,
-                            onRefresh: _loadDocuments,
-                            child: docs.isEmpty
+                            onRefresh: _loadPlaces,
+                            child: places.isEmpty
                                 ? _buildEmptyState()
                                 : ListView.builder(
                                     physics: const AlwaysScrollableScrollPhysics(
                                       parent: BouncingScrollPhysics(),
                                     ),
                                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
-                                    itemCount: docs.length,
+                                    itemCount: places.length,
                                     itemBuilder: (context, index) {
-                                      final doc = docs[index] as Map<String, dynamic>;
-                                      return _MyDocumentCard(
-                                        doc: doc,
+                                      final place = places[index];
+                                      return _MyPlaceCard(
+                                        place: place,
+                                        stateMap: _stateMap(place),
                                         primary: primary,
                                         onTap: () async {
-                                          await context.push('/document/${doc['id']}');
-                                          _loadDocuments();
+                                          await context.push('/places/${place.id}');
+                                          _loadPlaces();
                                         },
                                         onEdit: () async {
-                                          await context.push('/document/${doc['id']}/edit');
-                                          _loadDocuments();
+                                          await context.push('/places/${place.id}/edit');
+                                          _loadPlaces();
                                         },
-                                        onDelete: () => _deleteDocument(doc['id'].toString()),
+                                        onDelete: () => _deletePlace(place.id),
                                       );
                                     },
                                   ),
@@ -330,16 +357,17 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
                 color: Colors.grey.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.folder_open_rounded, size: 48, color: AppColors.muted(context)),
+              child: Icon(Icons.location_off_outlined, size: 48, color: AppColors.muted(context)),
             ),
             const SizedBox(height: 12),
             Text(
-              l10n.noDocumentsFound,
+              l10n.noPlaceYet,
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.subtitle(context)),
             ),
             const SizedBox(height: 4),
             Text(
-              l10n.yourDocumentsHere,
+              l10n.sharePlaceSubtitle,
+              textAlign: TextAlign.center,
               style: TextStyle(fontSize: 13, color: AppColors.muted(context)),
             ),
           ],
@@ -356,9 +384,9 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
       child: Row(
         children: [
           _buildStatItem(
-            title: l10n.documents,
+            title: l10n.places,
             value: '$_totalCount',
-            icon: Icons.article_rounded,
+            icon: Icons.location_on_rounded,
             color: primary,
             isSelected: _tabController.index == 0,
             onTap: () => _tabController.animateTo(0),
@@ -422,19 +450,19 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
     required VoidCallback onTap,
   }) {
     final isDark = AppColors.isDark(context);
-    
-    final cardBgColor = isSelected 
-        ? color 
+
+    final cardBgColor = isSelected
+        ? color
         : (isDark ? const Color(0xFF1E293B) : Colors.white);
-    
-    final textColor = isSelected 
-        ? Colors.white 
+
+    final textColor = isSelected
+        ? Colors.white
         : (isDark ? Colors.white : Colors.grey[900]);
-        
+
     final subtitleColor = isSelected
         ? Colors.white.withValues(alpha: 0.8)
         : AppColors.muted(context);
-        
+
     final iconColor = isSelected ? Colors.white : color;
 
     return Material(
@@ -487,16 +515,18 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
   }
 }
 
-class _MyDocumentCard extends StatelessWidget {
-  const _MyDocumentCard({
-    required this.doc,
+class _MyPlaceCard extends StatelessWidget {
+  const _MyPlaceCard({
+    required this.place,
+    required this.stateMap,
     required this.primary,
     required this.onTap,
     required this.onEdit,
     required this.onDelete,
   });
 
-  final Map<String, dynamic> doc;
+  final PlaceModel place;
+  final Map<String, dynamic> stateMap;
   final Color primary;
   final VoidCallback onTap;
   final VoidCallback onEdit;
@@ -504,17 +534,12 @@ class _MyDocumentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final l10n = context.l10n;
-    final title = doc['title']?.toString() ?? '';
-    final body = doc['body']?.toString() ?? '';
-    final fileType = (doc['fileType']?.toString() ?? 'pdf').toLowerCase();
-    final subjectCode = doc['subjectCode']?.toString() ?? '';
-    final downloads = doc['downloadsCount'] ?? 0;
-    final visibility = documentVisibilityOf(doc);
-    final moderation = documentModerationStatusOf(doc);
-
-    final (fileIcon, iconColor) = _resolveFileIcon(fileType, theme);
+    final address = place.address?.trim().isNotEmpty == true
+        ? place.address!
+        : (place.zone ?? l10n.places);
+    final visibility = placeVisibilityOf(stateMap);
+    final moderation = placeModerationStatusOf(stateMap);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -528,70 +553,53 @@ class _MyDocumentCard extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // File Type Icon
-                Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: iconColor.withValues(alpha: 0.1),
+                if (place.hasPoint && place.point != null)
+                  ClipRRect(
                     borderRadius: BorderRadius.circular(12),
+                    child: PlaceMiniMapPreview(
+                      point: place.point!,
+                      accentColor: primary,
+                      size: 50,
+                    ),
+                  )
+                else
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(Icons.location_on_rounded, size: 28, color: primary),
                   ),
-                  child: Icon(fileIcon, size: 28, color: iconColor),
-                ),
                 const SizedBox(width: 12),
-                // Core Details
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
-                          if (subjectCode.isNotEmpty) ...[
+                          if (place.zone != null && place.zone!.isNotEmpty) ...[
                             _Badge(
-                              text: subjectCode.toUpperCase(),
+                              text: place.zone!.toUpperCase(),
                               color: primary,
                               bgOpacity: 0.08,
                             ),
                             const SizedBox(width: 6),
                           ],
-                          _Badge(
-                            text:   l10n.translateCategory(
-                              (doc['category'] as Map?)?['name']?.toString() ?? 'Tài liệu',
+                          if (place.tags.isNotEmpty)
+                            _Badge(
+                              text: place.tags.first,
+                              color: AppColors.muted(context),
+                              backgroundColor: AppColors.chipBg(context),
                             ),
-                            color: AppColors.muted(context),
-                            backgroundColor: AppColors.chipBg(context),
-                          ),
-                          const SizedBox(width: 6),
-                          // Downloads count tag
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF10B981).withValues(alpha: 0.08),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.file_download_outlined, size: 10, color: Color(0xFF10B981)),
-                                const SizedBox(width: 2),
-                                Text(
-                                  '$downloads',
-                                  style: const TextStyle(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF10B981),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
                           const Spacer(),
                           _buildStatusBadge(context, visibility, moderation),
                         ],
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        title,
+                        place.title,
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
@@ -601,18 +609,16 @@ class _MyDocumentCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
-                      if (body.isNotEmpty)
-                        Text(
-                          body.split('\n').first,
-                          style: TextStyle(fontSize: 11, color: AppColors.muted(context)),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                      Text(
+                        address,
+                        style: TextStyle(fontSize: 11, color: AppColors.muted(context)),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ],
                   ),
                 ),
                 const SizedBox(width: 4),
-                // Card Actions Dropdown
                 PopupMenuButton<String>(
                   icon: Icon(Icons.more_vert_rounded, color: AppColors.muted(context), size: 20),
                   padding: EdgeInsets.zero,
@@ -625,23 +631,23 @@ class _MyDocumentCard extends StatelessWidget {
                     }
                   },
                   itemBuilder: (ctx) => [
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'edit',
                       child: Row(
                         children: [
-                          Icon(Icons.edit_outlined, size: 16),
-                          SizedBox(width: 8),
-                          Text('Sửa', style: TextStyle(fontSize: 13)),
+                          const Icon(Icons.edit_outlined, size: 16),
+                          const SizedBox(width: 8),
+                          Text(l10n.edit, style: const TextStyle(fontSize: 13)),
                         ],
                       ),
                     ),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'delete',
                       child: Row(
                         children: [
-                          Icon(Icons.delete_outline, size: 16, color: Colors.red),
-                          SizedBox(width: 8),
-                          Text('Xóa', style: TextStyle(fontSize: 13, color: Colors.red)),
+                          const Icon(Icons.delete_outline, size: 16, color: Colors.red),
+                          const SizedBox(width: 8),
+                          Text(l10n.delete, style: const TextStyle(fontSize: 13, color: Colors.red)),
                         ],
                       ),
                     ),
@@ -661,34 +667,34 @@ class _MyDocumentCard extends StatelessWidget {
     String moderation,
   ) {
     final l10n = context.l10n;
-    if (visibility == documentVisibilityPrivate) {
+    if (visibility == placeVisibilityPrivate) {
       return _Badge(
-          text: l10n.onlyMe,
-          color: Colors.orange,
-          bgOpacity: 0.1,
-        );
+        text: l10n.onlyMe,
+        color: Colors.orange,
+        bgOpacity: 0.1,
+      );
     }
 
     switch (moderation) {
-      case documentModerationPending:
+      case placeModerationPending:
         return _Badge(
           text: l10n.statusPending,
           color: Colors.blue,
           bgOpacity: 0.1,
         );
-      case documentModerationRejected:
+      case placeModerationRejected:
         return _Badge(
           text: l10n.statusRejected,
           color: Colors.red,
           bgOpacity: 0.1,
         );
-      case documentModerationHidden:
+      case placeModerationHidden:
         return _Badge(
           text: l10n.statusHidden,
           color: Colors.grey,
           bgOpacity: 0.1,
         );
-      case documentModerationApproved:
+      case placeModerationApproved:
         return _Badge(
           text: l10n.statusPublished,
           color: Colors.green,
@@ -696,20 +702,6 @@ class _MyDocumentCard extends StatelessWidget {
         );
       default:
         return const SizedBox.shrink();
-    }
-  }
-
-  (IconData, Color) _resolveFileIcon(String fileType, ThemeData theme) {
-    switch (fileType) {
-      case 'pdf':
-        return (Icons.picture_as_pdf, AppColors.primary);
-      case 'docx':
-      case 'doc':
-        return (Icons.description, const Color(0xFF1E88E5));
-      case 'link':
-        return (Icons.link, const Color(0xFF8E24AA));
-      default:
-        return (Icons.article_outlined, theme.colorScheme.primary);
     }
   }
 }

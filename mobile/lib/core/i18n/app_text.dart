@@ -224,6 +224,10 @@ class AppLocalizations {
       'placeDescription': 'Mô tả địa điểm',
       'additionalDescription': 'Mô tả bổ sung',
       'placeDescriptionHint': 'Mô tả ngắn gọn về địa điểm này...',
+      'placeCoverImage': 'Ảnh nền',
+      'placeCoverImageHint': 'Hiển thị ở đầu trang chi tiết địa điểm',
+      'placePickLocationHint': 'Chạm bản đồ hoặc dùng nút vị trí hiện tại',
+      'removeCoverImage': 'Xóa ảnh nền',
       'placeDescriptionDetail': 'Chi tiết về địa điểm',
       'placeDescriptionMin': 'Mô tả cần ít nhất 10 ký tự',
       'placeWillShowMap': 'Địa điểm sẽ hiển thị trên bản đồ',
@@ -311,6 +315,13 @@ class AppLocalizations {
       'groupChatTab': 'Trò chuyện',
       'groupStorageTab': 'Lưu trữ',
       'groupMembersTab': 'Thành viên',
+      'groupMapTab': 'Bản đồ',
+      'groupMapEmpty': 'Chưa có thành viên chia sẻ vị trí',
+      'groupMapEmptyHint': 'Mở tab Bản đồ để chia sẻ vị trí với nhóm',
+      'groupMapSharing': 'Đang chia sẻ vị trí của bạn',
+      'groupMapMembersVisible': '{count} thành viên trên bản đồ',
+      'groupMapLocationDenied': 'Cần quyền vị trí để hiển thị trên bản đồ nhóm',
+      'groupMapCenterMe': 'Về vị trí của tôi',
       'deleteMemberConfirm': 'Xóa thành viên khỏi nhóm?',
       'cannotRemoveMember': 'Không thể xóa thành viên',
       'inviteToGroup': 'Mời vào nhóm',
@@ -366,11 +377,25 @@ class AppLocalizations {
       'noComments': 'Chưa có bình luận',
       'all': 'Tất cả',
       'newest': 'Mới nhất',
+      'featuredHighlights': 'Nổi bật',
+      'featuredPlaces': 'Địa điểm nổi bật',
+      'featuredDocuments': 'Tài liệu nổi bật',
+      'recentCheckins': '{count} check-in gần đây',
+      'totalCheckins': '{count} lượt check-in',
+      'popularDownloads': '{count} lượt tải',
+      'weeklyActivity': 'Hoạt động tuần này',
+      'weeklyActivitySubtitle': 'Theo dõi địa điểm đã ghé và tài liệu đã tải',
+      'weeklyPlacesVisited': 'Địa điểm đã ghé',
+      'weeklyDocsDownloaded': 'Tài liệu đã tải',
+      'topUsersTitle': 'Người dùng xuất sắc',
+      'topUsersSubtitle': 'Xếp hạng theo đóng góp và tương tác cộng đồng',
+      'topUsersScore': '{score} điểm',
+      'topUsersContributions': '{docs} tài liệu · {places} địa điểm',
       'noCommentsFound': 'Không tìm thấy bình luận',
       'loadMoreComments': 'Tải thêm bình luận',
       'download': 'Tải xuống',
       'share': 'Chia sẻ',
-      'communityContent': 'Nội dung cộng đồng',
+      'communityContent': 'Cộng đồng',
       'searchGroupHint': 'Tìm nhóm...',
       'noGroupsExplore': 'Khám phá để tìm nhóm mới',
       'noGroupsFound': 'Không tìm thấy nhóm',
@@ -520,6 +545,17 @@ class AppLocalizations {
       'newPasswordRequired': 'Mật khẩu mới',
       'setPasswordSuccess': 'Thiết lập mật khẩu thành công',
       'joinGroup': 'Xin vào',
+      'searchSaved': 'Tìm kiếm trong mục đã lưu...',
+      'noSavedDocuments': 'Chưa lưu tài liệu nào',
+      'noSavedDocumentsDesc': 'Lưu các đề thi, bài giảng hay để ôn tập dễ dàng hơn.',
+      'noSavedPlaces': 'Chưa lưu địa điểm nào',
+      'noSavedPlacesDesc': 'Lưu lại quán cafe, thư viện tự học lý tưởng để xem trên bản đồ.',
+      'noFavoritesDesc': 'Bạn có thể lưu tài liệu học tập hoặc địa điểm từ màn hình Khám phá hoặc Bản đồ.',
+      'exploreNow': 'Khám phá ngay',
+      'unfavoritePlaceMessage': 'Đã bỏ lưu địa điểm "{name}"',
+      'unfavoriteDocMessage': 'Đã bỏ lưu tài liệu "{name}"',
+      'undo': 'HOÀN TÁC',
+      'cannotUnfavorite': 'Không thể bỏ lưu: {error}',
     },
     'en': {
       'appName': 'Sfinity',
@@ -734,6 +770,10 @@ class AppLocalizations {
       'placeDescription': 'Place description',
       'additionalDescription': 'Additional description',
       'placeDescriptionHint': 'Brief description of this place...',
+      'placeCoverImage': 'Cover image',
+      'placeCoverImageHint': 'Shown at the top of the place detail page',
+      'placePickLocationHint': 'Tap the map or use the current location button',
+      'removeCoverImage': 'Remove cover image',
       'placeDescriptionDetail': 'Place details',
       'placeDescriptionMin': 'Description must be at least 10 characters',
       'placeWillShowMap': 'Place will be shown on the map',
@@ -820,6 +860,13 @@ class AppLocalizations {
       'groupChatTab': 'Chat',
       'groupStorageTab': 'Storage',
       'groupMembersTab': 'Members',
+      'groupMapTab': 'Map',
+      'groupMapEmpty': 'No members are sharing location',
+      'groupMapEmptyHint': 'Open the Map tab to share your location with the group',
+      'groupMapSharing': 'Sharing your location',
+      'groupMapMembersVisible': '{count} members on map',
+      'groupMapLocationDenied': 'Location permission is required for the group map',
+      'groupMapCenterMe': 'Center on me',
       'deleteMemberConfirm': 'Remove member from group?',
       'cannotRemoveMember': 'Cannot remove member',
       'inviteToGroup': 'Invite to group',
@@ -875,11 +922,25 @@ class AppLocalizations {
       'noComments': 'No comments',
       'all': 'All',
       'newest': 'Newest',
+      'featuredHighlights': 'Highlights',
+      'featuredPlaces': 'Featured places',
+      'featuredDocuments': 'Featured documents',
+      'recentCheckins': '{count} recent check-ins',
+      'totalCheckins': '{count} check-ins',
+      'popularDownloads': '{count} downloads',
+      'weeklyActivity': 'This week',
+      'weeklyActivitySubtitle': 'Places visited and documents downloaded',
+      'weeklyPlacesVisited': 'Places visited',
+      'weeklyDocsDownloaded': 'Documents downloaded',
+      'topUsersTitle': 'Top contributors',
+      'topUsersSubtitle': 'Ranked by community contributions and engagement',
+      'topUsersScore': '{score} pts',
+      'topUsersContributions': '{docs} docs · {places} places',
       'noCommentsFound': 'No comments found',
       'loadMoreComments': 'Load more comments',
       'download': 'Download',
       'share': 'Share',
-      'communityContent': 'Community content',
+      'communityContent': 'Community',
       'searchGroupHint': 'Search groups...',
       'noGroupsExplore': 'Explore to find new groups',
       'noGroupsFound': 'No groups found',
@@ -1030,6 +1091,17 @@ class AppLocalizations {
       'newPasswordRequired': 'New password',
       'setPasswordSuccess': 'Password set successfully',
       'joinGroup': 'Join',
+      'searchSaved': 'Search in saved items...',
+      'noSavedDocuments': 'No saved documents',
+      'noSavedDocumentsDesc': 'Save exams, lectures to review easily.',
+      'noSavedPlaces': 'No saved places',
+      'noSavedPlacesDesc': 'Save cafes, self-study libraries to view on map.',
+      'noFavoritesDesc': 'You can save study materials or places from Explore or Map screens.',
+      'exploreNow': 'Explore now',
+      'unfavoritePlaceMessage': 'Unsaved place "{name}"',
+      'unfavoriteDocMessage': 'Unsaved document "{name}"',
+      'undo': 'UNDO',
+      'cannotUnfavorite': 'Cannot unsave: {error}',
     },
   };
 
@@ -1257,6 +1329,10 @@ class AppLocalizations {
   String get placeDescription => _text('placeDescription');
   String get additionalDescription => _text('additionalDescription');
   String get placeDescriptionHint => _text('placeDescriptionHint');
+  String get placeCoverImage => _text('placeCoverImage');
+  String get placeCoverImageHint => _text('placeCoverImageHint');
+  String get placePickLocationHint => _text('placePickLocationHint');
+  String get removeCoverImage => _text('removeCoverImage');
   String get placeDescriptionDetail => _text('placeDescriptionDetail');
   String get placeDescriptionMin => _text('placeDescriptionMin');
   String get placeWillShowMap => _text('placeWillShowMap');
@@ -1344,6 +1420,14 @@ class AppLocalizations {
   String get groupChatTab => _text('groupChatTab');
   String get groupStorageTab => _text('groupStorageTab');
   String get groupMembersTab => _text('groupMembersTab');
+  String get groupMapTab => _text('groupMapTab');
+  String get groupMapEmpty => _text('groupMapEmpty');
+  String get groupMapEmptyHint => _text('groupMapEmptyHint');
+  String get groupMapSharing => _text('groupMapSharing');
+  String groupMapMembersVisible(int count) =>
+      _format('groupMapMembersVisible', {'{count}': '$count'});
+  String get groupMapLocationDenied => _text('groupMapLocationDenied');
+  String get groupMapCenterMe => _text('groupMapCenterMe');
   String get deleteMemberConfirm => _text('deleteMemberConfirm');
   String get cannotRemoveMember => _text('cannotRemoveMember');
   String get inviteToGroup => _text('inviteToGroup');
@@ -1422,6 +1506,21 @@ class AppLocalizations {
   String get noComments => _text('noComments');
   String get all => _text('all');
   String get newest => _text('newest');
+  String get featuredHighlights => _text('featuredHighlights');
+  String get featuredPlaces => _text('featuredPlaces');
+  String get featuredDocuments => _text('featuredDocuments');
+  String recentCheckins(int count) => _format('recentCheckins', {'{count}': '$count'});
+  String totalCheckins(int count) => _format('totalCheckins', {'{count}': '$count'});
+  String popularDownloads(int count) => _format('popularDownloads', {'{count}': '$count'});
+  String get weeklyActivity => _text('weeklyActivity');
+  String get weeklyActivitySubtitle => _text('weeklyActivitySubtitle');
+  String get weeklyPlacesVisited => _text('weeklyPlacesVisited');
+  String get weeklyDocsDownloaded => _text('weeklyDocsDownloaded');
+  String get topUsersTitle => _text('topUsersTitle');
+  String get topUsersSubtitle => _text('topUsersSubtitle');
+  String topUsersScore(int score) => _format('topUsersScore', {'{score}': '$score'});
+  String topUsersContributions({required int docs, required int places}) =>
+      _format('topUsersContributions', {'{docs}': '$docs', '{places}': '$places'});
   String get noCommentsFound => _text('noCommentsFound');
   String get loadMoreComments => _text('loadMoreComments');
   String get download => _text('download');
@@ -1593,6 +1692,17 @@ class AppLocalizations {
   String get newPasswordRequired => _text('newPasswordRequired');
   String get setPasswordSuccess => _text('setPasswordSuccess');
   String get joinGroup => _text('joinGroup');
+  String get searchSaved => _text('searchSaved');
+  String get noSavedDocuments => _text('noSavedDocuments');
+  String get noSavedDocumentsDesc => _text('noSavedDocumentsDesc');
+  String get noSavedPlaces => _text('noSavedPlaces');
+  String get noSavedPlacesDesc => _text('noSavedPlacesDesc');
+  String get noFavoritesDesc => _text('noFavoritesDesc');
+  String get exploreNow => _text('exploreNow');
+  String unfavoritePlaceMessage(String name) => _format('unfavoritePlaceMessage', {'{name}': name});
+  String unfavoriteDocMessage(String name) => _format('unfavoriteDocMessage', {'{name}': name});
+  String get undo => _text('undo');
+  String cannotUnfavorite(String error) => _format('cannotUnfavorite', {'{error}': error});
   // Method for offline profile load
   String offlineProfileLoad(String err) => _format('offlineProfileLoad', {'{name}': err});
 

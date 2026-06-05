@@ -1,6 +1,7 @@
 import { Button, Input, Modal, Select, Space, Table, Tag, Typography, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useCallback, useEffect, useState } from 'react';
+import { SearchOutlined } from '@ant-design/icons';
 
 import { fetchFeedback, replyFeedback, type FeedbackItem } from '@/api/feedback';
 
@@ -11,6 +12,19 @@ export function FeedbackPage() {
   const [replyOpen, setReplyOpen] = useState(false);
   const [selected, setSelected] = useState<FeedbackItem | null>(null);
   const [replyText, setReplyText] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Filter list in memory based on search query
+  const filteredData = data.filter((item) => {
+    const term = searchQuery.toLowerCase().trim();
+    if (!term) return true;
+    return (
+      item.user?.name?.toLowerCase().includes(term) ||
+      item.user?.email?.toLowerCase().includes(term) ||
+      item.message?.toLowerCase().includes(term) ||
+      item.reply?.toLowerCase().includes(term)
+    );
+  });
 
   const load = useCallback(async () => {
     setLoading(true);

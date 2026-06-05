@@ -11,6 +11,7 @@ import '../../../friendships/presentation/controllers/friendship_controller.dart
 import '../widgets/attachment_menu.dart';
 import '../widgets/group_chat_tab.dart';
 import '../widgets/group_files_tab.dart';
+import '../widgets/group_members_map_tab.dart';
 import '../widgets/group_members_tab.dart';
 import '../widgets/invite_member_sheet.dart';
 
@@ -22,11 +23,14 @@ class GroupDetailPage extends StatefulWidget {
   State<GroupDetailPage> createState() => _GroupDetailPageState();
 }
 
-class _GroupDetailPageState extends State<GroupDetailPage> {
+class _GroupDetailPageState extends State<GroupDetailPage> with SingleTickerProviderStateMixin {
   late final GroupController _groupCtrl;
   late final FriendshipController _friendCtrl;
   late final AuthState _auth;
+  late final TabController _tabController;
   final _chatService = GroupChatService();
+
+  static const _mapTabIndex = 3;
 
   String? _userName;
   String? _userAvatar;
@@ -38,6 +42,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     _groupCtrl = SfinityApp.groupController;
     _friendCtrl = SfinityApp.friendshipController;
     _auth = SfinityApp.auth;
+    _tabController = TabController(length: 4, vsync: this);
     _groupCtrl.loadGroup(widget.groupId);
     _friendCtrl.loadFriends();
     _friendCtrl.loadPendingRequests();
@@ -49,6 +54,12 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   }
 
   String get _myUid => _userId ?? '';
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,9 +79,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         }
         final cs = Theme.of(context).colorScheme;
 
-        return DefaultTabController(
-          length: 3,
-          child: Scaffold(
+        return Scaffold(
             backgroundColor: cs.brightness == Brightness.dark ? const Color(0xFF0A0A0A) : cs.surface,
             body: NestedScrollView(
               headerSliverBuilder: (context, innerBoxIsScrolled) {
@@ -79,6 +88,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                 ];
               },
               body: TabBarView(
+                controller: _tabController,
                 children: [
                   GroupChatTab(
                     groupId: group.id,
@@ -104,11 +114,16 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                     groupCtrl: _groupCtrl,
                     onInviteMember: () => _showInviteMemberSheet(context, group),
                   ),
+                  GroupMembersMapTab(
+                    groupId: group.id,
+                    myUserId: _myUid,
+                    tabController: _tabController,
+                    mapTabIndex: _mapTabIndex,
+                  ),
                 ],
               ),
             ),
-          ),
-        );
+          );
       },
     );
   }
@@ -190,6 +205,9 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
             ),
           ),
           child: TabBar(
+            controller: _tabController,
+            isScrollable: true,
+            tabAlignment: TabAlignment.start,
             indicator: BoxDecoration(
               color: isDark
                   ? Colors.white.withValues(alpha: 0.08)
@@ -206,6 +224,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
               Tab(text: l10n.groupChatTab),
               Tab(text: l10n.groupStorageTab),
               Tab(text: l10n.groupMembersTab),
+              Tab(text: l10n.groupMapTab),
             ],
           ),
         ),

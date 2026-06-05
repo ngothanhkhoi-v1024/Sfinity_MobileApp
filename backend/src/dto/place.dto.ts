@@ -1,4 +1,4 @@
-import { ContentStatus } from '../types/enums';
+import { ContentModerationStatus, ContentVisibility } from '../types/enums';
 import { IsEnum, IsOptional, IsString, MinLength, IsNumber, IsArray } from 'class-validator';
 
 export class CreatePlaceDto {
@@ -11,8 +11,12 @@ export class CreatePlaceDto {
   body?: string;
 
   @IsOptional()
-  @IsEnum(ContentStatus)
-  status?: ContentStatus;
+  @IsEnum(ContentVisibility)
+  visibility?: ContentVisibility;
+
+  @IsOptional()
+  @IsEnum(ContentModerationStatus)
+  moderationStatus?: ContentModerationStatus;
 
   @IsNumber()
   latitude!: number;
@@ -45,8 +49,12 @@ export class UpdatePlaceDto {
   body?: string | null;
 
   @IsOptional()
-  @IsEnum(ContentStatus)
-  status?: ContentStatus;
+  @IsEnum(ContentVisibility)
+  visibility?: ContentVisibility;
+
+  @IsOptional()
+  @IsEnum(ContentModerationStatus)
+  moderationStatus?: ContentModerationStatus;
 
   @IsOptional()
   @IsNumber()

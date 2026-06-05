@@ -1,14 +1,15 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
-import '../../../../core/network/api_client.dart';
+import '../../../../core/constants/route_names.dart';
 import '../../../../core/i18n/app_text.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../features/document/presentation/widgets/document_card.dart';
+import '../../../../features/home/presentation/pages/home_shell_page.dart';
 import '../../../../features/places/presentation/widgets/place_list_tile.dart';
+import '../controllers/favorites_controller.dart';
 
 class FavoritesPage extends StatefulWidget {
   const FavoritesPage({super.key});
@@ -18,61 +19,18 @@ class FavoritesPage extends StatefulWidget {
 }
 
 class _FavoritesPageState extends State<FavoritesPage> {
-  List<dynamic> _items = [];
-  bool _loading = true;
-  String? _error;
-  final _searchController = TextEditingController();
-  String _searchQuery = '';
+  final FavoritesController _controller = FavoritesController();
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _controller.load();
   }
 
   @override
   void dispose() {
-    _searchController.dispose();
+    _controller.dispose();
     super.dispose();
-  }
-
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    try {
-      _items = await ApiClient.instance.getList('/favorites');
-    } on DioException catch (e) {
-      _error = ApiClient.instance.errorMessage(e);
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
-
-  List<dynamic> _getFilteredItems(String filterType) {
-    return _items.where((fav) {
-      final document = fav['document'] as Map<String, dynamic>?;
-      if (document == null) return false;
-
-      final type = document['type']?.toString();
-      if (filterType == 'document' && type != 'document') return false;
-      if (filterType == 'place' && type != 'place') return false;
-
-      if (_searchQuery.isEmpty) return true;
-
-      final title = document['title']?.toString().toLowerCase() ?? '';
-      final body = document['body']?.toString().toLowerCase() ?? '';
-      final address = document['address']?.toString().toLowerCase() ?? '';
-      final zone = document['zone']?.toString().toLowerCase() ?? '';
-      final subjectCode = document['subjectCode']?.toString().toLowerCase() ?? '';
-
-      return title.contains(_searchQuery) ||
-          body.contains(_searchQuery) ||
-          address.contains(_searchQuery) ||
-          zone.contains(_searchQuery) ||
-          subjectCode.contains(_searchQuery);
-    }).toList();
   }
 
   @override
@@ -126,30 +84,33 @@ class _FavoritesPageState extends State<FavoritesPage> {
                   labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
                   unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                   dividerColor: Colors.transparent,
-                  tabs: const [
-                    Tab(text: 'Tất cả'),
-                    Tab(text: 'Tài liệu'),
-                    Tab(text: 'Địa điểm'),
+                  tabs: [
+                    Tab(text: l10n.all),
+                    Tab(text: l10n.documents),
+                    Tab(text: l10n.places),
                   ],
                 ),
               ),
             ),
           ),
         ),
-        body: _buildBody(l10n, isDark, primary),
+        body: ListenableBuilder(
+          listenable: _controller,
+          builder: (context, child) => _buildBody(l10n, isDark, primary),
+        ),
       ),
     );
   }
 
   Widget _buildBody(AppLocalizations l10n, bool isDark, Color primary) {
-    if (_loading) {
+    if (_controller.loading) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (_error != null) {
+    if (_controller.error != null) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: ErrorView(message: _error!, onRetry: _load),
+        child: ErrorView(message: _controller.error!, onRetry: _controller.load),
       );
     }
 
@@ -165,31 +126,22 @@ class _FavoritesPageState extends State<FavoritesPage> {
               border: Border.all(color: AppColors.border(context)),
             ),
             child: TextField(
-              controller: _searchController,
+              controller: _controller.searchController,
               style: TextStyle(fontSize: 14, color: AppColors.title(context)),
               decoration: InputDecoration(
-                hintText: 'Tìm kiếm trong mục đã lưu...',
+                hintText: l10n.searchSaved,
                 hintStyle: TextStyle(fontSize: 13, color: AppColors.muted(context)),
                 prefixIcon: Icon(Icons.search_rounded, size: 20, color: AppColors.muted(context)),
-                suffixIcon: _searchQuery.isNotEmpty
+                suffixIcon: _controller.searchQuery.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.close_rounded, size: 18),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() {
-                            _searchQuery = '';
-                          });
-                        },
+                        onPressed: _controller.clearSearch,
                       )
                     : null,
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
-              onChanged: (val) {
-                setState(() {
-                  _searchQuery = val.trim().toLowerCase();
-                });
-              },
+              onChanged: _controller.updateSearchQuery,
             ),
           ),
         ),
@@ -208,14 +160,14 @@ class _FavoritesPageState extends State<FavoritesPage> {
   }
 
   Widget _buildTabList(String filterType, AppLocalizations l10n, bool isDark, Color primary) {
-    final filteredItems = _getFilteredItems(filterType);
+    final filteredItems = _controller.getFilteredItems(filterType);
 
     if (filteredItems.isEmpty) {
       return _buildEmptyState(filterType, l10n, primary);
     }
 
     return RefreshIndicator(
-      onRefresh: _load,
+      onRefresh: _controller.load,
       color: primary,
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
@@ -251,26 +203,23 @@ class _FavoritesPageState extends State<FavoritesPage> {
                 return true;
               },
               onDismissed: (direction) {
-                final removedFav = fav;
-                final originalIndex = _items.indexOf(fav);
+                final result = _controller.removeItemLocally(fav);
+                if (result == null) return;
                 
-                setState(() {
-                  _items.removeAt(originalIndex);
-                });
+                final originalIndex = result['index'] as int;
+                final removedFav = result['item'];
 
                 bool undone = false;
                 final messenger = ScaffoldMessenger.of(context);
                 messenger.clearSnackBars();
                 messenger.showSnackBar(
                   SnackBar(
-                    content: Text(isPlace ? 'Đã bỏ lưu địa điểm "$title"' : 'Đã bỏ lưu tài liệu "$title"'),
+                    content: Text(isPlace ? l10n.unfavoritePlaceMessage(title) : l10n.unfavoriteDocMessage(title)),
                     action: SnackBarAction(
-                      label: 'HOÀN TÁC',
+                      label: l10n.undo,
                       onPressed: () {
                         undone = true;
-                        setState(() {
-                          _items.insert(originalIndex, removedFav);
-                        });
+                        _controller.insertItemLocally(originalIndex, removedFav);
                       },
                     ),
                     duration: const Duration(seconds: 4),
@@ -278,15 +227,13 @@ class _FavoritesPageState extends State<FavoritesPage> {
                 ).closed.then((reason) async {
                   if (!undone) {
                     try {
-                      await ApiClient.instance.delete('/favorites/$docId');
+                      await _controller.deleteFavoriteOnServer(docId);
                     } catch (e) {
                       if (mounted) {
                         messenger.showSnackBar(
-                          SnackBar(content: Text('Không thể bỏ lưu: $e')),
+                          SnackBar(content: Text(l10n.cannotUnfavorite(e.toString()))),
                         );
-                        setState(() {
-                          _items.insert(originalIndex, removedFav);
-                        });
+                        _controller.insertItemLocally(originalIndex, removedFav);
                       }
                     }
                   }
@@ -295,8 +242,8 @@ class _FavoritesPageState extends State<FavoritesPage> {
               child: isPlace
                   ? PlaceListTile(
                       title: title,
-                      subtitle: document['address']?.toString() ?? 'Không có địa chỉ',
-                      distanceLabel: document['zone']?.toString() ?? 'Địa điểm',
+                      subtitle: document['address']?.toString() ?? l10n.noAddress,
+                      distanceLabel: document['zone']?.toString() ?? l10n.places,
                       isCommunity: true,
                       isSaved: true,
                       showMiniMap: mapPoint != null,
@@ -322,18 +269,18 @@ class _FavoritesPageState extends State<FavoritesPage> {
 
     if (filterType == 'document') {
       icon = Icons.menu_book_rounded;
-      title = 'Chưa lưu tài liệu nào';
-      subtitle = 'Lưu các đề thi, bài giảng hay để ôn tập dễ dàng hơn.';
+      title = l10n.noSavedDocuments;
+      subtitle = l10n.noSavedDocumentsDesc;
       iconColor = const Color(0xFF3B82F6);
     } else if (filterType == 'place') {
       icon = Icons.place_rounded;
-      title = 'Chưa lưu địa điểm nào';
-      subtitle = 'Lưu lại quán cafe, thư viện tự học lý tưởng để xem trên bản đồ.';
+      title = l10n.noSavedPlaces;
+      subtitle = l10n.noSavedPlacesDesc;
       iconColor = const Color(0xFFEF4444);
     } else {
       icon = Icons.bookmark_border_rounded;
       title = l10n.noFavoritesYet;
-      subtitle = 'Bạn có thể lưu tài liệu học tập hoặc địa điểm từ màn hình Khám phá hoặc Bản đồ.';
+      subtitle = l10n.noFavoritesDesc;
       iconColor = const Color(0xFFF59E0B);
     }
 
@@ -373,14 +320,21 @@ class _FavoritesPageState extends State<FavoritesPage> {
             ),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () {
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go(RouteNames.home);
+                }
+                homeShellKey.currentState?.switchTab(0);
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: primary,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               ),
-              child: const Text('Khám phá ngay'),
+              child: Text(l10n.exploreNow),
             ),
           ],
         ),

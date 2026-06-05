@@ -72,6 +72,11 @@ class ProfilePage extends StatelessWidget {
                   title: context.l10n.myPosts,
                   onTap: () => context.push(RouteNames.myDocuments),
                 ),
+                _ProfileMenuItem(
+                  icon: Icons.location_on_outlined,
+                  title: context.l10n.myPlaces,
+                  onTap: () => context.push(RouteNames.myPlaces),
+                ),
               ],
             ),
             _ProfileSection(
