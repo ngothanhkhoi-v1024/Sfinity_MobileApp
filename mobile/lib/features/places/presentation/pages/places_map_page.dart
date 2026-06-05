@@ -670,6 +670,59 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
     );
   }
 
+  Widget _buildBackToDetailButton() {
+    if (PlacesMapFocus.source.value != PlacesMapFocusSource.detail) {
+      return const SizedBox.shrink();
+    }
+    final placeId = PlacesMapFocus.highlightedPlaceId.value;
+    if (placeId == null || placeId.isEmpty) return const SizedBox.shrink();
+
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final surface = isDark ? const Color(0xFF242424) : Colors.white;
+
+    return Positioned(
+      left: 16,
+      bottom: 188,
+      child: Material(
+        color: surface.withValues(alpha: 0.96),
+        elevation: 3,
+        shadowColor: Colors.black26,
+        borderRadius: BorderRadius.circular(24),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(24),
+          onTap: () {
+            PlacesMapFocus.clearHighlight();
+            context.push('/places/$placeId');
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.arrow_back_rounded,
+                  size: 18,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  l10n.backToPlaceDetail,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildToolbar({required bool mapOverlay}) {
     return PlacesMapToolbar(
       mapOverlay: mapOverlay,
@@ -1101,9 +1154,10 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
           ),
         ),
         Positioned(right: 16, bottom: 96, child: _buildFabColumn()),
+        _buildBackToDetailButton(),
         Positioned(
-          left: 12,
-          bottom: 168,
+          left: 16,
+          bottom: 12,
           child: DecoratedBox(
             decoration: BoxDecoration(
               color: (isDark ? const Color(0xFF242424) : Colors.white).withValues(alpha: 0.92),

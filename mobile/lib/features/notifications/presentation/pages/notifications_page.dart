@@ -8,6 +8,7 @@ import '../../../../core/network/api_client.dart';
 import '../../../../core/i18n/app_text.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/error_view.dart';
+import '../widgets/notification_detail_sheet.dart';
 
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
@@ -50,16 +51,35 @@ class _NotificationsPageState extends State<NotificationsPage> {
     }
   }
 
-  Future<void> _markRead(String id) async {
-    if (!SfinityApp.notificationManager.enabled) return;
-    await ApiClient.instance.patch('/notifications/$id/read', {});
-    _load();
-  }
-
   Future<void> _markAllRead() async {
     if (!SfinityApp.notificationManager.enabled) return;
     await ApiClient.instance.patch('/notifications/read-all', {});
     _load();
+  }
+
+  Future<void> _openNotification(Map<String, dynamic> notification) async {
+    final id = notification['id']?.toString() ?? '';
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => NotificationDetailSheet(notification: notification),
+    );
+    if (!mounted || id.isEmpty) return;
+    if (notification['read'] != true) {
+      setState(() {
+        final index = _items.indexWhere(
+          (item) => (item as Map<String, dynamic>)['id']?.toString() == id,
+        );
+        if (index >= 0) {
+          _items[index] = {
+            ...Map<String, dynamic>.from(_items[index] as Map),
+            'read': true,
+          };
+        }
+      });
+      await ApiClient.instance.patch('/notifications/$id/read', {});
+    }
   }
 
   Future<void> _deleteNotification(String id) async {
@@ -323,14 +343,23 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                 child: Padding(
                                   padding: const EdgeInsets.symmetric(vertical: 2),
                                   child: ListTile(
-                                    leading: Icon(
-                                      read ? Icons.mark_email_read : Icons.mark_email_unread,
-                                      color: read ? Colors.grey : Theme.of(context).colorScheme.primary,
-                                    ),
-                                    title: Text(n['title']?.toString() ?? '', style: TextStyle(fontWeight: read ? FontWeight.normal : FontWeight.bold)),
-                                    subtitle: Text(n['body']?.toString() ?? ''),
-                                    onTap: () => _markRead(id),
+                                  leading: Icon(
+                                    read ? Icons.mark_email_read : Icons.mark_email_unread,
+                                    color: read ? Colors.grey : Theme.of(context).colorScheme.primary,
                                   ),
+                                  title: Text(
+                                    n['title']?.toString() ?? '',
+                                    style: TextStyle(
+                                      fontWeight: read ? FontWeight.normal : FontWeight.bold,
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    n['body']?.toString() ?? '',
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  onTap: () => _openNotification(n),
+                                ),
                                 ),
                               );
                             },

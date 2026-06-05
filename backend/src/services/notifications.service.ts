@@ -34,7 +34,7 @@ export const notificationsService = {
       title: item.title,
       body: item.body,
       read: item.read ?? false,
-      createdAt: toDate(item.createdAt),
+      createdAt: toDate(item.createdAt).toISOString(),
     }));
   },
 
@@ -61,7 +61,7 @@ export const notificationsService = {
       title: data.title,
       body: data.body,
       read: data.read ?? true,
-      createdAt: toDate(data.createdAt),
+      createdAt: toDate(data.createdAt).toISOString(),
     };
   },
 
@@ -212,7 +212,7 @@ export const notificationsService = {
           title: notif.title,
           body: notif.body,
           read: notif.read ?? false,
-          createdAt: toDate(notif.createdAt),
+          createdAt: toDate(notif.createdAt).toISOString(),
           user,
         };
       }),
