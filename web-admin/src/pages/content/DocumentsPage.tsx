@@ -13,6 +13,7 @@ import {
   Descriptions,
   Input,
   Modal,
+  Select,
   Space,
   Switch,
   Table,
@@ -22,6 +23,7 @@ import {
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useCallback, useEffect, useState } from 'react';
+import dayjs from 'dayjs';
 
 import {
   adminApproveDocument,
@@ -75,12 +77,18 @@ export function DocumentsPage() {
   const [approveModal, setApproveModal] = useState<DocumentItem | null>(null);
   const [rejectModal, setRejectModal] = useState<DocumentItem | null>(null);
   const [reason, setReason] = useState('');
+  const [reasonError, setReasonError] = useState(false);
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'APPROVED'>('ALL');
 
-  // Filter list in memory based on search query
+  // Filter list in memory based on search query and status filter
   const filteredData = data.filter((item) => {
+    const ms = getModerationStatus(item);
+    if (statusFilter === 'PENDING' && ms !== 'PENDING') return false;
+    if (statusFilter === 'APPROVED' && ms !== 'APPROVED') return false;
+
     const term = searchQuery.toLowerCase().trim();
     if (!term) return true;
     return (
@@ -125,8 +133,14 @@ export function DocumentsPage() {
   };
 
   const handleReject = async () => {
-    if (!rejectModal || reason.trim().length < 2) {
-      message.warning('Vui lòng nhập lý do từ chối (ít nhất 2 ký tự)');
+    if (!rejectModal) return;
+    if (!reason.trim()) {
+      setReasonError(true);
+      message.error('Lý do từ chối là bắt buộc');
+      return;
+    }
+    if (reason.trim().length < 2) {
+      message.warning('Lý do từ chối phải có ít nhất 2 ký tự');
       return;
     }
     setSubmitting(true);
@@ -135,6 +149,7 @@ export function DocumentsPage() {
       message.success('Đã từ chối tài liệu và thông báo cho tác giả');
       setRejectModal(null);
       setReason('');
+      setReasonError(false);
       load();
     } catch {
       message.error('Thất bại');
@@ -144,8 +159,14 @@ export function DocumentsPage() {
   };
 
   const handleHide = async () => {
-    if (!hideModal || reason.trim().length < 2) {
-      message.warning('Vui lòng nhập lý do (ít nhất 2 ký tự)');
+    if (!hideModal) return;
+    if (!reason.trim()) {
+      setReasonError(true);
+      message.error('Lý do ẩn là bắt buộc');
+      return;
+    }
+    if (reason.trim().length < 2) {
+      message.warning('Lý do ẩn phải có ít nhất 2 ký tự');
       return;
     }
     setSubmitting(true);
@@ -154,6 +175,7 @@ export function DocumentsPage() {
       message.success('Đã ẩn tài liệu và thông báo cho tác giả');
       setHideModal(null);
       setReason('');
+      setReasonError(false);
       load();
     } catch {
       message.error('Thất bại');
@@ -179,8 +201,14 @@ export function DocumentsPage() {
   };
 
   const handleDelete = async () => {
-    if (!deleteModal || reason.trim().length < 2) {
-      message.warning('Vui lòng nhập lý do (ít nhất 2 ký tự)');
+    if (!deleteModal) return;
+    if (!reason.trim()) {
+      setReasonError(true);
+      message.error('Lý do xóa là bắt buộc');
+      return;
+    }
+    if (reason.trim().length < 2) {
+      message.warning('Lý do xóa phải có ít nhất 2 ký tự');
       return;
     }
     setSubmitting(true);
@@ -189,6 +217,7 @@ export function DocumentsPage() {
       message.success('Đã xóa tài liệu và thông báo cho tác giả');
       setDeleteModal(null);
       setReason('');
+      setReasonError(false);
       load();
     } catch {
       message.error('Thất bại');
@@ -231,13 +260,29 @@ export function DocumentsPage() {
     },
     { title: 'Tác giả', dataIndex: ['author', 'name'], width: 140, ellipsis: true },
     {
-      title: 'Trạng thái',
+      title: 'Ngày tạo',
+      dataIndex: 'createdAt',
+      width: 150,
+      render: (v: string) => dayjs(v).format('DD/MM/YYYY HH:mm'),
+    },
+    {
+      title: 'Hiển thị',
+      key: 'visibility',
+      width: 110,
+      render: (_: unknown, record: DocumentItem) => (
+        <Tag color={record.visibility === 'PUBLIC' ? 'blue' : 'default'} style={{ width: 90, textAlign: 'center' }}>
+          {record.visibility === 'PUBLIC' ? 'Công khai' : 'Riêng tư'}
+        </Tag>
+      ),
+    },
+    {
+      title: 'Kiểm duyệt',
       key: 'moderationStatus',
       width: 130,
       render: (_: unknown, record: DocumentItem) => {
         const ms = getModerationStatus(record);
         return (
-          <Tag color={MODERATION_COLORS[ms]}>
+          <Tag color={MODERATION_COLORS[ms]} style={{ width: 90, textAlign: 'center' }}>
             {MODERATION_LABELS[ms]}
           </Tag>
         );
@@ -256,7 +301,7 @@ export function DocumentsPage() {
               Xem
             </Button>
 
-            {ms === 'PENDING' && (
+            {isPublic && ms === 'PENDING' && (
               <>
                 <Button
                   size="small"
@@ -289,7 +334,7 @@ export function DocumentsPage() {
               </Button>
             )}
 
-            {(ms === 'HIDDEN' || ms === 'NONE' || ms === 'REJECTED') && (
+            {isPublic && (ms === 'HIDDEN' || ms === 'NONE' || ms === 'REJECTED') && (
               <Button
                 size="small"
                 type="default"
@@ -331,6 +376,16 @@ export function DocumentsPage() {
                 unCheckedChildren="Tắt"
               />
             </Space>
+            <Select
+              value={statusFilter}
+              onChange={setStatusFilter}
+              style={{ width: 140 }}
+              options={[
+                { value: 'ALL', label: 'Tất cả' },
+                { value: 'PENDING', label: 'Chờ duyệt' },
+                { value: 'APPROVED', label: 'Đã duyệt' },
+              ]}
+            />
             <Input
               placeholder="Tìm kiếm tiêu đề, mã môn, tác giả..."
               prefix={<SearchOutlined />}
@@ -354,16 +409,11 @@ export function DocumentsPage() {
         pagination={{ pageSize: 10 }}
       />
 
-      {/* View Detail Modal */}
       <Modal
         title="Chi tiết tài liệu"
         open={!!viewModal}
         onCancel={() => setViewModal(null)}
-        footer={[
-          <Button key="close" onClick={() => setViewModal(null)}>
-            Đóng
-          </Button>,
-        ]}
+        footer={null}
         width={640}
       >
         {viewModal && (() => {
@@ -397,6 +447,14 @@ export function DocumentsPage() {
                   {MODERATION_LABELS[ms]}
                 </Tag>
               </Descriptions.Item>
+              <Descriptions.Item label="Ngày tạo">
+                {dayjs(viewModal.createdAt).format('DD/MM/YYYY HH:mm')}
+              </Descriptions.Item>
+              {viewModal.updatedAt && dayjs(viewModal.updatedAt).format('DD/MM/YYYY HH:mm') !== dayjs(viewModal.createdAt).format('DD/MM/YYYY HH:mm') && (
+                <Descriptions.Item label="Ngày cập nhật">
+                  {dayjs(viewModal.updatedAt).format('DD/MM/YYYY HH:mm')}
+                </Descriptions.Item>
+              )}
             </Descriptions>
           );
         })()}
@@ -425,7 +483,7 @@ export function DocumentsPage() {
       <Modal
         title={`Từ chối tài liệu: "${rejectModal?.title}"`}
         open={!!rejectModal}
-        onCancel={() => { setRejectModal(null); setReason(''); }}
+        onCancel={() => { setRejectModal(null); setReason(''); setReasonError(false); }}
         onOk={handleReject}
         okText="Từ chối và thông báo"
         okButtonProps={{ danger: true, loading: submitting }}
@@ -436,15 +494,22 @@ export function DocumentsPage() {
           rows={3}
           placeholder="Nhập lý do từ chối..."
           value={reason}
-          onChange={(e) => setReason(e.target.value)}
+          status={reasonError ? 'error' : undefined}
+          onChange={(e) => {
+            setReason(e.target.value);
+            if (e.target.value.trim()) setReasonError(false);
+          }}
         />
+        {reasonError && (
+          <div style={{ color: '#ff4d4f', marginTop: 4 }}>Lý do từ chối là bắt buộc</div>
+        )}
       </Modal>
 
       {/* Hide Modal */}
       <Modal
         title={`Ẩn tài liệu: "${hideModal?.title}"`}
         open={!!hideModal}
-        onCancel={() => { setHideModal(null); setReason(''); }}
+        onCancel={() => { setHideModal(null); setReason(''); setReasonError(false); }}
         onOk={handleHide}
         okText="Ẩn và thông báo"
         okButtonProps={{ danger: true, loading: submitting }}
@@ -455,8 +520,15 @@ export function DocumentsPage() {
           rows={3}
           placeholder="Nhập lý do ẩn tài liệu..."
           value={reason}
-          onChange={(e) => setReason(e.target.value)}
+          status={reasonError ? 'error' : undefined}
+          onChange={(e) => {
+            setReason(e.target.value);
+            if (e.target.value.trim()) setReasonError(false);
+          }}
         />
+        {reasonError && (
+          <div style={{ color: '#ff4d4f', marginTop: 4 }}>Lý do ẩn là bắt buộc</div>
+        )}
       </Modal>
 
       {/* Unhide Modal */}
@@ -482,7 +554,7 @@ export function DocumentsPage() {
       <Modal
         title={`Xóa tài liệu: "${deleteModal?.title}"`}
         open={!!deleteModal}
-        onCancel={() => { setDeleteModal(null); setReason(''); }}
+        onCancel={() => { setDeleteModal(null); setReason(''); setReasonError(false); }}
         onOk={handleDelete}
         okText="Xóa và thông báo"
         okButtonProps={{ danger: true, loading: submitting }}
@@ -493,8 +565,15 @@ export function DocumentsPage() {
           rows={3}
           placeholder="Nhập lý do xóa tài liệu..."
           value={reason}
-          onChange={(e) => setReason(e.target.value)}
+          status={reasonError ? 'error' : undefined}
+          onChange={(e) => {
+            setReason(e.target.value);
+            if (e.target.value.trim()) setReasonError(false);
+          }}
         />
+        {reasonError && (
+          <div style={{ color: '#ff4d4f', marginTop: 4 }}>Lý do xóa là bắt buộc</div>
+        )}
       </Modal>
     </PageShell>
   );
