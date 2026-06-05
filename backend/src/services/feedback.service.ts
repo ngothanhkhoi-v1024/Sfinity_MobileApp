@@ -1,6 +1,7 @@
 import { getDb } from '../lib/firebase';
 import { HttpError } from '../lib/http-error';
 import type { CreateFeedbackDto, ReplyFeedbackDto } from '../dto/feedback.dto';
+import { notificationsService } from './notifications.service';
 
 const toDate = (val: any): Date => {
   if (!val) return new Date();
@@ -72,7 +73,7 @@ export const feedbackService = {
   },
 
   async reply(id: string, dto: ReplyFeedbackDto) {
-    await feedbackService.findOne(id); // Throws if not found
+    const feedback = await feedbackService.findOne(id); // Throws if not found
     const ref = getDb().collection('feedbacks').doc(id);
 
     await ref.update({
@@ -80,6 +81,14 @@ export const feedbackService = {
       resolved: true,
       updatedAt: new Date(),
     });
+
+    if (feedback.userId) {
+      await notificationsService.create({
+        userId: feedback.userId,
+        title: 'Phản hồi của quản trị viên',
+        body: `Quản trị viên đã trả lời phản hồi của bạn: ${dto.reply}`,
+      });
+    }
 
     return feedbackService.findOne(id);
   },
