@@ -121,7 +121,6 @@ function ExpandedReportRow({ report }: ExpandedReportRowProps) {
                 <Descriptions column={1} size="small" bordered style={{ background: '#fafafa' }}>
                   <Descriptions.Item label="Tên địa điểm">{targetData.title}</Descriptions.Item>
                   <Descriptions.Item label="Địa chỉ">{targetData.address || '-'}</Descriptions.Item>
-                  <Descriptions.Item label="Khu vực">{targetData.zone || '-'}</Descriptions.Item>
                   <Descriptions.Item label="Trạng thái">{targetData.status}</Descriptions.Item>
                   <Descriptions.Item label="Mô tả">{targetData.body || '-'}</Descriptions.Item>
                 </Descriptions>
