@@ -89,13 +89,7 @@ class _CommunityPageState extends State<CommunityPage>
           appBar: AppBar(
             elevation: 0,
             scrolledUnderElevation: 0,
-            title: Text(
-              l10n.community,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: -0.2,
-                  ),
-            ),
+            title: Text(l10n.community),
             actions: [
               if (_tabController.index == _kTabGroups)
                 _buildCreateGroupButton(context, cs),

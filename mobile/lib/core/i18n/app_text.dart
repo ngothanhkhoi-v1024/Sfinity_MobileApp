@@ -376,11 +376,15 @@ class AppLocalizations {
       'weeklyActivitySubtitle': 'Theo dõi địa điểm đã ghé và tài liệu đã tải',
       'weeklyPlacesVisited': 'Địa điểm đã ghé',
       'weeklyDocsDownloaded': 'Tài liệu đã tải',
+      'topUsersTitle': 'Người dùng xuất sắc',
+      'topUsersSubtitle': 'Xếp hạng theo đóng góp và tương tác cộng đồng',
+      'topUsersScore': '{score} điểm',
+      'topUsersContributions': '{docs} tài liệu · {places} địa điểm',
       'noCommentsFound': 'Không tìm thấy bình luận',
       'loadMoreComments': 'Tải thêm bình luận',
       'download': 'Tải xuống',
       'share': 'Chia sẻ',
-      'communityContent': 'Nội dung cộng đồng',
+      'communityContent': 'Cộng đồng',
       'searchGroupHint': 'Tìm nhóm...',
       'noGroupsExplore': 'Khám phá để tìm nhóm mới',
       'noGroupsFound': 'Không tìm thấy nhóm',
@@ -906,11 +910,15 @@ class AppLocalizations {
       'weeklyActivitySubtitle': 'Places visited and documents downloaded',
       'weeklyPlacesVisited': 'Places visited',
       'weeklyDocsDownloaded': 'Documents downloaded',
+      'topUsersTitle': 'Top contributors',
+      'topUsersSubtitle': 'Ranked by community contributions and engagement',
+      'topUsersScore': '{score} pts',
+      'topUsersContributions': '{docs} docs · {places} places',
       'noCommentsFound': 'No comments found',
       'loadMoreComments': 'Load more comments',
       'download': 'Download',
       'share': 'Share',
-      'communityContent': 'Community content',
+      'communityContent': 'Community',
       'searchGroupHint': 'Search groups...',
       'noGroupsExplore': 'Explore to find new groups',
       'noGroupsFound': 'No groups found',
@@ -1474,6 +1482,11 @@ class AppLocalizations {
   String get weeklyActivitySubtitle => _text('weeklyActivitySubtitle');
   String get weeklyPlacesVisited => _text('weeklyPlacesVisited');
   String get weeklyDocsDownloaded => _text('weeklyDocsDownloaded');
+  String get topUsersTitle => _text('topUsersTitle');
+  String get topUsersSubtitle => _text('topUsersSubtitle');
+  String topUsersScore(int score) => _format('topUsersScore', {'{score}': '$score'});
+  String topUsersContributions({required int docs, required int places}) =>
+      _format('topUsersContributions', {'{docs}': '$docs', '{places}': '$places'});
   String get noCommentsFound => _text('noCommentsFound');
   String get loadMoreComments => _text('loadMoreComments');
   String get download => _text('download');

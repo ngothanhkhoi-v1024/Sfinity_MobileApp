@@ -19,6 +19,7 @@ abstract final class RouteNames {
   static const profile = '/profile';
 
   // Places
+  static const myPlaces = '/places/my';
   static const placeDetail = '/places/:id';
   static const placeEdit = '/places/:id/edit';
   static const placeShare = '/places/share';

@@ -30,3 +30,10 @@ exploreRouter.get(
     res.json(await exploreService.getWeeklyStats(req.user.sub));
   }),
 );
+
+exploreRouter.get(
+  '/top-users',
+  asyncHandler(async (_req, res) => {
+    res.json(await exploreService.getTopUsers());
+  }),
+);
