@@ -8,6 +8,7 @@ import 'core/i18n/app_text.dart';
 import 'core/router/app_router.dart';
 import 'features/assistant/data/services/assistant_api_service.dart';
 import 'features/assistant/presentation/controllers/assistant_controller.dart';
+import 'core/services/assistant_fab_position_manager.dart';
 import 'core/services/assistant_hint_manager.dart';
 import 'core/services/locale_manager.dart';
 import 'core/services/notification_manager.dart';
@@ -58,6 +59,8 @@ class SfinityApp extends StatefulWidget {
   static ThemeManager get themeManager => _SfinityAppState.themeManager;
   static AssistantController get assistantController => _SfinityAppState.assistantController;
   static AssistantHintManager get assistantHintManager => _SfinityAppState.assistantHintManager;
+  static AssistantFabPositionManager get assistantFabPositionManager =>
+      _SfinityAppState.assistantFabPositionManager;
 
   @override
   State<SfinityApp> createState() => _SfinityAppState();
@@ -70,6 +73,7 @@ class _SfinityAppState extends State<SfinityApp> {
   static late final ThemeManager themeManager;
   static late final AssistantController assistantController;
   static late final AssistantHintManager assistantHintManager;
+  static late final AssistantFabPositionManager assistantFabPositionManager;
   late final GoRouter _router = createAppRouter(auth);
 
   @override
@@ -131,6 +135,9 @@ class _SfinityAppState extends State<SfinityApp> {
     assistantController = AssistantController(AssistantApiService(ApiClient.instance));
     assistantHintManager = AssistantHintManager();
     assistantHintManager.init();
+
+    assistantFabPositionManager = AssistantFabPositionManager();
+    assistantFabPositionManager.init();
   }
 
   @override

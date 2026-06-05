@@ -5,10 +5,10 @@ import '../../../splash/presentation/widgets/academic_sealion_mascot.dart';
 class AssistantFab extends StatelessWidget {
   const AssistantFab({
     super.key,
-    required this.onTap,
+    this.onTap,
   });
 
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
