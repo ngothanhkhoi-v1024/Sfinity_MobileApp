@@ -511,6 +511,17 @@ class AppLocalizations {
       'newPasswordRequired': 'Mật khẩu mới',
       'setPasswordSuccess': 'Thiết lập mật khẩu thành công',
       'joinGroup': 'Xin vào',
+      'searchSaved': 'Tìm kiếm trong mục đã lưu...',
+      'noSavedDocuments': 'Chưa lưu tài liệu nào',
+      'noSavedDocumentsDesc': 'Lưu các đề thi, bài giảng hay để ôn tập dễ dàng hơn.',
+      'noSavedPlaces': 'Chưa lưu địa điểm nào',
+      'noSavedPlacesDesc': 'Lưu lại quán cafe, thư viện tự học lý tưởng để xem trên bản đồ.',
+      'noFavoritesDesc': 'Bạn có thể lưu tài liệu học tập hoặc địa điểm từ màn hình Khám phá hoặc Bản đồ.',
+      'exploreNow': 'Khám phá ngay',
+      'unfavoritePlaceMessage': 'Đã bỏ lưu địa điểm "{name}"',
+      'unfavoriteDocMessage': 'Đã bỏ lưu tài liệu "{name}"',
+      'undo': 'HOÀN TÁC',
+      'cannotUnfavorite': 'Không thể bỏ lưu: {error}',
     },
     'en': {
       'appName': 'Sfinity',
@@ -1012,6 +1023,17 @@ class AppLocalizations {
       'newPasswordRequired': 'New password',
       'setPasswordSuccess': 'Password set successfully',
       'joinGroup': 'Join',
+      'searchSaved': 'Search in saved items...',
+      'noSavedDocuments': 'No saved documents',
+      'noSavedDocumentsDesc': 'Save exams, lectures to review easily.',
+      'noSavedPlaces': 'No saved places',
+      'noSavedPlacesDesc': 'Save cafes, self-study libraries to view on map.',
+      'noFavoritesDesc': 'You can save study materials or places from Explore or Map screens.',
+      'exploreNow': 'Explore now',
+      'unfavoritePlaceMessage': 'Unsaved place "{name}"',
+      'unfavoriteDocMessage': 'Unsaved document "{name}"',
+      'undo': 'UNDO',
+      'cannotUnfavorite': 'Cannot unsave: {error}',
     },
   };
 
@@ -1563,6 +1585,17 @@ class AppLocalizations {
   String get newPasswordRequired => _text('newPasswordRequired');
   String get setPasswordSuccess => _text('setPasswordSuccess');
   String get joinGroup => _text('joinGroup');
+  String get searchSaved => _text('searchSaved');
+  String get noSavedDocuments => _text('noSavedDocuments');
+  String get noSavedDocumentsDesc => _text('noSavedDocumentsDesc');
+  String get noSavedPlaces => _text('noSavedPlaces');
+  String get noSavedPlacesDesc => _text('noSavedPlacesDesc');
+  String get noFavoritesDesc => _text('noFavoritesDesc');
+  String get exploreNow => _text('exploreNow');
+  String unfavoritePlaceMessage(String name) => _format('unfavoritePlaceMessage', {'{name}': name});
+  String unfavoriteDocMessage(String name) => _format('unfavoriteDocMessage', {'{name}': name});
+  String get undo => _text('undo');
+  String cannotUnfavorite(String error) => _format('cannotUnfavorite', {'{error}': error});
   // Method for offline profile load
   String offlineProfileLoad(String err) => _format('offlineProfileLoad', {'{name}': err});
 

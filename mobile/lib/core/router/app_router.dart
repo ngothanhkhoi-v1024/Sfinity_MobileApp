@@ -83,7 +83,7 @@ GoRouter createAppRouter(AuthState auth) {
         builder: (_, state) {
           final tabStr = state.uri.queryParameters['tab'];
           final initialTab = tabStr != null ? (int.tryParse(tabStr) ?? 0) : 0;
-          return HomeShellPage(initialTab: initialTab);
+          return HomeShellPage(key: homeShellKey, initialTab: initialTab);
         },
       ),
       GoRoute(path: RouteNames.search, builder: (_, __) => const SearchPage()),
