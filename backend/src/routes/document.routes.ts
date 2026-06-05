@@ -28,6 +28,7 @@ documentRouter.get(
     const page = req.query.page as string | undefined;
     const limit = req.query.limit as string | undefined;
     const publishedOnly = req.query.publishedOnly as string | undefined;
+    const subjectCode = req.query.subjectCode as string | undefined;
 
     res.json(
       await documentService.findAll({
@@ -36,6 +37,7 @@ documentRouter.get(
         categoryId,
         authorId,
         placeId,
+        subjectCode,
 
         page: page ? Number(page) : 1,
         limit: limit ? Number(limit) : 20,

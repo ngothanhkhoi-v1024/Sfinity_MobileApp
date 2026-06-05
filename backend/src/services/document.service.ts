@@ -51,6 +51,16 @@ function canViewDocument(item: any, viewerId?: string, viewerRole?: UserRole): b
   return isOwnerOrAdmin(item, viewerId, viewerRole) || isPubliclyVisible(item);
 }
 
+function fileNameFromUrl(url?: string | null): string {
+  if (!url) return '';
+  try {
+    const path = url.split('?')[0];
+    return decodeURIComponent(path.split('/').pop() ?? '');
+  } catch {
+    return '';
+  }
+}
+
 async function enrichDocument(item: any) {
   const normalized = applyContentState(item);
 
@@ -98,6 +108,7 @@ export const documentService = {
     categoryId?: string;
     authorId?: string;
     placeId?: string;
+    subjectCode?: string;
 
     page?: number;
     limit?: number;
@@ -144,13 +155,23 @@ export const documentService = {
       items = items.filter((item) => itemMatchesPlaceId(item, params.placeId!));
     }
 
+    if (params.subjectCode) {
+      const code = params.subjectCode.toLowerCase();
+      items = items.filter(
+        (item) => item.subjectCode && item.subjectCode.toLowerCase() === code,
+      );
+    }
+
     if (params.search) {
       const term = params.search.toLowerCase();
-      items = items.filter(
-        (item) =>
-          (item.title && item.title.toLowerCase().includes(term)) ||
-          (item.body && item.body.toLowerCase().includes(term)),
-      );
+      items = items.filter((item) => {
+        const titleMatch = item.title && item.title.toLowerCase().includes(term);
+        const bodyMatch = item.body && item.body.toLowerCase().includes(term);
+        const fileMatch = fileNameFromUrl(item.fileUrl).toLowerCase().includes(term);
+        const subjectMatch =
+          item.subjectCode && item.subjectCode.toLowerCase().includes(term);
+        return titleMatch || bodyMatch || fileMatch || subjectMatch;
+      });
     }
 
     items.sort((a, b) => toDate(b.createdAt).getTime() - toDate(a.createdAt).getTime());
