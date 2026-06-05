@@ -19,6 +19,9 @@ import 'features/auth/data/services/social_auth_service.dart';
 import 'features/document/data/repositories/document_repository.dart';
 import 'features/document/data/repositories/document_repository_impl.dart';
 import 'features/document/data/services/document_api_service.dart';
+import 'features/favorites/data/repositories/favorites_repository.dart';
+import 'features/favorites/data/repositories/favorites_repository_impl.dart';
+import 'features/favorites/data/services/favorites_api_service.dart';
 import 'features/friendships/data/repositories/friendship_repository_impl.dart';
 import 'features/groups/data/repositories/group_repository_impl.dart';
 import 'features/friendships/data/services/friendship_api_service.dart';
@@ -42,6 +45,7 @@ class SfinityApp extends StatefulWidget {
   static AuthState get auth => _SfinityAppState.auth;
   static late final DocumentRepository documentRepository;
   static late final PlaceRepository placeRepository;
+  static late final FavoritesRepository favoritesRepository;
   static late final StudyNearMeRepository studyNearMeRepository;
   static late final PlaceEngagementRepository placeEngagementRepository;
   static late final FriendshipController friendshipController;
@@ -77,6 +81,9 @@ class _SfinityAppState extends State<SfinityApp> {
     );
     SfinityApp.placeEngagementRepository = PlaceEngagementRepositoryImpl(
       PlaceEngagementApiService(ApiClient.instance),
+    );
+    SfinityApp.favoritesRepository = FavoritesRepositoryImpl(
+      FavoritesApiService(ApiClient.instance),
     );
 
     // Group feature

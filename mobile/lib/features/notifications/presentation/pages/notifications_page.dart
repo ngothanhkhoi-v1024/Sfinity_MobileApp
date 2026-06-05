@@ -6,6 +6,7 @@ import '../../../../app.dart';
 import '../../../../core/constants/route_names.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/i18n/app_text.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/error_view.dart';
 
 class NotificationsPage extends StatefulWidget {
@@ -101,31 +102,54 @@ class _NotificationsPageState extends State<NotificationsPage> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(deleteAllText),
-        content: Text(confirmText),
-        actionsAlignment: MainAxisAlignment.center,
-        actionsPadding: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
-        actions: [
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                _deleteAllNotifications();
-              },
-              style: FilledButton.styleFrom(
-                backgroundColor: Theme.of(ctx).colorScheme.error,
-              ),
-              child: Text(deleteText),
-            ),
+        backgroundColor: Theme.of(ctx).colorScheme.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        contentPadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+        icon: Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            color: Theme.of(ctx).colorScheme.error.withValues(alpha: 0.1),
+            shape: BoxShape.circle,
           ),
-          const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(cancelText),
-            ),
+          child: Icon(Icons.delete_sweep_rounded, color: Theme.of(ctx).colorScheme.error, size: 28),
+        ),
+        title: Text(deleteAllText, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+        content: Text(confirmText, textAlign: TextAlign.center, style: TextStyle(color: AppColors.muted(ctx), height: 1.4)),
+        actionsPadding: const EdgeInsets.all(24),
+        actions: [
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.chipBg(ctx),
+                    foregroundColor: AppColors.title(ctx),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  child: Text(cancelText, style: const TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _deleteAllNotifications();
+                  },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Theme.of(ctx).colorScheme.error,
+                    foregroundColor: Theme.of(ctx).colorScheme.onError,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    elevation: 0,
+                  ),
+                  child: Text(deleteText, style: const TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -245,28 +269,51 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                   return await showDialog<bool>(
                                     context: context,
                                     builder: (ctx) => AlertDialog(
-                                      title: Text(l10n.deleteNotification),
-                                      content: Text(l10n.deleteNotificationConfirm),
-                                      actionsAlignment: MainAxisAlignment.center,
-                                      actionsPadding: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
-                                      actions: [
-                                        SizedBox(
-                                          width: double.infinity,
-                                          child: FilledButton(
-                                            onPressed: () => Navigator.pop(ctx, true),
-                                            style: FilledButton.styleFrom(
-                                              backgroundColor: Theme.of(context).colorScheme.error,
-                                            ),
-                                            child: Text(l10n.yesDelete),
-                                          ),
+                                      backgroundColor: Theme.of(ctx).colorScheme.surface,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                                      contentPadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                                      icon: Container(
+                                        width: 56,
+                                        height: 56,
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(ctx).colorScheme.error.withValues(alpha: 0.1),
+                                          shape: BoxShape.circle,
                                         ),
-                                        const SizedBox(height: 8),
-                                        SizedBox(
-                                          width: double.infinity,
-                                          child: OutlinedButton(
-                                            onPressed: () => Navigator.pop(ctx, false),
-                                            child: Text(l10n.cancel),
-                                          ),
+                                        child: Icon(Icons.delete_outline_rounded, color: Theme.of(ctx).colorScheme.error, size: 28),
+                                      ),
+                                      title: Text(l10n.deleteNotification, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+                                      content: Text(l10n.deleteNotificationConfirm, textAlign: TextAlign.center, style: TextStyle(color: AppColors.muted(ctx), height: 1.4)),
+                                      actionsPadding: const EdgeInsets.all(24),
+                                      actions: [
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: FilledButton(
+                                                onPressed: () => Navigator.pop(ctx, false),
+                                                style: FilledButton.styleFrom(
+                                                  backgroundColor: AppColors.chipBg(ctx),
+                                                  foregroundColor: AppColors.title(ctx),
+                                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                                ),
+                                                child: Text(l10n.cancel, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: FilledButton(
+                                                onPressed: () => Navigator.pop(ctx, true),
+                                                style: FilledButton.styleFrom(
+                                                  backgroundColor: Theme.of(ctx).colorScheme.error,
+                                                  foregroundColor: Theme.of(ctx).colorScheme.onError,
+                                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                                  elevation: 0,
+                                                ),
+                                                child: Text(l10n.yesDelete, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ],
                                     ),
