@@ -1,4 +1,4 @@
-import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
+import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
 import { Button, Form, Input, Modal, Popconfirm, Space, Table, Typography, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useCallback, useEffect, useState } from 'react';
@@ -80,9 +80,7 @@ export function DocCategoriesPage() {
       width: 160,
       render: (_, record) => (
         <Space>
-          <Button size="small" onClick={() => openEdit(record)}>
-            Sửa
-          </Button>
+          <Button size="small" icon={<EditOutlined />} onClick={() => openEdit(record)} />
           <Popconfirm
             title="Xóa danh mục này?"
             onConfirm={async () => {
