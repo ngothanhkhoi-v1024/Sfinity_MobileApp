@@ -30,28 +30,38 @@ import {
   adminUnhideDocument,
   fetchDocuments,
   type DocumentItem,
+  type DocumentModerationStatus,
 } from '@/api/documents';
 import { useSettings } from '@/contexts/SettingsContext';
 import { PageHeader } from '@/components/common/PageHeader';
 import { PageShell } from '@/components/common/PageShell';
 
-type ContentStatus = 'DRAFT' | 'PENDING' | 'PUBLISHED' | 'REJECTED' | 'HIDDEN';
-
-const STATUS_LABELS: Record<ContentStatus, string> = {
-  DRAFT: 'Nháp',
+const MODERATION_LABELS: Record<DocumentModerationStatus, string> = {
+  NONE: 'Nháp',
   PENDING: 'Chờ duyệt',
-  PUBLISHED: 'Đã xuất bản',
+  APPROVED: 'Đã duyệt',
   REJECTED: 'Từ chối',
   HIDDEN: 'Ẩn',
 };
 
-const STATUS_COLORS: Record<ContentStatus, string> = {
-  DRAFT: 'default',
+const MODERATION_COLORS: Record<DocumentModerationStatus, string> = {
+  NONE: 'default',
   PENDING: 'gold',
-  PUBLISHED: 'green',
+  APPROVED: 'green',
   REJECTED: 'red',
   HIDDEN: 'volcano',
 };
+
+/** Derive a working moderationStatus even when backend still returns legacy status */
+function getModerationStatus(doc: DocumentItem): DocumentModerationStatus {
+  if (doc.moderationStatus) return doc.moderationStatus;
+  const s = (doc.status ?? '').toUpperCase();
+  if (s === 'PENDING') return 'PENDING';
+  if (s === 'REJECTED') return 'REJECTED';
+  if (s === 'HIDDEN') return 'HIDDEN';
+  if (s === 'PUBLISHED') return 'APPROVED';
+  return 'NONE';
+}
 
 export function DocumentsPage() {
   const { settings, saving, toggleAutoApprove } = useSettings();
@@ -183,13 +193,16 @@ export function DocumentsPage() {
     { title: 'Tiêu đề', dataIndex: 'title', ellipsis: true },
     {
       title: 'Trạng thái',
-      dataIndex: 'status',
+      key: 'moderationStatus',
       width: 130,
-      render: (s: string) => (
-        <Tag color={STATUS_COLORS[s as ContentStatus] ?? 'default'}>
-          {STATUS_LABELS[s as ContentStatus] ?? s}
-        </Tag>
-      ),
+      render: (_: unknown, record: DocumentItem) => {
+        const ms = getModerationStatus(record);
+        return (
+          <Tag color={MODERATION_COLORS[ms]}>
+            {MODERATION_LABELS[ms]}
+          </Tag>
+        );
+      },
     },
     { title: 'Môn', dataIndex: 'subjectCode', width: 100, ellipsis: true },
     {
@@ -219,78 +232,67 @@ export function DocumentsPage() {
       title: 'Thao tác',
       key: 'actions',
       width: 360,
-      render: (_, record) => (
-        <Space>
-          <Button size="small" icon={<EyeOutlined />} onClick={() => setViewModal(record)}>
-            Xem
-          </Button>
+      render: (_: unknown, record: DocumentItem) => {
+        const ms = getModerationStatus(record);
+        const isPublic = record.visibility === 'PUBLIC';
+        return (
+          <Space>
+            <Button size="small" icon={<EyeOutlined />} onClick={() => setViewModal(record)}>
+              Xem
+            </Button>
 
-          {record.status === 'PENDING' && (
-            <>
+            {ms === 'PENDING' && (
+              <>
+                <Button
+                  size="small"
+                  type="primary"
+                  icon={<CheckCircleOutlined />}
+                  onClick={() => { setApproveModal(record); setNote(''); }}
+                >
+                  Duyệt
+                </Button>
+                <Button
+                  size="small"
+                  danger
+                  type="default"
+                  icon={<CloseCircleOutlined />}
+                  onClick={() => { setRejectModal(record); setReason(''); }}
+                >
+                  Từ chối
+                </Button>
+              </>
+            )}
+
+            {isPublic && ms === 'APPROVED' && (
               <Button
                 size="small"
-                type="primary"
-                icon={<CheckCircleOutlined />}
-                onClick={() => {
-                  setApproveModal(record);
-                  setNote('');
-                }}
+                icon={<EyeInvisibleOutlined />}
+                onClick={() => { setHideModal(record); setReason(''); }}
               >
-                Duyệt
+                Ẩn
               </Button>
+            )}
+
+            {(ms === 'HIDDEN' || ms === 'NONE' || ms === 'REJECTED') && (
               <Button
                 size="small"
-                danger
                 type="default"
-                icon={<CloseCircleOutlined />}
-                onClick={() => {
-                  setRejectModal(record);
-                  setReason('');
-                }}
+                icon={<RetweetOutlined />}
+                onClick={() => { setUnhideModal(record); setNote(''); }}
               >
-                Từ chối
+                Bỏ ẩn
               </Button>
-            </>
-          )}
+            )}
 
-          {record.status === 'PUBLISHED' && (
             <Button
               size="small"
-              icon={<EyeInvisibleOutlined />}
-              onClick={() => {
-                setHideModal(record);
-                setReason('');
-              }}
-            >
-              Ẩn
-            </Button>
-          )}
-
-          {(record.status === 'HIDDEN' || record.status === 'DRAFT' || record.status === 'REJECTED') && (
-            <Button
-              size="small"
-              type="default"
-              icon={<RetweetOutlined />}
-              onClick={() => {
-                setUnhideModal(record);
-                setNote('');
-              }}
-            >
-              Bỏ ẩn
-            </Button>
-          )}
-
-          <Button
-            size="small"
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => {
-              setDeleteModal(record);
-              setReason('');
-            }}
-          />
-        </Space>
-      ),
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => { setDeleteModal(record); setReason(''); }}
+            />
+          </Space>
+        );
+      },
     },
   ];
 
@@ -334,38 +336,40 @@ export function DocumentsPage() {
         ]}
         width={640}
       >
-        {viewModal && (
-          <Descriptions column={1} bordered size="small">
-            <Descriptions.Item label="Tiêu đề">{viewModal.title}</Descriptions.Item>
-            <Descriptions.Item label="Trạng thái">
-              <Tag color={STATUS_COLORS[viewModal.status as ContentStatus] ?? 'default'}>
-                {STATUS_LABELS[viewModal.status as ContentStatus] ?? viewModal.status}
-              </Tag>
-            </Descriptions.Item>
-            <Descriptions.Item label="Mã môn">{viewModal.subjectCode ?? '-'}</Descriptions.Item>
-            <Descriptions.Item label="Loại file">{viewModal.fileType?.toUpperCase() ?? '-'}</Descriptions.Item>
-            <Descriptions.Item label="Dung lượng">{formatFileSize(viewModal.fileSize)}</Descriptions.Item>
-            <Descriptions.Item label="URL file">
-              {viewModal.fileUrl ? (
-                <a href={viewModal.fileUrl} target="_blank" rel="noopener noreferrer">
-                  {viewModal.fileUrl}
-                </a>
-              ) : (
-                '-'
-              )}
-            </Descriptions.Item>
-            <Descriptions.Item label="Tags">
-              {(viewModal.tags ?? []).map((t) => (
-                <Tag key={t}>{t}</Tag>
-              ))}
-              {(!viewModal.tags || viewModal.tags.length === 0) && '-'}
-            </Descriptions.Item>
-            <Descriptions.Item label="Tác giả">
-              {viewModal.author?.name ?? viewModal.authorId ?? '-'}
-            </Descriptions.Item>
-            <Descriptions.Item label="Mô tả">{viewModal.body || '-'}</Descriptions.Item>
-          </Descriptions>
-        )}
+        {viewModal && (() => {
+          const ms = getModerationStatus(viewModal);
+          return (
+            <Descriptions column={1} bordered size="small">
+              <Descriptions.Item label="Tiêu đề">{viewModal.title}</Descriptions.Item>
+              <Descriptions.Item label="Mã môn">{viewModal.subjectCode ?? '-'}</Descriptions.Item>
+              <Descriptions.Item label="Loại file">{viewModal.fileType?.toUpperCase() ?? '-'}</Descriptions.Item>
+              <Descriptions.Item label="Dung lượng">{formatFileSize(viewModal.fileSize)}</Descriptions.Item>
+              <Descriptions.Item label="URL file">
+                {viewModal.fileUrl ? (
+                  <a href={viewModal.fileUrl} target="_blank" rel="noopener noreferrer">
+                    {viewModal.fileUrl}
+                  </a>
+                ) : (
+                  '-'
+                )}
+              </Descriptions.Item>
+              <Descriptions.Item label="Tác giả">
+                {viewModal.author?.name ?? viewModal.authorId ?? '-'}
+              </Descriptions.Item>
+              <Descriptions.Item label="Mô tả">{viewModal.body || '-'}</Descriptions.Item>
+              <Descriptions.Item label="Hiển thị">
+                <Tag color={viewModal.visibility === 'PUBLIC' ? 'blue' : 'default'}>
+                  {viewModal.visibility === 'PUBLIC' ? 'Công khai' : 'Riêng tư'}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Trạng thái kiểm duyệt">
+                <Tag color={MODERATION_COLORS[ms]}>
+                  {MODERATION_LABELS[ms]}
+                </Tag>
+              </Descriptions.Item>
+            </Descriptions>
+          );
+        })()}
       </Modal>
 
       {/* Approve Modal */}

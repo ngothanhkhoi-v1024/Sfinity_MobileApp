@@ -20,15 +20,10 @@ class DocumentFormController extends ChangeNotifier {
   double uploadProgress = 0.0;
   bool uploading = false;
   File? localFileToUpload;
-  String selectedStatus = 'PENDING';
+  String selectedVisibility = 'PUBLIC';
 
-  void selectStatus(String? val) {
-    final isAdmin = SfinityApp.auth.user?['role']?.toString() == 'admin';
-    if (!isAdmin) {
-      selectedStatus = (val == 'DRAFT') ? 'DRAFT' : 'PENDING';
-    } else {
-      selectedStatus = val ?? 'PUBLISHED';
-    }
+  void selectVisibility(String? val) {
+    selectedVisibility = val ?? 'PUBLIC';
     notifyListeners();
   }
 
@@ -136,7 +131,7 @@ class DocumentFormController extends ChangeNotifier {
     required String title,
     required String body,
     required String subjectCode,
-    required String tagsText,
+
     required String externalUrl,
     String? placeId,
   }) async {
@@ -175,16 +170,12 @@ class DocumentFormController extends ChangeNotifier {
         }
       }
 
-      final tags = tagsText
-          .split(',')
-          .map((e) => e.trim())
-          .where((e) => e.isNotEmpty)
-          .toList();
+
 
       final payload = {
         'title': title,
         'body': body,
-        'status': selectedStatus,
+        'visibility': selectedVisibility,
         'categoryId': selectedCategoryId,
         if (isDocument && placeId != null && placeId.isNotEmpty) 'placeId': placeId,
         if (isDocument) ...{
@@ -192,7 +183,7 @@ class DocumentFormController extends ChangeNotifier {
           'fileType': 'pdf',
           'fileSize': uploadedFileSize ?? 0,
           'subjectCode': subjectCode,
-          'tags': tags,
+
         }
       };
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/i18n/app_text.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../utils/document_state.dart';
 
 class DocumentCard extends StatelessWidget {
   const DocumentCard({
@@ -33,11 +34,16 @@ class DocumentCard extends StatelessWidget {
       (item['category'] as Map?)?['name']?.toString() ?? 'Tai lieu',
     );
 
-    final status = item['status']?.toString();
+    final visibility = documentVisibilityOf(item);
+    final moderationStatus = documentModerationStatusOf(item);
     final description = body.isEmpty ? '' : body.split('\n').first.trim();
 
     final (fileIcon, accentColor) = _resolveFileIcon(fileType, theme);
-    final statusBadge = _buildStatusBadge(context, status);
+    final statusBadge = _buildStatusBadge(
+      context,
+      visibility,
+      moderationStatus,
+    );
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -170,41 +176,52 @@ class DocumentCard extends StatelessWidget {
     );
   }
 
-  _Badge? _buildStatusBadge(BuildContext context, String? status) {
+  _Badge? _buildStatusBadge(
+    BuildContext context,
+    String visibility,
+    String moderationStatus,
+  ) {
     final l10n = context.l10n;
-    switch (status) {
-      case 'DRAFT':
-        return _Badge(
-          text: l10n.statusDraft,
-          color: Colors.orange.shade800,
-          backgroundColor: Colors.orange.shade100,
-        );
-      case 'PENDING':
+    if (visibility == documentVisibilityPrivate) {
+      return _Badge(
+        text: l10n.onlyMe,
+        color: Colors.orange.shade800,
+        backgroundColor: Colors.orange.shade100,
+      );
+    }
+
+    switch (moderationStatus) {
+      case documentModerationPending:
         return _Badge(
           text: l10n.statusPending,
           color: Colors.blue.shade800,
           backgroundColor: Colors.blue.shade100,
         );
-      case 'REJECTED':
+      case documentModerationRejected:
         return _Badge(
           text: l10n.statusRejected,
           color: Colors.red.shade800,
           backgroundColor: Colors.red.shade100,
         );
-      case 'HIDDEN':
+      case documentModerationHidden:
         return _Badge(
           text: l10n.statusHidden,
           color: Colors.grey.shade800,
           backgroundColor: Colors.grey.shade200,
         );
-      case 'PUBLISHED':
+      case documentModerationApproved:
         return _Badge(
           text: l10n.statusPublished,
           color: Colors.green.shade800,
           backgroundColor: Colors.green.shade100,
         );
+      case documentModerationNone:
       default:
-        return null;
+        return _Badge(
+          text: l10n.onlyMe,
+          color: Colors.orange.shade800,
+          backgroundColor: Colors.orange.shade100,
+        );
     }
   }
 

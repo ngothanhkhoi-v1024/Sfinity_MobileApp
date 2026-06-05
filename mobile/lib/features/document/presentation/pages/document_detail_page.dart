@@ -167,36 +167,155 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
   }
 
   Future<void> _confirmDelete(BuildContext context, String docId) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showModalBottomSheet<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        icon: const Icon(Icons.delete_forever_rounded, color: Colors.red, size: 36),
-        title: const Text('Xóa tài liệu', style: TextStyle(fontWeight: FontWeight.bold)),
-        content: const Text(
-          'Bạn có chắc chắn muốn xóa tài liệu này không?\nHành động này không thể hoàn tác.',
-          textAlign: TextAlign.center,
-        ),
-        actionsAlignment: MainAxisAlignment.spaceEvenly,
-        actions: [
-          OutlinedButton(
-            onPressed: () => Navigator.pop(context, false),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: const Text('Hủy', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Theme.of(ctx).scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.red,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: const Text('Xóa', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          padding: EdgeInsets.only(
+            left: 24,
+            right: 24,
+            top: 8,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 32,
           ),
-        ],
-      ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle bar
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 24),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              // Circular icon
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.red.shade100, width: 2),
+                ),
+                child: Icon(
+                  Icons.delete_forever_rounded,
+                  color: Colors.red.shade600,
+                  size: 36,
+                ),
+              ),
+              const SizedBox(height: 20),
+              // Title
+              const Text(
+                'Xóa tài liệu?',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: -0.3,
+                ),
+              ),
+              const SizedBox(height: 10),
+              // Description
+              Text(
+                'Tài liệu này sẽ bị xóa vĩnh viễn và\nkhông thể khôi phục lại.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade600,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Warning chip
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.orange.shade200),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.warning_amber_rounded, size: 16, color: Colors.orange.shade700),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Hành động này không thể hoàn tác',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.orange.shade800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 28),
+              // Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        side: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      child: Text(
+                        'Hủy bỏ',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey.shade700,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.red.shade600,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.delete_rounded, size: 18, color: Colors.white),
+                          SizedBox(width: 6),
+                          Text(
+                            'Xóa tài liệu',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
     );
 
     if (confirmed == true && context.mounted) {
@@ -207,14 +326,38 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
         await SfinityApp.documentRepository.deleteDocument(docId);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Xóa tài liệu thành công')),
+            SnackBar(
+              content: const Row(
+                children: [
+                  Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+                  SizedBox(width: 8),
+                  Text('Đã xóa tài liệu thành công'),
+                ],
+              ),
+              backgroundColor: Colors.green.shade600,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              margin: const EdgeInsets.all(12),
+            ),
           );
           Navigator.pop(context);
         }
       } catch (e) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Xóa tài liệu thất bại: $e')),
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.error_rounded, color: Colors.white, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text('Xóa thất bại: $e')),
+                ],
+              ),
+              backgroundColor: Colors.red.shade600,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              margin: const EdgeInsets.all(12),
+            ),
           );
         }
       }
@@ -390,7 +533,7 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
         final fileSize = fileSizeRaw is int ? _formatBytes(fileSizeRaw) : 'Chưa rõ';
         final downloads = doc['downloadsCount'] ?? 0;
         final subjectCode = doc['subjectCode']?.toString() ?? l10n.studyDocument;
-        final tags = doc['tags'] as List? ?? [];
+
         final catName = (doc['category'] as Map?)?['name']?.toString();
         final category = catName != null ? l10n.translateCategory(catName) : l10n.documents;
         final fileUrl = doc['fileUrl']?.toString() ?? '';
@@ -578,10 +721,6 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                             const SizedBox(height: 20),
                             _buildDescription(body),
                             const SizedBox(height: 20),
-                            if (tags.isNotEmpty) ...[
-                              _buildTags(tags, primaryColor),
-                              const SizedBox(height: 20),
-                            ],
                             const Divider(),
                             const SizedBox(height: 20),
                             _buildReviewsArea(
@@ -619,10 +758,6 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                       const SizedBox(height: 24),
                       _buildDescription(body),
                       const SizedBox(height: 24),
-                      if (tags.isNotEmpty) ...[
-                        _buildTags(tags, primaryColor),
-                        const SizedBox(height: 32),
-                      ],
                       const Divider(),
                       const SizedBox(height: 24),
                       _buildReviewsArea(
