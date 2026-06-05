@@ -38,3 +38,12 @@ reportsRouter.patch(
     res.json(await reportsService.resolve(req.params.id, dto));
   }),
 );
+
+reportsRouter.patch(
+  '/:id',
+  ...adminOnly,
+  asyncHandler(async (req, res) => {
+    const { description } = req.body;
+    res.json(await reportsService.updateDescription(req.params.id, description));
+  }),
+);

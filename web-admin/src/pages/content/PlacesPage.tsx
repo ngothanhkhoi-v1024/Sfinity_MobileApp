@@ -5,6 +5,7 @@ import {
   EyeInvisibleOutlined,
   EyeOutlined,
   RetweetOutlined,
+  SearchOutlined,
 } from '@ant-design/icons';
 import {
   Button,
@@ -66,6 +67,21 @@ export function PlacesPage() {
   const [reason, setReason] = useState('');
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Filter list in memory based on search query
+  const filteredData = data.filter((item) => {
+    const term = searchQuery.toLowerCase().trim();
+    if (!term) return true;
+    return (
+      item.title?.toLowerCase().includes(term) ||
+      item.address?.toLowerCase().includes(term) ||
+      (geocoded[item.id] ?? '').toLowerCase().includes(term) ||
+      item.author?.name?.toLowerCase().includes(term) ||
+      item.body?.toLowerCase().includes(term) ||
+      item.id?.toLowerCase().includes(term)
+    );
+  });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -193,16 +209,6 @@ export function PlacesPage() {
   const columns: ColumnsType<PlaceItem> = [
     { title: 'Tên địa điểm', dataIndex: 'title', width: 200, ellipsis: true },
     {
-      title: 'Trạng thái',
-      dataIndex: 'status',
-      width: 130,
-      render: (s: string) => (
-        <Tag color={STATUS_COLORS[s as ContentStatus] ?? 'default'}>
-          {STATUS_LABELS[s as ContentStatus] ?? s}
-        </Tag>
-      ),
-    },
-    {
       title: 'Tên đường',
       dataIndex: 'address',
       width: 220,
@@ -214,6 +220,16 @@ export function PlacesPage() {
       },
     },
     { title: 'Tác giả', dataIndex: ['author', 'name'], width: 140, ellipsis: true },
+    {
+      title: 'Trạng thái',
+      dataIndex: 'status',
+      width: 130,
+      render: (s: string) => (
+        <Tag color={STATUS_COLORS[s as ContentStatus] ?? 'default'}>
+          {STATUS_LABELS[s as ContentStatus] ?? s}
+        </Tag>
+      ),
+    },
     {
       title: 'Thao tác',
       key: 'actions',
@@ -256,6 +272,7 @@ export function PlacesPage() {
             <Button
               size="small"
               icon={<EyeInvisibleOutlined />}
+              style={{ width: 80, justifyContent: 'flex-start' }}
               onClick={() => {
                 setHideModal(record);
                 setReason('');
@@ -270,6 +287,7 @@ export function PlacesPage() {
               size="small"
               type="default"
               icon={<RetweetOutlined />}
+              style={{ width: 80, justifyContent: 'flex-start' }}
               onClick={() => {
                 setUnhideModal(record);
                 setNote('');
@@ -287,7 +305,9 @@ export function PlacesPage() {
               setDeleteModal(record);
               setReason('');
             }}
-          />
+          >
+            Xóa
+          </Button>
         </Space>
       ),
     },
@@ -297,27 +317,38 @@ export function PlacesPage() {
     <PageShell>
       <PageHeader
         title="Quản lý địa điểm"
-        description="Xem, duyệt, ẩn hoặc xóa địa điểm. Địa điểm chờ duyệt cần admin duyệt trước khi xuất bản."
         extra={
-          <Space>
-            <span style={{ fontSize: 13, color: '#64748b' }}>Duyệt tự động</span>
-            <Switch
-              checked={settings?.autoApprovePlaces ?? false}
-              onChange={(checked) => toggleAutoApprove('autoApprovePlaces', checked)}
-              loading={saving}
-              checkedChildren="Bật"
-              unCheckedChildren="Tắt"
+          <Space size="middle">
+            <Space>
+              <span style={{ fontSize: 13, color: '#64748b' }}>Duyệt tự động</span>
+              <Switch
+                checked={settings?.autoApprovePlaces ?? false}
+                onChange={(checked) => toggleAutoApprove('autoApprovePlaces', checked)}
+                loading={saving}
+                checkedChildren="Bật"
+                unCheckedChildren="Tắt"
+              />
+            </Space>
+            <Input
+              placeholder="Tìm kiếm tên địa điểm, địa chỉ, tác giả..."
+              prefix={<SearchOutlined />}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ width: 280 }}
+              allowClear
             />
           </Space>
         }
       />
+
+      <div style={{ marginBottom: 16 }} />
 
       <Table
         className="admin-table"
         rowKey="id"
         loading={loading}
         columns={columns}
-        dataSource={data}
+        dataSource={filteredData}
         pagination={{ pageSize: 10 }}
         scroll={{ x: 900 }}
       />

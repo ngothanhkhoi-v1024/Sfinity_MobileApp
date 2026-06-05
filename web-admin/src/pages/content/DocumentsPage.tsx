@@ -6,6 +6,7 @@ import {
   EyeOutlined,
   EyeInvisibleOutlined,
   RetweetOutlined,
+  SearchOutlined,
 } from '@ant-design/icons';
 import {
   Button,
@@ -76,6 +77,20 @@ export function DocumentsPage() {
   const [reason, setReason] = useState('');
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Filter list in memory based on search query
+  const filteredData = data.filter((item) => {
+    const term = searchQuery.toLowerCase().trim();
+    if (!term) return true;
+    return (
+      item.title?.toLowerCase().includes(term) ||
+      item.subjectCode?.toLowerCase().includes(term) ||
+      item.author?.name?.toLowerCase().includes(term) ||
+      item.body?.toLowerCase().includes(term) ||
+      item.id?.toLowerCase().includes(term)
+    );
+  });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -191,19 +206,6 @@ export function DocumentsPage() {
 
   const columns: ColumnsType<DocumentItem> = [
     { title: 'Tiêu đề', dataIndex: 'title', ellipsis: true },
-    {
-      title: 'Trạng thái',
-      key: 'moderationStatus',
-      width: 130,
-      render: (_: unknown, record: DocumentItem) => {
-        const ms = getModerationStatus(record);
-        return (
-          <Tag color={MODERATION_COLORS[ms]}>
-            {MODERATION_LABELS[ms]}
-          </Tag>
-        );
-      },
-    },
     { title: 'Môn', dataIndex: 'subjectCode', width: 100, ellipsis: true },
     {
       title: 'Loại file',
@@ -228,6 +230,19 @@ export function DocumentsPage() {
       ),
     },
     { title: 'Tác giả', dataIndex: ['author', 'name'], width: 140, ellipsis: true },
+    {
+      title: 'Trạng thái',
+      key: 'moderationStatus',
+      width: 130,
+      render: (_: unknown, record: DocumentItem) => {
+        const ms = getModerationStatus(record);
+        return (
+          <Tag color={MODERATION_COLORS[ms]}>
+            {MODERATION_LABELS[ms]}
+          </Tag>
+        );
+      },
+    },
     {
       title: 'Thao tác',
       key: 'actions',
@@ -267,6 +282,7 @@ export function DocumentsPage() {
               <Button
                 size="small"
                 icon={<EyeInvisibleOutlined />}
+                style={{ width: 80, justifyContent: 'flex-start' }}
                 onClick={() => { setHideModal(record); setReason(''); }}
               >
                 Ẩn
@@ -278,6 +294,7 @@ export function DocumentsPage() {
                 size="small"
                 type="default"
                 icon={<RetweetOutlined />}
+                style={{ width: 80, justifyContent: 'flex-start' }}
                 onClick={() => { setUnhideModal(record); setNote(''); }}
               >
                 Bỏ ẩn
@@ -289,7 +306,9 @@ export function DocumentsPage() {
               danger
               icon={<DeleteOutlined />}
               onClick={() => { setDeleteModal(record); setReason(''); }}
-            />
+            >
+              Xóa
+            </Button>
           </Space>
         );
       },
@@ -300,27 +319,38 @@ export function DocumentsPage() {
     <PageShell>
       <PageHeader
         title="Quản lý tài liệu"
-        description="Xem, duyệt, ẩn hoặc xóa tài liệu. Tài liệu chờ duyệt cần admin duyệt trước khi xuất bản."
         extra={
-          <Space>
-            <span style={{ fontSize: 13, color: '#64748b' }}>Duyệt tự động</span>
-            <Switch
-              checked={settings?.autoApproveDocuments ?? false}
-              onChange={(checked) => toggleAutoApprove('autoApproveDocuments', checked)}
-              loading={saving}
-              checkedChildren="Bật"
-              unCheckedChildren="Tắt"
+          <Space size="middle">
+            <Space>
+              <span style={{ fontSize: 13, color: '#64748b' }}>Duyệt tự động</span>
+              <Switch
+                checked={settings?.autoApproveDocuments ?? false}
+                onChange={(checked) => toggleAutoApprove('autoApproveDocuments', checked)}
+                loading={saving}
+                checkedChildren="Bật"
+                unCheckedChildren="Tắt"
+              />
+            </Space>
+            <Input
+              placeholder="Tìm kiếm tiêu đề, mã môn, tác giả..."
+              prefix={<SearchOutlined />}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ width: 280 }}
+              allowClear
             />
           </Space>
         }
       />
+
+      <div style={{ marginBottom: 16 }} />
 
       <Table
         className="admin-table"
         rowKey="id"
         loading={loading}
         columns={columns}
-        dataSource={data}
+        dataSource={filteredData}
         pagination={{ pageSize: 10 }}
       />
 

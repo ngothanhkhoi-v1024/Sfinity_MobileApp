@@ -2,6 +2,7 @@ import { getDb } from '../lib/firebase';
 import { HttpError } from '../lib/http-error';
 import { ReportStatus } from '../types/enums';
 import type { CreateReportDto, ResolveReportDto } from '../dto/report.dto';
+import { documentService } from './document.service';
 
 const toDate = (val: any): Date => {
   if (!val) return new Date();
@@ -33,6 +34,28 @@ export const reportsService = {
             user = { id: userDoc.id, name: u.name, email: u.email };
           }
         }
+
+        let targetInfo = null;
+        if (report.targetType === 'document' && report.targetId) {
+          const doc = await getDb().collection('documents').doc(report.targetId).get();
+          if (doc.exists) {
+            const data = doc.data() as any;
+            targetInfo = { title: data.title, authorId: data.authorId };
+          }
+        } else if (report.targetType === 'place' && report.targetId) {
+          const place = await getDb().collection('places').doc(report.targetId).get();
+          if (place.exists) {
+            const data = place.data() as any;
+            targetInfo = { title: data.title, authorId: data.authorId };
+          }
+        } else if (report.targetType === 'user' && report.targetId) {
+          const usr = await getDb().collection('users').doc(report.targetId).get();
+          if (usr.exists) {
+            const data = usr.data() as any;
+            targetInfo = { title: data.name, email: data.email };
+          }
+        }
+
         return {
           id: report.id,
           userId: report.userId,
@@ -45,6 +68,7 @@ export const reportsService = {
           createdAt: toDate(report.createdAt),
           updatedAt: toDate(report.updatedAt),
           user,
+          targetInfo,
         };
       }),
     );
@@ -72,7 +96,7 @@ export const reportsService = {
   },
 
   async resolve(id: string, dto: ResolveReportDto) {
-    await reportsService.findOne(id); // Throws if not found
+    const report = await reportsService.findOne(id); // Throws if not found
     const reportRef = getDb().collection('reports').doc(id);
     
     await reportRef.update({
@@ -80,6 +104,18 @@ export const reportsService = {
       resolution: dto.resolution ?? null,
       updatedAt: new Date(),
     });
+
+    // Nếu phê duyệt báo cáo vi phạm (RESOLVED), tự động ẩn tài liệu bị báo cáo
+    if (dto.status === ReportStatus.RESOLVED && report.targetId) {
+      const reason = dto.resolution || 'Báo cáo vi phạm được duyệt bởi Admin';
+      if (report.targetType === 'document') {
+        try {
+          await documentService.adminHide(report.targetId, reason);
+        } catch (err) {
+          console.error(`Không thể tự động ẩn tài liệu ${report.targetId}:`, err);
+        }
+      }
+    }
 
     return reportsService.findOne(id);
   },
@@ -100,6 +136,27 @@ export const reportsService = {
       }
     }
 
+    let targetInfo = null;
+    if (report.targetType === 'document' && report.targetId) {
+      const doc = await getDb().collection('documents').doc(report.targetId).get();
+      if (doc.exists) {
+        const data = doc.data() as any;
+        targetInfo = { title: data.title, authorId: data.authorId };
+      }
+    } else if (report.targetType === 'place' && report.targetId) {
+      const place = await getDb().collection('places').doc(report.targetId).get();
+      if (place.exists) {
+        const data = place.data() as any;
+        targetInfo = { title: data.title, authorId: data.authorId };
+      }
+    } else if (report.targetType === 'user' && report.targetId) {
+      const usr = await getDb().collection('users').doc(report.targetId).get();
+      if (usr.exists) {
+        const data = usr.data() as any;
+        targetInfo = { title: data.name, email: data.email };
+      }
+    }
+
     return {
       id: report.id,
       userId: report.userId,
@@ -112,6 +169,19 @@ export const reportsService = {
       createdAt: toDate(report.createdAt),
       updatedAt: toDate(report.updatedAt),
       user,
+      targetInfo,
     };
+  },
+
+  async updateDescription(id: string, description: string) {
+    await reportsService.findOne(id); // Throws if not found
+    const reportRef = getDb().collection('reports').doc(id);
+    
+    await reportRef.update({
+      description: description ?? null,
+      updatedAt: new Date(),
+    });
+
+    return reportsService.findOne(id);
   },
 };

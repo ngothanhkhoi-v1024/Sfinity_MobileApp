@@ -153,7 +153,18 @@ GoRouter createAppRouter(AuthState auth) {
         path: RouteNames.feedback,
         builder: (_, __) => const FeedbackPage(),
       ),
-      GoRoute(path: RouteNames.report, builder: (_, __) => const ReportPage()),
+      GoRoute(
+        path: RouteNames.report,
+        builder: (_, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final targetType = extra?['targetType'] ?? state.uri.queryParameters['targetType'];
+          final targetId = extra?['targetId'] ?? state.uri.queryParameters['targetId'];
+          return ReportPage(
+            targetType: targetType?.toString(),
+            targetId: targetId?.toString(),
+          );
+        },
+      ),
       GoRoute(
         path: RouteNames.notifications,
         builder: (_, __) => const NotificationsPage(),
