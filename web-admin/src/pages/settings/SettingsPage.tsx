@@ -4,7 +4,7 @@ import {
   MoonOutlined,
   SunOutlined,
 } from '@ant-design/icons';
-import { Card, Col, Row, Switch, Typography } from 'antd';
+import { Card, Col, Row, Typography } from 'antd';
 
 import { PageHeader } from '@/components/common/PageHeader';
 import { PageShell } from '@/components/common/PageShell';
@@ -83,22 +83,6 @@ export function SettingsPage() {
                 );
               })}
             </Row>
-
-            <div style={{
-              marginTop: 16, padding: '12px 16px',
-              background: isDark ? '#0f172a' : '#f8fafc', borderRadius: 10,
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            }}>
-              <Text style={{ fontSize: 13, color: isDark ? '#94a3b8' : '#64748b' }}>
-                {theme === 'dark' ? '🌙 Đang dùng chế độ tối' : '☀️ Đang dùng chế độ sáng'}
-              </Text>
-              <Switch
-                checked={theme === 'dark'}
-                onChange={(checked) => setTheme(checked ? 'dark' : 'light')}
-                checkedChildren={<MoonOutlined />}
-                unCheckedChildren={<SunOutlined />}
-              />
-            </div>
           </Card>
         </Col>
 
@@ -124,8 +108,8 @@ export function SettingsPage() {
 
             <Row gutter={[12, 12]}>
               {([
-                { value: 'vi', label: 'Tiếng Việt', flag: '🇻🇳', desc: 'Vietnamese' },
-                { value: 'en', label: 'English', flag: '🇬🇧', desc: 'Tiếng Anh' },
+                { value: 'vi', label: 'Tiếng Việt', flag: 'VI', desc: 'Vietnamese' },
+                { value: 'en', label: 'English', flag: 'EN', desc: 'Tiếng Anh' },
               ] as const).map((opt) => {
                 const selected = language === opt.value;
                 const cardBg = isDark ? (selected ? '#042f33' : '#0f172a') : (selected ? '#ecfeff' : '#fff');
@@ -150,7 +134,7 @@ export function SettingsPage() {
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <span style={{ fontSize: 22 }}>{opt.flag}</span>
+                        <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: 0 }}>{opt.flag}</span>
                         <div>
                           <div style={{ fontWeight: 600, fontSize: 13, color: labelColor }}>{opt.label}</div>
                           <div style={{ fontSize: 11, color: isDark ? '#94a3b8' : '#94a3b8' }}>{opt.desc}</div>
@@ -164,18 +148,6 @@ export function SettingsPage() {
                 );
               })}
             </Row>
-
-            <div style={{
-              marginTop: 16, padding: '12px 16px',
-              background: isDark ? '#042f33' : '#f0fdff', borderRadius: 10,
-              border: `1px solid ${isDark ? '#064e55' : '#a5f3fc'}`,
-            }}>
-              <Text style={{ fontSize: 13, color: isDark ? '#06b6d4' : '#0891b2' }}>
-                {language === 'vi'
-                  ? '🇻🇳 Giao diện đang hiển thị bằng Tiếng Việt'
-                  : '🇬🇧 Interface is displayed in English'}
-              </Text>
-            </div>
           </Card>
         </Col>
       </Row>

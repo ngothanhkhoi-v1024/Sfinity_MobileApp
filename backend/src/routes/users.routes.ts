@@ -1,9 +1,10 @@
-import { UserRole } from '../types/enums';
+import { UserRole, UserStatus } from '../types/enums';
 import { Router } from 'express';
 
 import { CreateAdminDto } from '../dto/create-admin.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { asyncHandler } from '../lib/async-handler';
+import { HttpError } from '../lib/http-error';
 import { validateBody } from '../lib/validate';
 import { jwtAuthMiddleware } from '../middleware/jwt.middleware';
 import { rolesMiddleware } from '../middleware/roles.middleware';
@@ -46,6 +47,15 @@ usersRouter.patch(
   ...adminOnly,
   asyncHandler(async (req, res) => {
     const dto = await validateBody(UpdateUserDto, req.body);
+
+    if (req.user?.sub === req.params.id && dto.status === UserStatus.BANNED) {
+      throw new HttpError(
+        400,
+        'Không thể tự chuyển tài khoản đang đăng nhập sang không hoạt động',
+        'Bad Request',
+      );
+    }
+
     res.json(await usersService.update(req.params.id, dto));
   }),
 );
@@ -54,6 +64,14 @@ usersRouter.delete(
   '/:id',
   ...adminOnly,
   asyncHandler(async (req, res) => {
+    if (req.user?.sub === req.params.id) {
+      throw new HttpError(
+        400,
+        'Không thể xóa tài khoản đang đăng nhập',
+        'Bad Request',
+      );
+    }
+
     res.json(await usersService.remove(req.params.id));
   }),
 );
