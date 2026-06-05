@@ -5,6 +5,7 @@ import '../../../../app.dart';
 import '../../../../core/constants/route_names.dart';
 import '../../../../core/i18n/app_text.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../shared/widgets/app_bar_add_button.dart';
 import '../../../friendships/presentation/controllers/friendship_controller.dart';
 import '../../../friendships/presentation/widgets/friends_list_tab.dart';
 import '../../../groups/presentation/controllers/group_controller.dart';
@@ -214,14 +215,9 @@ class _CommunityPageState extends State<CommunityPage>
   }
 
   Widget _buildCreateGroupButton(BuildContext context, ColorScheme cs) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 12),
-      child: IconButton(
-        tooltip: context.l10n.createGroup,
-        onPressed: () => context.push(RouteNames.groupCreate),
-        icon: Icon(Icons.add_rounded, color: AppColors.primaryOf(context)),
-        visualDensity: VisualDensity.compact,
-      ),
+    return AppBarAddButton(
+      tooltip: context.l10n.createGroup,
+      onPressed: () => context.push(RouteNames.groupCreate),
     );
   }
 
