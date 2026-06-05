@@ -29,6 +29,7 @@ import {
   fetchPlaces,
   type PlaceItem,
 } from '@/api/places';
+import { reverseGeocode } from '@/utils/geocoding';
 import { useSettings } from '@/contexts/SettingsContext';
 import { PageHeader } from '@/components/common/PageHeader';
 import { PageShell } from '@/components/common/PageShell';
@@ -55,6 +56,7 @@ export function PlacesPage() {
   const { settings, saving, toggleAutoApprove } = useSettings();
   const [data, setData] = useState<PlaceItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [geocoded, setGeocoded] = useState<Record<string, string>>({});
   const [viewModal, setViewModal] = useState<PlaceItem | null>(null);
   const [hideModal, setHideModal] = useState<PlaceItem | null>(null);
   const [deleteModal, setDeleteModal] = useState<PlaceItem | null>(null);
@@ -67,9 +69,27 @@ export function PlacesPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setGeocoded({});
     try {
       const res = await fetchPlaces();
       setData(res.items);
+
+      const toGeocode = res.items.filter(
+        (p) => (!p.address || !p.address.trim()) && p.latitude != null && p.longitude != null,
+      );
+
+      const results = await Promise.all(
+        toGeocode.map(async (p) => {
+          const addr = await reverseGeocode(p.latitude!, p.longitude!);
+          return addr ? { id: p.id, address: addr } : null;
+        }),
+      );
+
+      const map: Record<string, string> = {};
+      for (const r of results) {
+        if (r) map[r.id] = r.address;
+      }
+      setGeocoded(map);
     } catch {
       message.error('Không tải được địa điểm');
     } finally {
@@ -182,15 +202,14 @@ export function PlacesPage() {
         </Tag>
       ),
     },
-    { title: 'Địa chỉ', dataIndex: 'address', ellipsis: true, width: 200 },
     {
-      title: 'Tọa độ',
-      dataIndex: 'latitude',
-      width: 160,
-      render: (_: number | null, record: PlaceItem) => {
-        if (record.latitude && record.longitude) {
-          return `${record.latitude.toFixed(5)}, ${record.longitude.toFixed(5)}`;
-        }
+      title: 'Tên đường',
+      dataIndex: 'address',
+      width: 220,
+      render: (addr: string | null, record: PlaceItem) => {
+        if (addr && addr.trim()) return addr;
+        const geocodedAddr = geocoded[record.id];
+        if (geocodedAddr) return geocodedAddr;
         return '-';
       },
     },
