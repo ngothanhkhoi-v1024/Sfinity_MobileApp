@@ -16,6 +16,7 @@ import '../../../study_near_me/presentation/controllers/study_near_me_controller
 import '../../../study_near_me/presentation/widgets/study_near_me_results_sheet.dart';
 import '../controllers/places_map_controller.dart';
 import '../places_map_focus.dart';
+import '../widgets/animated_place_map_pin.dart';
 import '../widgets/place_list_tile.dart';
 import '../widgets/place_map_pin.dart';
 import '../widgets/place_tag_chips.dart';
@@ -36,6 +37,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
   late final PlacesMapController _ctrl;
   late final StudyNearMeController _studyNearMeCtrl;
   Timer? _searchDebounce;
+  Timer? _filterDebounce;
   bool _mapReady = false;
   bool _placeSheetOpen = false;
   Set<String> _favoritePlaceIds = {};
@@ -50,6 +52,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
     _studyNearMeCtrl.addListener(_onControllerUpdate);
     PlacesMapFocus.pending.addListener(_onPendingMapFocus);
     PlacesMapFocus.highlightedPlaceId.addListener(_onControllerUpdate);
+    PlacesMapFocus.pulseHighlight.addListener(_onControllerUpdate);
     _ctrl.init();
     _loadFavoritePlaces();
   }
@@ -103,36 +106,55 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
   }
 
   void _applyMapFocus(PlacesMapFocusRequest req) {
-    PlacesMapFocus.highlight(req.placeId);
+    PlacesMapFocus.highlight(
+      req.placeId,
+      focusSource: req.source,
+      pulse: req.pulse,
+    );
 
-    PlaceModel? matched;
-    for (final place in [..._ctrl.publicPlaces, ..._ctrl.myPlaces]) {
-      if (place.id == req.placeId) {
-        matched = place;
-        break;
-      }
-    }
+    final matched = req.place ?? _findPlaceById(req.placeId);
 
     if (matched != null && matched.point != null) {
-      _focusPlaceOnMap(matched);
+      _focusPlaceOnMap(
+        matched,
+        openSheet: req.openSheet,
+        zoom: req.zoom,
+      );
       return;
     }
 
+    _ctrl.setMapFocusPlace(null);
     final point = LatLng(req.lat, req.lng);
     _ctrl.setListView(false);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _safeMove(point, 15);
+      _safeMove(point, req.zoom);
+    });
+  }
+
+  void _scheduleFilterReload() {
+    _filterDebounce?.cancel();
+    _filterDebounce = Timer(const Duration(milliseconds: 400), () async {
+      if (!mounted) return;
+      _ctrl.setSearchQuery(_searchController.text);
+      await _ctrl.loadPlaces();
+      if (!mounted) return;
+      final id = PlacesMapFocus.highlightedPlaceId.value;
+      if (id == null) return;
+      final place = _findPlaceById(id) ?? _ctrl.mapFocusPlace;
+      if (place != null) _ctrl.setMapFocusPlace(place);
     });
   }
 
   @override
   void dispose() {
     _searchDebounce?.cancel();
+    _filterDebounce?.cancel();
     _ctrl.removeListener(_onControllerUpdate);
     _studyNearMeCtrl.removeListener(_onControllerUpdate);
     PlacesMapFocus.pending.removeListener(_onPendingMapFocus);
     PlacesMapFocus.highlightedPlaceId.removeListener(_onControllerUpdate);
+    PlacesMapFocus.pulseHighlight.removeListener(_onControllerUpdate);
     _ctrl.dispose();
     _studyNearMeCtrl.dispose();
     _searchController.dispose();
@@ -169,6 +191,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
 
   List<Marker> _buildPlaceMarkers(List<PlaceModel> places) {
     final highlightedId = PlacesMapFocus.highlightedPlaceId.value;
+    final shouldPulse = PlacesMapFocus.pulseHighlight.value;
 
     final normal = <Marker>[];
     Marker? highlighted;
@@ -176,16 +199,17 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
     for (final p in places) {
       if (p.point == null) continue;
       final isHighlighted = p.id == highlightedId;
-      final pinSize = isHighlighted ? 52.0 : 40.0;
+      final pinSize = isHighlighted ? 56.0 : 40.0;
       final marker = Marker(
         key: ValueKey(p.id),
         point: p.point!,
         width: pinSize,
         height: pinSize,
         alignment: Alignment.bottomCenter,
-        child: PlaceMapPin(
+        child: AnimatedPlaceMapPin(
           variant: _pinVariant(p, isHighlighted: isHighlighted),
           size: pinSize,
+          pulse: isHighlighted && shouldPulse,
         ),
       );
       if (isHighlighted) {
@@ -216,21 +240,33 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
 
   void _clearPlaceSelection({bool closeSheet = true}) {
     PlacesMapFocus.clearHighlight();
+    _ctrl.clearMapFocusPlace();
     if (closeSheet && _placeSheetOpen && mounted) {
       Navigator.pop(context);
     }
   }
 
-  void _focusPlaceOnMap(PlaceModel place) {
+  void _focusPlaceOnMap(
+    PlaceModel place, {
+    bool openSheet = true,
+    double zoom = 15,
+  }) {
     final point = place.point;
     if (point == null) return;
-    PlacesMapFocus.highlight(place.id);
+    _ctrl.setMapFocusPlace(place);
+    PlacesMapFocus.highlight(
+      place.id,
+      focusSource: PlacesMapFocus.source.value ?? PlacesMapFocusSource.map,
+      pulse: PlacesMapFocus.pulseHighlight.value,
+    );
     _ctrl.setListView(false);
-    _safeMove(point, 15);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      _showPlaceSheet(place, point);
-    });
+    _safeMove(point, zoom);
+    if (openSheet) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _showPlaceSheet(place, point);
+      });
+    }
   }
 
   Future<void> _deletePlace(String placeId) async {
@@ -336,7 +372,12 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
 
   void _showPlaceSheet(PlaceModel place, LatLng point) {
     final l10n = context.l10n;
-    PlacesMapFocus.highlight(place.id);
+    _ctrl.setMapFocusPlace(place);
+    PlacesMapFocus.highlight(
+      place.id,
+      focusSource: PlacesMapFocus.source.value ?? PlacesMapFocusSource.map,
+      pulse: PlacesMapFocus.pulseHighlight.value,
+    );
     final distanceText = _ctrl.distanceLabelFor(place, noLocationYet: () => l10n.noYourLocation);
 
     _placeSheetOpen = true;
@@ -536,51 +577,94 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
   Widget _buildHighlightBanner() {
     final l10n = context.l10n;
     final highlightedId = PlacesMapFocus.highlightedPlaceId.value;
-    if (highlightedId == null) return const SizedBox.shrink();
+    if (highlightedId == null || _placeSheetOpen) return const SizedBox.shrink();
 
-    final place = _findPlaceById(highlightedId);
+    final place = _findPlaceById(highlightedId) ?? _ctrl.mapFocusPlace;
     final theme = Theme.of(context);
     final primary = theme.colorScheme.primary;
     final saved = place != null && _isSavedPlace(place);
+    final hiddenByFilter =
+        place != null && !_ctrl.isPlaceInCurrentResults(place.id);
+    final muted = theme.brightness == Brightness.dark
+        ? Colors.grey.shade400
+        : const Color(0xFF6B7280);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(10, 0, 10, 8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: BoxDecoration(
-          color: const Color(0xFFFF6F00).withValues(alpha: 0.1),
+      child: Material(
+        color: PlaceMapPin.selectedColor.withValues(alpha: 0.12),
+        elevation: 0,
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          onTap: place != null
+              ? () {
+                  final p = place.point;
+                  if (p != null) _showPlaceSheet(place, p);
+                }
+              : null,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: const Color(0xFFFF6F00).withValues(alpha: 0.35)),
-        ),
-        child: Row(
-          children: [
-            SizedBox(
-              width: 32,
-              height: 36,
-              child: PlaceMapPin(
-                variant: saved
-                    ? PlaceMapPinVariant.highlightedSaved
-                    : PlaceMapPinVariant.highlightedCommunity,
-                size: 32,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: PlaceMapPin.selectedColor.withValues(alpha: 0.4),
               ),
             ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                place?.title ?? l10n.selectedLocation,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
-              ),
+            child: Row(
+              children: [
+                AnimatedPlaceMapPin(
+                  variant: saved
+                      ? PlaceMapPinVariant.highlightedSaved
+                      : PlaceMapPinVariant.highlightedCommunity,
+                  size: 28,
+                  pulse: PlacesMapFocus.pulseHighlight.value,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        place?.title ?? l10n.selectedLocation,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                        ),
+                      ),
+                      if (hiddenByFilter)
+                        GestureDetector(
+                          onTap: () {
+                            _ctrl.setFilterTags({});
+                            _searchController.clear();
+                            _ctrl.setSearchQuery('');
+                            _scheduleFilterReload();
+                          },
+                          child: Text(
+                            '${l10n.placeHiddenByFilters} · ${l10n.showAllPlaces}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: 10, color: muted),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  onPressed: _clearPlaceSelection,
+                  icon: const Icon(Icons.close_rounded, size: 18),
+                  color: primary,
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                  tooltip: l10n.clearMapSelection,
+                ),
+              ],
             ),
-            IconButton(
-              onPressed: _clearPlaceSelection,
-              icon: const Icon(Icons.close_rounded, size: 18),
-              color: primary,
-              visualDensity: VisualDensity.compact,
-              tooltip: l10n.remove,
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -599,10 +683,10 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
         _onSearchChanged(value);
       },
       filterTags: _ctrl.filterTags,
-      onFilterChanged: _ctrl.setFilterTags,
-      onFilterApply: () {
-        _ctrl.setSearchQuery(_searchController.text);
-        _ctrl.loadPlaces();
+      filterCount: _ctrl.filterTags.length,
+      onFilterChanged: (tags) {
+        _ctrl.setFilterTags(tags);
+        _scheduleFilterReload();
       },
       studyNearMeLoading: _studyNearMeCtrl.loading,
       onStudyNearMe: _onStudyNearMe,
@@ -953,7 +1037,12 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
                       _clearPlaceSelection();
                       return;
                     }
-                    PlacesMapFocus.highlight(place.id);
+                    PlacesMapFocus.highlight(
+                      place.id,
+                      focusSource: PlacesMapFocusSource.map,
+                      pulse: false,
+                    );
+                    _ctrl.setMapFocusPlace(place);
                     _safeMove(place.point!, 15);
                     _showPlaceSheet(place, place.point!);
                   },
@@ -1064,7 +1153,7 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
 
   @override
   Widget build(BuildContext context) {
-    final places = _ctrl.activePlaces;
+    final places = _ctrl.placesForMap;
     return _buildAnimatedBody(places);
   }
 }

@@ -14,7 +14,6 @@ class CommunityTabItem {
   final int badgeCount;
 }
 
-/// Tab chuyển gọn cho màn Cộng đồng.
 class CommunitySegmentedTabs extends StatelessWidget {
   const CommunitySegmentedTabs({
     super.key,
@@ -35,26 +34,23 @@ class CommunitySegmentedTabs extends StatelessWidget {
       animation: controller,
       builder: (context, _) {
         return Container(
-          margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-          padding: const EdgeInsets.all(4),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          padding: const EdgeInsets.all(3),
           decoration: BoxDecoration(
-            color: AppColors.toggleTrack(context),
-            borderRadius: BorderRadius.circular(14),
+            color: AppColors.chipBg(context),
+            borderRadius: BorderRadius.circular(12),
           ),
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                for (var i = 0; i < tabs.length; i++) ...[
-                  if (i > 0) const SizedBox(width: 4),
+                for (var i = 0; i < tabs.length; i++)
                   _TabChip(
                     item: tabs[i],
                     selected: controller.index == i,
                     primary: primary,
-                    isDark: AppColors.isDark(context),
                     onTap: () => onTap(i),
                   ),
-                ],
               ],
             ),
           ),
@@ -69,63 +65,57 @@ class _TabChip extends StatelessWidget {
     required this.item,
     required this.selected,
     required this.primary,
-    required this.isDark,
     required this.onTap,
   });
 
   final CommunityTabItem item;
   final bool selected;
   final Color primary;
-  final bool isDark;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final isDark = AppColors.isDark(context);
+
     return Material(
       color: selected
-          ? (isDark ? primary.withValues(alpha: 0.25) : Colors.white)
+          ? (isDark ? const Color(0xFF2A2A2A) : Colors.white)
           : Colors.transparent,
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(9),
+      elevation: selected && !isDark ? 0.5 : 0,
+      shadowColor: Colors.black12,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(9),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                item.icon,
-                size: 16,
-                color: selected
-                    ? primary
-                    : (isDark ? Colors.grey.shade500 : Colors.grey.shade600),
-              ),
-              const SizedBox(width: 6),
               Text(
                 item.label,
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  color: selected
-                      ? (isDark ? Colors.white : const Color(0xFF1F2937))
-                      : (isDark ? Colors.grey.shade500 : Colors.grey.shade600),
+                  color: selected ? primary : AppColors.muted(context),
                 ),
               ),
               if (item.badgeCount > 0) ...[
                 const SizedBox(width: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                   decoration: BoxDecoration(
-                    color: selected ? primary : const Color(0xFFEF4444),
-                    borderRadius: BorderRadius.circular(10),
+                    color: selected
+                        ? primary.withValues(alpha: 0.12)
+                        : AppColors.border(context),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     '${item.badgeCount}',
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
                       fontSize: 10,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w700,
+                      color: selected ? primary : AppColors.muted(context),
                     ),
                   ),
                 ),

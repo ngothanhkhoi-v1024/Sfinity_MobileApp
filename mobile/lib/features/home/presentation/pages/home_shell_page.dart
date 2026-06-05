@@ -462,7 +462,7 @@ class _HomeShellPageState extends State<HomeShellPage> {
         children: _pages,
       ),
       bottomNavigationBar: Padding(
-        padding: EdgeInsets.fromLTRB(20, 0, 20, 12 + bottomInset),
+        padding: EdgeInsets.fromLTRB(16, 0, 16, 10 + bottomInset),
         child: FloatingPillNavBar(
           selectedIndex: _navIndex,
           items: navItems,

@@ -118,12 +118,10 @@ class PlaceTagFilterBar extends StatelessWidget {
     super.key,
     required this.selected,
     required this.onChanged,
-    this.onApply,
   });
 
   final Set<String> selected;
   final ValueChanged<Set<String>> onChanged;
-  final VoidCallback? onApply;
 
   void _toggle(String id) {
     final next = Set<String>.from(selected);
@@ -133,7 +131,10 @@ class PlaceTagFilterBar extends StatelessWidget {
       next.add(id);
     }
     onChanged(next);
-    onApply?.call();
+  }
+
+  void _clearAll() {
+    onChanged({});
   }
 
   @override
@@ -154,10 +155,7 @@ class PlaceTagFilterBar extends StatelessWidget {
               child: ActionChip(
                 label: Text(l10n.removeFilter),
                 avatar: const Icon(Icons.clear, size: 16),
-                onPressed: () {
-                  onChanged({});
-                  onApply?.call();
-                },
+                onPressed: _clearAll,
               ),
             ),
           for (final tag in PlaceTags.all)

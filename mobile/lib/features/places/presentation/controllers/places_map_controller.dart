@@ -32,7 +32,23 @@ class PlacesMapController extends ChangeNotifier {
   List<PlaceModel> publicPlaces = [];
   List<PlaceModel> myPlaces = [];
 
+  /// Địa điểm luôn hiển thị trên map khi đang focus (kể cả bị lọc ẩn).
+  PlaceModel? mapFocusPlace;
+
   List<PlaceModel> get activePlaces => communityMode ? publicPlaces : myPlaces;
+
+  List<PlaceModel> get placesForMap {
+    final base = activePlaces;
+    final focus = mapFocusPlace;
+    if (focus == null || focus.point == null) return base;
+    if (base.any((p) => p.id == focus.id)) return base;
+    return [...base, focus];
+  }
+
+  bool get hasActiveFilters => filterTags.isNotEmpty || searchQuery.trim().isNotEmpty;
+
+  bool isPlaceInCurrentResults(String placeId) =>
+      activePlaces.any((p) => p.id == placeId);
 
   List<PlaceModel> sortedActivePlaces() {
     return _location.sortByDistance(activePlaces, myLocation);
@@ -153,6 +169,17 @@ class PlacesMapController extends ChangeNotifier {
 
   void setFilterTags(Set<String> tags) {
     filterTags = tags;
+    notifyListeners();
+  }
+
+  void setMapFocusPlace(PlaceModel? place) {
+    mapFocusPlace = place;
+    notifyListeners();
+  }
+
+  void clearMapFocusPlace() {
+    if (mapFocusPlace == null) return;
+    mapFocusPlace = null;
     notifyListeners();
   }
 

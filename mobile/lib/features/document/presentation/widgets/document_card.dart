@@ -4,10 +4,6 @@ import '../../../../app.dart';
 import '../../../../core/i18n/app_text.dart';
 import '../../../../core/theme/app_colors.dart';
 
-/// Card hiển thị một item tài liệu học tập trên bảng tin.
-///
-/// Hiển thị icon loại tệp, mã môn học, danh mục, tiêu đề, mô tả ngắn,
-/// tên tác giả và số lượt tải xuống.
 class DocumentCard extends StatelessWidget {
   const DocumentCard({
     super.key,
@@ -23,161 +19,80 @@ class DocumentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final theme = Theme.of(context);
-    final body = item['body']?.toString() ?? '';
+    final primary = AppColors.primaryOf(context);
     final fileType = (item['fileType']?.toString() ?? 'pdf').toLowerCase();
     final subjectCode = item['subjectCode']?.toString() ?? '';
     final downloads = item['downloadsCount'] ?? 0;
     final author = item['author'] as Map?;
     final authorName = author?['name']?.toString() ?? l10n.community;
+    final category = l10n.translateCategory(
+      (item['category'] as Map?)?['name']?.toString() ?? 'Tài liệu',
+    );
 
     final currentUserId = SfinityApp.auth.user?['id']?.toString();
     final isAuthor = item['authorId']?.toString() == currentUserId;
     final status = item['status']?.toString();
+    final fileIcon = _resolveFileIcon(fileType);
 
-    final (fileIcon, iconColor) = _resolveFileIcon(fileType, theme);
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: AppColors.panel(context, radius: 14),
+    return Material(
+      color: AppColors.card(context),
+      borderRadius: BorderRadius.circular(12),
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.border(context)),
+          ),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // File type icon
-              Container(
-                width: 54,
-                height: 54,
-                decoration: BoxDecoration(
-                  color: iconColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(fileIcon, size: 30, color: iconColor),
-              ),
-              const SizedBox(width: 14),
-              // Content details
+              Icon(fileIcon, size: 20, color: primary),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Badges row
-                    Row(
-                      children: [
-                        if (subjectCode.isNotEmpty)
-                          _Badge(
-                            text: subjectCode.toUpperCase(),
-                            color: theme.colorScheme.primary,
-                            bgOpacity: 0.08,
-                          ),
-                        if (subjectCode.isNotEmpty) const SizedBox(width: 6),
-                        _Badge(
-                          text: l10n.translateCategory(
-                            (item['category'] as Map?)?['name']?.toString() ?? 'Tài liệu',
-                          ),
-                          color: AppColors.muted(context),
-                          backgroundColor: AppColors.chipBg(context),
-                        ),
-                        if (isAuthor && showStatus) ...[
-                          if (status == 'DRAFT') ...[
-                            const SizedBox(width: 6),
-                            _Badge(
-                              text: l10n.statusDraft,
-                              color: Colors.orange.shade800,
-                              backgroundColor: Colors.orange.shade100,
-                            ),
-                          ] else if (status == 'PENDING') ...[
-                            const SizedBox(width: 6),
-                            _Badge(
-                              text: l10n.statusPending,
-                              color: Colors.blue.shade800,
-                              backgroundColor: Colors.blue.shade100,
-                            ),
-                          ] else if (status == 'REJECTED') ...[
-                            const SizedBox(width: 6),
-                            _Badge(
-                              text: l10n.statusRejected,
-                              color: Colors.red.shade800,
-                              backgroundColor: Colors.red.shade100,
-                            ),
-                          ] else if (status == 'HIDDEN') ...[
-                            const SizedBox(width: 6),
-                            _Badge(
-                              text: l10n.statusHidden,
-                              color: Colors.grey.shade800,
-                              backgroundColor: Colors.grey.shade200,
-                            ),
-                          ] else if (status == 'PUBLISHED') ...[
-                            const SizedBox(width: 6),
-                            _Badge(
-                              text: l10n.statusPublished,
-                              color: Colors.green.shade800,
-                              backgroundColor: Colors.green.shade100,
-                            ),
-                          ],
-                        ] else ...[
-                          if (status == 'DRAFT') ...[
-                            const SizedBox(width: 6),
-                            _Badge(
-                              text: l10n.statusDraft,
-                              color: Colors.orange.shade800,
-                              backgroundColor: Colors.orange.shade100,
-                            ),
-                          ],
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    // Title
                     Text(
                       item['title']?.toString() ?? '',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                        height: 1.25,
-                      ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14,
+                        height: 1.35,
+                        color: AppColors.title(context),
+                      ),
                     ),
-                    const SizedBox(height: 6),
-                    // Description preview
+                    const SizedBox(height: 3),
                     Text(
-                      body.split('\n').first,
-                      style: TextStyle(fontSize: 12, color: AppColors.muted(context)),
+                      [
+                        if (subjectCode.isNotEmpty) subjectCode.toUpperCase(),
+                        category,
+                        authorName,
+                        '$downloads ${l10n.download.toLowerCase()}',
+                      ].where((e) => e.isNotEmpty).join(' · '),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 11, color: AppColors.muted(context)),
                     ),
-                    const SizedBox(height: 10),
-                    // Metadata row
-                    Row(
-                      children: [
-                        Icon(Icons.person_outline, size: 14, color: AppColors.muted(context)),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            authorName,
-                            style: TextStyle(fontSize: 11, color: AppColors.muted(context)),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                    if (isAuthor && showStatus && status != null && status != 'PUBLISHED')
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          _statusLabel(l10n, status),
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.muted(context),
                           ),
                         ),
-                        Icon(Icons.file_download_outlined,
-                            size: 14, color: AppColors.muted(context)),
-                        const SizedBox(width: 2),
-                        Text(
-                          '$downloads',
-                          style: TextStyle(fontSize: 11, color: AppColors.muted(context)),
-                        ),
-                        const SizedBox(width: 10),
-                      ],
-                    ),
+                      ),
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right_rounded, color: AppColors.muted(context)),
+              Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.muted(context)),
             ],
           ),
         ),
@@ -185,50 +100,22 @@ class DocumentCard extends StatelessWidget {
     );
   }
 
-  (IconData, Color) _resolveFileIcon(String fileType, ThemeData theme) {
-    switch (fileType) {
-      case 'pdf':
-        return (Icons.picture_as_pdf, AppColors.primary);
-      case 'docx':
-      case 'doc':
-        return (Icons.description, const Color(0xFF1E88E5));
-      case 'link':
-        return (Icons.link, const Color(0xFF8E24AA));
-      default:
-        return (Icons.article_outlined, theme.colorScheme.primary);
-    }
+  IconData _resolveFileIcon(String fileType) {
+    return switch (fileType) {
+      'pdf' => Icons.picture_as_pdf_outlined,
+      'docx' || 'doc' => Icons.description_outlined,
+      'link' => Icons.link_rounded,
+      _ => Icons.article_outlined,
+    };
   }
-}
 
-class _Badge extends StatelessWidget {
-  const _Badge({
-    required this.text,
-    required this.color,
-    this.backgroundColor,
-    this.bgOpacity,
-  });
-
-  final String text;
-  final Color color;
-  final Color? backgroundColor;
-  final double? bgOpacity;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: backgroundColor ?? color.withValues(alpha: bgOpacity ?? 0.08),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-          color: color,
-        ),
-      ),
-    );
+  String _statusLabel(AppLocalizations l10n, String status) {
+    return switch (status) {
+      'DRAFT' => l10n.statusDraft,
+      'PENDING' => l10n.statusPending,
+      'REJECTED' => l10n.statusRejected,
+      'HIDDEN' => l10n.statusHidden,
+      _ => status,
+    };
   }
 }

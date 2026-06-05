@@ -17,6 +17,7 @@ class PlaceDirectionsSection extends StatefulWidget {
     this.compact = false,
     this.onViewOnMap,
     this.mapPreviewSize = 108,
+    this.mapPinHighlighted = false,
   });
 
   final LatLng destination;
@@ -26,6 +27,7 @@ class PlaceDirectionsSection extends StatefulWidget {
   final bool compact;
   final VoidCallback? onViewOnMap;
   final double mapPreviewSize;
+  final bool mapPinHighlighted;
 
   @override
   State<PlaceDirectionsSection> createState() => _PlaceDirectionsSectionState();
@@ -224,6 +226,7 @@ class _PlaceDirectionsSectionState extends State<PlaceDirectionsSection> {
             point: widget.destination,
             accentColor: widget.accentColor,
             size: widget.mapPreviewSize,
+            highlighted: widget.mapPinHighlighted,
           ),
         ],
       );

@@ -262,6 +262,10 @@ class AppLocalizations {
       'invalidCoordinates': 'Tọa độ không hợp lệ',
       'allZones': 'Tất cả khu vực',
       'filterAmenities': 'Lọc tiện nghi',
+      'activeFilters': '{count} bộ lọc',
+      'placeHiddenByFilters': 'Địa điểm đang bị ẩn bởi bộ lọc',
+      'clearMapSelection': 'Bỏ chọn',
+      'showAllPlaces': 'Hiện tất cả',
       'holdMapOrButton': 'Giữ bản đồ hoặc nhấn nút',
       'holdMapOrPressPlus': 'Giữ bản đồ hoặc nhấn dấu cộng',
       'selectedLocation': 'Vị trí đã chọn',
@@ -768,6 +772,10 @@ class AppLocalizations {
       'invalidCoordinates': 'Invalid coordinates',
       'allZones': 'All zones',
       'filterAmenities': 'Filter amenities',
+      'activeFilters': '{count} filters',
+      'placeHiddenByFilters': 'Place hidden by active filters',
+      'clearMapSelection': 'Clear selection',
+      'showAllPlaces': 'Show all',
       'holdMapOrButton': 'Hold map or press button',
       'holdMapOrPressPlus': 'Hold map or press plus',
       'selectedLocation': 'Selected location',
@@ -1287,6 +1295,10 @@ class AppLocalizations {
   String get invalidCoordinates => _text('invalidCoordinates');
   String get allZones => _text('allZones');
   String get filterAmenities => _text('filterAmenities');
+  String activeFilters(int count) => _format('activeFilters', {'{count}': '$count'});
+  String get placeHiddenByFilters => _text('placeHiddenByFilters');
+  String get clearMapSelection => _text('clearMapSelection');
+  String get showAllPlaces => _text('showAllPlaces');
   String get holdMapOrButton => _text('holdMapOrButton');
   String get holdMapOrPressPlus => _text('holdMapOrPressPlus');
   String get selectedLocation => _text('selectedLocation');

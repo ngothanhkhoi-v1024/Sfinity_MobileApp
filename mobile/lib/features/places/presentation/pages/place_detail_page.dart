@@ -12,7 +12,7 @@ import '../../../place_reviews/presentation/widgets/place_photo_gallery.dart';
 import '../../../place_reviews/presentation/widgets/place_rating_section.dart';
 import '../../data/models/place_model.dart';
 import '../controllers/place_detail_controller.dart';
-import '../places_map_focus.dart';
+import '../places_map_focus.dart' show PlacesMapFocus, PlacesMapFocusSource;
 import '../widgets/place_detail_photo_carousel.dart';
 import '../widgets/place_directions_section.dart';
 import '../widgets/place_tag_chips.dart';
@@ -142,6 +142,11 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
       placeId: place.id,
       lat: point.latitude,
       lng: point.longitude,
+      place: place,
+      openSheet: true,
+      zoom: 16,
+      focusSource: PlacesMapFocusSource.detail,
+      pulse: true,
     );
     context.go(RouteNames.home);
   }
@@ -281,6 +286,7 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
                 accentColor: primary,
                 compact: true,
                 onViewOnMap: _viewOnMap,
+                mapPinHighlighted: true,
               ),
               const SizedBox(height: 20),
             ],
