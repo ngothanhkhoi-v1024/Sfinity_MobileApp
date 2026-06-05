@@ -311,6 +311,13 @@ class AppLocalizations {
       'groupChatTab': 'Trò chuyện',
       'groupStorageTab': 'Lưu trữ',
       'groupMembersTab': 'Thành viên',
+      'groupMapTab': 'Bản đồ',
+      'groupMapEmpty': 'Chưa có thành viên chia sẻ vị trí',
+      'groupMapEmptyHint': 'Mở tab Bản đồ để chia sẻ vị trí với nhóm',
+      'groupMapSharing': 'Đang chia sẻ vị trí của bạn',
+      'groupMapMembersVisible': '{count} thành viên trên bản đồ',
+      'groupMapLocationDenied': 'Cần quyền vị trí để hiển thị trên bản đồ nhóm',
+      'groupMapCenterMe': 'Về vị trí của tôi',
       'deleteMemberConfirm': 'Xóa thành viên khỏi nhóm?',
       'cannotRemoveMember': 'Không thể xóa thành viên',
       'inviteToGroup': 'Mời vào nhóm',
@@ -366,11 +373,25 @@ class AppLocalizations {
       'noComments': 'Chưa có bình luận',
       'all': 'Tất cả',
       'newest': 'Mới nhất',
+      'featuredHighlights': 'Nổi bật',
+      'featuredPlaces': 'Địa điểm nổi bật',
+      'featuredDocuments': 'Tài liệu nổi bật',
+      'recentCheckins': '{count} check-in gần đây',
+      'totalCheckins': '{count} lượt check-in',
+      'popularDownloads': '{count} lượt tải',
+      'weeklyActivity': 'Hoạt động tuần này',
+      'weeklyActivitySubtitle': 'Theo dõi địa điểm đã ghé và tài liệu đã tải',
+      'weeklyPlacesVisited': 'Địa điểm đã ghé',
+      'weeklyDocsDownloaded': 'Tài liệu đã tải',
+      'topUsersTitle': 'Người dùng xuất sắc',
+      'topUsersSubtitle': 'Xếp hạng theo đóng góp và tương tác cộng đồng',
+      'topUsersScore': '{score} điểm',
+      'topUsersContributions': '{docs} tài liệu · {places} địa điểm',
       'noCommentsFound': 'Không tìm thấy bình luận',
       'loadMoreComments': 'Tải thêm bình luận',
       'download': 'Tải xuống',
       'share': 'Chia sẻ',
-      'communityContent': 'Nội dung cộng đồng',
+      'communityContent': 'Cộng đồng',
       'searchGroupHint': 'Tìm nhóm...',
       'noGroupsExplore': 'Khám phá để tìm nhóm mới',
       'noGroupsFound': 'Không tìm thấy nhóm',
@@ -831,6 +852,13 @@ class AppLocalizations {
       'groupChatTab': 'Chat',
       'groupStorageTab': 'Storage',
       'groupMembersTab': 'Members',
+      'groupMapTab': 'Map',
+      'groupMapEmpty': 'No members are sharing location',
+      'groupMapEmptyHint': 'Open the Map tab to share your location with the group',
+      'groupMapSharing': 'Sharing your location',
+      'groupMapMembersVisible': '{count} members on map',
+      'groupMapLocationDenied': 'Location permission is required for the group map',
+      'groupMapCenterMe': 'Center on me',
       'deleteMemberConfirm': 'Remove member from group?',
       'cannotRemoveMember': 'Cannot remove member',
       'inviteToGroup': 'Invite to group',
@@ -886,11 +914,25 @@ class AppLocalizations {
       'noComments': 'No comments',
       'all': 'All',
       'newest': 'Newest',
+      'featuredHighlights': 'Highlights',
+      'featuredPlaces': 'Featured places',
+      'featuredDocuments': 'Featured documents',
+      'recentCheckins': '{count} recent check-ins',
+      'totalCheckins': '{count} check-ins',
+      'popularDownloads': '{count} downloads',
+      'weeklyActivity': 'This week',
+      'weeklyActivitySubtitle': 'Places visited and documents downloaded',
+      'weeklyPlacesVisited': 'Places visited',
+      'weeklyDocsDownloaded': 'Documents downloaded',
+      'topUsersTitle': 'Top contributors',
+      'topUsersSubtitle': 'Ranked by community contributions and engagement',
+      'topUsersScore': '{score} pts',
+      'topUsersContributions': '{docs} docs · {places} places',
       'noCommentsFound': 'No comments found',
       'loadMoreComments': 'Load more comments',
       'download': 'Download',
       'share': 'Share',
-      'communityContent': 'Community content',
+      'communityContent': 'Community',
       'searchGroupHint': 'Search groups...',
       'noGroupsExplore': 'Explore to find new groups',
       'noGroupsFound': 'No groups found',
@@ -1366,6 +1408,14 @@ class AppLocalizations {
   String get groupChatTab => _text('groupChatTab');
   String get groupStorageTab => _text('groupStorageTab');
   String get groupMembersTab => _text('groupMembersTab');
+  String get groupMapTab => _text('groupMapTab');
+  String get groupMapEmpty => _text('groupMapEmpty');
+  String get groupMapEmptyHint => _text('groupMapEmptyHint');
+  String get groupMapSharing => _text('groupMapSharing');
+  String groupMapMembersVisible(int count) =>
+      _format('groupMapMembersVisible', {'{count}': '$count'});
+  String get groupMapLocationDenied => _text('groupMapLocationDenied');
+  String get groupMapCenterMe => _text('groupMapCenterMe');
   String get deleteMemberConfirm => _text('deleteMemberConfirm');
   String get cannotRemoveMember => _text('cannotRemoveMember');
   String get inviteToGroup => _text('inviteToGroup');
@@ -1444,6 +1494,21 @@ class AppLocalizations {
   String get noComments => _text('noComments');
   String get all => _text('all');
   String get newest => _text('newest');
+  String get featuredHighlights => _text('featuredHighlights');
+  String get featuredPlaces => _text('featuredPlaces');
+  String get featuredDocuments => _text('featuredDocuments');
+  String recentCheckins(int count) => _format('recentCheckins', {'{count}': '$count'});
+  String totalCheckins(int count) => _format('totalCheckins', {'{count}': '$count'});
+  String popularDownloads(int count) => _format('popularDownloads', {'{count}': '$count'});
+  String get weeklyActivity => _text('weeklyActivity');
+  String get weeklyActivitySubtitle => _text('weeklyActivitySubtitle');
+  String get weeklyPlacesVisited => _text('weeklyPlacesVisited');
+  String get weeklyDocsDownloaded => _text('weeklyDocsDownloaded');
+  String get topUsersTitle => _text('topUsersTitle');
+  String get topUsersSubtitle => _text('topUsersSubtitle');
+  String topUsersScore(int score) => _format('topUsersScore', {'{score}': '$score'});
+  String topUsersContributions({required int docs, required int places}) =>
+      _format('topUsersContributions', {'{docs}': '$docs', '{places}': '$places'});
   String get noCommentsFound => _text('noCommentsFound');
   String get loadMoreComments => _text('loadMoreComments');
   String get download => _text('download');

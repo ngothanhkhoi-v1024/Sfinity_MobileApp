@@ -16,6 +16,7 @@ import '../../features/groups/presentation/pages/group_list_page.dart';
 import '../../features/groups/presentation/pages/group_form_page.dart';
 import '../../features/friendships/data/models/friend_model.dart';
 import '../../features/home/presentation/pages/home_shell_page.dart';
+import '../../features/places/presentation/pages/my_places_page.dart';
 import '../../features/places/presentation/pages/place_detail_page.dart';
 import '../../features/places/presentation/pages/place_share_page.dart';
 import '../../features/search/presentation/pages/search_page.dart';
@@ -91,7 +92,11 @@ GoRouter createAppRouter(AuthState auth) {
         path: RouteNames.favorites,
         builder: (_, __) => const FavoritesPage(),
       ),
-      // /places/share phải đứng trước /places/:id, nếu không "share" bị match nhầm thành id.
+      // /places/share và /places/my phải đứng trước /places/:id.
+      GoRoute(
+        path: RouteNames.myPlaces,
+        builder: (_, __) => const MyPlacesPage(),
+      ),
       GoRoute(
         path: RouteNames.placeShare,
         builder: (_, __) => const PlaceSharePage(),

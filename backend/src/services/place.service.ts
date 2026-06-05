@@ -1,11 +1,23 @@
 import { itemHasAllTags, parseTagsQuery } from '../constants/place-tags';
 import { isValidPlaceZone } from '../constants/place-zones';
+import {
+  applyContentState,
+  deriveRequestedModeration,
+  deriveRequestedVisibility,
+  isPubliclyVisible,
+  normalizeContentState,
+  sanitizeAdminModeration,
+} from '../lib/content-state';
 import { getDb } from '../lib/firebase';
 import { distanceMeters } from '../lib/geo';
 import { HttpError } from '../lib/http-error';
 import { notificationsService } from './notifications.service';
 import { settingsService } from './settings.service';
-import { ContentStatus, UserRole } from '../types/enums';
+import {
+  ContentModerationStatus,
+  ContentVisibility,
+  UserRole,
+} from '../types/enums';
 import type { CreatePlaceDto, UpdatePlaceDto } from '../dto/place.dto';
 
 const toDate = (val: any): Date => {
@@ -24,10 +36,49 @@ const extractCoords = (item: any): { lat: number; lng: number } | null => {
   return null;
 };
 
+async function enrichPlace(item: any) {
+  const normalized = applyContentState(item);
+
+  let author = null;
+  if (normalized.authorId) {
+    const authorDoc = await getDb().collection('users').doc(normalized.authorId).get();
+    if (authorDoc.exists) {
+      const a = authorDoc.data() as any;
+      author = { id: authorDoc.id, name: a.name, email: a.email };
+    }
+  }
+
+  return {
+    ...normalized,
+    id: normalized.id,
+    type: 'place',
+    createdAt: toDate(normalized.createdAt),
+    updatedAt: toDate(normalized.updatedAt),
+    author,
+  };
+}
+
+async function getPlaceRaw(id: string) {
+  const doc = await getDb().collection('places').doc(id).get();
+  if (!doc.exists) {
+    throw new HttpError(404, 'Không tìm thấy địa điểm', 'Not Found');
+  }
+  return { id: doc.id, ...doc.data() } as any;
+}
+
+function isOwnerOrAdmin(item: any, viewerId?: string, viewerRole?: UserRole): boolean {
+  return viewerRole === UserRole.ADMIN || (!!viewerId && item.authorId === viewerId);
+}
+
+function canViewPlace(item: any, viewerId?: string, viewerRole?: UserRole): boolean {
+  return isOwnerOrAdmin(item, viewerId, viewerRole) || isPubliclyVisible(item);
+}
+
 export const placeService = {
   async findAll(params: {
     search?: string;
-    status?: ContentStatus;
+    visibility?: ContentVisibility;
+    moderationStatus?: ContentModerationStatus;
     authorId?: string;
     tags?: string;
     zone?: string;
@@ -37,6 +88,8 @@ export const placeService = {
     page?: number;
     limit?: number;
     publishedOnly?: boolean;
+    viewerId?: string;
+    viewerRole?: UserRole;
   }) {
     const page = params.page ?? 1;
     const limit = params.limit ?? 20;
@@ -52,12 +105,36 @@ export const placeService = {
         : null;
 
     const snapshot = await getDb().collection('places').get();
-    let items = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as any));
+    let items = snapshot.docs.map((doc) =>
+      applyContentState({ id: doc.id, ...doc.data() } as any),
+    );
 
-    if (params.publishedOnly) {
-      items = items.filter((item) => item.status === ContentStatus.PUBLISHED);
-    } else if (params.status) {
-      items = items.filter((item) => item.status === params.status);
+    const canReadAuthorWorkspace =
+      !!params.authorId &&
+      (params.viewerRole === UserRole.ADMIN || params.viewerId === params.authorId);
+
+    items = items.filter((item) => {
+      if (params.authorId && item.authorId !== params.authorId) {
+        return false;
+      }
+
+      if (params.publishedOnly) {
+        return isPubliclyVisible(item);
+      }
+
+      if (canReadAuthorWorkspace || params.viewerRole === UserRole.ADMIN) {
+        return true;
+      }
+
+      return isPubliclyVisible(item);
+    });
+
+    if (params.visibility) {
+      items = items.filter((item) => item.visibility === params.visibility);
+    }
+
+    if (params.moderationStatus) {
+      items = items.filter((item) => item.moderationStatus === params.moderationStatus);
     }
 
     if (params.authorId) {
@@ -100,81 +177,54 @@ export const placeService = {
 
     const total = items.length;
     const paginatedItems = items.slice(skip, skip + limit);
-
-    const resolvedItems = await Promise.all(
-      paginatedItems.map(async (item) => {
-        let author = null;
-        if (item.authorId) {
-          const authorDoc = await getDb().collection('users').doc(item.authorId).get();
-          if (authorDoc.exists) {
-            const a = authorDoc.data() as any;
-            author = { id: authorDoc.id, name: a.name, email: a.email };
-          }
-        }
-
-        return {
-          ...item,
-          id: item.id,
-          type: 'place', // Inject type for compatibility
-          createdAt: toDate(item.createdAt),
-          updatedAt: toDate(item.updatedAt),
-          author,
-        };
-      }),
-    );
+    const resolvedItems = await Promise.all(paginatedItems.map((item) => enrichPlace(item)));
 
     return { items: resolvedItems, total, page, limit, totalPages: Math.ceil(total / limit) };
   },
 
-  async findOne(id: string) {
-    const doc = await getDb().collection('places').doc(id).get();
-    if (!doc.exists) {
+  async findOne(id: string, viewerId?: string, viewerRole?: UserRole) {
+    const item = await getPlaceRaw(id);
+    if (!canViewPlace(item, viewerId, viewerRole)) {
       throw new HttpError(404, 'Không tìm thấy địa điểm', 'Not Found');
     }
-    const item = { id: doc.id, ...doc.data() } as any;
-
-    let author = null;
-    if (item.authorId) {
-      const authorDoc = await getDb().collection('users').doc(item.authorId).get();
-      if (authorDoc.exists) {
-        const a = authorDoc.data() as any;
-        author = { id: authorDoc.id, name: a.name, email: a.email };
-      }
-    }
-
-    return {
-      ...item,
-      id: item.id,
-      type: 'place', // Inject type for compatibility
-      createdAt: toDate(item.createdAt),
-      updatedAt: toDate(item.updatedAt),
-      author,
-    };
+    return enrichPlace(item);
   },
 
   async create(authorId: string, dto: CreatePlaceDto, role: UserRole = UserRole.USER) {
     const docRef = getDb().collection('places').doc();
 
-    let initialStatus = dto.status ?? ContentStatus.PENDING;
-    if (role !== UserRole.ADMIN) {
-      if (initialStatus === ContentStatus.PUBLISHED || initialStatus === ContentStatus.REJECTED || initialStatus === ContentStatus.HIDDEN) {
-        initialStatus = ContentStatus.PENDING;
-      }
-      const settings = await settingsService.get();
-      if ((initialStatus === ContentStatus.PENDING || initialStatus === ContentStatus.DRAFT) && settings.autoApprovePlaces) {
-        initialStatus = ContentStatus.PUBLISHED;
-      }
-    }
-
     if (dto.zone != null && !isValidPlaceZone(dto.zone)) {
       throw new HttpError(400, 'Khu vực không hợp lệ', 'Bad Request');
     }
+
+    const requestedVisibility = deriveRequestedVisibility(dto) ?? ContentVisibility.PUBLIC;
+    const settings = role === UserRole.ADMIN ? null : await settingsService.get();
+    const autoApprove = settings?.autoApprovePlaces ?? false;
+
+    const state =
+      requestedVisibility === ContentVisibility.PRIVATE
+        ? {
+            visibility: ContentVisibility.PRIVATE,
+            moderationStatus: ContentModerationStatus.NONE,
+          }
+        : role === UserRole.ADMIN
+          ? {
+              visibility: ContentVisibility.PUBLIC,
+              moderationStatus: sanitizeAdminModeration(deriveRequestedModeration(dto)),
+            }
+          : {
+              visibility: ContentVisibility.PUBLIC,
+              moderationStatus: autoApprove
+                ? ContentModerationStatus.APPROVED
+                : ContentModerationStatus.PENDING,
+            };
 
     const newPlace: any = {
       id: docRef.id,
       title: dto.title,
       body: dto.body ?? '',
-      status: initialStatus,
+      visibility: state.visibility,
+      moderationStatus: state.moderationStatus,
       authorId,
       latitude: dto.latitude,
       longitude: dto.longitude,
@@ -186,11 +236,11 @@ export const placeService = {
     };
 
     await docRef.set(newPlace);
-    return placeService.findOne(docRef.id);
+    return placeService.findOne(docRef.id, authorId, role);
   },
 
   async update(id: string, dto: UpdatePlaceDto, userId: string, role: UserRole) {
-    const item = await placeService.findOne(id);
+    const item = await getPlaceRaw(id);
     if (role !== UserRole.ADMIN && item.authorId !== userId) {
       throw new HttpError(404, 'Not Found', 'Not Found');
     }
@@ -203,6 +253,7 @@ export const placeService = {
     const updateData: any = {
       updatedAt: new Date(),
     };
+    const currentState = normalizeContentState(item);
 
     let hasContentChanges = false;
     for (const [key, value] of Object.entries(dto)) {
@@ -214,25 +265,57 @@ export const placeService = {
       }
     }
 
-    if (role !== UserRole.ADMIN) {
-      if (dto.status === ContentStatus.PUBLISHED || dto.status === ContentStatus.REJECTED || dto.status === ContentStatus.HIDDEN) {
-        updateData.status = ContentStatus.PENDING;
+    const requestedVisibility = deriveRequestedVisibility(dto);
+    const requestedModeration = deriveRequestedModeration(dto);
+
+    let nextVisibility = requestedVisibility ?? currentState.visibility;
+    let nextModeration = currentState.moderationStatus;
+
+    if (role === UserRole.ADMIN) {
+      if (nextVisibility === ContentVisibility.PRIVATE) {
+        nextModeration = ContentModerationStatus.NONE;
+      } else if (requestedModeration !== undefined) {
+        nextModeration = sanitizeAdminModeration(requestedModeration);
+      } else if (
+        currentState.visibility === ContentVisibility.PRIVATE &&
+        nextVisibility === ContentVisibility.PUBLIC
+      ) {
+        nextModeration = ContentModerationStatus.APPROVED;
       }
-      if (hasContentChanges && (item.status === ContentStatus.PUBLISHED || item.status === ContentStatus.REJECTED || item.status === ContentStatus.HIDDEN)) {
-        updateData.status = ContentStatus.PENDING;
-        const settings = await settingsService.get();
-        if (settings.autoApprovePlaces) {
-          updateData.status = ContentStatus.PUBLISHED;
-        }
+    } else {
+      const settings = await settingsService.get();
+      const publicModeration = settings.autoApprovePlaces
+        ? ContentModerationStatus.APPROVED
+        : ContentModerationStatus.PENDING;
+
+      if (nextVisibility === ContentVisibility.PRIVATE) {
+        nextModeration = ContentModerationStatus.NONE;
+      } else if (
+        currentState.visibility === ContentVisibility.PRIVATE &&
+        nextVisibility === ContentVisibility.PUBLIC
+      ) {
+        nextModeration = publicModeration;
+      } else if (
+        hasContentChanges &&
+        [
+          ContentModerationStatus.APPROVED,
+          ContentModerationStatus.REJECTED,
+          ContentModerationStatus.HIDDEN,
+        ].includes(currentState.moderationStatus)
+      ) {
+        nextModeration = publicModeration;
       }
     }
 
+    updateData.visibility = nextVisibility;
+    updateData.moderationStatus = nextModeration;
+
     await docRef.update(updateData);
-    return placeService.findOne(id);
+    return placeService.findOne(id, userId, role);
   },
 
   async remove(id: string, userId: string, role: UserRole) {
-    const item = await placeService.findOne(id);
+    const item = await getPlaceRaw(id);
     if (role !== UserRole.ADMIN && item.authorId !== userId) {
       throw new HttpError(404, 'Not Found', 'Not Found');
     }
@@ -242,14 +325,15 @@ export const placeService = {
   },
 
   async adminHide(id: string, reason: string) {
-    const item = await placeService.findOne(id);
+    const item = await getPlaceRaw(id);
     if (!item.authorId) {
       throw new HttpError(400, 'Không tìm thấy tác giả để gửi thông báo', 'Bad Request');
     }
 
     const docRef = getDb().collection('places').doc(id);
     await docRef.update({
-      status: ContentStatus.HIDDEN,
+      visibility: ContentVisibility.PUBLIC,
+      moderationStatus: ContentModerationStatus.HIDDEN,
       updatedAt: new Date(),
     });
 
@@ -259,18 +343,19 @@ export const placeService = {
       body: `Admin đã ẩn địa điểm của bạn. Lý do: ${reason}`,
     });
 
-    return placeService.findOne(id);
+    return placeService.findOne(id, item.authorId, UserRole.USER);
   },
 
   async adminReject(id: string, reason: string) {
-    const item = await placeService.findOne(id);
+    const item = await getPlaceRaw(id);
     if (!item.authorId) {
       throw new HttpError(400, 'Không tìm thấy tác giả để gửi thông báo', 'Bad Request');
     }
 
     const docRef = getDb().collection('places').doc(id);
     await docRef.update({
-      status: ContentStatus.REJECTED,
+      visibility: ContentVisibility.PUBLIC,
+      moderationStatus: ContentModerationStatus.REJECTED,
       updatedAt: new Date(),
     });
 
@@ -280,11 +365,11 @@ export const placeService = {
       body: `Admin đã từ chối duyệt địa điểm của bạn. Lý do: ${reason}`,
     });
 
-    return placeService.findOne(id);
+    return placeService.findOne(id, item.authorId, UserRole.USER);
   },
 
   async adminDelete(id: string, reason: string) {
-    const item = await placeService.findOne(id);
+    const item = await getPlaceRaw(id);
     if (!item.authorId) {
       throw new HttpError(400, 'Không tìm thấy tác giả để gửi thông báo', 'Bad Request');
     }
@@ -300,14 +385,15 @@ export const placeService = {
   },
 
   async adminUnhide(id: string, note?: string) {
-    const item = await placeService.findOne(id);
+    const item = await getPlaceRaw(id);
     if (!item.authorId) {
       throw new HttpError(400, 'Không tìm thấy tác giả để gửi thông báo', 'Bad Request');
     }
 
     const docRef = getDb().collection('places').doc(id);
     await docRef.update({
-      status: ContentStatus.PUBLISHED,
+      visibility: ContentVisibility.PUBLIC,
+      moderationStatus: ContentModerationStatus.APPROVED,
       updatedAt: new Date(),
     });
 
@@ -319,15 +405,16 @@ export const placeService = {
         : `Admin đã bỏ ẩn và khôi phục địa điểm của bạn.`,
     });
 
-    return placeService.findOne(id);
+    return placeService.findOne(id, item.authorId, UserRole.USER);
   },
 
   async adminApprove(id: string, note?: string) {
-    const item = await placeService.findOne(id);
+    const item = await getPlaceRaw(id);
 
     const docRef = getDb().collection('places').doc(id);
     await docRef.update({
-      status: ContentStatus.PUBLISHED,
+      visibility: ContentVisibility.PUBLIC,
+      moderationStatus: ContentModerationStatus.APPROVED,
       updatedAt: new Date(),
     });
 
@@ -341,6 +428,6 @@ export const placeService = {
       });
     }
 
-    return placeService.findOne(id);
+    return placeService.findOne(id, item.authorId, UserRole.USER);
   },
 };
