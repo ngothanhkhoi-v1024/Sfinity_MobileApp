@@ -311,6 +311,13 @@ class AppLocalizations {
       'groupChatTab': 'Trò chuyện',
       'groupStorageTab': 'Lưu trữ',
       'groupMembersTab': 'Thành viên',
+      'groupMapTab': 'Bản đồ',
+      'groupMapEmpty': 'Chưa có thành viên chia sẻ vị trí',
+      'groupMapEmptyHint': 'Mở tab Bản đồ để chia sẻ vị trí với nhóm',
+      'groupMapSharing': 'Đang chia sẻ vị trí của bạn',
+      'groupMapMembersVisible': '{count} thành viên trên bản đồ',
+      'groupMapLocationDenied': 'Cần quyền vị trí để hiển thị trên bản đồ nhóm',
+      'groupMapCenterMe': 'Về vị trí của tôi',
       'deleteMemberConfirm': 'Xóa thành viên khỏi nhóm?',
       'cannotRemoveMember': 'Không thể xóa thành viên',
       'inviteToGroup': 'Mời vào nhóm',
@@ -845,6 +852,13 @@ class AppLocalizations {
       'groupChatTab': 'Chat',
       'groupStorageTab': 'Storage',
       'groupMembersTab': 'Members',
+      'groupMapTab': 'Map',
+      'groupMapEmpty': 'No members are sharing location',
+      'groupMapEmptyHint': 'Open the Map tab to share your location with the group',
+      'groupMapSharing': 'Sharing your location',
+      'groupMapMembersVisible': '{count} members on map',
+      'groupMapLocationDenied': 'Location permission is required for the group map',
+      'groupMapCenterMe': 'Center on me',
       'deleteMemberConfirm': 'Remove member from group?',
       'cannotRemoveMember': 'Cannot remove member',
       'inviteToGroup': 'Invite to group',
@@ -1394,6 +1408,14 @@ class AppLocalizations {
   String get groupChatTab => _text('groupChatTab');
   String get groupStorageTab => _text('groupStorageTab');
   String get groupMembersTab => _text('groupMembersTab');
+  String get groupMapTab => _text('groupMapTab');
+  String get groupMapEmpty => _text('groupMapEmpty');
+  String get groupMapEmptyHint => _text('groupMapEmptyHint');
+  String get groupMapSharing => _text('groupMapSharing');
+  String groupMapMembersVisible(int count) =>
+      _format('groupMapMembersVisible', {'{count}': '$count'});
+  String get groupMapLocationDenied => _text('groupMapLocationDenied');
+  String get groupMapCenterMe => _text('groupMapCenterMe');
   String get deleteMemberConfirm => _text('deleteMemberConfirm');
   String get cannotRemoveMember => _text('cannotRemoveMember');
   String get inviteToGroup => _text('inviteToGroup');
