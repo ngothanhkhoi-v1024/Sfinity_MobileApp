@@ -1,4 +1,4 @@
-import { ContentStatus } from '../types/enums';
+import { ContentModerationStatus, ContentVisibility } from '../types/enums';
 import { IsEnum, IsOptional, IsString, MinLength, IsNumber, IsArray } from 'class-validator';
 
 export class CreateDocumentDto {
@@ -10,9 +10,15 @@ export class CreateDocumentDto {
   @IsString()
   body?: string;
 
+
+
   @IsOptional()
-  @IsEnum(ContentStatus)
-  status?: ContentStatus;
+  @IsEnum(ContentVisibility)
+  visibility?: ContentVisibility;
+
+  @IsOptional()
+  @IsEnum(ContentModerationStatus)
+  moderationStatus?: ContentModerationStatus;
 
   @IsOptional()
   @IsString()
@@ -40,7 +46,7 @@ export class CreateDocumentDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  tags?: string[];
+
 
   @IsOptional()
   @IsNumber()
@@ -66,9 +72,15 @@ export class UpdateDocumentDto {
   @IsString()
   body?: string | null;
 
+
+
   @IsOptional()
-  @IsEnum(ContentStatus)
-  status?: ContentStatus;
+  @IsEnum(ContentVisibility)
+  visibility?: ContentVisibility;
+
+  @IsOptional()
+  @IsEnum(ContentModerationStatus)
+  moderationStatus?: ContentModerationStatus;
 
   @IsOptional()
   @IsString()
@@ -96,7 +108,7 @@ export class UpdateDocumentDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  tags?: string[];
+
 
   @IsOptional()
   @IsNumber()

@@ -13,7 +13,7 @@ class DocumentRepositoryImpl implements DocumentRepository {
     String? type,
     String? authorId,
     String? placeId,
-    String? tags,
+
     double? lat,
     double? lng,
     double? radiusKm,
@@ -26,7 +26,7 @@ class DocumentRepositoryImpl implements DocumentRepository {
       type: type,
       authorId: authorId,
       placeId: placeId,
-      tags: tags,
+
       lat: lat,
       lng: lng,
       radiusKm: radiusKm,
