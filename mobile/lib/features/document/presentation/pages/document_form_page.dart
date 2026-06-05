@@ -212,7 +212,7 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
                       autovalidateMode: AutovalidateMode.onUserInteraction,
                       decoration: InputDecoration(
                         labelText: l10n.subjectCode,
-                        hintText: 'VD: Giải tích 1',
+                        hintText: l10n.subjectCodeHint,
                         prefixIcon: const Icon(Icons.book_outlined),
                       ),
                     ),
@@ -303,7 +303,11 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
                                 strokeWidth: 2.5,
                               ),
                             )
-                          : Text(widget.isEdit ? l10n.updatePlace : l10n.postDocument),
+                          : Text(
+                              widget.isEdit
+                                  ? (widget.isDocument ? l10n.updateDocument : l10n.updatePlace)
+                                  : l10n.postDocument,
+                            ),
                     ),
                   ),
                 ],

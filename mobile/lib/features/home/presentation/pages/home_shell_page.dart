@@ -129,68 +129,31 @@ class HomeShellPageState extends State<HomeShellPage> {
 
             return Column(
               children: [
-                // Brand and Profile Header
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.fromLTRB(20, MediaQuery.paddingOf(context).top + 20, 20, 24),
-                  decoration: BoxDecoration(
-                    gradient: AppColors.brandHeader(context),
-                    borderRadius: const BorderRadius.only(
-                      topRight: Radius.circular(24),
-                    ),
-                  ),
+                Padding(
+                  padding: EdgeInsets.fromLTRB(20, MediaQuery.paddingOf(context).top + 16, 20, 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              gradient: AppColors.brandPill(context),
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.primaryOf(context).withValues(alpha: 0.25),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ],
+                      Text(
+                        l10n.appName,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.4,
                             ),
-                            child: const Icon(
-                              Icons.explore_rounded,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            l10n.appName,
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 24,
-                                  letterSpacing: -0.5,
-                                  color: AppColors.title(context),
-                                ),
-                          ),
-                        ],
                       ),
-                      const SizedBox(height: 8),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 4),
-                        child: Text(
-                          l10n.shareDescription,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.muted(context),
-                            fontWeight: FontWeight.w500,
-                          ),
+                      const SizedBox(height: 4),
+                      Text(
+                        l10n.shareDescription,
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          color: AppColors.muted(context),
+                          height: 1.35,
                         ),
                       ),
                       if (hasUser) ...[
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 16),
                         Material(
-                          color: AppColors.card(context).withValues(alpha: 0.7),
+                          color: AppColors.card(context),
                           borderRadius: BorderRadius.circular(16),
                           clipBehavior: Clip.antiAlias,
                           child: InkWell(
@@ -201,16 +164,14 @@ class HomeShellPageState extends State<HomeShellPage> {
                             child: Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: AppColors.border(context).withValues(alpha: 0.5),
-                                ),
+                                border: Border.all(color: AppColors.border(context)),
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               child: Row(
                                 children: [
                                   CircleAvatar(
                                     radius: 20,
-                                    backgroundColor: AppColors.primaryOf(context).withValues(alpha: 0.15),
+                                    backgroundColor: AppColors.primaryTint(context),
                                     backgroundImage: hasAvatar ? NetworkImage(avatarUrl) : null,
                                     child: hasAvatar
                                         ? null
@@ -223,16 +184,17 @@ class HomeShellPageState extends State<HomeShellPage> {
                                             ),
                                           ),
                                   ),
-                                  const SizedBox(width: 10),
+                                  const SizedBox(width: 12),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           displayName.isNotEmpty ? displayName : 'User',
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w700,
                                             fontSize: 14,
+                                            color: AppColors.title(context),
                                           ),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
@@ -242,7 +204,7 @@ class HomeShellPageState extends State<HomeShellPage> {
                                           Text(
                                             email,
                                             style: TextStyle(
-                                              fontSize: 11,
+                                              fontSize: 11.5,
                                               color: AppColors.muted(context),
                                             ),
                                             maxLines: 1,
@@ -266,52 +228,59 @@ class HomeShellPageState extends State<HomeShellPage> {
                     ],
                   ),
                 ),
+                Divider(height: 1, color: AppColors.divider(context)),
                 
                 // Menu List
                 Expanded(
                   child: ListView(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                     children: [
-                      _buildDrawerItem(
-                        context,
-                        icon: Icons.search_rounded,
-                        label: l10n.search,
-                        color: Colors.blue,
-                        onTap: () {
-                          Navigator.pop(context);
-                          context.push(RouteNames.search);
-                        },
-                      ),
-                      _buildDrawerItem(
-                        context,
-                        icon: Icons.bookmark_rounded,
-                        label: l10n.saved,
-                        color: Colors.green,
-                        onTap: () {
-                          Navigator.pop(context);
-                          context.push(RouteNames.favorites);
-                        },
-                      ),
-                      if (hasUser)
-                        _buildDrawerItem(
-                          context,
-                          icon: Icons.article_rounded,
-                          label: l10n.myPosts,
-                          color: Colors.teal,
-                          onTap: () {
-                            Navigator.pop(context);
-                            context.push(RouteNames.myDocuments);
-                          },
+                      Container(
+                        decoration: AppColors.panel(context),
+                        child: Column(
+                          children: [
+                            _buildDrawerItem(
+                              context,
+                              icon: Icons.manage_search_rounded,
+                              label: l10n.quickLookup,
+                              onTap: () {
+                                Navigator.pop(context);
+                                context.push(RouteNames.search);
+                              },
+                              showDivider: true,
+                            ),
+                            _buildDrawerItem(
+                              context,
+                              icon: Icons.bookmark_outline_rounded,
+                              label: l10n.saved,
+                              onTap: () {
+                                Navigator.pop(context);
+                                context.push(RouteNames.favorites);
+                              },
+                              showDivider: hasUser,
+                            ),
+                            if (hasUser)
+                              _buildDrawerItem(
+                                context,
+                                icon: Icons.article_outlined,
+                                label: l10n.myPosts,
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  context.push(RouteNames.myDocuments);
+                                },
+                                showDivider: true,
+                              ),
+                            _buildDrawerItem(
+                              context,
+                              icon: Icons.settings_outlined,
+                              label: l10n.settings,
+                              onTap: () {
+                                Navigator.pop(context);
+                                context.push(RouteNames.settings);
+                              },
+                            ),
+                          ],
                         ),
-                      _buildDrawerItem(
-                        context,
-                        icon: Icons.settings_rounded,
-                        label: l10n.settings,
-                        color: Colors.indigo,
-                        onTap: () {
-                          Navigator.pop(context);
-                          context.push(RouteNames.settings);
-                        },
                       ),
                     ],
                   ),
@@ -507,55 +476,41 @@ class HomeShellPageState extends State<HomeShellPage> {
     BuildContext context, {
     required IconData icon,
     required String label,
-    required Color color,
     required VoidCallback onTap,
+    bool showDivider = false,
   }) {
-    final isDark = AppColors.isDark(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(14),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Row(
-              children: [
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: isDark ? 0.15 : 0.08),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    icon,
-                    size: 20,
-                    color: isDark ? color.withValues(alpha: 0.9) : color,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Text(
-                    label,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                      color: AppColors.title(context),
-                    ),
-                  ),
-                ),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  size: 18,
-                  color: AppColors.muted(context).withValues(alpha: 0.5),
-                ),
-              ],
+    return Column(
+      children: [
+        ListTile(
+          dense: true,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+          leading: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.chipBg(context),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 20, color: AppColors.title(context)),
+          ),
+          title: Text(
+            label,
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 14.5,
+              color: AppColors.title(context),
             ),
           ),
+          trailing: Icon(
+            Icons.chevron_right_rounded,
+            size: 18,
+            color: AppColors.muted(context),
+          ),
+          onTap: onTap,
         ),
-      ),
+        if (showDivider)
+          Divider(height: 1, indent: 62, color: AppColors.divider(context)),
+      ],
     );
   }
 }

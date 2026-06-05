@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/i18n/app_text.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../document/presentation/widgets/document_card.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -16,28 +17,28 @@ class SearchPage extends StatefulWidget {
 
 class _SearchPageState extends State<SearchPage> {
   final _query = TextEditingController();
-  List<dynamic> _results = [];
+  List<Map<String, dynamic>> _results = [];
   bool _loading = false;
+  bool _hasSearched = false;
 
-  // Rich UX content state
   List<String> _recentSearches = [];
-  List<dynamic> _recommendations = [];
+  List<Map<String, dynamic>> _recommendations = [];
+  List<String> _lookupSuggestions = [];
+  List<String> _subjectCodes = [];
   bool _loadingRecommendations = false;
-
-  // Popular search suggestions
-  final List<Map<String, dynamic>> _popularSuggestions = const [
-    {'label': 'Thư viện', 'color': Color(0xFFEF4444)},
-    {'label': 'Café học tập', 'color': Color(0xFF10B981)},
-    {'label': 'Giải tích', 'color': Color(0xFF3B82F6)},
-    {'label': 'Đề thi đại cương', 'color': Color(0xFF8B5CF6)},
-    {'label': 'Ghi chú', 'color': Color(0xFFF59E0B)},
-  ];
 
   @override
   void initState() {
     super.initState();
     _query.addListener(() {
-      setState(() {});
+      if (_query.text.trim().isEmpty) {
+        setState(() {
+          _hasSearched = false;
+          _results = [];
+        });
+      } else {
+        setState(() {});
+      }
     });
     _loadRecentSearches();
     _loadRecommendations();
@@ -51,6 +52,7 @@ class _SearchPageState extends State<SearchPage> {
 
   Future<void> _loadRecentSearches() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     setState(() {
       _recentSearches = prefs.getStringList('recent_searches') ?? [];
     });
@@ -60,13 +62,12 @@ class _SearchPageState extends State<SearchPage> {
     if (q.isEmpty) return;
     final prefs = await SharedPreferences.getInstance();
     final list = prefs.getStringList('recent_searches') ?? [];
-    list.remove(q); // Prevent duplicates
-    list.insert(0, q); // Push to front
-    if (list.length > 5) list.removeLast(); // Keep top 5
+    list.remove(q);
+    list.insert(0, q);
+    if (list.length > 5) list.removeLast();
     await prefs.setStringList('recent_searches', list);
-    setState(() {
-      _recentSearches = list;
-    });
+    if (!mounted) return;
+    setState(() => _recentSearches = list);
   }
 
   Future<void> _deleteSearch(String q) async {
@@ -74,17 +75,67 @@ class _SearchPageState extends State<SearchPage> {
     final list = prefs.getStringList('recent_searches') ?? [];
     list.remove(q);
     await prefs.setStringList('recent_searches', list);
-    setState(() {
-      _recentSearches = list;
-    });
+    if (!mounted) return;
+    setState(() => _recentSearches = list);
   }
 
   Future<void> _clearAllRecent() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('recent_searches');
-    setState(() {
-      _recentSearches = [];
-    });
+    if (!mounted) return;
+    setState(() => _recentSearches = []);
+  }
+
+  String? _fileNameFromUrl(String? url) {
+    if (url == null || url.isEmpty) return null;
+    try {
+      final path = Uri.parse(url).path;
+      final name = Uri.decodeComponent(path.split('/').last);
+      return name.isEmpty ? null : name;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  List<String> _buildLookupSuggestions(List<dynamic> items) {
+    final suggestions = <String>{};
+    for (final raw in items) {
+      if (raw is! Map) continue;
+      final item = Map<String, dynamic>.from(raw);
+
+      final title = item['title']?.toString().trim();
+      if (title != null && title.isNotEmpty && title.length <= 32) {
+        suggestions.add(title);
+      }
+
+      final category = item['category'];
+      if (category is Map && category['name'] != null) {
+        final name = category['name'].toString().trim();
+        if (name.isNotEmpty) suggestions.add(name);
+      }
+
+      final fileName = _fileNameFromUrl(item['fileUrl']?.toString());
+      if (fileName != null && !fileName.startsWith('scaled_')) {
+        final base = fileName.contains('.') ? fileName.split('.').first : fileName;
+        if (base.length >= 3 && base.length <= 24) {
+          suggestions.add(base);
+        }
+      }
+    }
+    return suggestions.take(6).toList();
+  }
+
+  List<String> _buildSubjectCodes(List<dynamic> items) {
+    final codes = <String>{};
+    for (final raw in items) {
+      if (raw is! Map) continue;
+      final code = raw['subjectCode']?.toString().trim();
+      if (code != null && code.isNotEmpty) {
+        codes.add(code.toUpperCase());
+      }
+    }
+    final sorted = codes.toList()..sort();
+    return sorted.take(12).toList();
   }
 
   Future<void> _loadRecommendations() async {
@@ -92,41 +143,22 @@ class _SearchPageState extends State<SearchPage> {
     try {
       final res = await ApiClient.instance.get('/document', query: {
         'publishedOnly': 'true',
-        'limit': '6',
+        'limit': '40',
       });
-      setState(() => _recommendations = res['items'] as List? ?? []);
+      final items = (res['items'] as List? ?? [])
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+      if (!mounted) return;
+      setState(() {
+        _recommendations = items.take(6).toList();
+        _lookupSuggestions = _buildLookupSuggestions(items);
+        _subjectCodes = _buildSubjectCodes(items);
+      });
     } catch (_) {
       // Silent catch
     } finally {
-      setState(() => _loadingRecommendations = false);
-    }
-  }
-
-  Future<void> _search({String? customQuery}) async {
-    final q = customQuery ?? _query.text.trim();
-    if (q.isEmpty) return;
-
-    if (customQuery != null) {
-      _query.text = q;
-      // Put cursor at the end
-      _query.selection = TextSelection.fromPosition(TextPosition(offset: q.length));
-    }
-
-    _saveSearch(q);
-
-    setState(() {
-      _loading = true;
-    });
-    try {
-      final res = await ApiClient.instance.get('/document', query: {
-        'search': q,
-        'publishedOnly': 'true',
-      });
-      setState(() => _results = res['items'] as List? ?? []);
-    } on DioException catch (_) {
-      setState(() => _results = []);
-    } finally {
-      setState(() => _loading = false);
+      if (mounted) setState(() => _loadingRecommendations = false);
     }
   }
 
@@ -136,21 +168,122 @@ class _SearchPageState extends State<SearchPage> {
     return body.contains('type:place');
   }
 
+  String _placeSubtitle(Map<String, dynamic> item) {
+    final address = item['address']?.toString().trim();
+    if (address != null && address.isNotEmpty) return address;
+    return '';
+  }
+
+  Widget _buildLookupItem(Map<String, dynamic> item) {
+    if (_isPlace(item)) {
+      return _PlaceLookupTile(
+        item: item,
+        subtitle: _placeSubtitle(item),
+        onTap: () => _openResult(item),
+      );
+    }
+
+    return DocumentCard(
+      item: item,
+      onTap: () => _openResult(item),
+    );
+  }
+
+  Future<void> _searchBySubject(String subjectCode) async {
+    _query.text = subjectCode;
+    _query.selection = TextSelection.fromPosition(TextPosition(offset: subjectCode.length));
+    await _saveSearch(subjectCode);
+    setState(() {
+      _loading = true;
+      _hasSearched = true;
+    });
+
+    try {
+      final res = await ApiClient.instance.get('/document', query: {
+        'subjectCode': subjectCode,
+        'publishedOnly': 'true',
+        'limit': '20',
+      });
+      final docs = (res['items'] as List? ?? [])
+          .whereType<Map>()
+          .map((e) => {...Map<String, dynamic>.from(e), 'type': 'document'})
+          .toList();
+      if (!mounted) return;
+      setState(() => _results = docs);
+    } on DioException catch (_) {
+      if (!mounted) return;
+      setState(() => _results = []);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _search({String? customQuery}) async {
+    final q = customQuery ?? _query.text.trim();
+    if (q.isEmpty) return;
+
+    if (customQuery != null) {
+      _query.text = q;
+      _query.selection = TextSelection.fromPosition(TextPosition(offset: q.length));
+    }
+
+    await _saveSearch(q);
+    setState(() {
+      _loading = true;
+      _hasSearched = true;
+    });
+
+    try {
+      final responses = await Future.wait([
+        ApiClient.instance.get('/document', query: {
+          'search': q,
+          'publishedOnly': 'true',
+          'limit': '20',
+        }),
+        ApiClient.instance.get('/places', query: {
+          'search': q,
+          'publishedOnly': 'true',
+          'limit': '20',
+        }),
+      ]);
+
+      final docs = (responses[0]['items'] as List? ?? [])
+          .whereType<Map>()
+          .map((e) => {...Map<String, dynamic>.from(e), 'type': 'document'})
+          .toList();
+      final places = (responses[1]['items'] as List? ?? [])
+          .whereType<Map>()
+          .map((e) => {...Map<String, dynamic>.from(e), 'type': 'place'})
+          .toList();
+
+      if (!mounted) return;
+      setState(() => _results = [...docs, ...places]);
+    } on DioException catch (_) {
+      if (!mounted) return;
+      setState(() => _results = []);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  void _openResult(Map<String, dynamic> item) {
+    final id = item['id']?.toString() ?? '';
+    if (id.isEmpty) return;
+    context.push(_isPlace(item) ? '/places/$id' : '/document/$id');
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final isDark = AppColors.isDark(context);
     final primary = AppColors.primaryOf(context);
-
-    // If query was cleared and they aren't loading, reset the searched state so recommendations display
     final isQueryEmpty = _query.text.trim().isEmpty;
-    final showSuggestions = isQueryEmpty && !_loading;
+    final showSuggestions = isQueryEmpty && !_loading && !_hasSearched;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
-          l10n.search,
+          l10n.quickLookup,
           style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 20),
         ),
         leading: IconButton(
@@ -162,50 +295,41 @@ class _SearchPageState extends State<SearchPage> {
       ),
       body: Column(
         children: [
-          // Search input bar
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.searchFill(context),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: AppColors.border(context),
-                      ),
-                    ),
-                    child: TextField(
-                      controller: _query,
-                      decoration: InputDecoration(
-                        hintText: l10n.searchHint,
-                        prefixIcon: Icon(Icons.search_rounded, color: AppColors.muted(context)),
-                        suffixIcon: _query.text.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.clear_rounded, size: 20),
-                                onPressed: () {
-                                  _query.clear();
-                                  setState(() {
-                                    _results = [];
-                                  });
-                                },
-                              )
-                            : null,
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      ),
-                      textInputAction: TextInputAction.search,
-                      onSubmitted: (_) => _search(),
-                    ),
-                  ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppColors.searchFill(context),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.border(context)),
+              ),
+              child: TextField(
+                controller: _query,
+                decoration: InputDecoration(
+                  hintText: l10n.quickLookupHint,
+                  prefixIcon: Icon(Icons.manage_search_rounded, color: AppColors.muted(context)),
+                  suffixIcon: _query.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear_rounded, size: 20),
+                          onPressed: () {
+                            _query.clear();
+                            setState(() {
+                              _results = [];
+                              _hasSearched = false;
+                            });
+                          },
+                        )
+                      : null,
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
-              ],
+                textInputAction: TextInputAction.search,
+                onSubmitted: (_) => _search(),
+              ),
             ),
           ),
-
           if (_loading)
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16),
@@ -214,29 +338,26 @@ class _SearchPageState extends State<SearchPage> {
                 child: LinearProgressIndicator(minHeight: 3),
               ),
             ),
-
           Expanded(
             child: showSuggestions
-                ? _buildSuggestions(isDark, primary)
-                : _buildSearchResults(l10n, isDark, primary),
+                ? _buildSuggestions(l10n, primary)
+                : _buildSearchResults(l10n, primary),
           ),
         ],
       ),
     );
   }
 
-  // Build the rich suggestions UI shown BEFORE search
-  Widget _buildSuggestions(bool isDark, Color primary) {
+  Widget _buildSuggestions(AppLocalizations l10n, Color primary) {
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       children: [
-        // 1. Recent Searches Section
         if (_recentSearches.isNotEmpty) ...[
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Tìm kiếm gần đây',
+                l10n.recentLookups,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
@@ -250,20 +371,13 @@ class _SearchPageState extends State<SearchPage> {
                   minimumSize: const Size(50, 30),
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
-                child: Text(
-                  'Xóa tất cả',
-                  style: TextStyle(fontSize: 12, color: primary),
-                ),
+                child: Text(l10n.clearAll, style: TextStyle(fontSize: 12, color: primary)),
               ),
             ],
           ),
           const SizedBox(height: 8),
           Container(
-            decoration: BoxDecoration(
-              color: AppColors.card(context),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.border(context)),
-            ),
+            decoration: AppColors.panel(context),
             child: Column(
               children: [
                 for (int i = 0; i < _recentSearches.length; i++) ...[
@@ -288,45 +402,78 @@ class _SearchPageState extends State<SearchPage> {
           ),
           const SizedBox(height: 20),
         ],
-
-        // 2. Popular Tags Suggestions Section
-        Text(
-          'Gợi ý tìm kiếm',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-            color: AppColors.title(context),
+        if (_lookupSuggestions.isNotEmpty) ...[
+          Text(
+            l10n.lookupSuggestions,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+              color: AppColors.title(context),
+            ),
           ),
-        ),
-        const SizedBox(height: 10),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: _popularSuggestions.map((suggestion) {
-            final color = suggestion['color'] as Color;
-            return ActionChip(
-              backgroundColor: color.withValues(alpha: isDark ? 0.15 : 0.08),
-              side: BorderSide.none,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              label: Text(
-                suggestion['label'] as String,
-                style: TextStyle(
-                  color: isDark ? color.withValues(alpha: 0.95) : color,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _lookupSuggestions.map((label) {
+              return ActionChip(
+                backgroundColor: AppColors.chipBg(context),
+                side: BorderSide(color: AppColors.border(context)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                label: Text(
+                  label,
+                  style: TextStyle(
+                    color: AppColors.title(context),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
                 ),
-              ),
-              onPressed: () => _search(customQuery: suggestion['label'] as String),
-            );
-          }).toList(),
-        ),
-        const SizedBox(height: 24),
-
-        // 3. Recommended Items Section
+                onPressed: () => _search(customQuery: label),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 24),
+        ],
+        if (_subjectCodes.isNotEmpty) ...[
+          Text(
+            l10n.lookupBySubject,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+              color: AppColors.title(context),
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 38,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: _subjectCodes.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final code = _subjectCodes[index];
+                return ActionChip(
+                  backgroundColor: primary.withValues(alpha: AppColors.isDark(context) ? 0.18 : 0.1),
+                  side: BorderSide(color: primary.withValues(alpha: 0.25)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  label: Text(
+                    code,
+                    style: TextStyle(
+                      color: primary,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12.5,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                  onPressed: () => _searchBySubject(code),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
         Text(
-          'Đề xuất cho bạn',
+          l10n.recommendedForYou,
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 14,
@@ -338,11 +485,7 @@ class _SearchPageState extends State<SearchPage> {
           const Center(
             child: Padding(
               padding: EdgeInsets.symmetric(vertical: 24),
-              child: SizedBox(
-                width: 28,
-                height: 28,
-                child: CircularProgressIndicator(strokeWidth: 2.5),
-              ),
+              child: SizedBox(width: 28, height: 28, child: CircularProgressIndicator(strokeWidth: 2.5)),
             ),
           )
         else if (_recommendations.isEmpty)
@@ -350,100 +493,20 @@ class _SearchPageState extends State<SearchPage> {
             padding: const EdgeInsets.symmetric(vertical: 20),
             child: Center(
               child: Text(
-                'Không có đề xuất nào',
+                l10n.noRecommendations,
                 style: TextStyle(color: AppColors.muted(context), fontSize: 13),
               ),
             ),
           )
         else
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: _recommendations.length,
-            itemBuilder: (context, idx) {
-              final item = _recommendations[idx] as Map<String, dynamic>;
-              final id = item['id']?.toString() ?? '';
-              final title = item['title']?.toString() ?? '';
-              final isPlace = _isPlace(item);
-              final accentColor = isPlace ? const Color(0xFFEF4444) : const Color(0xFF3B82F6);
-
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Material(
-                  color: AppColors.card(context),
-                  borderRadius: BorderRadius.circular(16),
-                  clipBehavior: Clip.antiAlias,
-                  child: InkWell(
-                    onTap: id.isEmpty
-                        ? null
-                        : () => context.push(isPlace ? '/places/$id' : '/document/$id'),
-                    child: Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: AppColors.border(context),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 42,
-                            height: 42,
-                            decoration: BoxDecoration(
-                              color: accentColor.withValues(alpha: isDark ? 0.18 : 0.08),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Icon(
-                              isPlace ? Icons.place_rounded : Icons.description_rounded,
-                              color: accentColor,
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  title,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14.5,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  isPlace ? 'Địa điểm học tập' : 'Tài liệu chia sẻ',
-                                  style: TextStyle(
-                                    fontSize: 11.5,
-                                    color: AppColors.muted(context),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Icon(
-                            Icons.chevron_right_rounded,
-                            size: 18,
-                            color: AppColors.muted(context),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
+          ..._recommendations.map(
+            (item) => _buildLookupItem(item),
           ),
       ],
     );
   }
 
-  // Build the search results view shown AFTER search is executed
-  Widget _buildSearchResults(AppLocalizations l10n, bool isDark, Color primary) {
+  Widget _buildSearchResults(AppLocalizations l10n, Color primary) {
     if (_loading && _results.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -453,7 +516,7 @@ class _SearchPageState extends State<SearchPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.search_off_rounded, size: 48, color: AppColors.muted(context)),
+            Icon(Icons.manage_search_rounded, size: 48, color: AppColors.muted(context)),
             const SizedBox(height: 16),
             Text(
               l10n.noResultsFound,
@@ -465,11 +528,8 @@ class _SearchPageState extends State<SearchPage> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Thử tìm với từ khóa khác xem sao nhé',
-              style: TextStyle(
-                fontSize: 13,
-                color: AppColors.muted(context),
-              ),
+              l10n.tryDifferentLookup,
+              style: TextStyle(fontSize: 13, color: AppColors.muted(context)),
             ),
           ],
         ),
@@ -479,83 +539,113 @@ class _SearchPageState extends State<SearchPage> {
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       itemCount: _results.length,
-      itemBuilder: (context, i) {
-        final item = _results[i] as Map<String, dynamic>;
-        final id = item['id']?.toString() ?? '';
-        final title = item['title']?.toString() ?? '';
-        final isPlace = _isPlace(item);
-        final accentColor = isPlace ? const Color(0xFFEF4444) : const Color(0xFF3B82F6);
+      itemBuilder: (context, i) => _buildLookupItem(_results[i]),
+    );
+  }
+}
 
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: Material(
-            color: AppColors.card(context),
-            borderRadius: BorderRadius.circular(16),
-            clipBehavior: Clip.antiAlias,
-            child: InkWell(
-              onTap: id.isEmpty
-                  ? null
-                  : () => context.push(isPlace ? '/places/$id' : '/document/$id'),
-              child: Container(
-                padding: const EdgeInsets.all(14),
+class _PlaceLookupTile extends StatelessWidget {
+  const _PlaceLookupTile({
+    required this.item,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final Map<String, dynamic> item;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final title = item['title']?.toString() ?? '';
+    const accentColor = Color(0xFFEF4444);
+    final isDark = AppColors.isDark(context);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: AppColors.card(context),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppColors.border(context)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.05),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(22),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              Container(
+                width: 100,
+                height: 118,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: AppColors.border(context),
-                  ),
+                  color: accentColor.withValues(alpha: isDark ? 0.18 : 0.08),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: AppColors.border(context)),
                 ),
-                child: Row(
+                child: Icon(Icons.place_rounded, color: accentColor, size: 36),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15.5,
+                        height: 1.18,
+                        color: AppColors.title(context),
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 10),
                     Container(
-                      width: 42,
-                      height: 42,
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: accentColor.withValues(alpha: isDark ? 0.18 : 0.08),
-                        borderRadius: BorderRadius.circular(12),
+                        color: AppColors.chipBg(context),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Icon(
-                        isPlace ? Icons.place_rounded : Icons.description_rounded,
-                        color: accentColor,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            title,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            isPlace ? 'Địa điểm học tập' : 'Tài liệu chia sẻ',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.muted(context),
-                            ),
-                          ),
-                        ],
+                      child: Text(
+                        context.l10n.studyPlaceLabel,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.muted(context),
+                        ),
                       ),
                     ),
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      size: 20,
-                      color: AppColors.muted(context),
-                    ),
+                    if (subtitle.isNotEmpty) ...[
+                      const SizedBox(height: 10),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: 12,
+                          height: 1.35,
+                          color: AppColors.muted(context),
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ],
                 ),
               ),
-            ),
+              const SizedBox(width: 6),
+              Icon(Icons.chevron_right_rounded, color: AppColors.muted(context), size: 22),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }

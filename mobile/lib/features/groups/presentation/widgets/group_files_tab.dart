@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:dio/dio.dart';
 import 'package:sfinity/features/document/presentation/pages/pdf_full_screen_page.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/i18n/app_text.dart';
 import '../../data/models/group_message_model.dart';
 import '../../data/services/group_chat_service.dart';
@@ -76,6 +77,22 @@ class _GroupFilesTabState extends State<GroupFilesTab> {
 
   String _formatDate(DateTime dt) {
     return '${dt.day}/${dt.month}/${dt.year}';
+  }
+
+  String _friendlyDisplayName(String? raw, String fallback) {
+    if (raw == null || raw.trim().isEmpty) return fallback;
+    var name = raw.trim();
+    if (name.startsWith('scaled_')) {
+      name = name.substring(7);
+    }
+    final dotIndex = name.lastIndexOf('.');
+    final base = dotIndex > 0 ? name.substring(0, dotIndex) : name;
+    final looksLikeUuid = RegExp(
+      r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+      caseSensitive: false,
+    ).hasMatch(base);
+    if (looksLikeUuid || base.length < 2) return fallback;
+    return name;
   }
 
   @override
@@ -349,7 +366,11 @@ class _GroupFilesTabState extends State<GroupFilesTab> {
 
                           // Xử lý riêng dạng Hình ảnh: Hiển thị hình ảnh giống bên chat nhưng nhỏ hơn
                           if (msg.type == MessageType.image) {
-                            return _ImageResourceItem(message: msg);
+                            return _ImageResourceItem(
+                              message: msg,
+                              formatDate: _formatDate,
+                              displayName: _friendlyDisplayName(msg.fileName, l10n.imageLabel),
+                            );
                           }
 
                           // Xử lý Tài liệu học tập và Tệp đính kèm: Cơ chế tải và mở giống bên chat
@@ -363,88 +384,10 @@ class _GroupFilesTabState extends State<GroupFilesTab> {
 
                           // Xử lý dạng Địa điểm: Hiện dạng thẻ List tiện dụng
                           if (msg.type == MessageType.location) {
-                            final title = msg.fileName ?? l10n.locationPlaceholder;
-                            final subtitle = l10n.placeSharedSentBy(msg.senderName);
-                            final leading = Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: Colors.green.shade50,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Icon(Icons.place_rounded, color: Colors.green.shade700),
-                            );
-                            final onTap = () async {
-                              final placeId = msg.sharedPlaceId;
-                              if (placeId != null && placeId.isNotEmpty) {
-                                context.push('/places/$placeId');
-                              } else if (msg.fileUrl != null && msg.fileUrl!.isNotEmpty) {
-                                final uri = Uri.parse(msg.fileUrl!);
-                                try {
-                                  await launchUrl(uri, mode: LaunchMode.externalApplication);
-                                } catch (_) {}
-                              }
-                            };
-
-                            return Card(
-                              elevation: 0,
-                              color: cs.surfaceContainerLowest,
-                              margin: const EdgeInsets.only(bottom: 10),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                side: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3)),
-                              ),
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(16),
-                                onTap: onTap,
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                  child: Row(
-                                    children: [
-                                      leading,
-                                      const SizedBox(width: 14),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              title,
-                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              subtitle,
-                                              style: theme.textTheme.bodySmall?.copyWith(
-                                                color: cs.onSurfaceVariant,
-                                                fontSize: 11,
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Column(
-                                        crossAxisAlignment: CrossAxisAlignment.end,
-                                        children: [
-                                          Icon(Icons.arrow_forward_ios_rounded, size: 14, color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
-                                          const SizedBox(height: 6),
-                                          Text(
-                                            _formatDate(msg.createdAt),
-                                            style: TextStyle(
-                                              fontSize: 9.5,
-                                              color: cs.onSurfaceVariant.withValues(alpha: 0.6),
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
+                            return _LocationResourceItem(
+                              message: msg,
+                              formatDate: _formatDate,
+                              title: msg.fileName ?? l10n.locationPlaceholder,
                             );
                           }
 
@@ -460,73 +403,198 @@ class _GroupFilesTabState extends State<GroupFilesTab> {
   }
 }
 
-class _ImageResourceItem extends StatelessWidget {
-  const _ImageResourceItem({required this.message});
+class _StorageResourceCard extends StatelessWidget {
+  const _StorageResourceCard({
+    required this.leading,
+    required this.title,
+    required this.subtitle,
+    required this.date,
+    required this.trailing,
+    required this.onTap,
+  });
+
+  final Widget leading;
+  final String title;
+  final String subtitle;
+  final String date;
+  final Widget trailing;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    return Card(
+      elevation: 0,
+      color: AppColors.card(context),
+      margin: const EdgeInsets.only(bottom: 10),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: AppColors.border(context)),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
+            children: [
+              leading,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.muted(context),
+                        fontSize: 11.5,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  trailing,
+                  const SizedBox(height: 6),
+                  Text(
+                    date,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: cs.onSurfaceVariant.withValues(alpha: 0.65),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LocationResourceItem extends StatelessWidget {
+  const _LocationResourceItem({
+    required this.message,
+    required this.formatDate,
+    required this.title,
+  });
+
   final GroupMessageModel message;
+  final String Function(DateTime) formatDate;
+  final String title;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    final imageUrl = message.fileUrl ?? '';
+    final isDark = AppColors.isDark(context);
+    const accent = Color(0xFF10B981);
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          GestureDetector(
-            onTap: () async {
-              if (imageUrl.isNotEmpty) {
-                final uri = Uri.parse(imageUrl);
-                try {
-                  await launchUrl(uri, mode: LaunchMode.externalApplication);
-                } catch (_) {}
-              }
-            },
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Container(
-                color: cs.surfaceContainerHigh,
-                width: 180,
-                height: 120,
-                child: imageUrl.isNotEmpty
-                    ? Image.network(
-                        imageUrl,
-                        fit: BoxFit.cover,
-                        loadingBuilder: (_, child, progress) {
-                          if (progress == null) return child;
-                          return Center(
-                            child: CircularProgressIndicator(
-                              value: progress.expectedTotalBytes != null
-                                  ? progress.cumulativeBytesLoaded /
-                                      progress.expectedTotalBytes!
-                                  : null,
-                            ),
-                          );
-                        },
-                        errorBuilder: (_, __, ___) => const Center(
-                          child: Icon(Icons.broken_image_rounded, size: 36),
-                        ),
-                      )
-                    : const Center(child: Icon(Icons.image_rounded, size: 36)),
-              ),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Padding(
-            padding: const EdgeInsets.only(left: 4),
-            child: Text(
-              l10n.imageSharedBy(message.fileName ?? l10n.images, message.senderName),
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: cs.onSurfaceVariant.withValues(alpha: 0.8),
-                fontSize: 11,
-              ),
-            ),
-          ),
-        ],
+    return _StorageResourceCard(
+      title: title,
+      subtitle: l10n.resourceSharedBy(message.senderName),
+      date: formatDate(message.createdAt),
+      leading: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          color: accent.withValues(alpha: isDark ? 0.18 : 0.1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Icon(Icons.place_rounded, color: accent, size: 22),
       ),
+      trailing: Icon(
+        Icons.chevron_right_rounded,
+        size: 18,
+        color: AppColors.muted(context),
+      ),
+      onTap: () async {
+        final placeId = message.sharedPlaceId;
+        if (placeId != null && placeId.isNotEmpty) {
+          context.push('/places/$placeId');
+        } else if (message.fileUrl != null && message.fileUrl!.isNotEmpty) {
+          final uri = Uri.parse(message.fileUrl!);
+          try {
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+          } catch (_) {}
+        }
+      },
+    );
+  }
+}
+
+class _ImageResourceItem extends StatelessWidget {
+  const _ImageResourceItem({
+    required this.message,
+    required this.formatDate,
+    required this.displayName,
+  });
+
+  final GroupMessageModel message;
+  final String Function(DateTime) formatDate;
+  final String displayName;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final cs = Theme.of(context).colorScheme;
+    final imageUrl = message.fileUrl ?? '';
+    const accent = Color(0xFF3B82F6);
+
+    return _StorageResourceCard(
+      title: displayName,
+      subtitle: l10n.resourceSharedBy(message.senderName),
+      date: formatDate(message.createdAt),
+      leading: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          width: 48,
+          height: 48,
+          color: cs.surfaceContainerHighest,
+          child: imageUrl.isNotEmpty
+              ? Image.network(
+                  imageUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Icon(
+                    Icons.image_rounded,
+                    color: accent.withValues(alpha: 0.8),
+                  ),
+                )
+              : Icon(Icons.image_rounded, color: accent.withValues(alpha: 0.8)),
+        ),
+      ),
+      trailing: Icon(
+        Icons.chevron_right_rounded,
+        size: 18,
+        color: AppColors.muted(context),
+      ),
+      onTap: () async {
+        if (imageUrl.isNotEmpty) {
+          final uri = Uri.parse(imageUrl);
+          try {
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+          } catch (_) {}
+        }
+      },
     );
   }
 }
@@ -669,41 +737,66 @@ class _FileResourceItemState extends State<_FileResourceItem> {
 
     if (isDoc) {
       title = msg.sharedDocumentTitle ?? l10n.untitledDocument;
-      subtitle = l10n.documentStudyShared.replaceAll('...', ' • ${msg.senderName}');
+      subtitle = l10n.resourceSharedBy(msg.senderName);
       leading = Container(
-        padding: const EdgeInsets.all(10),
+        width: 48,
+        height: 48,
         decoration: BoxDecoration(
-          color: Colors.red.shade50,
+          color: Colors.red.withValues(alpha: isDark ? 0.18 : 0.1),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Icon(Icons.picture_as_pdf_rounded, color: Colors.red.shade700),
+        child: Icon(Icons.picture_as_pdf_rounded, color: Colors.red.shade700, size: 22),
       );
     } else {
-      title = msg.fileName ?? l10n.sharedFile;
+      title = _friendlyFileTitle(msg.fileName, l10n.sharedFile);
       final sizeStr = widget.formatSize(msg.fileSize);
-      subtitle = '${sizeStr.isNotEmpty ? "$sizeStr • " : ""}${l10n.files} • ${msg.senderName}';
+      subtitle = '${sizeStr.isNotEmpty ? "$sizeStr • " : ""}${l10n.resourceSharedBy(msg.senderName)}';
       final extColor = _colorForFile(title);
       leading = Container(
-        padding: const EdgeInsets.all(10),
+        width: 48,
+        height: 48,
         decoration: BoxDecoration(
-          color: extColor.withValues(alpha: 0.1),
+          color: extColor.withValues(alpha: isDark ? 0.18 : 0.1),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Icon(_iconForFile(title), color: extColor.withValues(alpha: 0.9)),
+        child: Icon(_iconForFile(title), color: extColor.withValues(alpha: 0.9), size: 22),
       );
     }
 
-    return Card(
-      elevation: 0,
-      color: cs.surfaceContainerLowest,
-      margin: const EdgeInsets.only(bottom: 10),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3)),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () async {
+    Widget trailing;
+    if (isDoc) {
+      trailing = Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.muted(context));
+    } else if (_isDownloading) {
+      trailing = SizedBox(
+        width: 18,
+        height: 18,
+        child: CircularProgressIndicator(
+          value: _downloadProgress > 0 ? _downloadProgress : null,
+          strokeWidth: 2,
+          valueColor: AlwaysStoppedAnimation<Color>(cs.primary),
+        ),
+      );
+    } else if (_fileExists) {
+      trailing = Icon(
+        Icons.check_circle_rounded,
+        size: 18,
+        color: isDark ? Colors.greenAccent : Colors.green,
+      );
+    } else {
+      trailing = Icon(
+        Icons.download_rounded,
+        size: 18,
+        color: cs.primary.withValues(alpha: 0.85),
+      );
+    }
+
+    return _StorageResourceCard(
+      leading: leading,
+      title: title,
+      subtitle: subtitle,
+      date: widget.formatDate(msg.createdAt),
+      trailing: trailing,
+      onTap: () async {
           if (isDoc) {
             final docId = msg.sharedDocumentId ?? '';
             context.push('/document/$docId');
@@ -752,80 +845,21 @@ class _FileResourceItemState extends State<_FileResourceItem> {
               await _downloadFile();
             }
           }
-        },
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              leading,
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: cs.onSurfaceVariant,
-                        fontSize: 11,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  // Action indicator: downloading (progress), checked (checkmark), or download button
-                  if (isDoc)
-                    Icon(Icons.arrow_forward_ios_rounded, size: 14, color: cs.onSurfaceVariant.withValues(alpha: 0.5))
-                  else if (_isDownloading)
-                    SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        value: _downloadProgress > 0 ? _downloadProgress : null,
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(cs.primary),
-                      ),
-                    )
-                  else if (_fileExists)
-                    Icon(
-                      Icons.check_circle_rounded,
-                      size: 18,
-                      color: isDark ? Colors.greenAccent : Colors.green,
-                    )
-                  else
-                    Icon(
-                      Icons.download_rounded,
-                      size: 18,
-                      color: cs.primary.withValues(alpha: 0.8),
-                    ),
-                  const SizedBox(height: 6),
-                  Text(
-                    widget.formatDate(msg.createdAt),
-                    style: TextStyle(
-                      fontSize: 9.5,
-                      color: cs.onSurfaceVariant.withValues(alpha: 0.6),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
+      },
     );
+  }
+
+  String _friendlyFileTitle(String? raw, String fallback) {
+    if (raw == null || raw.trim().isEmpty) return fallback;
+    var name = raw.trim();
+    if (name.startsWith('scaled_')) name = name.substring(7);
+    final dotIndex = name.lastIndexOf('.');
+    final base = dotIndex > 0 ? name.substring(0, dotIndex) : name;
+    final looksLikeUuid = RegExp(
+      r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+      caseSensitive: false,
+    ).hasMatch(base);
+    if (looksLikeUuid || base.length < 2) return fallback;
+    return name;
   }
 }

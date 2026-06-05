@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
+
+import '../../../../core/i18n/app_text.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../controllers/document_form_controller.dart';
 
 /// Phần giao diện tải tệp PDF lên và xem trước nội dung trực tiếp khi đăng.
@@ -16,6 +19,7 @@ class DocumentUploadSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final primary = theme.colorScheme.primary;
     final hasFile = controller.localFileToUpload != null || controller.uploadedFileUrl != null;
 
@@ -23,11 +27,11 @@ class DocumentUploadSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Tài liệu PDF',
+          l10n.pdfDocument,
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: theme.colorScheme.onSurface,
+            color: AppColors.title(context),
           ),
         ),
         const SizedBox(height: 10),
@@ -38,9 +42,7 @@ class DocumentUploadSection extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 16),
               decoration: BoxDecoration(
-                color: theme.brightness == Brightness.light
-                    ? Colors.grey.shade50
-                    : Colors.grey.shade900,
+                color: AppColors.chipBg(context),
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
                   color: primary.withValues(alpha: 0.3),
@@ -56,15 +58,16 @@ class DocumentUploadSection extends StatelessWidget {
                     color: primary,
                   ),
                   const SizedBox(height: 14),
-                  const Text(
-                    'Chọn tệp tài liệu PDF',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  Text(
+                    l10n.selectPdfDocument,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Nhấn để chọn tệp tài liệu dạng .pdf',
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                    l10n.tapToSelectPdf,
+                    style: TextStyle(fontSize: 12, color: AppColors.muted(context)),
+                    textAlign: TextAlign.center,
                   ),
                 ],
               ),
@@ -74,11 +77,9 @@ class DocumentUploadSection extends StatelessWidget {
           Container(
             width: double.infinity,
             decoration: BoxDecoration(
-              color: theme.brightness == Brightness.light
-                  ? Colors.grey.shade100
-                  : Colors.grey.shade900,
+              color: AppColors.chipBg(context),
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: theme.dividerColor),
+              border: Border.all(color: AppColors.border(context)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -91,10 +92,11 @@ class DocumentUploadSection extends StatelessWidget {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          controller.uploadedFileName ?? 'Tài liệu học tập.pdf',
-                          style: const TextStyle(
+                          controller.uploadedFileName ?? l10n.defaultDocumentFileName,
+                          style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
+                            color: AppColors.title(context),
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -104,7 +106,7 @@ class DocumentUploadSection extends StatelessWidget {
                       TextButton.icon(
                         onPressed: controller.loading || controller.uploading ? null : onPickFile,
                         icon: const Icon(Icons.refresh, size: 16),
-                        label: const Text('Đổi tệp', style: TextStyle(fontSize: 12)),
+                        label: Text(l10n.changeFile, style: const TextStyle(fontSize: 12)),
                         style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           minimumSize: Size.zero,
@@ -114,7 +116,7 @@ class DocumentUploadSection extends StatelessWidget {
                     ],
                   ),
                 ),
-                const Divider(height: 1),
+                Divider(height: 1, color: AppColors.divider(context)),
                 Container(
                   height: 250,
                   width: double.infinity,
@@ -148,7 +150,7 @@ class DocumentUploadSection extends StatelessWidget {
               Expanded(
                 child: LinearProgressIndicator(
                   value: controller.uploadProgress,
-                  backgroundColor: Colors.grey.shade200,
+                  backgroundColor: AppColors.border(context),
                   valueColor: AlwaysStoppedAnimation<Color>(primary),
                   borderRadius: BorderRadius.circular(4),
                 ),

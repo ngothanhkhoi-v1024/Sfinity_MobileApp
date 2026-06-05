@@ -20,6 +20,19 @@ class AppLocalizations {
       'publishedPostsList': 'Danh sách bài viết đã xuất bản',
       'profile': 'Cá nhân',
       'search': 'Tìm kiếm',
+      'quickLookup': 'Tra cứu nhanh',
+      'quickLookupHint': 'Tra cứu tài liệu, tên file, địa điểm…',
+      'recentLookups': 'Tra cứu gần đây',
+      'lookupSuggestions': 'Gợi ý tra cứu',
+      'lookupBySubject': 'Tra cứu theo môn học',
+      'recommendedForYou': 'Đề xuất cho bạn',
+      'clearAll': 'Xóa tất cả',
+      'noRecommendations': 'Không có đề xuất nào',
+      'tryDifferentLookup': 'Thử từ khóa khác xem sao nhé',
+      'sharedDocumentLabel': 'Tài liệu chia sẻ',
+      'studyPlaceLabel': 'Địa điểm học tập',
+      'resourceSharedBy': 'Chia sẻ bởi {name}',
+      'imageLabel': 'Ảnh',
       'saved': 'Đã lưu',
       'settings': 'Cài đặt',
       'notifications': 'Thông báo',
@@ -213,6 +226,12 @@ class AppLocalizations {
       'categoryOther': 'Khác',
       'tags': 'Thẻ',
       'postDocument': 'Đăng tài liệu',
+      'updateDocument': 'Cập nhật tài liệu',
+      'changeFile': 'Đổi tệp',
+      'selectPdfDocument': 'Chọn tệp tài liệu PDF',
+      'tapToSelectPdf': 'Nhấn để chọn tệp tài liệu dạng .pdf',
+      'defaultDocumentFileName': 'Tài liệu học tập.pdf',
+      'subjectCodeHint': 'VD: Giải tích 1',
       'documentUpdateSuccess': 'Cập nhật tài liệu thành công',
       'documentShareSuccess': 'Chia sẻ tài liệu thành công',
       'documentStudyShared': 'Tài liệu học tập được chia sẻ',
@@ -577,6 +596,19 @@ class AppLocalizations {
       'publishedPostsList': 'List of published posts',
       'profile': 'Profile',
       'search': 'Search',
+      'quickLookup': 'Quick lookup',
+      'quickLookupHint': 'Look up documents, file names, places…',
+      'recentLookups': 'Recent lookups',
+      'lookupSuggestions': 'Lookup suggestions',
+      'lookupBySubject': 'Browse by subject',
+      'recommendedForYou': 'Recommended for you',
+      'clearAll': 'Clear all',
+      'noRecommendations': 'No recommendations yet',
+      'tryDifferentLookup': 'Try a different keyword',
+      'sharedDocumentLabel': 'Shared document',
+      'studyPlaceLabel': 'Study place',
+      'resourceSharedBy': 'Shared by {name}',
+      'imageLabel': 'Image',
       'saved': 'Saved',
       'settings': 'Settings',
       'notifications': 'Notifications',
@@ -740,7 +772,7 @@ class AppLocalizations {
       'selectCategory': 'Select category',
       'publicAllSee': 'Public - Everyone can see',
       'reset_': 'Reset',
-      'displayMode': 'Display Mode',
+      'displayMode': 'Visibility',
       'publicApproved': 'Public (Everyone can see)',
       'publicPending': 'Public (Submit for approval)',
       'onlyMeDraft': 'Only me (Draft)',
@@ -769,7 +801,13 @@ class AppLocalizations {
       'categoryNote': 'Note',
       'categoryOther': 'Other',
       'tags': 'Tags',
-      'postDocument': 'Post document',
+      'postDocument': 'Publish document',
+      'updateDocument': 'Update document',
+      'changeFile': 'Change file',
+      'selectPdfDocument': 'Select PDF document',
+      'tapToSelectPdf': 'Tap to choose a .pdf file',
+      'defaultDocumentFileName': 'Study document.pdf',
+      'subjectCodeHint': 'e.g. Calculus I',
       'documentUpdateSuccess': 'Document updated successfully',
       'documentShareSuccess': 'Document shared successfully',
       'documentStudyShared': 'Study document shared',
@@ -1147,6 +1185,19 @@ class AppLocalizations {
   String get publishedPostsList => _text('publishedPostsList');
   String get profile => _text('profile');
   String get search => _text('search');
+  String get quickLookup => _text('quickLookup');
+  String get quickLookupHint => _text('quickLookupHint');
+  String get recentLookups => _text('recentLookups');
+  String get lookupSuggestions => _text('lookupSuggestions');
+  String get lookupBySubject => _text('lookupBySubject');
+  String get recommendedForYou => _text('recommendedForYou');
+  String get clearAll => _text('clearAll');
+  String get noRecommendations => _text('noRecommendations');
+  String get tryDifferentLookup => _text('tryDifferentLookup');
+  String get sharedDocumentLabel => _text('sharedDocumentLabel');
+  String get studyPlaceLabel => _text('studyPlaceLabel');
+  String get imageLabel => _text('imageLabel');
+  String resourceSharedBy(String name) => _format('resourceSharedBy', {'{name}': name});
   String get saved => _text('saved');
   String get settings => _text('settings');
   String get notifications => _text('notifications');
@@ -1340,6 +1391,12 @@ class AppLocalizations {
   String get tags => _text('tags');
   String get updatePlace => _text('updatePlace');
   String get postDocument => _text('postDocument');
+  String get updateDocument => _text('updateDocument');
+  String get changeFile => _text('changeFile');
+  String get selectPdfDocument => _text('selectPdfDocument');
+  String get tapToSelectPdf => _text('tapToSelectPdf');
+  String get defaultDocumentFileName => _text('defaultDocumentFileName');
+  String get subjectCodeHint => _text('subjectCodeHint');
   String get documentUpdateSuccess => _text('documentUpdateSuccess');
   String get documentShareSuccess => _text('documentShareSuccess');
   String get documentStudyShared => _text('documentStudyShared');
