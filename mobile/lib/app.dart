@@ -6,6 +6,9 @@ import 'core/auth/auth_state.dart';
 import 'core/network/api_client.dart';
 import 'core/i18n/app_text.dart';
 import 'core/router/app_router.dart';
+import 'features/assistant/data/services/assistant_api_service.dart';
+import 'features/assistant/presentation/controllers/assistant_controller.dart';
+import 'core/services/assistant_hint_manager.dart';
 import 'core/services/locale_manager.dart';
 import 'core/services/notification_manager.dart';
 import 'core/services/theme_manager.dart';
@@ -53,6 +56,8 @@ class SfinityApp extends StatefulWidget {
   static LocaleManager get localeManager => _SfinityAppState.localeManager;
   static NotificationManager get notificationManager => _SfinityAppState.notificationManager;
   static ThemeManager get themeManager => _SfinityAppState.themeManager;
+  static AssistantController get assistantController => _SfinityAppState.assistantController;
+  static AssistantHintManager get assistantHintManager => _SfinityAppState.assistantHintManager;
 
   @override
   State<SfinityApp> createState() => _SfinityAppState();
@@ -63,6 +68,8 @@ class _SfinityAppState extends State<SfinityApp> {
   static late final LocaleManager localeManager;
   static late final NotificationManager notificationManager;
   static late final ThemeManager themeManager;
+  static late final AssistantController assistantController;
+  static late final AssistantHintManager assistantHintManager;
   late final GoRouter _router = createAppRouter(auth);
 
   @override
@@ -120,6 +127,10 @@ class _SfinityAppState extends State<SfinityApp> {
 
     themeManager = ThemeManager();
     themeManager.init();
+
+    assistantController = AssistantController(AssistantApiService(ApiClient.instance));
+    assistantHintManager = AssistantHintManager();
+    assistantHintManager.init();
   }
 
   @override

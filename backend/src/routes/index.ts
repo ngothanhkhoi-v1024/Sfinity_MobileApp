@@ -1,5 +1,6 @@
 import { Router } from 'express';
 
+import { assistantRouter } from './assistant.routes';
 import { amenitiesRouter } from './amenities.routes';
 import { authRouter } from './auth.routes';
 import { categoriesRouter } from './categories.routes';
@@ -28,6 +29,7 @@ apiRouter.use('/explore', exploreRouter);
 apiRouter.use('/places', placesRouter);
 apiRouter.use('/study-near-me', studyNearMeRouter);
 apiRouter.use('/favorites', favoritesRouter);
+apiRouter.use('/assistant', assistantRouter);
 apiRouter.use('/feedback', feedbackRouter);
 apiRouter.use('/reports', reportsRouter);
 apiRouter.use('/notifications', notificationsRouter);

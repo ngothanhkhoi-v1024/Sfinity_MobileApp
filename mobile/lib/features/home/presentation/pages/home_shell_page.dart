@@ -8,6 +8,9 @@ import '../../../../core/i18n/app_text.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/app_bar_add_button.dart';
 import '../../../../shared/widgets/floating_pill_nav_bar.dart';
+import '../../../assistant/presentation/widgets/assistant_chat_sheet.dart';
+import '../../../assistant/presentation/widgets/assistant_context_hint.dart';
+import '../../../assistant/presentation/widgets/assistant_fab.dart';
 import '../../../document/presentation/pages/document_list_page.dart';
 import 'community_page.dart';
 import '../../../places/presentation/pages/places_map_page.dart';
@@ -30,6 +33,8 @@ class HomeShellPageState extends State<HomeShellPage> {
   /// 0 Khám phá, 1 Địa điểm, 2 Tài liệu, 3 Cộng đồng, 4 Cá nhân.
   late int _navIndex;
   int _unreadCount = 0;
+  bool _showContextHint = false;
+  String _currentContextId = 'explore';
 
   late final List<Widget> _pages = const [
     ExplorePage(),
@@ -43,9 +48,11 @@ class HomeShellPageState extends State<HomeShellPage> {
   void initState() {
     super.initState();
     _navIndex = widget.initialTab;
+    _currentContextId = _contextForTab(_navIndex);
     PlacesMapFocus.pending.addListener(_onPlacesMapFocus);
     SfinityApp.auth.addListener(_onAuthChanged);
     _loadUnreadCount();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkContextHint());
   }
 
   @override
@@ -58,8 +65,14 @@ class HomeShellPageState extends State<HomeShellPage> {
   void _onAuthChanged() {
     if (SfinityApp.auth.isAuthenticated) {
       _loadUnreadCount();
+      _checkContextHint();
     } else {
-      if (mounted) setState(() => _unreadCount = 0);
+      if (mounted) {
+        setState(() {
+          _unreadCount = 0;
+          _showContextHint = false;
+        });
+      }
     }
   }
 
@@ -88,7 +101,47 @@ class HomeShellPageState extends State<HomeShellPage> {
   void switchTab(int index) {
     if (_navIndex != index && mounted) {
       setState(() => _navIndex = index);
+      _onTabChanged(index);
     }
+  }
+
+  String _contextForTab(int index) {
+    return switch (index) {
+      0 => 'explore',
+      1 => 'places',
+      2 => 'documents',
+      3 => 'community',
+      4 => 'profile',
+      _ => 'explore',
+    };
+  }
+
+  void _onTabChanged(int index) {
+    final contextId = _contextForTab(index);
+    _currentContextId = contextId;
+    SfinityApp.assistantController.setContext(contextId);
+    _checkContextHint();
+  }
+
+  void _checkContextHint() {
+    if (!SfinityApp.auth.isAuthenticated) {
+      if (_showContextHint) setState(() => _showContextHint = false);
+      return;
+    }
+    final seen = SfinityApp.assistantHintManager.hasSeenContext(_currentContextId);
+    if (mounted && _showContextHint != !seen) {
+      setState(() => _showContextHint = !seen);
+    }
+  }
+
+  void _dismissContextHint() {
+    SfinityApp.assistantHintManager.markContextSeen(_currentContextId);
+    if (mounted) setState(() => _showContextHint = false);
+  }
+
+  void _openAssistantChat() {
+    _dismissContextHint();
+    AssistantChatSheet.show(context, contextId: _currentContextId);
   }
 
   @override
@@ -446,16 +499,40 @@ class HomeShellPageState extends State<HomeShellPage> {
                   ),
               ],
             ),
-      body: IndexedStack(
-        index: _navIndex,
-        children: _pages,
+      body: Stack(
+        children: [
+          IndexedStack(
+            index: _navIndex,
+            children: _pages,
+          ),
+          if (SfinityApp.auth.isAuthenticated)
+            Positioned(
+              right: 16,
+              bottom: 88 + bottomInset,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  if (_showContextHint)
+                    AssistantContextHint(
+                      onOpenChat: _openAssistantChat,
+                      onDismiss: _dismissContextHint,
+                    ),
+                  AssistantFab(onTap: _openAssistantChat),
+                ],
+              ),
+            ),
+        ],
       ),
       bottomNavigationBar: Padding(
         padding: EdgeInsets.fromLTRB(16, 0, 16, 10 + bottomInset),
         child: FloatingPillNavBar(
           selectedIndex: _navIndex,
           items: navItems,
-          onTabSelected: (i) => setState(() => _navIndex = i),
+          onTabSelected: (i) {
+            setState(() => _navIndex = i);
+            _onTabChanged(i);
+          },
         ),
       ),
     );
