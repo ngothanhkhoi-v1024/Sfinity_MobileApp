@@ -21,50 +21,54 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { config } from '@/config';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTranslation } from '@/i18n';
 
 const { Header, Sider, Content } = Layout;
 
-const menuItems = [
-  {
-    type: 'group' as const,
-    label: 'Tổng quan',
-    children: [{ key: '/', icon: <DashboardOutlined />, label: 'Dashboard' }],
-  },
-  {
-    type: 'group' as const,
-    label: 'Quản lý',
-    children: [
-      { key: '/users', icon: <TeamOutlined />, label: 'Người dùng' },
-      { key: '/content', icon: <AppstoreOutlined />, label: 'Nội dung' },
-      { key: '/categories', icon: <TagsOutlined />, label: 'Danh mục tài liệu' },
-      { key: '/amenities', icon: <ToolOutlined />, label: 'Tiện ích địa điểm' },
-    ],
-  },
-  {
-    type: 'group' as const,
-    label: 'Hỗ trợ',
-    children: [
-      { key: '/feedback', icon: <MessageOutlined />, label: 'Phản hồi' },
-      { key: '/reports', icon: <WarningOutlined />, label: 'Báo cáo' },
-      { key: '/notifications', icon: <BellOutlined />, label: 'Thông báo' },
-    ],
-  },
-  {
-    type: 'group' as const,
-    label: 'Hệ thống',
-    children: [
-      { key: '/admins', icon: <CrownOutlined />, label: 'Admin' },
-      { key: '/media', icon: <PictureOutlined />, label: 'Media' },
-      { key: '/settings', icon: <SettingOutlined />, label: 'Cài đặt' },
-    ],
-  },
-];
+// menu items are created inside the component so they respond to language changes
 
 export function AdminLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const { user, logout } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const menuItems = [
+    {
+      type: 'group' as const,
+      label: t('menu.overview'),
+      children: [{ key: '/', icon: <DashboardOutlined />, label: t('menu.dashboard') }],
+    },
+    {
+      type: 'group' as const,
+      label: t('menu.management') ?? t('menu.overview'),
+      children: [
+        { key: '/users', icon: <TeamOutlined />, label: t('menu.users') },
+        { key: '/content', icon: <AppstoreOutlined />, label: t('menu.content') },
+        { key: '/categories', icon: <TagsOutlined />, label: t('menu.categories') },
+        { key: '/amenities', icon: <ToolOutlined />, label: t('menu.amenities') },
+      ],
+    },
+    {
+      type: 'group' as const,
+      label: t('menu.support') ?? t('menu.overview'),
+      children: [
+        { key: '/feedback', icon: <MessageOutlined />, label: t('menu.feedback') },
+        { key: '/reports', icon: <WarningOutlined />, label: t('menu.reports') },
+        { key: '/notifications', icon: <BellOutlined />, label: t('menu.notifications') },
+      ],
+    },
+    {
+      type: 'group' as const,
+      label: t('menu.system') ?? t('menu.overview'),
+      children: [
+        { key: '/admins', icon: <CrownOutlined />, label: t('menu.admins') },
+        { key: '/media', icon: <PictureOutlined />, label: t('menu.media') },
+        { key: '/settings', icon: <SettingOutlined />, label: t('menu.settings') },
+      ],
+    },
+  ];
 
   const selectedKey = useMemo(() => {
     const flat = menuItems.flatMap((g) => g.children ?? []);
@@ -77,7 +81,7 @@ export function AdminLayout() {
       {
         key: 'logout',
         icon: <LogoutOutlined />,
-        label: 'Đăng xuất',
+        label: t('logout'),
         danger: true,
         onClick: () => {
           logout();
@@ -114,7 +118,7 @@ export function AdminLayout() {
           {!collapsed && (
             <div>
               <div className="admin-logo-text">{config.appName}</div>
-              <div className="admin-logo-sub">Control Panel</div>
+              <div className="admin-logo-sub">{t('control.panel')}</div>
             </div>
           )}
         </div>
@@ -169,7 +173,7 @@ export function AdminLayout() {
                   {user?.name ?? 'Admin'}
                 </Typography.Text>
                 <Typography.Text type="secondary" style={{ fontSize: 11 }}>
-                  Quản trị viên
+                  {t('profile.role')}
                 </Typography.Text>
               </div>
             </Button>

@@ -1,4 +1,4 @@
-import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
+import { DeleteOutlined, EditOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import {
   Button,
   Form,
@@ -27,6 +27,7 @@ export function AmenitiesPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<AmenityItem | null>(null);
   const [form] = Form.useForm();
+  const [search, setSearch] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -75,6 +76,12 @@ export function AmenitiesPage() {
     }
   };
 
+  const filtered = data.filter(
+    (item) =>
+      item.name.toLowerCase().includes(search.toLowerCase()) ||
+      (item.description ?? '').toLowerCase().includes(search.toLowerCase()),
+  );
+
   const columns: ColumnsType<AmenityItem> = [
     { title: 'Tên tiện ích', dataIndex: 'name' },
     { title: 'Mô tả', dataIndex: 'description', ellipsis: true },
@@ -84,9 +91,7 @@ export function AmenitiesPage() {
       width: 160,
       render: (_, record) => (
         <Space>
-          <Button size="small" onClick={() => openEdit(record)}>
-            Sửa
-          </Button>
+          <Button size="small" icon={<EditOutlined />} onClick={() => openEdit(record)} />
           <Popconfirm
             title="Xóa tiện ích này?"
             onConfirm={async () => {
@@ -103,20 +108,30 @@ export function AmenitiesPage() {
 
   return (
     <div>
-      <Space style={{ width: '100%', justifyContent: 'space-between', marginBottom: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <Typography.Title level={4} style={{ margin: 0 }}>
           Tiện ích địa điểm
         </Typography.Title>
-        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-          Thêm tiện ích
-        </Button>
-      </Space>
+        <Space>
+          <Input
+            placeholder="Tìm theo tên, mô tả..."
+            prefix={<SearchOutlined style={{ color: '#94a3b8' }} />}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            allowClear
+            style={{ width: 260 }}
+          />
+          <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+            Thêm tiện ích
+          </Button>
+        </Space>
+      </div>
 
       <Table
         rowKey="id"
         loading={loading}
         columns={columns}
-        dataSource={data}
+        dataSource={filtered}
         pagination={{ pageSize: 10 }}
         scroll={{ x: 700 }}
         locale={{ emptyText: 'Chưa có tiện ích nào. Hãy thêm tiện ích mới.' }}
