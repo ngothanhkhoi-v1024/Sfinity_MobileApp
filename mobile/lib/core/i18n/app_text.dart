@@ -148,7 +148,12 @@ class AppLocalizations {
       'skip': 'Bỏ qua',
       'getStartedNow': 'Bắt đầu ngay',
       'invitesTab': 'Lời mời',
-      'placeDetail': 'Chi tiết địa điểm',
+      'placeDetail': 'Chi tiết Không gian Học tập',
+      'interactionCheckin': 'Tương tác & Check-in',
+      'checkinsToday': '{count} lượt check-in hôm nay',
+      'checkInNow': 'Check-in ngay',
+      'sharedAccount': 'Tài khoản chia sẻ',
+      'ratingStarsCount': '{rating} sao ({count} đánh giá)',
       'placeUpdated': 'Cập nhật địa điểm',
       'memberRemoved': 'Đã xóa thành viên',
       'gender': 'Giới tính',
@@ -644,7 +649,12 @@ class AppLocalizations {
       'skip': 'Skip',
       'getStartedNow': 'Get started',
       'invitesTab': 'Invitations',
-      'placeDetail': 'Place detail',
+      'placeDetail': 'Study space detail',
+      'interactionCheckin': 'Interaction & check-in',
+      'checkinsToday': '{count} check-ins today',
+      'checkInNow': 'Check in now',
+      'sharedAccount': 'Shared by',
+      'ratingStarsCount': '{rating} stars ({count} reviews)',
       'placeUpdated': 'Place updated',
       'memberRemoved': 'Removed member',
       'registerTitle': 'Create account',
@@ -1155,6 +1165,14 @@ class AppLocalizations {
   String get getStartedNow => _text('getStartedNow');
   String get invitesTab => _text('invitesTab');
   String get placeDetail => _text('placeDetail');
+  String get interactionCheckin => _text('interactionCheckin');
+  String checkinsToday(int count) => _format('checkinsToday', {'{count}': '$count'});
+  String get checkInNow => _text('checkInNow');
+  String get sharedAccount => _text('sharedAccount');
+  String ratingStarsCount(double rating, int count) => _format(
+        'ratingStarsCount',
+        {'{rating}': rating.toStringAsFixed(1), '{count}': '$count'},
+      );
   String get placeUpdated => _text('placeUpdated');
   String get memberRemoved => _text('memberRemoved');
   String get registerTitle => _text('registerTitle');

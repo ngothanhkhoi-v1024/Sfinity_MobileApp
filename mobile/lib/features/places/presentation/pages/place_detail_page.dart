@@ -13,8 +13,10 @@ import '../../../place_reviews/presentation/widgets/place_rating_section.dart';
 import '../../data/models/place_model.dart';
 import '../controllers/place_detail_controller.dart';
 import '../places_map_focus.dart';
+import '../widgets/place_detail_photo_carousel.dart';
 import '../widgets/place_directions_section.dart';
 import '../widgets/place_tag_chips.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class PlaceDetailPage extends StatefulWidget {
   const PlaceDetailPage({super.key, required this.placeId});
@@ -184,13 +186,13 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
     final l10n = context.l10n;
     if (_ctrl.loading) {
       return Scaffold(
-        appBar: AppBar(title: Text(l10n.viewPlaceDetail)),
+        appBar: AppBar(title: Text(l10n.placeDetail)),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
     if (_ctrl.error != null || _ctrl.place == null) {
       return Scaffold(
-        appBar: AppBar(title: Text(l10n.viewPlaceDetail)),
+        appBar: AppBar(title: Text(l10n.placeDetail)),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -217,9 +219,16 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
     final primary = theme.colorScheme.primary;
     final showCommunitySave = !isMine;
 
+    final photos = _engagementCtrl.photoResult?.photos ?? [];
+
     return Scaffold(
+      backgroundColor: isDark ? null : Colors.white,
       appBar: AppBar(
-        title: Text(l10n.viewPlaceDetail),
+        title: Text(
+          l10n.placeDetail,
+          overflow: TextOverflow.ellipsis,
+        ),
+        centerTitle: true,
         actions: [
           if (!_loadingFavorite)
             IconButton(
@@ -249,6 +258,7 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: [
+            PlaceDetailPhotoCarousel(photos: photos),
             _PlaceInfoCard(
               place: place,
               theme: theme,
@@ -266,32 +276,11 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
               const SizedBox(height: 12),
             ],
             if (place.hasPoint) ...[
-              _SectionTitle(
-                icon: Icons.navigation_outlined,
-                title: l10n.mapDirections,
-              ),
-              const SizedBox(height: 8),
               PlaceDirectionsSection(
                 destination: place.point!,
                 accentColor: primary,
-              ),
-              const SizedBox(height: 10),
-              OutlinedButton.icon(
-                onPressed: _viewOnMap,
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(48),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-                icon: Icon(Icons.map_outlined, color: primary),
-                label: Text(
-                  l10n.viewOnMap,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: primary,
-                  ),
-                ),
+                compact: true,
+                onViewOnMap: _viewOnMap,
               ),
               const SizedBox(height: 20),
             ],
@@ -308,7 +297,7 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
                   place.longitude != null) ...[
                 _SectionTitle(
                   icon: Icons.how_to_reg_outlined,
-                  title: l10n.loginToCheckin,
+                  title: l10n.interactionCheckin,
                 ),
                 const SizedBox(height: 8),
                 PlaceCheckInSection(
@@ -330,12 +319,14 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
                   placeId: widget.placeId,
                   summary: _engagementCtrl.reviewSummary!,
                 ),
-                const SizedBox(height: 16),
-                PlacePhotoGallery(
-                  controller: _engagementCtrl,
-                  placeId: widget.placeId,
-                  photos: _engagementCtrl.photoResult?.photos ?? [],
-                ),
+                if (photos.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  PlacePhotoGallery(
+                    controller: _engagementCtrl,
+                    placeId: widget.placeId,
+                    photos: photos,
+                  ),
+                ],
                 const SizedBox(height: 20),
               ],
             ],
@@ -523,14 +514,16 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Row(
       children: [
-        Icon(icon, size: 20, color: theme.colorScheme.primary),
+        Icon(icon, size: 22, color: AppColors.primary),
         const SizedBox(width: 8),
         Text(
           title,
-          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: AppColors.primary,
+              ),
         ),
       ],
     );
@@ -550,44 +543,35 @@ class _PlaceInfoCard extends StatelessWidget {
   final bool isDark;
   final Color primary;
 
+  static const _beigeLight = Color(0xFFF8F4EE);
+  static const _beigeDark = Color(0xFF2A2824);
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            primary.withValues(alpha: isDark ? 0.35 : 0.12),
-            theme.colorScheme.secondary.withValues(alpha: isDark ? 0.2 : 0.08),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
+        color: isDark ? _beigeDark : _beigeLight,
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: isDark ? Colors.white12 : primary.withValues(alpha: 0.15),
+          color: isDark ? Colors.white10 : const Color(0xFFE8E0D4),
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: primary.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(Icons.place_rounded, color: primary, size: 28),
-              ),
-              const SizedBox(width: 12),
+              Icon(Icons.place_rounded, color: AppColors.primary, size: 26),
+              const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   place.title,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    height: 1.3,
                   ),
                 ),
               ),
@@ -596,7 +580,7 @@ class _PlaceInfoCard extends StatelessWidget {
           const SizedBox(height: 14),
           _InfoRow(
             icon: Icons.person_outline,
-            label: l10n.account,
+            label: l10n.sharedAccount,
             value: place.authorName ?? l10n.anonymous,
             isDark: isDark,
           ),
@@ -610,21 +594,21 @@ class _PlaceInfoCard extends StatelessWidget {
             ),
           ],
           if (place.tags.isNotEmpty) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             Text(
               l10n.filterAmenities,
               style: theme.textTheme.labelLarge?.copyWith(
                 fontWeight: FontWeight.w600,
-                color: isDark ? Colors.grey.shade300 : Colors.grey.shade800,
+                color: isDark ? Colors.grey.shade300 : const Color(0xFF374151),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             PlaceTagDisplay(tagIds: place.tags),
           ],
           if (place.body.isNotEmpty) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             _InfoRow(
-              icon: Icons.notes_outlined,
+              icon: Icons.format_align_left_rounded,
               label: l10n.placeDescription,
               value: place.body,
               isDark: isDark,

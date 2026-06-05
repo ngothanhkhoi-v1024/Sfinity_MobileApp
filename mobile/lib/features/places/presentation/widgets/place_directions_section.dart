@@ -7,16 +7,25 @@ import '../../../../core/i18n/app_text.dart';
 import '../../data/models/place_route_model.dart';
 import '../../data/services/place_location_service.dart';
 import '../../data/services/place_routing_service.dart';
+import 'place_mini_map_preview.dart';
 
 class PlaceDirectionsSection extends StatefulWidget {
   const PlaceDirectionsSection({
     super.key,
     required this.destination,
     required this.accentColor,
+    this.compact = false,
+    this.onViewOnMap,
+    this.mapPreviewSize = 108,
   });
 
   final LatLng destination;
   final Color accentColor;
+
+  /// Hàng nút + bản đồ thu nhỏ (chỉ khi chưa mở chỉ đường).
+  final bool compact;
+  final VoidCallback? onViewOnMap;
+  final double mapPreviewSize;
 
   @override
   State<PlaceDirectionsSection> createState() => _PlaceDirectionsSectionState();
@@ -162,17 +171,61 @@ class _PlaceDirectionsSectionState extends State<PlaceDirectionsSection> {
     final isDark = theme.brightness == Brightness.dark;
 
     if (!_expanded) {
-      return FilledButton.icon(
+      final directionsBtn = FilledButton.icon(
         onPressed: _loadDirections,
         style: FilledButton.styleFrom(
           minimumSize: const Size.fromHeight(48),
+          backgroundColor: widget.accentColor,
+          foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
-        icon: const Icon(Icons.directions_rounded),
+        icon: const Icon(Icons.navigation_rounded, size: 20),
         label: Text(
           l10n.mapDirections,
-          style: const TextStyle(fontWeight: FontWeight.w600),
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
         ),
+      );
+
+      if (!widget.compact) return directionsBtn;
+
+      final viewMapBtn = OutlinedButton.icon(
+        onPressed: widget.onViewOnMap,
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size.fromHeight(48),
+          foregroundColor: widget.accentColor,
+          side: BorderSide(color: widget.accentColor, width: 1.5),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        ),
+        icon: Icon(Icons.map_outlined, color: widget.accentColor, size: 20),
+        label: Text(
+          l10n.viewOnMap,
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 13,
+            color: widget.accentColor,
+          ),
+        ),
+      );
+
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              children: [
+                directionsBtn,
+                const SizedBox(height: 10),
+                viewMapBtn,
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          PlaceMiniMapPreview(
+            point: widget.destination,
+            accentColor: widget.accentColor,
+            size: widget.mapPreviewSize,
+          ),
+        ],
       );
     }
 

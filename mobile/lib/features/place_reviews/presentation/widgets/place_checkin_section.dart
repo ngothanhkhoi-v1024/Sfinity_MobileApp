@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import '../../../../app.dart';
 import '../../../../core/constants/route_names.dart';
 import '../../../../core/i18n/app_text.dart';
-import '../../../places/data/utils/place_checkin_geo.dart';
 import '../controllers/place_engagement_controller.dart';
 
 class PlaceCheckInSection extends StatefulWidget {
@@ -66,11 +65,12 @@ class _PlaceCheckInSectionState extends State<PlaceCheckInSection> {
     final hasCheckedIn = status?.hasCheckedIn == true;
     final isAuth = SfinityApp.auth.isAuthenticated;
     final l10n = context.l10n;
+    final cardBg = isDark ? const Color(0xFF1F1F1F) : const Color(0xFFF9FAFB);
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1F1F1F) : const Color(0xFFF9FAFB),
+        color: cardBg,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDark ? Colors.white10 : const Color(0xFFE8EAED),
@@ -81,29 +81,25 @@ class _PlaceCheckInSectionState extends State<PlaceCheckInSection> {
         children: [
           Row(
             children: [
-              Icon(Icons.how_to_reg_rounded,
-                  color: theme.colorScheme.primary, size: 28),
-              const SizedBox(width: 8),
-              Text(
-                '$count',
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
+              Icon(
+                Icons.people_outline,
+                size: 20,
+                color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  count == 1
-                      ? l10n.loginToCheckin
-                      : l10n.loginToCheckinDesc,
+                  l10n.checkinsToday(count),
                   style: TextStyle(
-                    color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? Colors.grey.shade300 : const Color(0xFF4B5563),
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           if (hasCheckedIn) ...[
             Row(
               children: [
@@ -111,7 +107,7 @@ class _PlaceCheckInSectionState extends State<PlaceCheckInSection> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    l10n.loginToCheckin,
+                    l10n.checkInNow,
                     style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: Colors.green.shade700,
@@ -136,37 +132,122 @@ class _PlaceCheckInSectionState extends State<PlaceCheckInSection> {
           ] else ...[
             _NearbyHint(controller: ctrl),
             const SizedBox(height: 12),
-            FilledButton.icon(
-              onPressed: ctrl.checkInSubmitting ||
-                      ctrl.locatingNearby ||
-                      ctrl.nearbyCanCheckIn != true
-                  ? null
-                  : _onCheckIn,
-              icon: ctrl.checkInSubmitting
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Icon(Icons.location_on),
-              label: Text(
-                ctrl.checkInSubmitting ? l10n.loading : l10n.loginToCheckin,
-              ),
-            ),
-            TextButton.icon(
-              onPressed: ctrl.locatingNearby
+            _CheckInGradientBar(
+              checkInEnabled: !ctrl.checkInSubmitting &&
+                  !ctrl.locatingNearby &&
+                  ctrl.nearbyCanCheckIn == true,
+              checkInLoading: ctrl.checkInSubmitting,
+              gpsLoading: ctrl.locatingNearby,
+              onCheckIn: _onCheckIn,
+              onUpdateGps: ctrl.locatingNearby
                   ? null
                   : () => ctrl.refreshNearby(
                         placeLat: widget.placeLat,
                         placeLng: widget.placeLng,
                       ),
-              icon: const Icon(Icons.refresh, size: 18),
-              label: Text(l10n.updateGPS),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _CheckInGradientBar extends StatelessWidget {
+  const _CheckInGradientBar({
+    required this.checkInEnabled,
+    required this.checkInLoading,
+    required this.gpsLoading,
+    required this.onCheckIn,
+    required this.onUpdateGps,
+  });
+
+  final bool checkInEnabled;
+  final bool checkInLoading;
+  final bool gpsLoading;
+  final VoidCallback onCheckIn;
+  final VoidCallback? onUpdateGps;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    return Container(
+      height: 52,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF4CAF50), Color(0xFF2196F3)],
+        ),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Row(
+        children: [
+          Expanded(
+            flex: 3,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: checkInEnabled && !checkInLoading ? onCheckIn : null,
+                child: Center(
+                  child: checkInLoading
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.check_circle_outline,
+                                color: Colors.white, size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              l10n.checkInNow,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
+              ),
+            ),
+          ),
+          Container(width: 1, height: 28, color: Colors.white38),
+          Expanded(
+            flex: 2,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: gpsLoading ? null : onUpdateGps,
+                child: Center(
+                  child: gpsLoading
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(
+                          l10n.updateGPS,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                          ),
+                        ),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -207,30 +288,15 @@ class _NearbyHint extends StatelessWidget {
       );
     }
 
-    final allowed = PlaceCheckInGeo.allowedRadiusM(accuracy);
     final can = controller.nearbyCanCheckIn == true;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          l10n.enableGPSDistance,
-          style: TextStyle(fontSize: 13, color: muted),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          can
-              ? l10n.enableGPSNearMe
-              : accuracy > PlaceCheckInGeo.maxAccuracyM
-                  ? l10n.enableGPSCheckin
-                  : l10n.enableGPSNearMe,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: can ? Colors.green.shade700 : Colors.orange.shade800,
-          ),
-        ),
-      ],
+    return Text(
+      can ? l10n.enableGPSNearMe : l10n.enableGPSCheckin,
+      style: TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w500,
+        color: can ? Colors.green.shade700 : Colors.orange.shade800,
+      ),
     );
   }
 }

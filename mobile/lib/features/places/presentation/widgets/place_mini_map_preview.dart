@@ -20,36 +20,42 @@ class PlaceMiniMapPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: SizedBox(
-        width: size,
-        height: size,
-        child: IgnorePointer(
-          child: FlutterMap(
-            options: MapOptions(
-              initialCenter: point,
-              initialZoom: 15,
-              interactionOptions: const InteractionOptions(
-                flags: InteractiveFlag.none,
+      borderRadius: BorderRadius.circular(14),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border.all(color: accentColor.withValues(alpha: 0.2)),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: SizedBox(
+          width: size,
+          height: size,
+          child: IgnorePointer(
+            child: FlutterMap(
+              options: MapOptions(
+                initialCenter: point,
+                initialZoom: 15,
+                interactionOptions: const InteractionOptions(
+                  flags: InteractiveFlag.none,
+                ),
               ),
+              children: [
+                TileLayer(
+                  urlTemplate: MapConfig.tileUrlTemplate,
+                  userAgentPackageName: MapConfig.userAgentPackageName,
+                ),
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: point,
+                      width: 22,
+                      height: 22,
+                      alignment: Alignment.bottomCenter,
+                      child: Icon(Icons.place_rounded, color: accentColor, size: 22),
+                    ),
+                  ],
+                ),
+              ],
             ),
-            children: [
-              TileLayer(
-                urlTemplate: MapConfig.tileUrlTemplate,
-                userAgentPackageName: MapConfig.userAgentPackageName,
-              ),
-              MarkerLayer(
-                markers: [
-                  Marker(
-                    point: point,
-                    width: 22,
-                    height: 22,
-                    alignment: Alignment.bottomCenter,
-                    child: Icon(Icons.place_rounded, color: accentColor, size: 22),
-                  ),
-                ],
-              ),
-            ],
           ),
         ),
       ),
