@@ -17,138 +17,56 @@ class DocumentEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final l10n = context.l10n;
+    final primary = AppColors.primaryOf(context);
+
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(20, 40, 20, 120),
+      padding: const EdgeInsets.fromLTRB(16, 48, 16, 120),
       children: [
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 24),
-          decoration: BoxDecoration(
-            color: AppColors.card(context),
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: AppColors.border(context)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(
-                  alpha: theme.brightness == Brightness.dark ? 0.22 : 0.06,
+        Column(
+          children: [
+            Icon(
+              hasSearchQuery ? Icons.search_off_rounded : Icons.menu_book_outlined,
+              size: 40,
+              color: AppColors.muted(context),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              hasSearchQuery ? l10n.noSearchResults('') : l10n.noDocumentsFound,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.title(context),
+                  ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              hasSearchQuery
+                  ? l10n.clearSearch
+                  : l10n.uploadStudyMaterialsSubtitle,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 13, color: AppColors.muted(context), height: 1.4),
+            ),
+            if (!hasSearchQuery && onPrimaryAction != null) ...[
+              const SizedBox(height: 18),
+              OutlinedButton.icon(
+                onPressed: onPrimaryAction,
+                icon: Icon(Icons.upload_file_outlined, size: 18, color: primary),
+                label: Text(l10n.uploadDocument),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: primary,
+                  side: BorderSide(color: primary.withValues(alpha: 0.4)),
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                blurRadius: 28,
-                offset: const Offset(0, 14),
               ),
             ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 96,
-                height: 96,
-                decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                    colors: [
-                      theme.colorScheme.primary.withValues(alpha: 0.22),
-                      theme.colorScheme.primary.withValues(alpha: 0.05),
-                    ],
-                  ),
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Container(
-                    width: 62,
-                    height: 62,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          AppColors.primaryOf(context),
-                          AppColors.secondaryOf(context),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primaryOf(context).withValues(alpha: 0.28),
-                          blurRadius: 16,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      hasSearchQuery
-                          ? Icons.search_off_rounded
-                          : Icons.menu_book_rounded,
-                      size: 28,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                hasSearchQuery ? l10n.noSearchResults('') : l10n.noDocumentsFound,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 10),
-              Text(
-                hasSearchQuery
-                    ? l10n.noSearchResults('')
-                    : l10n.uploadStudyMaterialsSubtitle,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: AppColors.muted(context),
-                  height: 1.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              if (!hasSearchQuery && onPrimaryAction != null) ...[
-                const SizedBox(height: 22),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    onPressed: onPrimaryAction,
-                    icon: const Icon(Icons.upload_file_rounded),
-                    label: Text(l10n.uploadDocument),
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-              if (hasSearchQuery && onClearSearch != null) ...[
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: onClearSearch,
-                    icon: const Icon(Icons.refresh_rounded, size: 18),
-                    label: Text(l10n.clearSearch),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.primaryOf(context),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      side: BorderSide(
-                        color: AppColors.primaryOf(context).withValues(alpha: 0.35),
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+            if (hasSearchQuery && onClearSearch != null) ...[
+              const SizedBox(height: 14),
+              TextButton(onPressed: onClearSearch, child: Text(l10n.clearSearch)),
             ],
-          ),
+          ],
         ),
       ],
     );

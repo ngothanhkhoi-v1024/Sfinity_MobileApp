@@ -65,7 +65,6 @@ class DocumentCard extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _DocumentPreviewThumbnail(
                 fileType: fileType,

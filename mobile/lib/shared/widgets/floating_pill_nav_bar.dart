@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_colors.dart';
+
 class PillNavItem {
   const PillNavItem({
     required this.label,
@@ -12,7 +14,7 @@ class PillNavItem {
   final IconData selectedIcon;
 }
 
-/// Thanh điều hướng dạng viên thuốc — nền pill trượt ôm cả icon và nhãn.
+/// Thanh điều hướng dưới — tối giản, đồng bộ tone Khám phá / Cá nhân.
 class FloatingPillNavBar extends StatelessWidget {
   const FloatingPillNavBar({
     super.key,
@@ -28,31 +30,27 @@ class FloatingPillNavBar extends StatelessWidget {
 
   static const centerSlotIndex = -1;
 
-  static const _barHeight = 76.0;
-  static const _slideDuration = Duration(milliseconds: 300);
-  static const _cellInsetH = 2.0;
-  static const _cellInsetV = 2.0;
+  static const _barHeight = 64.0;
+  static const _slideDuration = Duration(milliseconds: 260);
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final indicatorFill = isDark ? const Color(0xFFF0F0F0) : const Color(0xFF111111);
-    final inactiveColor = isDark ? Colors.grey.shade500 : Colors.grey.shade500;
-    final selectedForeground = isDark ? const Color(0xFF111111) : Colors.white;
+    final isDark = AppColors.isDark(context);
+    final primary = AppColors.primaryOf(context);
 
     return Material(
       color: Colors.transparent,
       child: Container(
         height: _barHeight,
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
-          borderRadius: BorderRadius.circular(40),
+          color: AppColors.card(context),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.border(context)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.07),
-              blurRadius: 20,
-              offset: const Offset(0, 6),
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
@@ -60,9 +58,10 @@ class FloatingPillNavBar extends StatelessWidget {
           builder: (context, constraints) {
             final count = items.length;
             final cellWidth = constraints.maxWidth / count;
-            final pillWidth = cellWidth - _cellInsetH * 2;
-            final pillHeight = constraints.maxHeight - _cellInsetV * 2;
-            final pillLeft = cellWidth * selectedIndex + _cellInsetH;
+            const inset = 4.0;
+            final indicatorWidth = cellWidth - inset * 2;
+            final indicatorHeight = constraints.maxHeight - inset * 2;
+            final indicatorLeft = cellWidth * selectedIndex + inset;
 
             return Stack(
               alignment: Alignment.centerLeft,
@@ -70,14 +69,28 @@ class FloatingPillNavBar extends StatelessWidget {
                 AnimatedPositioned(
                   duration: _slideDuration,
                   curve: Curves.easeOutCubic,
-                  left: pillLeft,
-                  top: _cellInsetV,
-                  width: pillWidth,
-                  height: pillHeight,
+                  left: indicatorLeft,
+                  top: inset,
+                  width: indicatorWidth,
+                  height: indicatorHeight,
                   child: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: indicatorFill,
-                      borderRadius: BorderRadius.circular(22),
+                      color: isDark
+                          ? const Color(0xFF2A2A2A)
+                          : Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: primary.withValues(alpha: isDark ? 0.28 : 0.18),
+                      ),
+                      boxShadow: isDark
+                          ? null
+                          : [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.04),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                     ),
                   ),
                 ),
@@ -87,8 +100,7 @@ class FloatingPillNavBar extends StatelessWidget {
                     (i) => _TabButton(
                       item: items[i],
                       selected: selectedIndex == i,
-                      inactiveColor: inactiveColor,
-                      selectedColor: selectedForeground,
+                      primary: primary,
                       onTap: () => onTabSelected(i),
                     ),
                   ),
@@ -106,40 +118,38 @@ class _TabButton extends StatelessWidget {
   const _TabButton({
     required this.item,
     required this.selected,
-    required this.inactiveColor,
-    required this.selectedColor,
+    required this.primary,
     required this.onTap,
   });
 
   final PillNavItem item;
   final bool selected;
-  final Color inactiveColor;
-  final Color selectedColor;
+  final Color primary;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? selectedColor : inactiveColor;
+    final color = selected ? primary : AppColors.muted(context);
 
     return Expanded(
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(22),
-          splashColor: selectedColor.withValues(alpha: 0.08),
-          highlightColor: selectedColor.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(12),
+          splashColor: primary.withValues(alpha: 0.06),
+          highlightColor: primary.withValues(alpha: 0.04),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 6),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
                   selected ? item.selectedIcon : item.icon,
-                  size: 21,
+                  size: 20,
                   color: color,
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 2),
                 FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Text(
@@ -149,9 +159,9 @@ class _TabButton extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 10,
                       height: 1.1,
-                      fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                       color: color,
-                      letterSpacing: -0.2,
+                      letterSpacing: -0.1,
                     ),
                   ),
                 ),

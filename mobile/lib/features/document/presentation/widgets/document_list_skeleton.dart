@@ -12,21 +12,17 @@ class DocumentListSkeleton extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
       children: [
-        Container(height: 28, width: 180, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(8))),
-        const SizedBox(height: 8),
-        Container(height: 14, width: 240, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(6))),
-        const SizedBox(height: 12),
-        Container(height: 44, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(14))),
+        Container(height: 40, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(12))),
         const SizedBox(height: 10),
-        Container(height: 120, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(16))),
+        Container(height: 48, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(12))),
         const SizedBox(height: 12),
         ...List.generate(
-          4,
+          5,
           (_) => Padding(
-            padding: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.only(bottom: 8),
             child: Container(
-              height: 88,
-              decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(14)),
+              height: 64,
+              decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(12)),
             ),
           ),
         ),

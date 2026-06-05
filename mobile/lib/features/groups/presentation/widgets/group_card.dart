@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/theme/app_colors.dart';
 import '../../data/models/group_message_model.dart';
 import '../../data/models/group_model.dart';
 
@@ -54,48 +55,30 @@ class _GroupCardBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    final isDark = cs.brightness == Brightness.dark;
     final preview = _messagePreview(message);
     final sender = message?.senderName.trim() ?? '';
     final time = message == null ? '' : DateFormat('HH:mm').format(message!.createdAt);
-    final hasPreview = preview.isNotEmpty;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
       child: Material(
-        color: Colors.transparent,
+        color: AppColors.card(context),
+        borderRadius: BorderRadius.circular(12),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Ink(
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF242424) : cs.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.08)
-                    : cs.outlineVariant.withValues(alpha: 0.7),
-              ),
-              boxShadow: isDark
-                  ? []
-                  : [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        blurRadius: 16,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.border(context)),
             ),
             child: Row(
               children: [
                 _GroupAvatar(group: group),
-                const SizedBox(width: 14),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
-                    mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
@@ -105,59 +88,35 @@ class _GroupCardBody extends StatelessWidget {
                               group.name,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w800,
-                                color: isDark ? Colors.white : const Color(0xFF171717),
-                                letterSpacing: 0,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                                color: AppColors.title(context),
                               ),
                             ),
                           ),
-                          if (time.isNotEmpty) ...[
-                            const SizedBox(width: 10),
+                          if (time.isNotEmpty)
                             Text(
                               time,
-                              style: theme.textTheme.labelMedium?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: isDark
-                                    ? Colors.white.withValues(alpha: 0.42)
-                                    : cs.onSurfaceVariant.withValues(alpha: 0.75),
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppColors.muted(context),
                               ),
                             ),
-                          ],
                         ],
                       ),
-                      const SizedBox(height: 7),
-                      SizedBox(
-                        height: 18,
-                        child: hasPreview
-                            ? RichText(
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                text: TextSpan(
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: isDark
-                                        ? Colors.white.withValues(alpha: 0.55)
-                                        : cs.onSurfaceVariant,
-                                    height: 1.25,
-                                    letterSpacing: 0,
-                                  ),
-                                  children: [
-                                    if (sender.isNotEmpty)
-                                      TextSpan(
-                                        text: '$sender: ',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w800,
-                                          color: isDark
-                                              ? Colors.white.withValues(alpha: 0.8)
-                                              : const Color(0xFF404040),
-                                        ),
-                                      ),
-                                    TextSpan(text: preview),
-                                  ],
-                                ),
-                              )
-                            : const SizedBox.shrink(),
-                      ),
+                      if (preview.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          sender.isNotEmpty ? '$sender: $preview' : preview,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.muted(context),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -191,31 +150,22 @@ class _GroupAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final primary = AppColors.primaryOf(context);
     final avatarUrl = group.avatarUrl?.trim();
 
-    return Container(
-      width: 54,
-      height: 54,
-      decoration: BoxDecoration(
-        color: cs.primary.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(14),
-        image: avatarUrl != null && avatarUrl.isNotEmpty
-            ? DecorationImage(
-                image: NetworkImage(avatarUrl),
-                fit: BoxFit.cover,
-              )
-            : null,
-      ),
-      alignment: Alignment.center,
+    return CircleAvatar(
+      radius: 22,
+      backgroundColor: primary.withValues(alpha: 0.08),
+      backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
+          ? NetworkImage(avatarUrl)
+          : null,
       child: avatarUrl == null || avatarUrl.isEmpty
           ? Text(
-              group.name.isNotEmpty ? group.name[0].toUpperCase() : '',
+              group.name.isNotEmpty ? group.name[0].toUpperCase() : 'G',
               style: TextStyle(
-                color: cs.primary,
-                fontWeight: FontWeight.w800,
-                fontSize: 22,
-                letterSpacing: 0,
+                color: primary,
+                fontWeight: FontWeight.w700,
+                fontSize: 16,
               ),
             )
           : null,

@@ -223,7 +223,6 @@ class _ExplorePageState extends State<ExplorePage> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final primary = theme.colorScheme.primary;
-    final secondary = theme.colorScheme.secondary;
     final visible = _visibleItems;
     final isSearching = _searchController.text.trim().isNotEmpty;
     final spotlight = _items.take(5).cast<Map<String, dynamic>>().toList();
@@ -277,22 +276,20 @@ class _ExplorePageState extends State<ExplorePage> {
                         ],
                       ),
                     ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
                   _StudyNearMeBanner(
                     loading: _studyNearMeCtrl.loading,
                     onPressed: _onStudyNearMe,
                     primary: primary,
-                    secondary: secondary,
                   ),
                   const SizedBox(height: 12),
                   _ExploreStatsStrip(
                     placeCount: displayPlaceCount,
                     docCount: displayDocCount,
-                    isDark: isDark,
-                    primary: primary,
                     showingSaved: _showingSaved,
+                    primary: primary,
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
                   _ExploreActionRow(
                     savedLabel: l10n.saved,
                     savedSelected: _showingSaved,
@@ -301,40 +298,35 @@ class _ExplorePageState extends State<ExplorePage> {
                       RouteNames.documentCreate,
                       extra: const {'contentType': 'document'},
                     ),
+                    primary: primary,
                   ),
                   if (spotlight.isNotEmpty && !isSearching && !_showingSaved) ...[
-                    const SizedBox(height: 14),
-                    _ExploreSectionLabel(
-                      icon: Icons.auto_awesome_rounded,
-                      title: l10n.studyNearMe,
-                      primary: primary,
-                    ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 18),
+                    _ExploreSectionLabel(title: l10n.newest),
+                    const SizedBox(height: 10),
                     SizedBox(
-                      height: 108,
+                      height: 44,
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
                         itemCount: spotlight.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 10),
+                        separatorBuilder: (context, index) => const SizedBox(width: 8),
                         itemBuilder: (_, i) {
                           final item = spotlight[i];
-                          return _SpotlightCard(
+                          return _SpotlightChip(
                             title: item['title']?.toString() ?? '',
                             isPlace: _isPlace(item),
-                            isDark: isDark,
+                            primary: primary,
                             onTap: () => _openItem(item),
                           );
                         },
                       ),
                     ),
                   ],
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 18),
                   _ExploreFeedSectionHeader(
                     title: sectionTitle,
                     count: visible.length,
                     showingSaved: _showingSaved,
-                    primary: primary,
-                    isDark: isDark,
                   ),
                   if (isSearching && visible.isEmpty && !_searchingApi)
                     Padding(
@@ -395,7 +387,7 @@ class _ExplorePageState extends State<ExplorePage> {
                         title: item['title']?.toString() ?? '',
                         isPlace: _isPlace(item),
                         onTap: () => _openItem(item),
-                        isDark: isDark,
+                        primary: primary,
                       ),
                     );
                   },
@@ -410,36 +402,19 @@ class _ExplorePageState extends State<ExplorePage> {
 }
 
 class _ExploreSectionLabel extends StatelessWidget {
-  const _ExploreSectionLabel({
-    required this.icon,
-    required this.title,
-    required this.primary,
-  });
+  const _ExploreSectionLabel({required this.title});
 
-  final IconData icon;
   final String title;
-  final Color primary;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            color: primary.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(8),
+    return Text(
+      title,
+      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: AppColors.title(context),
+            letterSpacing: -0.1,
           ),
-          child: Icon(icon, size: 16, color: primary),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          title,
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-        ),
-      ],
     );
   }
 }
@@ -449,15 +424,11 @@ class _ExploreFeedSectionHeader extends StatelessWidget {
     required this.title,
     required this.count,
     required this.showingSaved,
-    required this.primary,
-    required this.isDark,
   });
 
   final String title;
   final int count;
   final bool showingSaved;
-  final Color primary;
-  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -466,25 +437,23 @@ class _ExploreFeedSectionHeader extends StatelessWidget {
         Text(
           title,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
                 letterSpacing: -0.2,
+                color: AppColors.title(context),
               ),
         ),
         if (showingSaved) ...[
           const SizedBox(width: 6),
-          const Icon(Icons.bookmark_rounded, size: 18, color: Color(0xFFF59E0B)),
+          Icon(Icons.bookmark_rounded, size: 16, color: AppColors.muted(context)),
         ],
         const Spacer(),
         if (count > 0)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-            decoration: BoxDecoration(
-              color: primary.withValues(alpha: isDark ? 0.18 : 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              '$count',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: primary),
+          Text(
+            '$count',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.muted(context),
             ),
           ),
       ],
@@ -496,86 +465,43 @@ class _ExploreStatsStrip extends StatelessWidget {
   const _ExploreStatsStrip({
     required this.placeCount,
     required this.docCount,
-    required this.isDark,
+    required this.showingSaved,
     required this.primary,
-    this.showingSaved = false,
   });
 
   final int placeCount;
   final int docCount;
-  final bool isDark;
-  final Color primary;
   final bool showingSaved;
+  final Color primary;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.primaryTint(context),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: primary.withValues(alpha: isDark ? 0.2 : 0.12),
-        ),
-      ),
-      child: Row(
+    final muted = AppColors.muted(context);
+
+    return Text.rich(
+      TextSpan(
+        style: TextStyle(fontSize: 13, color: muted, height: 1.4),
         children: [
-          _StatPill(icon: Icons.place_rounded, count: placeCount, label: l10n.places, color: const Color(0xFFEF4444)),
-          Container(
-            width: 1,
-            height: 28,
-            margin: const EdgeInsets.symmetric(horizontal: 12),
-            color: AppColors.border(context),
+          TextSpan(
+            text: '$placeCount',
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              color: showingSaved ? muted : primary,
+            ),
           ),
-          _StatPill(icon: Icons.menu_book_rounded, count: docCount, label: l10n.documents, color: const Color(0xFF3B82F6)),
-          const Spacer(),
-          Icon(
-            showingSaved ? Icons.bookmark_rounded : Icons.trending_up_rounded,
-            size: 18,
-            color: showingSaved ? const Color(0xFFF59E0B) : primary.withValues(alpha: 0.8),
+          TextSpan(text: ' ${l10n.places}'),
+          const TextSpan(text: '  ·  '),
+          TextSpan(
+            text: '$docCount',
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              color: AppColors.title(context),
+            ),
           ),
+          TextSpan(text: ' ${l10n.documents}'),
         ],
       ),
-    );
-  }
-}
-
-class _StatPill extends StatelessWidget {
-  const _StatPill({
-    required this.icon,
-    required this.count,
-    required this.label,
-    required this.color,
-  });
-
-  final IconData icon;
-  final int count;
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 18, color: color),
-        const SizedBox(width: 6),
-        Text(
-          '$count',
-          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-        ),
-        const SizedBox(width: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Theme.of(context).brightness == Brightness.dark
-                ? AppColors.muted(context)
-                : AppColors.muted(context),
-          ),
-        ),
-      ],
     );
   }
 }
@@ -586,12 +512,14 @@ class _ExploreActionRow extends StatelessWidget {
     required this.savedSelected,
     required this.onSaved,
     required this.onCreate,
+    required this.primary,
   });
 
   final String savedLabel;
   final bool savedSelected;
   final VoidCallback onSaved;
   final VoidCallback onCreate;
+  final Color primary;
 
   @override
   Widget build(BuildContext context) {
@@ -599,20 +527,20 @@ class _ExploreActionRow extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: _GradientShortcutTile(
-            icon: Icons.bookmark_rounded,
+          child: _MinimalActionTile(
+            icon: Icons.bookmark_outline_rounded,
             label: savedLabel,
-            gradient: const [Color(0xFFF59E0B), Color(0xFFD97706)],
             selected: savedSelected,
+            accent: primary,
             onTap: onSaved,
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 10),
         Expanded(
-          child: _GradientShortcutTile(
-            icon: Icons.add_circle_rounded,
+          child: _MinimalActionTile(
+            icon: Icons.add_rounded,
             label: l10n.share,
-            gradient: const [Color(0xFF3B82F6), Color(0xFF2563EB)],
+            accent: primary,
             onTap: onCreate,
           ),
         ),
@@ -621,69 +549,57 @@ class _ExploreActionRow extends StatelessWidget {
   }
 }
 
-class _GradientShortcutTile extends StatelessWidget {
-  const _GradientShortcutTile({
+class _MinimalActionTile extends StatelessWidget {
+  const _MinimalActionTile({
     required this.icon,
     required this.label,
-    required this.gradient,
+    required this.accent,
     required this.onTap,
     this.selected = false,
   });
 
   final IconData icon;
   final String label;
-  final List<Color> gradient;
+  final Color accent;
   final VoidCallback onTap;
   final bool selected;
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      borderRadius: BorderRadius.circular(16),
-      clipBehavior: Clip.antiAlias,
+      color: AppColors.card(context),
+      borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onTap,
-        child: Ink(
-          height: 80,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          height: 48,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: gradient,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: selected ? accent.withValues(alpha: 0.45) : AppColors.border(context),
             ),
-            border: selected
-                ? Border.all(color: Colors.white, width: 2.5)
-                : null,
-            boxShadow: selected
-                ? [
-                    BoxShadow(
-                      color: gradient.first.withValues(alpha: 0.45),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ]
-                : null,
           ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(
-              children: [
-                Icon(icon, color: Colors.white, size: 24),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    label,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                    ),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                size: 18,
+                color: selected ? accent : AppColors.muted(context),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    color: selected ? accent : AppColors.title(context),
                   ),
                 ),
-                if (selected)
-                  const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -691,59 +607,57 @@ class _GradientShortcutTile extends StatelessWidget {
   }
 }
 
-class _SpotlightCard extends StatelessWidget {
-  const _SpotlightCard({
+class _SpotlightChip extends StatelessWidget {
+  const _SpotlightChip({
     required this.title,
     required this.isPlace,
-    required this.isDark,
+    required this.primary,
     required this.onTap,
   });
 
   final String title;
   final bool isPlace;
-  final bool isDark;
+  final Color primary;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final accent = isPlace ? const Color(0xFFEF4444) : const Color(0xFF3B82F6);
-
     return Material(
       color: AppColors.card(context),
-      borderRadius: BorderRadius.circular(14),
-      clipBehavior: Clip.antiAlias,
+      borderRadius: BorderRadius.circular(20),
       child: InkWell(
         onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
         child: Container(
-          width: 148,
-          padding: const EdgeInsets.all(12),
+          constraints: const BoxConstraints(maxWidth: 180),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: AppColors.border(context),
-            ),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.border(context)),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                padding: const EdgeInsets.all(6),
+                width: 6,
+                height: 6,
                 decoration: BoxDecoration(
-                  color: accent.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  isPlace ? Icons.place_rounded : Icons.menu_book_rounded,
-                  color: accent,
-                  size: 18,
+                  color: isPlace ? primary : AppColors.muted(context),
+                  shape: BoxShape.circle,
                 ),
               ),
-              const Spacer(),
-              Text(
-                title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, height: 1.25),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.title(context),
+                  ),
+                ),
               ),
             ],
           ),
@@ -783,85 +697,70 @@ class _StudyNearMeBanner extends StatelessWidget {
     required this.loading,
     required this.onPressed,
     required this.primary,
-    required this.secondary,
   });
 
   final bool loading;
   final VoidCallback? onPressed;
   final Color primary;
-  final Color secondary;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     return Material(
-      elevation: 0,
-      borderRadius: BorderRadius.circular(20),
-      clipBehavior: Clip.antiAlias,
+      color: AppColors.card(context),
+      borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: loading ? null : onPressed,
-        child: Ink(
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [primary, secondary],
-            ),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.border(context)),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Row(
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: loading
-                      ? const Padding(
-                          padding: EdgeInsets.all(12),
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Icon(Icons.my_location_rounded, color: Colors.white, size: 26),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: primary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l10n.studyNearMe,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.2,
-                        ),
+                child: loading
+                    ? Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: CircularProgressIndicator(strokeWidth: 2, color: primary),
+                      )
+                    : Icon(Icons.near_me_outlined, color: primary, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.studyNearMe,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.title(context),
+                        letterSpacing: -0.1,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        l10n.places,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          height: 1.3,
-                        ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      l10n.places,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.muted(context),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  size: 16,
-                  color: Colors.white.withValues(alpha: 0.9),
-                ),
-              ],
-            ),
+              ),
+              Icon(Icons.chevron_right_rounded, size: 20, color: AppColors.muted(context)),
+            ],
           ),
         ),
       ),
@@ -874,51 +773,40 @@ class _ExploreFeedCard extends StatelessWidget {
     required this.title,
     required this.isPlace,
     required this.onTap,
-    required this.isDark,
+    required this.primary,
   });
 
   final String title;
   final bool isPlace;
   final VoidCallback onTap;
-  final bool isDark;
+  final Color primary;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final accent = isPlace ? const Color(0xFFEF4444) : const Color(0xFF3B82F6);
-    final accentBg = accent.withValues(alpha: isDark ? 0.18 : 0.1);
     final label = isPlace ? l10n.places : l10n.documents;
+    final typeColor = isPlace ? primary : AppColors.muted(context);
 
     return Material(
       color: AppColors.card(context),
-      borderRadius: BorderRadius.circular(16),
-      clipBehavior: Clip.antiAlias,
+      borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
         child: Container(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: AppColors.border(context),
-            ),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.border(context)),
           ),
           child: Row(
             children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: accentBg,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(
-                  isPlace ? Icons.place_rounded : Icons.menu_book_rounded,
-                  color: accent,
-                  size: 26,
-                ),
+              Icon(
+                isPlace ? Icons.location_on_outlined : Icons.article_outlined,
+                size: 20,
+                color: typeColor,
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -927,36 +815,22 @@ class _ExploreFeedCard extends StatelessWidget {
                       title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
-                        height: 1.3,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14,
+                        height: 1.35,
+                        color: AppColors.title(context),
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: accentBg,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        label,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: accent,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
+                    const SizedBox(height: 3),
+                    Text(
+                      label,
+                      style: TextStyle(fontSize: 11, color: AppColors.muted(context)),
                     ),
                   ],
                 ),
               ),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: isDark ? const Color(0xFF6B7280) : const Color(0xFFD1D5DB),
-              ),
+              Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.muted(context)),
             ],
           ),
         ),
@@ -1053,35 +927,31 @@ class _ExploreLoadingView extends StatelessWidget {
     final skeleton = AppColors.chipBg(context);
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 100),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
       children: [
-        Container(height: 32, width: 140, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(8))),
+        Container(height: 48, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(12))),
         const SizedBox(height: 10),
-        Container(height: 16, width: 260, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(6))),
-        const SizedBox(height: 20),
-        Container(height: 52, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(26))),
-        const SizedBox(height: 10),
-        Container(height: 36, width: 220, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(20))),
-        const SizedBox(height: 16),
-        Container(height: 84, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(20))),
-        const SizedBox(height: 16),
-        Container(height: 48, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(14))),
+        Container(height: 40, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(12))),
         const SizedBox(height: 14),
+        Container(height: 66, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(14))),
+        const SizedBox(height: 12),
+        Container(height: 14, width: 200, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(6))),
+        const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(child: Container(height: 80, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(16)))),
-            const SizedBox(width: 12),
-            Expanded(child: Container(height: 80, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(16)))),
+            Expanded(child: Container(height: 48, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(12)))),
+            const SizedBox(width: 10),
+            Expanded(child: Container(height: 48, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(12)))),
           ],
         ),
-        const SizedBox(height: 28),
-        Container(height: 22, width: 100, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(6))),
+        const SizedBox(height: 24),
+        Container(height: 16, width: 80, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(6))),
         const SizedBox(height: 12),
         ...List.generate(4, (_) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.only(bottom: 8),
               child: Container(
-                height: 80,
-                decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(16)),
+                height: 64,
+                decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(12)),
               ),
             )),
       ],

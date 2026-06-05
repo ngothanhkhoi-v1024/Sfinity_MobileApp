@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/i18n/app_text.dart';
 import '../../../../core/constants/route_names.dart';
+import '../../../../core/i18n/app_text.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../controllers/friendship_controller.dart';
 import '../../../places/presentation/widgets/places_search_field.dart';
 import 'friend_tile.dart';
@@ -70,7 +71,7 @@ class _FriendsListTabState extends State<FriendsListTab> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
           child: Row(
             children: [
               Expanded(
@@ -82,15 +83,19 @@ class _FriendsListTabState extends State<FriendsListTab> {
               ),
               const SizedBox(width: 8),
               Material(
-                color: cs.primary.withValues(alpha: isDark ? 0.2 : 0.1),
-                borderRadius: BorderRadius.circular(14),
+                color: AppColors.chipBg(context),
+                borderRadius: BorderRadius.circular(12),
                 child: InkWell(
                   onTap: () => context.push(RouteNames.friends),
-                  borderRadius: BorderRadius.circular(14),
-                  child: const SizedBox(
-                    width: 48,
-                    height: 48,
-                    child: Icon(Icons.person_add_rounded, size: 22),
+                  borderRadius: BorderRadius.circular(12),
+                  child: SizedBox(
+                    width: 44,
+                    height: 44,
+                    child: Icon(
+                      Icons.person_add_outlined,
+                      size: 20,
+                      color: AppColors.primaryOf(context),
+                    ),
                   ),
                 ),
               ),

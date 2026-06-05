@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../app.dart';
 import '../../../../core/constants/route_names.dart';
 import '../../../../core/i18n/app_text.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../friendships/presentation/controllers/friendship_controller.dart';
 import '../../../friendships/presentation/widgets/friends_list_tab.dart';
 import '../../../groups/presentation/controllers/group_controller.dart';
@@ -91,7 +92,8 @@ class _CommunityPageState extends State<CommunityPage>
             title: Text(
               l10n.community,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    letterSpacing: -0.3,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: -0.2,
                   ),
             ),
             actions: [
@@ -177,7 +179,7 @@ class _CommunityPageState extends State<CommunityPage>
         padding: const EdgeInsets.fromLTRB(0, 8, 0, 100),
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 10),
             child: PlacesSearchField(
               controller: _groupSearchCtrl,
               hint: l10n.searchGroupHint,
@@ -218,44 +220,13 @@ class _CommunityPageState extends State<CommunityPage>
   }
 
   Widget _buildCreateGroupButton(BuildContext context, ColorScheme cs) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Padding(
-      padding: const EdgeInsets.only(right: 10),
-      child: Tooltip(
-        message: context.l10n.createGroup,
-        child: Material(
-          color: Colors.transparent,
-          child: Ink(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: cs.primary.withValues(alpha: isDark ? 0.22 : 0.12),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: cs.primary.withValues(alpha: isDark ? 0.24 : 0.18),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: isDark ? 0.16 : 0.04),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(12),
-              onTap: () => context.push(RouteNames.groupCreate),
-              child: Center(
-                child: Icon(
-                  Icons.add_rounded,
-                  size: 19,
-                  color: cs.primary,
-                ),
-              ),
-            ),
-          ),
-        ),
+      padding: const EdgeInsets.only(right: 12),
+      child: IconButton(
+        tooltip: context.l10n.createGroup,
+        onPressed: () => context.push(RouteNames.groupCreate),
+        icon: Icon(Icons.add_rounded, color: AppColors.primaryOf(context)),
+        visualDensity: VisualDensity.compact,
       ),
     );
   }
@@ -287,36 +258,15 @@ class _CommunityPageState extends State<CommunityPage>
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(32, 64, 32, 100),
           children: [
-            Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                color: cs.primary.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.mark_email_unread_outlined,
-                size: 36,
-                color: cs.primary.withValues(alpha: 0.6),
-              ),
-            ),
-            const SizedBox(height: 16),
+            Icon(Icons.mail_outline_rounded, size: 40, color: AppColors.muted(context)),
+            const SizedBox(height: 14),
             Text(
               l10n.noInvites,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: cs.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              l10n.noInvites,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: cs.onSurfaceVariant.withValues(alpha: 0.7),
-                height: 1.5,
-              ),
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.title(context),
+                  ),
             ),
           ],
         ),
@@ -336,7 +286,6 @@ class _CommunityPageState extends State<CommunityPage>
         children: [
           if (hasFriendRequests) ...[
             CommunitySectionHeader(
-              icon: Icons.person_add_alt_rounded,
               label: l10n.friendRequests,
               isExpanded: _isFriendRequestsExpanded,
               onTap: () => setState(
@@ -359,7 +308,6 @@ class _CommunityPageState extends State<CommunityPage>
 
           if (hasSent) ...[
             CommunitySectionHeader(
-              icon: Icons.schedule_send_rounded,
               label: l10n.sentRequests(sentRequests.length),
               isExpanded: _isSentRequestsExpanded,
               onTap: () => setState(
@@ -382,7 +330,6 @@ class _CommunityPageState extends State<CommunityPage>
 
           if (hasGroupInvites) ...[
             CommunitySectionHeader(
-              icon: Icons.group_add_rounded,
               label: l10n.invitesTab,
               isExpanded: _isGroupInvitesExpanded,
               onTap: () => setState(
@@ -412,17 +359,17 @@ class _CommunityPageState extends State<CommunityPage>
           child: Row(
             children: [
               CircleAvatar(
-                radius: 22,
+                radius: 20,
                 backgroundImage: user.avatar != null && user.avatar!.isNotEmpty
                     ? NetworkImage(user.avatar!)
                     : null,
-                backgroundColor: cs.primaryContainer,
+                backgroundColor: AppColors.primaryOf(context).withValues(alpha: 0.08),
                 child: user.avatar == null || user.avatar!.isEmpty
                     ? Text(
                         user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
                         style: TextStyle(
-                          color: cs.onPrimaryContainer,
-                          fontWeight: FontWeight.bold,
+                          color: AppColors.primaryOf(context),
+                          fontWeight: FontWeight.w700,
                         ),
                       )
                     : null,
@@ -478,7 +425,7 @@ class _CommunityPageState extends State<CommunityPage>
                 ),
               ),
               const SizedBox(width: 6),
-              FilledButton(
+              OutlinedButton(
                 onPressed: () async {
                   final ok = await _friendCtrl.respondRequest(req.id, true);
                   if (context.mounted) {
@@ -494,20 +441,21 @@ class _CommunityPageState extends State<CommunityPage>
                     );
                   }
                 },
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primaryOf(context),
+                  side: BorderSide(
+                    color: AppColors.primaryOf(context).withValues(alpha: 0.4),
                   ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
                 child: Text(
                   l10n.accept,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
                 ),
               ),
             ],
@@ -532,17 +480,17 @@ class _CommunityPageState extends State<CommunityPage>
           child: Row(
             children: [
               CircleAvatar(
-                radius: 22,
+                radius: 20,
                 backgroundImage: user.avatar != null && user.avatar!.isNotEmpty
                     ? NetworkImage(user.avatar!)
                     : null,
-                backgroundColor: cs.primaryContainer,
+                backgroundColor: AppColors.primaryOf(context).withValues(alpha: 0.08),
                 child: user.avatar == null || user.avatar!.isEmpty
                     ? Text(
                         user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
                         style: TextStyle(
-                          color: cs.onPrimaryContainer,
-                          fontWeight: FontWeight.bold,
+                          color: AppColors.primaryOf(context),
+                          fontWeight: FontWeight.w700,
                         ),
                       )
                     : null,
@@ -716,53 +664,36 @@ class _CommunityPageState extends State<CommunityPage>
                   ),
                 ),
                 const SizedBox(width: 8),
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [cs.primary, const Color(0xFFFF5A36)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      final ok = await _groupCtrl.respondToInvitation(
-                        inviteId,
-                        true,
-                      );
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              ok
-                                  ? l10n.acceptInvite
-                                  : l10n.errorOccurred,
-                            ),
-                            backgroundColor: ok ? Colors.green.shade700 : null,
+                OutlinedButton(
+                  onPressed: () async {
+                    final ok = await _groupCtrl.respondToInvitation(
+                      inviteId,
+                      true,
+                    );
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            ok ? l10n.acceptInvite : l10n.errorOccurred,
                           ),
-                        );
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.transparent,
-                      shadowColor: Colors.transparent,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 10,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                          backgroundColor: ok ? Colors.green.shade700 : null,
+                        ),
+                      );
+                    }
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primaryOf(context),
+                    side: BorderSide(
+                      color: AppColors.primaryOf(context).withValues(alpha: 0.4),
                     ),
-                    child: Text(
-                      l10n.accept,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
+                  ),
+                  child: Text(
+                    l10n.accept,
+                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
                   ),
                 ),
               ],
@@ -789,7 +720,7 @@ class _CommunityPageState extends State<CommunityPage>
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
             child: PlacesSearchField(
               controller: _discoverSearchCtrl,
               hint: l10n.searchGroupHint,

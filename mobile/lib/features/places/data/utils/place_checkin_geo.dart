@@ -1,9 +1,9 @@
 import 'package:geolocator/geolocator.dart';
 
-/// Check-in geofence: distance <= max(10m, GPS accuracy), accuracy <= 25m.
+/// Check-in geofence: distance <= max(50m, GPS accuracy), accuracy <= 50m.
 abstract final class PlaceCheckInGeo {
-  static const maxAccuracyM = 25.0;
-  static const baseRadiusM = 10.0;
+  static const maxAccuracyM = 50.0;
+  static const baseRadiusM = 50.0;
 
   static double allowedRadiusM(double accuracyM) {
     if (accuracyM <= 0 || accuracyM > maxAccuracyM) return 0;
