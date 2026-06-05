@@ -1,4 +1,6 @@
 import {
+  CheckCircleOutlined,
+  CloseCircleOutlined,
   DeleteOutlined,
   DownloadOutlined,
   EyeOutlined,
@@ -11,6 +13,7 @@ import {
   Input,
   Modal,
   Space,
+  Switch,
   Table,
   Tag,
   Tooltip,
@@ -20,22 +23,46 @@ import type { ColumnsType } from 'antd/es/table';
 import { useCallback, useEffect, useState } from 'react';
 
 import {
+  adminApproveDocument,
   adminDeleteDocument,
   adminHideDocument,
+  adminRejectDocument,
   adminUnhideDocument,
   fetchDocuments,
   type DocumentItem,
 } from '@/api/documents';
+import { useSettings } from '@/contexts/SettingsContext';
 import { PageHeader } from '@/components/common/PageHeader';
 import { PageShell } from '@/components/common/PageShell';
 
+type ContentStatus = 'DRAFT' | 'PENDING' | 'PUBLISHED' | 'REJECTED' | 'HIDDEN';
+
+const STATUS_LABELS: Record<ContentStatus, string> = {
+  DRAFT: 'Nháp',
+  PENDING: 'Chờ duyệt',
+  PUBLISHED: 'Đã xuất bản',
+  REJECTED: 'Từ chối',
+  HIDDEN: 'Ẩn',
+};
+
+const STATUS_COLORS: Record<ContentStatus, string> = {
+  DRAFT: 'default',
+  PENDING: 'gold',
+  PUBLISHED: 'green',
+  REJECTED: 'red',
+  HIDDEN: 'volcano',
+};
+
 export function DocumentsPage() {
+  const { settings, saving, toggleAutoApprove } = useSettings();
   const [data, setData] = useState<DocumentItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [viewModal, setViewModal] = useState<DocumentItem | null>(null);
   const [hideModal, setHideModal] = useState<DocumentItem | null>(null);
   const [deleteModal, setDeleteModal] = useState<DocumentItem | null>(null);
   const [unhideModal, setUnhideModal] = useState<DocumentItem | null>(null);
+  const [approveModal, setApproveModal] = useState<DocumentItem | null>(null);
+  const [rejectModal, setRejectModal] = useState<DocumentItem | null>(null);
   const [reason, setReason] = useState('');
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -55,6 +82,41 @@ export function DocumentsPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  const handleApprove = async () => {
+    if (!approveModal) return;
+    setSubmitting(true);
+    try {
+      await adminApproveDocument(approveModal.id, note.trim() || undefined);
+      message.success('Đã duyệt tài liệu và thông báo cho tác giả');
+      setApproveModal(null);
+      setNote('');
+      load();
+    } catch {
+      message.error('Thất bại');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!rejectModal || reason.trim().length < 2) {
+      message.warning('Vui lòng nhập lý do từ chối (ít nhất 2 ký tự)');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await adminRejectDocument(rejectModal.id, reason.trim());
+      message.success('Đã từ chối tài liệu và thông báo cho tác giả');
+      setRejectModal(null);
+      setReason('');
+      load();
+    } catch {
+      message.error('Thất bại');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const handleHide = async () => {
     if (!hideModal || reason.trim().length < 2) {
@@ -124,8 +186,8 @@ export function DocumentsPage() {
       dataIndex: 'status',
       width: 130,
       render: (s: string) => (
-        <Tag color={s === 'PUBLISHED' ? 'green' : 'default'}>
-          {s === 'PUBLISHED' ? 'Đã xuất bản' : 'Nháp'}
+        <Tag color={STATUS_COLORS[s as ContentStatus] ?? 'default'}>
+          {STATUS_LABELS[s as ContentStatus] ?? s}
         </Tag>
       ),
     },
@@ -156,13 +218,42 @@ export function DocumentsPage() {
     {
       title: 'Thao tác',
       key: 'actions',
-      width: 280,
+      width: 360,
       render: (_, record) => (
         <Space>
           <Button size="small" icon={<EyeOutlined />} onClick={() => setViewModal(record)}>
             Xem
           </Button>
-          {record.status === 'PUBLISHED' ? (
+
+          {record.status === 'PENDING' && (
+            <>
+              <Button
+                size="small"
+                type="primary"
+                icon={<CheckCircleOutlined />}
+                onClick={() => {
+                  setApproveModal(record);
+                  setNote('');
+                }}
+              >
+                Duyệt
+              </Button>
+              <Button
+                size="small"
+                danger
+                type="default"
+                icon={<CloseCircleOutlined />}
+                onClick={() => {
+                  setRejectModal(record);
+                  setReason('');
+                }}
+              >
+                Từ chối
+              </Button>
+            </>
+          )}
+
+          {record.status === 'PUBLISHED' && (
             <Button
               size="small"
               icon={<EyeInvisibleOutlined />}
@@ -173,7 +264,9 @@ export function DocumentsPage() {
             >
               Ẩn
             </Button>
-          ) : (
+          )}
+
+          {(record.status === 'HIDDEN' || record.status === 'DRAFT' || record.status === 'REJECTED') && (
             <Button
               size="small"
               type="default"
@@ -186,6 +279,7 @@ export function DocumentsPage() {
               Bỏ ẩn
             </Button>
           )}
+
           <Button
             size="small"
             danger
@@ -204,7 +298,19 @@ export function DocumentsPage() {
     <PageShell>
       <PageHeader
         title="Quản lý tài liệu"
-        description="Xem chi tiết, ẩn hoặc xóa tài liệu học tập. Thao tác sẽ gửi thông báo lý do cho tác giả."
+        description="Xem, duyệt, ẩn hoặc xóa tài liệu. Tài liệu chờ duyệt cần admin duyệt trước khi xuất bản."
+        extra={
+          <Space>
+            <span style={{ fontSize: 13, color: '#64748b' }}>Duyệt tự động</span>
+            <Switch
+              checked={settings?.autoApproveDocuments ?? false}
+              onChange={(checked) => toggleAutoApprove('autoApproveDocuments', checked)}
+              loading={saving}
+              checkedChildren="Bật"
+              unCheckedChildren="Tắt"
+            />
+          </Space>
+        }
       />
 
       <Table
@@ -232,8 +338,8 @@ export function DocumentsPage() {
           <Descriptions column={1} bordered size="small">
             <Descriptions.Item label="Tiêu đề">{viewModal.title}</Descriptions.Item>
             <Descriptions.Item label="Trạng thái">
-              <Tag color={viewModal.status === 'PUBLISHED' ? 'green' : 'default'}>
-                {viewModal.status === 'PUBLISHED' ? 'Đã xuất bản' : 'Nháp'}
+              <Tag color={STATUS_COLORS[viewModal.status as ContentStatus] ?? 'default'}>
+                {STATUS_LABELS[viewModal.status as ContentStatus] ?? viewModal.status}
               </Tag>
             </Descriptions.Item>
             <Descriptions.Item label="Mã môn">{viewModal.subjectCode ?? '-'}</Descriptions.Item>
@@ -260,6 +366,44 @@ export function DocumentsPage() {
             <Descriptions.Item label="Mô tả">{viewModal.body || '-'}</Descriptions.Item>
           </Descriptions>
         )}
+      </Modal>
+
+      {/* Approve Modal */}
+      <Modal
+        title={`Duyệt tài liệu: "${approveModal?.title}"`}
+        open={!!approveModal}
+        onCancel={() => { setApproveModal(null); setNote(''); }}
+        onOk={handleApprove}
+        okText="Duyệt và xuất bản"
+        okButtonProps={{ loading: submitting }}
+        width={520}
+      >
+        <p>Tài liệu sẽ được xuất bản ngay lập tức và tác giả sẽ được thông báo.</p>
+        <Input.TextArea
+          rows={3}
+          placeholder="Ghi chú cho tác giả (tùy chọn)..."
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+        />
+      </Modal>
+
+      {/* Reject Modal */}
+      <Modal
+        title={`Từ chối tài liệu: "${rejectModal?.title}"`}
+        open={!!rejectModal}
+        onCancel={() => { setRejectModal(null); setReason(''); }}
+        onOk={handleReject}
+        okText="Từ chối và thông báo"
+        okButtonProps={{ danger: true, loading: submitting }}
+        width={520}
+      >
+        <p>Tài liệu sẽ bị từ chối và tác giả sẽ nhận được thông báo kèm lý do.</p>
+        <Input.TextArea
+          rows={3}
+          placeholder="Nhập lý do từ chối..."
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+        />
       </Modal>
 
       {/* Hide Modal */}

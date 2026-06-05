@@ -14,6 +14,7 @@ import '../../features/groups/presentation/pages/group_chat_page.dart';
 import '../../features/groups/presentation/pages/group_detail_page.dart';
 import '../../features/groups/presentation/pages/group_list_page.dart';
 import '../../features/groups/presentation/pages/group_form_page.dart';
+import '../../features/friendships/data/models/friend_model.dart';
 import '../../features/home/presentation/pages/home_shell_page.dart';
 import '../../features/places/presentation/pages/place_detail_page.dart';
 import '../../features/places/presentation/pages/place_share_page.dart';
@@ -27,7 +28,6 @@ import '../../features/profile/presentation/pages/edit_profile_page.dart';
 import '../../features/profile/presentation/pages/view_profile_page.dart';
 import '../../features/report/presentation/pages/report_page.dart';
 import '../../features/security/presentation/pages/change_password_page.dart';
-import '../../features/settings/presentation/pages/language_settings_page.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
 import '../auth/auth_state.dart';
 import '../constants/route_names.dart';
@@ -146,10 +146,6 @@ GoRouter createAppRouter(AuthState auth) {
         builder: (_, __) => const SettingsPage(),
       ),
       GoRoute(
-        path: RouteNames.languageSettings,
-        builder: (_, __) => const LanguageSettingsPage(),
-      ),
-      GoRoute(
         path: RouteNames.notificationSettings,
         builder: (_, __) => const NotificationSettingsPage(),
       ),
@@ -164,7 +160,9 @@ GoRouter createAppRouter(AuthState auth) {
       ),
       GoRoute(
         path: RouteNames.viewProfile,
-        builder: (_, __) => const ViewProfilePage(),
+        builder: (_, state) => ViewProfilePage(
+          profileUser: state.extra is FriendUser ? state.extra as FriendUser : null,
+        ),
       ),
       GoRoute(
         path: RouteNames.editProfile,

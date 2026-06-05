@@ -312,7 +312,16 @@ body {
 
 /* Responsive table */
 .admin-table .ant-table {
-  min-width: 700px;       
+  min-width: 700px;
+}
+
+/* Places page: horizontal scrollbar on top */
+.admin-table .ant-table-wrapper {
+  direction: rtl;
+}
+
+.admin-table .ant-table-wrapper > * {
+  direction: ltr;
 }
 
 @media (max-width: 1200px) {

@@ -67,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           ?.message;
       throw new Error(Array.isArray(msg) ? msg[0] : msg ?? 'Đăng nhập thất bại');
     }
-    if (response.user.role !== 'admin') {
+    if (response.user.role?.toLowerCase() !== 'admin') {
       throw new Error('Tài khoản không có quyền quản trị');
     }
     localStorage.setItem(AUTH_TOKEN_KEY, response.accessToken);

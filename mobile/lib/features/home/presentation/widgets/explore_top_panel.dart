@@ -9,8 +9,6 @@ enum ExploreFilter { all, place, document }
 class ExploreTopPanel extends StatelessWidget {
   const ExploreTopPanel({
     super.key,
-    required this.title,
-    required this.subtitle,
     required this.searchController,
     required this.searchHint,
     required this.filter,
@@ -20,8 +18,6 @@ class ExploreTopPanel extends StatelessWidget {
     required this.onSearchSubmitted,
   });
 
-  final String title;
-  final String subtitle;
   final TextEditingController searchController;
   final String searchHint;
   final ExploreFilter filter;
@@ -36,20 +32,6 @@ class ExploreTopPanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.5,
-                height: 1.1,
-              ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          subtitle,
-          style: TextStyle(fontSize: 14, color: AppColors.subtitle(context), height: 1.35),
-        ),
-        const SizedBox(height: 14),
         Container(
           padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
           decoration: AppColors.panel(context),

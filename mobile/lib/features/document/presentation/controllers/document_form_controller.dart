@@ -35,7 +35,9 @@ class DocumentFormController extends ChangeNotifier {
   Future<void> loadCategories(String? initialCategoryId, bool isEdit) async {
     try {
       categories = await SfinityApp.documentRepository.getCategories();
-      if (categories.isNotEmpty && selectedCategoryId == null && !isEdit) {
+      if (initialCategoryId != null) {
+        selectedCategoryId = initialCategoryId;
+      } else if (categories.isNotEmpty && selectedCategoryId == null && !isEdit) {
         selectedCategoryId = categories.first['id']?.toString();
       }
       notifyListeners();
@@ -184,7 +186,6 @@ class DocumentFormController extends ChangeNotifier {
         'body': body,
         'status': selectedStatus,
         'categoryId': selectedCategoryId,
-        'type': contentType,
         if (isDocument && placeId != null && placeId.isNotEmpty) 'placeId': placeId,
         if (isDocument) ...{
           'fileUrl': finalFileUrl,

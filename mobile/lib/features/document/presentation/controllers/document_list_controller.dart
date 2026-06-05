@@ -32,20 +32,11 @@ class DocumentListController extends ChangeNotifier {
     try {
       final currentUserId = SfinityApp.auth.user?['id']?.toString();
       final res = await SfinityApp.documentRepository.getDocuments(
-        publishedOnly: true,
+        publishedOnly: communityMode ? true : null,
         authorId: communityMode ? null : currentUserId,
         limit: 50,
       );
-      final raw = res['items'] as List? ?? [];
-      allItems = raw.where((e) {
-        final itemMap = e as Map<String, dynamic>;
-        final type = itemMap['type']?.toString();
-        if (type != null) {
-          return type == 'document';
-        }
-        final body = itemMap['body']?.toString() ?? '';
-        return !body.contains('type:place');
-      }).toList();
+      allItems = res['items'] as List? ?? [];
       filterItems();
     } on DioException catch (e) {
       error = ApiClient.instance.errorMessage(e);

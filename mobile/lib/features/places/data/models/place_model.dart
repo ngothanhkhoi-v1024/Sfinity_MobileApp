@@ -90,7 +90,6 @@ class PlaceUpsertPayload {
   Map<String, dynamic> toJson() => {
         'title': title,
         'body': body,
-        'type': 'place',
         'latitude': latitude,
         'longitude': longitude,
         'address': address,

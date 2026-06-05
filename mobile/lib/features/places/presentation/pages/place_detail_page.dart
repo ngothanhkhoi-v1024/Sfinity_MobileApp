@@ -43,13 +43,16 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
     _engagementCtrl.addListener(() {
       if (mounted) setState(() {});
     });
-    _loadAll();
+    // Defer _loadAll sau frame đầu tiên để context.l10n khả dụng
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _loadAll();
+    });
   }
 
   Future<void> _loadAll() async {
-    final l10n = context.l10n;
     await Future.wait([
-      _ctrl.load(widget.placeId, placeNotFound: () => l10n.placeNotFound),
+      // Truy cập context.l10n lazily bên trong callback — an toàn vì lúc này widget đã mounted
+      _ctrl.load(widget.placeId, placeNotFound: () => context.l10n.placeNotFound),
       _engagementCtrl.load(widget.placeId),
       _checkFavorite(),
     ]);

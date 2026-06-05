@@ -7,6 +7,9 @@ export interface UserRecord {
   role: string;
   status: string;
   notificationsEnabled?: boolean;
+  gender?: string;
+  birthDate?: string;
+  address?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -20,7 +23,7 @@ export async function fetchUsers(search?: string): Promise<UserRecord[]> {
 
 export async function updateUser(
   id: string,
-  payload: Partial<{ name: string; role: string; status: string }>,
+  payload: Partial<{ name: string; role: string; status: string; gender: string; birthDate: string; address: string }>,
 ): Promise<UserRecord> {
   const { data } = await apiClient.patch<UserRecord>(`/users/${id}`, payload);
   return data;

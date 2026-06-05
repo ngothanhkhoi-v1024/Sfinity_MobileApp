@@ -13,6 +13,9 @@ async function getTransporter(): Promise<nodemailer.Transporter> {
         user: config.smtpUser,
         pass: config.smtpPass,
       },
+      tls: {
+        rejectUnauthorized: false,
+      },
     });
   }
 
@@ -47,7 +50,7 @@ export const mailService = {
       });
 
       console.log(`[Email] Đã gửi email tới: ${to} | Subject: ${subject}`);
-      
+
       const previewUrl = nodemailer.getTestMessageUrl(info);
       if (previewUrl) {
         console.log(`[Email Preview Link] Xem nội dung email chi tiết tại: ${previewUrl}`);

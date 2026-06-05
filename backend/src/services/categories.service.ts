@@ -1,6 +1,5 @@
 import { getDb } from '../lib/firebase';
 import { HttpError } from '../lib/http-error';
-import { CategoryType } from '../dto/category.dto';
 import type { CreateCategoryDto, UpdateCategoryDto } from '../dto/category.dto';
 
 const toDate = (val: any): Date => {
@@ -10,45 +9,26 @@ const toDate = (val: any): Date => {
   return new Date(val);
 };
 
-// Tiện ích địa điểm mặc định (PLACE)
-const PLACE_AMENITIES = [
-  { name: 'WiFi', slug: 'wifi', description: 'Có kết nối WiFi miễn phí', type: CategoryType.PLACE },
-  { name: 'Điều hòa', slug: 'dieu-hoa', description: 'Có điều hòa không khí', type: CategoryType.PLACE },
-  { name: 'Ổ cắm', slug: 'o-cam', description: 'Có ổ cắm sạc thiết bị', type: CategoryType.PLACE },
-  { name: 'Yên tĩnh', slug: 'yen-tinh', description: 'Khu vực yên tĩnh, phù hợp học tập', type: CategoryType.PLACE },
-  { name: 'Mở muộn', slug: 'mo-muon', description: 'Mở cửa đến giờ muộn', type: CategoryType.PLACE },
-  { name: 'Giữ xe', slug: 'giu-xe', description: 'Có khu vực giữ xe', type: CategoryType.PLACE },
-];
-
 // Danh mục tài liệu mặc định (DOCUMENT)
 const DOCUMENT_CATEGORIES = [
-  { name: 'Bài giảng', slug: 'bai-giang', description: 'Slide bài giảng, tài liệu lý thuyết', type: CategoryType.DOCUMENT },
-  { name: 'Đề thi', slug: 'de-thi', description: 'Đề thi ôn tập, đề kiểm tra các kỳ', type: CategoryType.DOCUMENT },
-  { name: 'Ghi chú', slug: 'ghi-chu', description: 'Ghi chú cá nhân, tóm tắt môn học', type: CategoryType.DOCUMENT },
-  { name: 'Khác', slug: 'khac', description: 'Tài liệu học tập khác', type: CategoryType.DOCUMENT },
+  { name: 'Bài giảng', description: 'Slide bài giảng, tài liệu lý thuyết' },
+  { name: 'Đề thi', description: 'Đề thi ôn tập, đề kiểm tra các kỳ' },
+  { name: 'Ghi chú', description: 'Ghi chú cá nhân, tóm tắt môn học' },
+  { name: 'Khác', description: 'Tài liệu học tập khác' },
 ];
 
 async function seedCategories() {
-  // Xoá toàn bộ categories cũ và seed lại đúng cấu trúc
   const snapshot = await getDb().collection('categories').get();
+  // Chỉ chạy seed nếu collection trống hoàn toàn
+  if (!snapshot.empty) return;
 
-  // Xoá tất cả docs cũ
-  if (!snapshot.empty) {
-    const deleteBatch = getDb().batch();
-    for (const doc of snapshot.docs) {
-      deleteBatch.delete(doc.ref);
-    }
-    await deleteBatch.commit();
-  }
-
-  // Seed đúng cấu trúc mới: 4 DOCUMENT + 6 PLACE
-  const allDefaults = [...DOCUMENT_CATEGORIES, ...PLACE_AMENITIES];
   const seedBatch = getDb().batch();
-  for (const cat of allDefaults) {
+  for (const cat of DOCUMENT_CATEGORIES) {
     const docRef = getDb().collection('categories').doc();
     seedBatch.set(docRef, {
       id: docRef.id,
-      ...cat,
+      name: cat.name,
+      description: cat.description,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -57,7 +37,7 @@ async function seedCategories() {
 }
 
 export const categoriesService = {
-  async findAll(type?: string) {
+  async findAll() {
     await seedCategories();
 
     const snapshot = await getDb().collection('categories').get();
@@ -74,9 +54,7 @@ export const categoriesService = {
         return {
           id: cat.id,
           name: cat.name,
-          slug: cat.slug,
           description: cat.description ?? null,
-          type: cat.type ?? CategoryType.DOCUMENT,
           createdAt: toDate(cat.createdAt),
           updatedAt: toDate(cat.updatedAt),
           _count: {
@@ -87,10 +65,6 @@ export const categoriesService = {
     );
 
     const sorted = categoriesWithCount.sort((a, b) => a.name.localeCompare(b.name));
-
-    if (type) {
-      return sorted.filter((c) => c.type === type);
-    }
 
     return sorted;
   },
@@ -111,9 +85,7 @@ export const categoriesService = {
     return {
       id: cat.id,
       name: cat.name,
-      slug: cat.slug,
       description: cat.description ?? null,
-      type: cat.type ?? CategoryType.DOCUMENT,
       createdAt: toDate(cat.createdAt),
       updatedAt: toDate(cat.updatedAt),
       _count: {
@@ -125,21 +97,19 @@ export const categoriesService = {
   async create(dto: CreateCategoryDto) {
     const snapshot = await getDb()
       .collection('categories')
-      .where('slug', '==', dto.slug)
+      .where('name', '==', dto.name)
       .limit(1)
       .get();
 
     if (!snapshot.empty) {
-      throw new HttpError(409, 'Slug đã tồn tại', 'Conflict');
+      throw new HttpError(409, 'Tên danh mục đã tồn tại', 'Conflict');
     }
 
     const docRef = getDb().collection('categories').doc();
     const newCat = {
       id: docRef.id,
       name: dto.name,
-      slug: dto.slug,
       description: dto.description ?? null,
-      type: dto.type,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -164,9 +134,7 @@ export const categoriesService = {
     return {
       id: updated.id,
       name: updated.name,
-      slug: updated.slug,
       description: updated.description ?? null,
-      type: updated.type ?? CategoryType.DOCUMENT,
       createdAt: toDate(updated.createdAt),
       updatedAt: toDate(updated.updatedAt),
     };

@@ -68,18 +68,7 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
         authorId: currentUserId,
         limit: 100,
       );
-      final rawList = res['items'] as List? ?? [];
-      
-      // Filter out only document-type items
-      _allDocuments = rawList.where((e) {
-        final itemMap = e as Map<String, dynamic>;
-        final type = itemMap['type']?.toString();
-        if (type != null) {
-          return type == 'document';
-        }
-        final body = itemMap['body']?.toString() ?? '';
-        return !body.contains('type:place');
-      }).toList();
+      _allDocuments = res['items'] as List? ?? [];
 
       _calculateStats();
     } on DioException catch (e) {
@@ -146,17 +135,30 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(l10n.delete),
-        content: Text(l10n.deleteDocumentConfirm),
+        icon: const Icon(Icons.delete_forever_rounded, color: Colors.red, size: 36),
+        title: Text(l10n.delete, style: const TextStyle(fontWeight: FontWeight.bold)),
+        content: Text(
+          l10n.deleteDocumentConfirm,
+          textAlign: TextAlign.center,
+        ),
+        actionsAlignment: MainAxisAlignment.spaceEvenly,
         actions: [
-          TextButton(
+          OutlinedButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.cancelBtn2),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: Text(l10n.cancelBtn2, style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
           ),
-          TextButton(
+          FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: Text(l10n.delete),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.red,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: Text(l10n.delete, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -185,6 +187,7 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
   Widget build(BuildContext context) {
     final primary = AppColors.primaryOf(context);
     final l10n = context.l10n;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: AppColors.scaffold(context),
@@ -195,15 +198,49 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
         ),
         elevation: 0,
         actions: [
-          IconButton(
-            icon: Icon(Icons.add_circle_outline, color: primary, size: 26),
-            onPressed: () async {
-              await context.push(
-                RouteNames.documentCreate,
-                extra: const {'contentType': 'document'},
-              );
-              _loadDocuments();
-            },
+          Padding(
+            padding: const EdgeInsets.only(right: 10),
+            child: Tooltip(
+              message: l10n.uploadDocument,
+              child: Material(
+                color: Colors.transparent,
+                child: Ink(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: primary.withValues(alpha: isDark ? 0.22 : 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: primary.withValues(alpha: isDark ? 0.24 : 0.18),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: isDark ? 0.16 : 0.04),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () async {
+                      await context.push(
+                        RouteNames.documentCreate,
+                        extra: const {'contentType': 'document'},
+                      );
+                      _loadDocuments();
+                    },
+                    child: Center(
+                      child: Icon(
+                        Icons.add_rounded,
+                        color: primary,
+                        size: 19,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),
