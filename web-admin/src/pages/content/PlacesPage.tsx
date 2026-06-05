@@ -5,12 +5,14 @@ import {
   EyeInvisibleOutlined,
   EyeOutlined,
   RetweetOutlined,
+  SearchOutlined,
 } from '@ant-design/icons';
 import {
   Button,
   Descriptions,
   Input,
   Modal,
+  Select,
   Space,
   Switch,
   Table,
@@ -19,6 +21,7 @@ import {
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useCallback, useEffect, useState } from 'react';
+import dayjs from 'dayjs';
 
 import {
   adminApprovePlace,
@@ -65,8 +68,29 @@ export function PlacesPage() {
   const [approveModal, setApproveModal] = useState<PlaceItem | null>(null);
   const [rejectModal, setRejectModal] = useState<PlaceItem | null>(null);
   const [reason, setReason] = useState('');
+  const [reasonError, setReasonError] = useState(false);
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'APPROVED'>('ALL');
+
+  // Filter list in memory based on search query and status filter
+  const filteredData = data.filter((item) => {
+    const ms = getPlaceModerationStatus(item);
+    if (statusFilter === 'PENDING' && ms !== 'PENDING') return false;
+    if (statusFilter === 'APPROVED' && ms !== 'APPROVED') return false;
+
+    const term = searchQuery.toLowerCase().trim();
+    if (!term) return true;
+    return (
+      item.title?.toLowerCase().includes(term) ||
+      item.address?.toLowerCase().includes(term) ||
+      (geocoded[item.id] ?? '').toLowerCase().includes(term) ||
+      item.author?.name?.toLowerCase().includes(term) ||
+      item.body?.toLowerCase().includes(term) ||
+      item.id?.toLowerCase().includes(term)
+    );
+  });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -119,8 +143,14 @@ export function PlacesPage() {
   };
 
   const handleReject = async () => {
-    if (!rejectModal || reason.trim().length < 2) {
-      message.warning('Vui lòng nhập lý do từ chối (ít nhất 2 ký tự)');
+    if (!rejectModal) return;
+    if (!reason.trim()) {
+      setReasonError(true);
+      message.error('Lý do từ chối là bắt buộc');
+      return;
+    }
+    if (reason.trim().length < 2) {
+      message.warning('Lý do từ chối phải có ít nhất 2 ký tự');
       return;
     }
     setSubmitting(true);
@@ -129,6 +159,7 @@ export function PlacesPage() {
       message.success('Đã từ chối địa điểm và thông báo cho tác giả');
       setRejectModal(null);
       setReason('');
+      setReasonError(false);
       load();
     } catch {
       message.error('Thất bại');
@@ -138,8 +169,14 @@ export function PlacesPage() {
   };
 
   const handleHide = async () => {
-    if (!hideModal || reason.trim().length < 2) {
-      message.warning('Vui lòng nhập lý do (ít nhất 2 ký tự)');
+    if (!hideModal) return;
+    if (!reason.trim()) {
+      setReasonError(true);
+      message.error('Lý do ẩn là bắt buộc');
+      return;
+    }
+    if (reason.trim().length < 2) {
+      message.warning('Lý do ẩn phải có ít nhất 2 ký tự');
       return;
     }
     setSubmitting(true);
@@ -148,6 +185,7 @@ export function PlacesPage() {
       message.success('Đã ẩn địa điểm và thông báo cho tác giả');
       setHideModal(null);
       setReason('');
+      setReasonError(false);
       load();
     } catch {
       message.error('Thất bại');
@@ -173,8 +211,14 @@ export function PlacesPage() {
   };
 
   const handleDelete = async () => {
-    if (!deleteModal || reason.trim().length < 2) {
-      message.warning('Vui lòng nhập lý do (ít nhất 2 ký tự)');
+    if (!deleteModal) return;
+    if (!reason.trim()) {
+      setReasonError(true);
+      message.error('Lý do xóa là bắt buộc');
+      return;
+    }
+    if (reason.trim().length < 2) {
+      message.warning('Lý do xóa phải có ít nhất 2 ký tự');
       return;
     }
     setSubmitting(true);
@@ -183,6 +227,7 @@ export function PlacesPage() {
       message.success('Đã xóa địa điểm và thông báo cho tác giả');
       setDeleteModal(null);
       setReason('');
+      setReasonError(false);
       load();
     } catch {
       message.error('Thất bại');
@@ -193,29 +238,6 @@ export function PlacesPage() {
 
   const columns: ColumnsType<PlaceItem> = [
     { title: 'Tên địa điểm', dataIndex: 'title', width: 200, ellipsis: true },
-    {
-      title: 'Hiển thị',
-      key: 'visibility',
-      width: 100,
-      render: (_: unknown, record: PlaceItem) => (
-        <Tag color={getPlaceVisibility(record) === 'PUBLIC' ? 'blue' : 'default'}>
-          {getPlaceVisibility(record) === 'PUBLIC' ? 'Cộng đồng' : 'Chỉ mình'}
-        </Tag>
-      ),
-    },
-    {
-      title: 'Kiểm duyệt',
-      key: 'moderationStatus',
-      width: 130,
-      render: (_: unknown, record: PlaceItem) => {
-        const ms = getPlaceModerationStatus(record);
-        return (
-          <Tag color={MODERATION_COLORS[ms]}>
-            {MODERATION_LABELS[ms]}
-          </Tag>
-        );
-      },
-    },
     {
       title: 'Tên đường',
       dataIndex: 'address',
@@ -229,6 +251,36 @@ export function PlacesPage() {
     },
     { title: 'Tác giả', dataIndex: ['author', 'name'], width: 140, ellipsis: true },
     {
+      title: 'Ngày tạo',
+      dataIndex: 'createdAt',
+      width: 150,
+      render: (v: string) => dayjs(v).format('DD/MM/YYYY HH:mm'),
+    },
+    {
+      title: 'Hiển thị',
+      key: 'visibility',
+      width: 110,
+      render: (_: unknown, record: PlaceItem) => (
+        <Tag color={getPlaceVisibility(record) === 'PUBLIC' ? 'blue' : 'default'} style={{ width: 90, textAlign: 'center' }}>
+          {getPlaceVisibility(record) === 'PUBLIC' ? 'Cộng đồng' : 'Chỉ mình'}
+        </Tag>
+      ),
+    },
+    {
+      title: 'Kiểm duyệt',
+      key: 'moderationStatus',
+      width: 130,
+      render: (_: unknown, record: PlaceItem) => {
+        const ms = getPlaceModerationStatus(record);
+        return (
+          <Tag color={MODERATION_COLORS[ms]} style={{ width: 90, textAlign: 'center' }}>
+            {MODERATION_LABELS[ms]}
+          </Tag>
+        );
+      },
+    },
+
+    {
       title: 'Thao tác',
       key: 'actions',
       width: 360,
@@ -238,61 +290,67 @@ export function PlacesPage() {
             Xem
           </Button>
 
-          {record.status === 'PENDING' && (
+          {getPlaceVisibility(record) === 'PUBLIC' && (
             <>
-              <Button
-                size="small"
-                type="primary"
-                icon={<CheckCircleOutlined />}
-                onClick={() => {
-                  setApproveModal(record);
-                  setNote('');
-                }}
-              >
-                Duyệt
-              </Button>
-              <Button
-                size="small"
-                danger
-                type="default"
-                icon={<CloseCircleOutlined />}
-                onClick={() => {
-                  setRejectModal(record);
-                  setReason('');
-                }}
-              >
-                Từ chối
-              </Button>
+              {getPlaceModerationStatus(record) === 'PENDING' && (
+                <>
+                  <Button
+                    size="small"
+                    type="primary"
+                    icon={<CheckCircleOutlined />}
+                    onClick={() => {
+                      setApproveModal(record);
+                      setNote('');
+                    }}
+                  >
+                    Duyệt
+                  </Button>
+                  <Button
+                    size="small"
+                    danger
+                    type="default"
+                    icon={<CloseCircleOutlined />}
+                    onClick={() => {
+                      setRejectModal(record);
+                      setReason('');
+                    }}
+                  >
+                    Từ chối
+                  </Button>
+                </>
+              )}
+
+              {getPlaceModerationStatus(record) === 'APPROVED' && (
+                <Button
+                  size="small"
+                  icon={<EyeInvisibleOutlined />}
+                  style={{ width: 80, justifyContent: 'flex-start' }}
+                  onClick={() => {
+                    setHideModal(record);
+                    setReason('');
+                  }}
+                >
+                  Ẩn
+                </Button>
+              )}
+
+              {(['HIDDEN', 'NONE', 'REJECTED'] as PlaceModerationStatus[]).includes(
+                getPlaceModerationStatus(record),
+              ) && (
+                <Button
+                  size="small"
+                  type="default"
+                  icon={<RetweetOutlined />}
+                  style={{ width: 80, justifyContent: 'flex-start' }}
+                  onClick={() => {
+                    setUnhideModal(record);
+                    setNote('');
+                  }}
+                >
+                  Bỏ ẩn
+                </Button>
+              )}
             </>
-          )}
-
-          {getPlaceModerationStatus(record) === 'APPROVED' && (
-            <Button
-              size="small"
-              icon={<EyeInvisibleOutlined />}
-              onClick={() => {
-                setHideModal(record);
-                setReason('');
-              }}
-            >
-              Ẩn
-            </Button>
-          )}
-
-          {(['HIDDEN', 'NONE', 'REJECTED'] as PlaceModerationStatus[]).includes(
-            getPlaceModerationStatus(record),
-          ) && (
-            <Button
-              size="small"
-              type="default"
-              icon={<RetweetOutlined />}
-              onClick={() => {
-                setUnhideModal(record);
-                setNote('');
-              }}
-            >
-              Bỏ ẩn
-            </Button>
           )}
 
           <Button
@@ -303,7 +361,9 @@ export function PlacesPage() {
               setDeleteModal(record);
               setReason('');
             }}
-          />
+          >
+            Xóa
+          </Button>
         </Space>
       ),
     },
@@ -313,27 +373,48 @@ export function PlacesPage() {
     <PageShell>
       <PageHeader
         title="Quản lý địa điểm"
-        description="Xem, duyệt, ẩn hoặc xóa địa điểm. Địa điểm chờ duyệt cần admin duyệt trước khi xuất bản."
         extra={
-          <Space>
-            <span style={{ fontSize: 13, color: '#64748b' }}>Duyệt tự động</span>
-            <Switch
-              checked={settings?.autoApprovePlaces ?? false}
-              onChange={(checked) => toggleAutoApprove('autoApprovePlaces', checked)}
-              loading={saving}
-              checkedChildren="Bật"
-              unCheckedChildren="Tắt"
+          <Space size="middle">
+            <Space>
+              <span style={{ fontSize: 13, color: '#64748b' }}>Duyệt tự động</span>
+              <Switch
+                checked={settings?.autoApprovePlaces ?? false}
+                onChange={(checked) => toggleAutoApprove('autoApprovePlaces', checked)}
+                loading={saving}
+                checkedChildren="Bật"
+                unCheckedChildren="Tắt"
+              />
+            </Space>
+            <Select
+              value={statusFilter}
+              onChange={setStatusFilter}
+              style={{ width: 140 }}
+              options={[
+                { value: 'ALL', label: 'Tất cả' },
+                { value: 'PENDING', label: 'Chờ duyệt' },
+                { value: 'APPROVED', label: 'Đã duyệt' },
+              ]}
+            />
+            <Input
+              placeholder="Tìm kiếm tên địa điểm, địa chỉ, tác giả..."
+              prefix={<SearchOutlined />}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ width: 280 }}
+              allowClear
             />
           </Space>
         }
       />
+
+      <div style={{ marginBottom: 16 }} />
 
       <Table
         className="admin-table"
         rowKey="id"
         loading={loading}
         columns={columns}
-        dataSource={data}
+        dataSource={filteredData}
         pagination={{ pageSize: 10 }}
         scroll={{ x: 900 }}
       />
@@ -343,11 +424,7 @@ export function PlacesPage() {
         title="Chi tiết địa điểm"
         open={!!viewModal}
         onCancel={() => setViewModal(null)}
-        footer={[
-          <Button key="close" onClick={() => setViewModal(null)}>
-            Đóng
-          </Button>,
-        ]}
+        footer={null}
         width={560}
       >
         {viewModal && (
@@ -376,6 +453,14 @@ export function PlacesPage() {
               {viewModal.author?.name ?? viewModal.authorId ?? '-'}
             </Descriptions.Item>
             <Descriptions.Item label="Mô tả">{viewModal.body || '-'}</Descriptions.Item>
+            <Descriptions.Item label="Ngày tạo">
+              {dayjs(viewModal.createdAt).format('DD/MM/YYYY HH:mm')}
+            </Descriptions.Item>
+            {viewModal.updatedAt && dayjs(viewModal.updatedAt).format('DD/MM/YYYY HH:mm') !== dayjs(viewModal.createdAt).format('DD/MM/YYYY HH:mm') && (
+              <Descriptions.Item label="Ngày cập nhật">
+                {dayjs(viewModal.updatedAt).format('DD/MM/YYYY HH:mm')}
+              </Descriptions.Item>
+            )}
           </Descriptions>
         )}
       </Modal>
@@ -403,7 +488,7 @@ export function PlacesPage() {
       <Modal
         title={`Từ chối địa điểm: "${rejectModal?.title}"`}
         open={!!rejectModal}
-        onCancel={() => { setRejectModal(null); setReason(''); }}
+        onCancel={() => { setRejectModal(null); setReason(''); setReasonError(false); }}
         onOk={handleReject}
         okText="Từ chối và thông báo"
         okButtonProps={{ danger: true, loading: submitting }}
@@ -414,15 +499,22 @@ export function PlacesPage() {
           rows={3}
           placeholder="Nhập lý do từ chối..."
           value={reason}
-          onChange={(e) => setReason(e.target.value)}
+          status={reasonError ? 'error' : undefined}
+          onChange={(e) => {
+            setReason(e.target.value);
+            if (e.target.value.trim()) setReasonError(false);
+          }}
         />
+        {reasonError && (
+          <div style={{ color: '#ff4d4f', marginTop: 4 }}>Lý do từ chối là bắt buộc</div>
+        )}
       </Modal>
 
       {/* Hide Modal */}
       <Modal
         title={`Ẩn địa điểm: "${hideModal?.title}"`}
         open={!!hideModal}
-        onCancel={() => { setHideModal(null); setReason(''); }}
+        onCancel={() => { setHideModal(null); setReason(''); setReasonError(false); }}
         onOk={handleHide}
         okText="Ẩn và thông báo"
         okButtonProps={{ danger: true, loading: submitting }}
@@ -433,8 +525,15 @@ export function PlacesPage() {
           rows={3}
           placeholder="Nhập lý do ẩn địa điểm..."
           value={reason}
-          onChange={(e) => setReason(e.target.value)}
+          status={reasonError ? 'error' : undefined}
+          onChange={(e) => {
+            setReason(e.target.value);
+            if (e.target.value.trim()) setReasonError(false);
+          }}
         />
+        {reasonError && (
+          <div style={{ color: '#ff4d4f', marginTop: 4 }}>Lý do ẩn là bắt buộc</div>
+        )}
       </Modal>
 
       {/* Unhide Modal */}
@@ -460,7 +559,7 @@ export function PlacesPage() {
       <Modal
         title={`Xóa địa điểm: "${deleteModal?.title}"`}
         open={!!deleteModal}
-        onCancel={() => { setDeleteModal(null); setReason(''); }}
+        onCancel={() => { setDeleteModal(null); setReason(''); setReasonError(false); }}
         onOk={handleDelete}
         okText="Xóa và thông báo"
         okButtonProps={{ danger: true, loading: submitting }}
@@ -471,8 +570,15 @@ export function PlacesPage() {
           rows={3}
           placeholder="Nhập lý do xóa địa điểm..."
           value={reason}
-          onChange={(e) => setReason(e.target.value)}
+          status={reasonError ? 'error' : undefined}
+          onChange={(e) => {
+            setReason(e.target.value);
+            if (e.target.value.trim()) setReasonError(false);
+          }}
         />
+        {reasonError && (
+          <div style={{ color: '#ff4d4f', marginTop: 4 }}>Lý do xóa là bắt buộc</div>
+        )}
       </Modal>
     </PageShell>
   );

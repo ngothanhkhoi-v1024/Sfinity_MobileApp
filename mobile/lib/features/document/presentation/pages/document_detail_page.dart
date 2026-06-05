@@ -13,6 +13,7 @@ import '../../../../shared/widgets/error_view.dart';
 import '../controllers/document_detail_controller.dart';
 import '../widgets/document_info_tile.dart';
 import '../widgets/document_review_card.dart';
+import '../../../../core/constants/route_names.dart';
 import 'pdf_full_screen_page.dart';
 
 class DocumentDetailPage extends StatefulWidget {
@@ -653,24 +654,35 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                   onPressed: _toggleFavorite,
                   tooltip: _isFavorite ? l10n.unfavoriteDocument : l10n.favoriteDocument,
                 ),
-              // 3-dots overflow popup menu for edit/delete (only for author)
-              if (isAuthor)
-                PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_vert),
-                  onSelected: (value) async {
-                    switch (value) {
-                      case 'edit':
-                        await context.push('/document/${doc['id']}/edit');
-                        _controller.load(widget.documentId);
-                        break;
-                      case 'delete':
-                        if (context.mounted) {
-                          _confirmDelete(context, doc['id'].toString());
-                        }
-                        break;
-                    }
-                  },
-                  itemBuilder: (context) => [
+              // 3-dots overflow popup menu
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert),
+                onSelected: (value) async {
+                  switch (value) {
+                    case 'edit':
+                      await context.push('/document/${doc['id']}/edit');
+                      _controller.load(widget.documentId);
+                      break;
+                    case 'delete':
+                      if (context.mounted) {
+                        _confirmDelete(context, doc['id'].toString());
+                      }
+                      break;
+                    case 'report':
+                      if (context.mounted) {
+                        context.push(
+                          RouteNames.report,
+                          extra: {
+                            'targetType': 'document',
+                            'targetId': doc['id'].toString(),
+                          },
+                        );
+                      }
+                      break;
+                  }
+                },
+                itemBuilder: (context) => [
+                  if (isAuthor) ...[
                     PopupMenuItem(
                       value: 'edit',
                       child: Row(
@@ -691,8 +703,20 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                         ],
                       ),
                     ),
+                  ] else ...[
+                    PopupMenuItem(
+                      value: 'report',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.report_problem_outlined, size: 20, color: Colors.red),
+                          const SizedBox(width: 8),
+                          Text(l10n.reportViolation, style: const TextStyle(color: Colors.red)),
+                        ],
+                      ),
+                    ),
                   ],
-                ),
+                ],
+              ),
             ],
           ),
           body: isLandscape
