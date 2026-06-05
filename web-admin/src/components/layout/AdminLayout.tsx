@@ -6,7 +6,6 @@ import {
   LogoutOutlined,
   MenuOutlined,
   MessageOutlined,
-  PictureOutlined,
   SettingOutlined,
   TagsOutlined,
   TeamOutlined,
@@ -15,7 +14,7 @@ import {
   WarningOutlined,
 } from '@ant-design/icons';
 import { Avatar, Button, Dropdown, Layout, Menu, Typography } from 'antd';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { config } from '@/config';
@@ -63,17 +62,15 @@ export function AdminLayout() {
       label: t('menu.system') ?? t('menu.overview'),
       children: [
         { key: '/admins', icon: <CrownOutlined />, label: t('menu.admins') },
-        { key: '/media', icon: <PictureOutlined />, label: t('menu.media') },
         { key: '/settings', icon: <SettingOutlined />, label: t('menu.settings') },
       ],
     },
   ];
 
-  const selectedKey = useMemo(() => {
-    const flat = menuItems.flatMap((g) => g.children ?? []);
-    const match = flat.find((item) => item.key !== '/' && location.pathname.startsWith(item.key));
-    return match?.key ?? '/';
-  }, [location.pathname]);
+  const flatMenuItems = menuItems.flatMap((g) => g.children ?? []);
+  const selectedKey =
+    flatMenuItems.find((item) => item.key !== '/' && location.pathname.startsWith(item.key))
+      ?.key ?? '/';
 
   const userMenu = {
     items: [
