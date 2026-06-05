@@ -1,4 +1,4 @@
-import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
+import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
 import {
   Button,
   Form,
@@ -84,9 +84,7 @@ export function AmenitiesPage() {
       width: 160,
       render: (_, record) => (
         <Space>
-          <Button size="small" onClick={() => openEdit(record)}>
-            Sửa
-          </Button>
+          <Button size="small" icon={<EditOutlined />} onClick={() => openEdit(record)} />
           <Popconfirm
             title="Xóa tiện ích này?"
             onConfirm={async () => {
