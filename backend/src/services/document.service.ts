@@ -433,6 +433,18 @@ export const documentService = {
       updatedAt: new Date(),
     });
 
+    if (viewerId) {
+      try {
+        await getDb().collection('document_download_logs').add({
+          userId: viewerId,
+          documentId: id,
+          createdAt: new Date(),
+        });
+      } catch {
+        // Non-blocking: weekly stats should not fail downloads.
+      }
+    }
+
     return documentService.findOne(id, viewerId, viewerRole);
   },
 
