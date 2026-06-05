@@ -22,12 +22,12 @@ class _AcademicSealionMascotState extends State<AcademicSealionMascot>
     super.initState();
     _loop = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2400),
+      duration: const Duration(milliseconds: 3200),
     )..repeat();
 
     _entry = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 700),
+      duration: const Duration(milliseconds: 900),
     )..forward();
   }
 
@@ -47,23 +47,23 @@ class _AcademicSealionMascotState extends State<AcademicSealionMascot>
       animation: Listenable.merge([_loop, _entry]),
       builder: (context, _) {
         final t = _loop.value;
-        final entry = Curves.easeOutBack.transform(_entry.value);
+        final entry = Curves.easeOutCubic.transform(_entry.value);
 
         return Transform.scale(
-          scale: 0.72 + entry * 0.28,
+          scale: 0.86 + entry * 0.14,
           alignment: Alignment.center,
           child: Opacity(
-            opacity: Curves.easeOut.transform(_entry.value.clamp(0.0, 1.0)),
+            opacity: Curves.easeOutCubic.transform(_entry.value.clamp(0.0, 1.0)),
             child: SizedBox(
               width: widget.size,
               height: widget.size,
               child: CustomPaint(
                 painter: _AcademicSealionPainter(
-                  bob: math.sin(t * math.pi * 2) * 6,
-                  headNod: math.sin(t * math.pi * 2 + 0.4) * 0.08,
+                  bob: math.sin(t * math.pi * 2) * 3.5,
+                  headNod: math.sin(t * math.pi * 2 + 0.4) * 0.05,
                   pageTurn: (math.sin(t * math.pi * 2 - 0.2) + 1) / 2,
-                  flipperWave: math.sin(t * math.pi * 2 + 1.2) * 0.35,
-                  blink: t > 0.82 && t < 0.88 ? 1.0 : 0.0,
+                  flipperWave: math.sin(t * math.pi * 2 + 1.2) * 0.22,
+                  blink: t > 0.84 && t < 0.9 ? 1.0 : 0.0,
                   orbit: t * math.pi * 2,
                   primary: primary,
                   secondary: secondary,
@@ -144,7 +144,7 @@ class _AcademicSealionPainter extends CustomPainter {
             fontSize: 18 + pulse * 4,
             fontFamily: icons[i].fontFamily,
             package: icons[i].fontPackage,
-            color: primary.withValues(alpha: 0.18 + pulse * 0.22),
+            color: primary.withValues(alpha: 0.12 + pulse * 0.16),
           ),
         ),
         textDirection: TextDirection.ltr,
