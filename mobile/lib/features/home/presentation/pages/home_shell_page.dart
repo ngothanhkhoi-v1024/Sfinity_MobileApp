@@ -6,6 +6,7 @@ import '../../../../core/constants/route_names.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/i18n/app_text.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../shared/widgets/app_bar_add_button.dart';
 import '../../../../shared/widgets/floating_pill_nav_bar.dart';
 import '../../../document/presentation/pages/document_list_page.dart';
 import 'community_page.dart';
@@ -94,7 +95,6 @@ class HomeShellPageState extends State<HomeShellPage> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final navItems = [
       PillNavItem(label: l10n.explore, icon: Icons.explore_outlined, selectedIcon: Icons.explore),
       PillNavItem(label: l10n.places, icon: Icons.map_outlined, selectedIcon: Icons.map),
@@ -468,45 +468,11 @@ class HomeShellPageState extends State<HomeShellPage> {
                     },
                   ),
                 if (_navIndex == 2)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 10),
-                    child: Tooltip(
-                      message: l10n.uploadDocument,
-                      child: Material(
-                        color: Colors.transparent,
-                        child: Ink(
-                          width: 38,
-                          height: 38,
-                          decoration: BoxDecoration(
-                            color: cs.primary.withValues(alpha: isDark ? 0.22 : 0.12),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: cs.primary.withValues(alpha: isDark ? 0.24 : 0.18),
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: isDark ? 0.16 : 0.04),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(12),
-                            onTap: () => context.push(
-                              RouteNames.documentCreate,
-                              extra: const {'contentType': 'document'},
-                            ),
-                            child: Center(
-                              child: Icon(
-                                Icons.add_rounded,
-                                color: cs.primary,
-                                size: 19,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
+                  AppBarAddButton(
+                    tooltip: l10n.uploadDocument,
+                    onPressed: () => context.push(
+                      RouteNames.documentCreate,
+                      extra: const {'contentType': 'document'},
                     ),
                   ),
               ],

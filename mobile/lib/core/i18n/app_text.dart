@@ -224,6 +224,10 @@ class AppLocalizations {
       'placeDescription': 'Mô tả địa điểm',
       'additionalDescription': 'Mô tả bổ sung',
       'placeDescriptionHint': 'Mô tả ngắn gọn về địa điểm này...',
+      'placeCoverImage': 'Ảnh nền',
+      'placeCoverImageHint': 'Hiển thị ở đầu trang chi tiết địa điểm',
+      'placePickLocationHint': 'Chạm bản đồ hoặc dùng nút vị trí hiện tại',
+      'removeCoverImage': 'Xóa ảnh nền',
       'placeDescriptionDetail': 'Chi tiết về địa điểm',
       'placeDescriptionMin': 'Mô tả cần ít nhất 10 ký tự',
       'placeWillShowMap': 'Địa điểm sẽ hiển thị trên bản đồ',
@@ -766,6 +770,10 @@ class AppLocalizations {
       'placeDescription': 'Place description',
       'additionalDescription': 'Additional description',
       'placeDescriptionHint': 'Brief description of this place...',
+      'placeCoverImage': 'Cover image',
+      'placeCoverImageHint': 'Shown at the top of the place detail page',
+      'placePickLocationHint': 'Tap the map or use the current location button',
+      'removeCoverImage': 'Remove cover image',
       'placeDescriptionDetail': 'Place details',
       'placeDescriptionMin': 'Description must be at least 10 characters',
       'placeWillShowMap': 'Place will be shown on the map',
@@ -1321,6 +1329,10 @@ class AppLocalizations {
   String get placeDescription => _text('placeDescription');
   String get additionalDescription => _text('additionalDescription');
   String get placeDescriptionHint => _text('placeDescriptionHint');
+  String get placeCoverImage => _text('placeCoverImage');
+  String get placeCoverImageHint => _text('placeCoverImageHint');
+  String get placePickLocationHint => _text('placePickLocationHint');
+  String get removeCoverImage => _text('removeCoverImage');
   String get placeDescriptionDetail => _text('placeDescriptionDetail');
   String get placeDescriptionMin => _text('placeDescriptionMin');
   String get placeWillShowMap => _text('placeWillShowMap');

@@ -266,8 +266,16 @@ placesRouter.post(
 
 placesRouter.get(
   '/:placeId/photos',
+  optionalJwtAuthMiddleware,
   asyncHandler(async (req, res) => {
-    res.json(await placePhotoService.list(req.params.placeId));
+    res.json(
+      await placePhotoService.list(
+        req.params.placeId,
+        30,
+        req.user?.sub,
+        req.user?.role,
+      ),
+    );
   }),
 );
 
@@ -277,7 +285,12 @@ placesRouter.post(
   asyncHandler(async (req, res) => {
     const dto = await validateBody(CreatePlacePhotoDto, req.body);
     res.json(
-      await placePhotoService.create(req.params.placeId, req.user!.sub, dto),
+      await placePhotoService.create(
+        req.params.placeId,
+        req.user!.sub,
+        dto,
+        req.user!.role,
+      ),
     );
   }),
 );

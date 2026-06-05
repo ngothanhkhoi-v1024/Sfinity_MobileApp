@@ -6,6 +6,7 @@ import '../../../../app.dart';
 import '../../../../core/i18n/app_text.dart';
 import '../../../../core/constants/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../shared/widgets/app_bar_add_button.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../utils/document_state.dart';
 import '../widgets/document_list_skeleton.dart';
@@ -208,7 +209,6 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
   Widget build(BuildContext context) {
     final primary = AppColors.primaryOf(context);
     final l10n = context.l10n;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: AppColors.scaffold(context),
@@ -219,49 +219,15 @@ class _MyDocumentsPageState extends State<MyDocumentsPage> with SingleTickerProv
         ),
         elevation: 0,
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 10),
-            child: Tooltip(
-              message: l10n.uploadDocument,
-              child: Material(
-                color: Colors.transparent,
-                child: Ink(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: primary.withValues(alpha: isDark ? 0.22 : 0.12),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: primary.withValues(alpha: isDark ? 0.24 : 0.18),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: isDark ? 0.16 : 0.04),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: () async {
-                      await context.push(
-                        RouteNames.documentCreate,
-                        extra: const {'contentType': 'document'},
-                      );
-                      _loadDocuments();
-                    },
-                    child: Center(
-                      child: Icon(
-                        Icons.add_rounded,
-                        color: primary,
-                        size: 19,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
+          AppBarAddButton(
+            tooltip: l10n.uploadDocument,
+            onPressed: () async {
+              await context.push(
+                RouteNames.documentCreate,
+                extra: const {'contentType': 'document'},
+              );
+              _loadDocuments();
+            },
           ),
         ],
       ),

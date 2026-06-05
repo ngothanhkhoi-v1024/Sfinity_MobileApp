@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/route_names.dart';
 import '../../../../core/i18n/app_text.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../shared/widgets/app_bar_add_button.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../controllers/document_list_controller.dart';
 import '../widgets/document_card.dart';
@@ -119,13 +120,12 @@ class _DocumentListPageState extends State<DocumentListPage> {
             ),
             elevation: 0,
             actions: [
-              IconButton(
+              AppBarAddButton(
                 tooltip: l10n.uploadDocument,
                 onPressed: () => context.push(
                   RouteNames.documentCreate,
                   extra: const {'contentType': 'document'},
                 ),
-                icon: Icon(Icons.add_rounded, color: AppColors.primaryOf(context)),
               ),
             ],
           ),

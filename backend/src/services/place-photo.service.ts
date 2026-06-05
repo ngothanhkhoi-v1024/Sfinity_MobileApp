@@ -13,13 +13,22 @@ const toDate = (val: unknown): Date => {
   return new Date(val as string | number);
 };
 
-async function assertPlaceExists(placeId: string): Promise<void> {
-  await placeService.findOne(placeId);
+async function assertPlaceExists(
+  placeId: string,
+  viewerId?: string,
+  viewerRole?: UserRole,
+): Promise<void> {
+  await placeService.findOne(placeId, viewerId, viewerRole);
 }
 
 export const placePhotoService = {
-  async list(placeId: string, limit = 30) {
-    await assertPlaceExists(placeId);
+  async list(
+    placeId: string,
+    limit = 30,
+    viewerId?: string,
+    viewerRole?: UserRole,
+  ) {
+    await assertPlaceExists(placeId, viewerId, viewerRole);
     const snapshot = await getDb()
       .collection('place_photos')
       .where('placeId', '==', placeId)
@@ -52,8 +61,13 @@ export const placePhotoService = {
     return { items: items.slice(0, limit), photoCount: items.length };
   },
 
-  async create(placeId: string, userId: string, dto: CreatePlacePhotoDto) {
-    await assertPlaceExists(placeId);
+  async create(
+    placeId: string,
+    userId: string,
+    dto: CreatePlacePhotoDto,
+    role: UserRole = UserRole.USER,
+  ) {
+    await assertPlaceExists(placeId, userId, role);
     const docRef = getDb().collection('place_photos').doc();
     const photo = {
       id: docRef.id,
