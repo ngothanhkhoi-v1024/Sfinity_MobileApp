@@ -1,5 +1,5 @@
 import { getDb } from '../lib/firebase';
-import { ContentStatus } from '../types/enums';
+import { isPubliclyVisible } from '../lib/content-state';
 import { placeService } from './place.service';
 import { documentService } from './document.service';
 
@@ -77,7 +77,7 @@ export const exploreService = {
         sortedPlaceIds.map(async (placeId) => {
           try {
             const place = await placeService.findOne(placeId);
-            if (place.status !== ContentStatus.PUBLISHED) return null;
+            if (!isPubliclyVisible(place)) return null;
             return {
               ...place,
               recentCheckInCount: checkinCounts.get(placeId) ?? 0,

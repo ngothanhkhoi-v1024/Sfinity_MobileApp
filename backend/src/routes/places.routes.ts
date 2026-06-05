@@ -13,7 +13,11 @@ import { placeService } from '../services/place.service';
 import { placeCheckInService } from '../services/place-checkin.service';
 import { placePhotoService } from '../services/place-photo.service';
 import { placeReviewService } from '../services/place-review.service';
-import { ContentStatus, UserRole } from '../types/enums';
+import {
+  ContentModerationStatus,
+  ContentVisibility,
+  UserRole,
+} from '../types/enums';
 
 export const placesRouter = Router();
 
@@ -28,9 +32,13 @@ placesRouter.get(
 
 placesRouter.get(
   '/',
+  optionalJwtAuthMiddleware,
   asyncHandler(async (req, res) => {
     const search = req.query.search as string | undefined;
-    const status = req.query.status as ContentStatus | undefined;
+    const visibility = req.query.visibility as ContentVisibility | undefined;
+    const moderationStatus = req.query.moderationStatus as
+      | ContentModerationStatus
+      | undefined;
     const authorId = req.query.authorId as string | undefined;
     const tags = req.query.tags as string | undefined;
     const zone = req.query.zone as string | undefined;
@@ -44,7 +52,8 @@ placesRouter.get(
     res.json(
       await placeService.findAll({
         search,
-        status,
+        visibility,
+        moderationStatus,
         authorId,
         tags,
         zone,
@@ -54,6 +63,8 @@ placesRouter.get(
         page: page ? Number(page) : 1,
         limit: limit ? Number(limit) : 20,
         publishedOnly: publishedOnly === 'true',
+        viewerId: req.user?.sub,
+        viewerRole: req.user?.role,
       }),
     );
   }),
@@ -70,8 +81,11 @@ placesRouter.post(
 
 placesRouter.get(
   '/:id',
+  optionalJwtAuthMiddleware,
   asyncHandler(async (req, res) => {
-    res.json(await placeService.findOne(req.params.id));
+    res.json(
+      await placeService.findOne(req.params.id, req.user?.sub, req.user?.role),
+    );
   }),
 );
 
@@ -109,7 +123,10 @@ placesRouter.patch(
     res.json(
       await placeService.update(
         req.params.id,
-        { status: ContentStatus.PUBLISHED },
+        {
+          visibility: ContentVisibility.PUBLIC,
+          moderationStatus: ContentModerationStatus.APPROVED,
+        },
         '',
         UserRole.ADMIN,
       ),
@@ -124,7 +141,10 @@ placesRouter.patch(
     res.json(
       await placeService.update(
         req.params.id,
-        { status: ContentStatus.DRAFT },
+        {
+          visibility: ContentVisibility.PRIVATE,
+          moderationStatus: ContentModerationStatus.NONE,
+        },
         '',
         UserRole.ADMIN,
       ),

@@ -1,10 +1,16 @@
 import { apiClient } from './client';
 
+export type PlaceVisibility = 'PRIVATE' | 'PUBLIC';
+export type PlaceModerationStatus = 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'HIDDEN';
+
 export interface PlaceItem {
   id: string;
   title: string;
   body: string;
-  status: 'DRAFT' | 'PENDING' | 'PUBLISHED' | 'REJECTED' | 'HIDDEN';
+  /** @deprecated use visibility + moderationStatus */
+  status?: string;
+  visibility: PlaceVisibility;
+  moderationStatus: PlaceModerationStatus;
   authorId: string;
   categoryId: string | null;
   type: 'place';
@@ -39,9 +45,27 @@ export const PLACE_ZONES = [
   { id: 'other', label: 'Khác' },
 ] as const;
 
+export function getPlaceModerationStatus(place: PlaceItem): PlaceModerationStatus {
+  if (place.moderationStatus) return place.moderationStatus;
+  const s = (place.status ?? '').toUpperCase();
+  if (s === 'PENDING') return 'PENDING';
+  if (s === 'REJECTED') return 'REJECTED';
+  if (s === 'HIDDEN') return 'HIDDEN';
+  if (s === 'PUBLISHED') return 'APPROVED';
+  return 'NONE';
+}
+
+export function getPlaceVisibility(place: PlaceItem): PlaceVisibility {
+  if (place.visibility) return place.visibility;
+  const s = (place.status ?? '').toUpperCase();
+  if (s === 'DRAFT') return 'PRIVATE';
+  return 'PUBLIC';
+}
+
 export async function fetchPlaces(params?: {
   search?: string;
-  status?: string;
+  visibility?: string;
+  moderationStatus?: string;
   categoryId?: string;
   authorId?: string;
   zone?: string;
@@ -57,7 +81,8 @@ export async function fetchPlaces(params?: {
 export async function createPlace(payload: {
   title: string;
   body: string;
-  status?: string;
+  visibility?: string;
+  moderationStatus?: string;
   categoryId?: string;
   latitude?: number | null;
   longitude?: number | null;
@@ -74,7 +99,8 @@ export async function updatePlace(
   payload: Partial<{
     title: string;
     body: string;
-    status: string;
+    visibility: string;
+    moderationStatus: string;
     categoryId: string | null;
     latitude: number | null;
     longitude: number | null;

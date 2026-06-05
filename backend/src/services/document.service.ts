@@ -4,6 +4,14 @@ import { notificationsService } from './notifications.service';
 import { settingsService } from './settings.service';
 import { placeService } from './place.service';
 import {
+  applyContentState,
+  deriveRequestedModeration,
+  deriveRequestedVisibility,
+  isPubliclyVisible,
+  normalizeContentState,
+  sanitizeAdminModeration,
+} from '../lib/content-state';
+import {
   ContentModerationStatus,
   ContentVisibility,
   UserRole,
@@ -20,26 +28,12 @@ const toDate = (val: any): Date => {
 const itemMatchesPlaceId = (item: any, placeId: string): boolean =>
   item.placeId === placeId;
 
-type DocumentState = {
-  visibility: ContentVisibility;
-  moderationStatus: ContentModerationStatus;
-};
-
-const visibilityValues = new Set<string>(Object.values(ContentVisibility));
-const moderationValues = new Set<string>(Object.values(ContentModerationStatus));
-const publicModerationStatuses = new Set<ContentModerationStatus>([
-  ContentModerationStatus.PENDING,
-  ContentModerationStatus.APPROVED,
-  ContentModerationStatus.REJECTED,
-  ContentModerationStatus.HIDDEN,
-]);
-
 async function assertPlaceOwnerForDocument(
   placeId: string,
   userId: string,
   role: UserRole,
 ): Promise<void> {
-  const place = await placeService.findOne(placeId);
+  const place = await placeService.findOne(placeId, userId, role);
   if (role !== UserRole.ADMIN && place.authorId !== userId) {
     throw new HttpError(
       403,
@@ -49,101 +43,16 @@ async function assertPlaceOwnerForDocument(
   }
 }
 
-function normalizeDocumentState(item: any): DocumentState {
-  const visibility = item.visibility?.toString();
-  const moderationStatus = item.moderationStatus?.toString();
-
-  if (
-    visibilityValues.has(visibility ?? '') &&
-    moderationValues.has(moderationStatus ?? '')
-  ) {
-    const normalizedVisibility = visibility as ContentVisibility;
-    let normalizedModeration = moderationStatus as ContentModerationStatus;
-
-    if (normalizedVisibility === ContentVisibility.PRIVATE) {
-      normalizedModeration = ContentModerationStatus.NONE;
-    }
-
-    if (
-      normalizedVisibility === ContentVisibility.PUBLIC &&
-      !publicModerationStatuses.has(normalizedModeration)
-    ) {
-      normalizedModeration = ContentModerationStatus.PENDING;
-    }
-
-    return {
-      visibility: normalizedVisibility,
-      moderationStatus: normalizedModeration,
-    };
-  }
-
-  // Fallback default if completely missing
-  return {
-    visibility: ContentVisibility.PRIVATE,
-    moderationStatus: ContentModerationStatus.NONE,
-  };
-}
-
-function applyDocumentState<T extends Record<string, any>>(item: T): T & DocumentState {
-  const state = normalizeDocumentState(item);
-  return {
-    ...item,
-    visibility: state.visibility,
-    moderationStatus: state.moderationStatus,
-  };
-}
-
 function isOwnerOrAdmin(item: any, viewerId?: string, viewerRole?: UserRole): boolean {
   return viewerRole === UserRole.ADMIN || (!!viewerId && item.authorId === viewerId);
-}
-
-function isPubliclyVisible(item: any): boolean {
-  const state = normalizeDocumentState(item);
-  return (
-    state.visibility === ContentVisibility.PUBLIC &&
-    state.moderationStatus === ContentModerationStatus.APPROVED
-  );
 }
 
 function canViewDocument(item: any, viewerId?: string, viewerRole?: UserRole): boolean {
   return isOwnerOrAdmin(item, viewerId, viewerRole) || isPubliclyVisible(item);
 }
 
-function deriveRequestedVisibility(input: {
-  visibility?: ContentVisibility | null;
-}): ContentVisibility | undefined {
-  if (input.visibility === ContentVisibility.PRIVATE || input.visibility === ContentVisibility.PUBLIC) {
-    return input.visibility;
-  }
-  return undefined;
-}
-
-function deriveRequestedModeration(input: {
-  moderationStatus?: ContentModerationStatus | null;
-}): ContentModerationStatus | undefined {
-  if (
-    input.moderationStatus &&
-    moderationValues.has(input.moderationStatus)
-  ) {
-    return input.moderationStatus;
-  }
-  return undefined;
-}
-
-function sanitizeAdminModeration(
-  moderationStatus?: ContentModerationStatus,
-): ContentModerationStatus {
-  if (!moderationStatus || moderationStatus === ContentModerationStatus.NONE) {
-    return ContentModerationStatus.APPROVED;
-  }
-
-  return publicModerationStatuses.has(moderationStatus)
-    ? moderationStatus
-    : ContentModerationStatus.APPROVED;
-}
-
 async function enrichDocument(item: any) {
-  const normalized = applyDocumentState(item);
+  const normalized = applyContentState(item);
 
   let author = null;
   if (normalized.authorId) {
@@ -202,7 +111,7 @@ export const documentService = {
 
     const snapshot = await getDb().collection('documents').get();
     let items = snapshot.docs.map((doc) =>
-      applyDocumentState({ id: doc.id, ...doc.data() } as any),
+      applyContentState({ id: doc.id, ...doc.data() } as any),
     );
 
     const canReadAuthorWorkspace =
@@ -337,7 +246,7 @@ export const documentService = {
     const updateData: any = {
       updatedAt: new Date(),
     };
-    const currentState = normalizeDocumentState(item);
+    const currentState = normalizeContentState(item);
 
     let hasContentChanges = false;
     for (const [key, value] of Object.entries(dto)) {
