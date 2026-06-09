@@ -301,7 +301,7 @@ Mở terminal mới:
 cd web-admin
 npm install
 cp .env.example .env
-# Đảm bảo VITE_API_BASE_URL=http://localhost:3000/api
+# Đảm bảo VITE_API_BASE_URL=http://localhost:3000
 npm run dev
 ```
 
@@ -326,7 +326,7 @@ flutter run -d chrome    # Flutter Web
 | Vai trò | Email | Mật khẩu | Ghi chú |
 |---------|-------|----------|---------|
 | **Admin** | `admin@sfinity.com` | `admin123` | Tạo bằng `npm run seed:admin` — dùng cho web-admin và mobile |
-| **User** | `user@sfinity.com` | `user123` | Đăng ký qua app **hoặc** đã có sẵn trên Firebase project nhóm |
+| **User** | `plakpes1001@gmail.com` | `Abc@123` | Đăng ký qua app **hoặc** đã có sẵn trên Firebase project nhóm |
 
 Đăng nhập web-admin: dùng tài khoản **Admin**.
 
@@ -380,10 +380,6 @@ Dashboard, quản lý người dùng, nội dung (tài liệu & địa điểm),
 
 - [Firestore schema](backend/docs/firestore_schema.md) — cấu trúc collection/document
 - [Deploy backend lên Google Cloud Run](backend/docs/google-cloud-run-deploy.md)
-- [Prisma usage audit](backend/docs/prisma-usage-audit.md) — vai trò SQLite vs Firestore
 
----
 
-## 14. Giấy phép
 
-Dự án đồ án học thuật — Sfinity © 2026.
