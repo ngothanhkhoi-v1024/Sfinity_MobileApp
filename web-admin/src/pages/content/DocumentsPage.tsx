@@ -234,7 +234,7 @@ export function DocumentsPage() {
   };
 
   const columns: ColumnsType<DocumentItem> = [
-    { title: 'Tiêu đề', dataIndex: 'title', ellipsis: true },
+    { title: 'Tiêu đề', dataIndex: 'title', width: 220, ellipsis: true },
     { title: 'Môn', dataIndex: 'subjectCode', width: 100, ellipsis: true },
     {
       title: 'Loại file',
@@ -407,6 +407,7 @@ export function DocumentsPage() {
         columns={columns}
         dataSource={filteredData}
         pagination={{ pageSize: 10 }}
+        scroll={{ x: 1300 }}
       />
 
       <Modal
@@ -443,10 +444,22 @@ export function DocumentsPage() {
                 </Tag>
               </Descriptions.Item>
               <Descriptions.Item label="Trạng thái kiểm duyệt">
-                <Tag color={MODERATION_COLORS[ms]}>
-                  {MODERATION_LABELS[ms]}
-                </Tag>
+                <Space direction="horizontal" size="small" wrap>
+                  <Tag color={MODERATION_COLORS[ms]}>
+                    {MODERATION_LABELS[ms]}
+                  </Tag>
+                  {viewModal.aiRejected && (
+                    <Tag color="purple">Duyệt tự động bởi AI</Tag>
+                  )}
+                </Space>
               </Descriptions.Item>
+              {viewModal.rejectionReason && (
+                <Descriptions.Item label="Lý do từ chối/ẩn">
+                  <span style={{ color: '#d32f2f', fontWeight: '500' }}>
+                    {viewModal.rejectionReason}
+                  </span>
+                </Descriptions.Item>
+              )}
               <Descriptions.Item label="Ngày tạo">
                 {dayjs(viewModal.createdAt).format('DD/MM/YYYY HH:mm')}
               </Descriptions.Item>

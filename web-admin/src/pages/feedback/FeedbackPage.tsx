@@ -104,9 +104,17 @@ export function FeedbackPage() {
             { value: 'RESOLVED', label: 'Đã xử lý' },
           ]}
         />
+        <Input
+          placeholder="Tìm kiếm phản hồi..."
+          prefix={<SearchOutlined />}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          style={{ width: 280 }}
+          allowClear
+        />
         <Button onClick={load}>Làm mới</Button>
       </Space>
-      <Table rowKey="id" loading={loading} columns={columns} dataSource={data} pagination={{ pageSize: 10 }} />
+      <Table rowKey="id" loading={loading} columns={columns} dataSource={filteredData} pagination={{ pageSize: 10 }} />
 
       <Modal
         title="Phản hồi"
