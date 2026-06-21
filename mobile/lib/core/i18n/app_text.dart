@@ -1190,6 +1190,26 @@ class AppLocalizations {
       'unfavoriteDocMessage': 'Unsaved document "{name}"',
       'undo': 'UNDO',
       'cannotUnfavorite': 'Cannot unsave: {error}',
+      // Subscription
+      'upgradeVip': 'Upgrade to VIP',
+      'upgradeVipSubtitle': 'Unlock all premium features',
+      'currentPlan': 'Current plan',
+      'chooseThisPlan': 'Choose this plan',
+      'payNow': 'Pay now',
+      'confirmSubscription': 'Confirm purchase',
+      'confirmPurchase': 'Confirm purchase',
+      'youWillBeRedirected': 'You will be redirected to the payment gateway to complete.',
+      'congratulations': 'Congratulations!',
+      'upgradeSuccess': 'You have successfully upgraded.',
+      'startEnjoying': 'Start enjoying',
+      'monthly': 'Monthly',
+      'yearly': 'Yearly',
+      'savePercent': 'Save {percent}%',
+      'mostPopular': 'Most popular',
+      'pricePerMonth': 'VND/month',
+      'pricePerYear': 'VND/year',
+      'daysRemaining': 'days remaining',
+      'currentPlan_': 'Current plan',
     },
   };
 
@@ -1835,6 +1855,25 @@ class AppLocalizations {
   String unfavoriteDocMessage(String name) => _format('unfavoriteDocMessage', {'{name}': name});
   String get undo => _text('undo');
   String cannotUnfavorite(String error) => _format('cannotUnfavorite', {'{error}': error});
+  // Subscription getters
+  String get upgradeVip => _text('upgradeVip');
+  String get upgradeVipSubtitle => _text('upgradeVipSubtitle');
+  String get currentPlan => _text('currentPlan');
+  String get chooseThisPlan => _text('chooseThisPlan');
+  String get payNow => _text('payNow');
+  String get confirmPurchase => _text('confirmPurchase');
+  String get youWillBeRedirected => _text('youWillBeRedirected');
+  String get congratulations => _text('congratulations');
+  String get upgradeSuccess => _text('upgradeSuccess');
+  String get startEnjoying => _text('startEnjoying');
+  String get monthly => _text('monthly');
+  String get yearly => _text('yearly');
+  String get mostPopular => _text('mostPopular');
+  String get pricePerMonth => _text('pricePerMonth');
+  String get pricePerYear => _text('pricePerYear');
+  String get daysRemaining => _text('daysRemaining');
+  String get currentPlan_ => _text('currentPlan_');
+  String savePercent(int percent) => _format('savePercent', {'{percent}': '$percent'});
   // Method for offline profile load
   String offlineProfileLoad(String err) => _format('offlineProfileLoad', {'{name}': err});
 

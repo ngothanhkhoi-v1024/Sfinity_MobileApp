@@ -30,6 +30,7 @@ import '../../features/profile/presentation/pages/view_profile_page.dart';
 import '../../features/report/presentation/pages/report_page.dart';
 import '../../features/security/presentation/pages/change_password_page.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
+import '../../features/subscription/presentation/pages/subscription_page.dart';
 import '../auth/auth_state.dart';
 import '../constants/route_names.dart';
 
@@ -187,6 +188,10 @@ GoRouter createAppRouter(AuthState auth) {
       GoRoute(
         path: RouteNames.changePassword,
         builder: (_, __) => const ChangePasswordPage(),
+      ),
+      GoRoute(
+        path: RouteNames.subscription,
+        builder: (_, __) => const SubscriptionPage(),
       ),
       // Group & Friends routes
       GoRoute(

@@ -58,6 +58,13 @@ class ProfilePage extends StatelessWidget {
               title: context.l10n.studyGroups,
               children: [
                 _ProfileMenuItem(
+                  icon: Icons.workspace_premium_outlined,
+                  title: context.l10n.upgradeVip,
+                  subtitle: context.l10n.upgradeVipSubtitle,
+                  trailing: Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.primary),
+                  onTap: () => context.push(RouteNames.subscription),
+                ),
+                _ProfileMenuItem(
                   icon: Icons.notifications_outlined,
                   title: context.l10n.notifications,
                   onTap: () => context.push(RouteNames.notifications),
@@ -268,10 +275,14 @@ class _ProfileMenuItem extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.onTap,
+    this.subtitle,
+    this.trailing,
   });
 
   final IconData icon;
   final String title;
+  final String? subtitle;
+  final Widget? trailing;
   final VoidCallback onTap;
 
   @override
@@ -287,16 +298,32 @@ class _ProfileMenuItem extends StatelessWidget {
               Icon(icon, size: 20, color: AppColors.muted(context)),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w500,
-                    fontSize: 14,
-                    color: AppColors.title(context),
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14,
+                        color: AppColors.title(context),
+                      ),
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 1),
+                      Text(
+                        subtitle!,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w400,
+                          fontSize: 12,
+                          color: AppColors.muted(context),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
-              Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.muted(context)),
+              trailing ?? Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.muted(context)),
             ],
           ),
         ),
