@@ -1,5 +1,6 @@
 import { getDb } from '../lib/firebase';
 import { HttpError } from '../lib/http-error';
+import { checkContentModeration, extractTextFromPdf } from '../lib/moderation';
 import { notificationsService } from './notifications.service';
 import { settingsService } from './settings.service';
 import { placeService } from './place.service';
@@ -226,12 +227,45 @@ export const documentService = {
                 : ContentModerationStatus.PENDING,
             };
 
+    let moderationStatus = state.moderationStatus;
+    let aiRejected = false;
+    let rejectionReason = null;
+
+    if (role !== UserRole.ADMIN && state.visibility === ContentVisibility.PUBLIC) {
+      let textToScan = `${dto.title} ${dto.body ?? ''}`;
+      
+      // Nếu có đính kèm file PDF, tải và đọc nội dung văn bản bên trong file PDF đó
+      if (dto.fileUrl && (dto.fileType === 'pdf' || dto.fileUrl.toLowerCase().includes('.pdf'))) {
+        try {
+          const pdfText = await extractTextFromPdf(dto.fileUrl);
+          if (pdfText) {
+            textToScan += ` [PDF Content: ${pdfText}]`;
+          }
+        } catch (err) {
+          console.error('[PDF Extraction Error during Create]', err);
+        }
+      }
+
+      const modResult = await checkContentModeration(textToScan);
+      if (modResult.flagged) {
+        moderationStatus = ContentModerationStatus.REJECTED;
+        aiRejected = true;
+        rejectionReason = `Tự động từ chối bởi AI. Vi phạm danh mục: ${modResult.categories.join(', ')}`;
+      } else if (modResult.error) {
+        // Fallback to PENDING if AI moderation fails (e.g. quota limit, api key issue) to prevent auto-approving bad files
+        moderationStatus = ContentModerationStatus.PENDING;
+        rejectionReason = `Lỗi hệ thống khi kiểm duyệt tự động: ${modResult.error}. Cần chờ quản trị viên duyệt thủ công.`;
+      }
+    }
+
     const newDocument: any = {
       id: docRef.id,
       title: dto.title,
       body: dto.body ?? '',
       visibility: state.visibility,
-      moderationStatus: state.moderationStatus,
+      moderationStatus,
+      aiRejected,
+      rejectionReason,
       authorId,
       categoryId: dto.categoryId ?? null,
       createdAt: new Date(),
@@ -328,6 +362,46 @@ export const documentService = {
         ].includes(currentState.moderationStatus)
       ) {
         nextModeration = publicModeration;
+      }
+    }
+
+    if (
+      role !== UserRole.ADMIN &&
+      nextVisibility === ContentVisibility.PUBLIC &&
+      (hasContentChanges || (currentState.visibility === ContentVisibility.PRIVATE && nextVisibility === ContentVisibility.PUBLIC))
+    ) {
+      const title = dto.title !== undefined ? dto.title : (item.title ?? '');
+      const body = dto.body !== undefined ? (dto.body ?? '') : (item.body ?? '');
+      let textToScan = `${title} ${body}`;
+
+      // Lấy fileUrl và fileType từ dữ liệu cập nhật hoặc dữ liệu cũ
+      const fileUrl = dto.fileUrl !== undefined ? dto.fileUrl : item.fileUrl;
+      const fileType = dto.fileType !== undefined ? dto.fileType : item.fileType;
+
+      if (fileUrl && (fileType === 'pdf' || fileUrl.toLowerCase().includes('.pdf'))) {
+        try {
+          const pdfText = await extractTextFromPdf(fileUrl);
+          if (pdfText) {
+            textToScan += ` [PDF Content: ${pdfText}]`;
+          }
+        } catch (err) {
+          console.error('[PDF Extraction Error during Update]', err);
+        }
+      }
+
+      const modResult = await checkContentModeration(textToScan);
+      if (modResult.flagged) {
+        nextModeration = ContentModerationStatus.REJECTED;
+        updateData.aiRejected = true;
+        updateData.rejectionReason = `Tự động từ chối bởi AI. Vi phạm danh mục: ${modResult.categories.join(', ')}`;
+      } else if (modResult.error) {
+        // Fallback to PENDING if AI moderation fails (e.g. quota limit, api key issue) to prevent auto-approving bad files
+        nextModeration = ContentModerationStatus.PENDING;
+        updateData.aiRejected = null;
+        updateData.rejectionReason = `Lỗi hệ thống khi kiểm duyệt tự động: ${modResult.error}. Cần chờ quản trị viên duyệt thủ công.`;
+      } else {
+        updateData.aiRejected = null;
+        updateData.rejectionReason = null;
       }
     }
 

@@ -436,6 +436,28 @@ export const openApiDocument = {
         responses: { '200': { description: 'OK' } },
       },
     },
+    '/api/document/test-moderation': {
+      post: {
+        tags: ['document'],
+        summary: 'Test PDF text extraction & OpenAI content moderation',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  title: { type: 'string' },
+                  body: { type: 'string' },
+                  fileUrl: { type: 'string', description: 'URL of the PDF file' },
+                },
+              },
+            },
+          },
+        },
+        responses: { '200': { description: 'OK' } },
+      },
+    },
     '/api/document': {
       get: {
         tags: ['document'],

@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import '../i18n/app_text.dart';
 import '../network/api_client.dart';
@@ -24,9 +25,18 @@ class AuthState extends ChangeNotifier {
           // Thử tải thông tin trực tiếp từ Server qua Internet
           user = await _repo.getProfile();
         } catch (e) {
-          print(l10n?.offlineProfileLoad(e.toString()) ?? 'Mất kết nối mạng, tải thông tin profile từ SQLite local: $e');
-          // Offline -> Sử dụng thông tin người dùng được lưu trữ cục bộ trong SQLite
-          user = await _repo.getCachedProfile();
+          if (e is DioException && (e.response?.statusCode == 401 || e.response?.statusCode == 403)) {
+            print('Token không hợp lệ hoặc hết hạn. Thực hiện xóa session để đăng nhập lại.');
+            await _repo.clearSession();
+            user = null;
+          } else {
+            print(l10n?.offlineProfileLoad(e.toString()) ?? 'Mất kết nối mạng, tải thông tin profile từ SQLite local: $e');
+            // Offline -> Sử dụng thông tin người dùng được lưu trữ cục bộ trong SQLite
+            user = await _repo.getCachedProfile();
+            if (user == null) {
+              await _repo.clearSession();
+            }
+          }
         }
       }
     } catch (_) {
