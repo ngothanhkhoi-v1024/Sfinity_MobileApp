@@ -1,0 +1,143 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+
+jobs:
+  # 1. Build project
+  build:
+    name: Build Projects (Backend, Web Admin, Mobile)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+          cache-dependency-path: |
+            backend/package-lock.json
+            web-admin/package-lock.json
+
+      - name: Build Backend
+        run: |
+          cd backend
+          npm ci
+          npm run build
+
+      - name: Build Web Admin
+        run: |
+          cd web-admin
+          npm ci
+          npm run build
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.4'
+          channel: 'stable'
+          cache: true
+
+      - name: Get Mobile dependencies
+        run: |
+          cd mobile
+          flutter pub get
+
+      - name: Build Mobile (Web or APK)
+        run: |
+          cd mobile
+          flutter build apk --debug
+
+  # 2. Run Tests & Coverage
+  test:
+    name: Run Tests & Check Coverage
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Run Backend Tests with Coverage
+        run: |
+          cd backend
+          npm ci
+          npm run test:cov
+
+      - name: Verify Backend Coverage Thresholds
+        run: |
+          # The jest config is configured to fail if global coverage is below 90%
+          cd backend
+          npm run test:cov
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.4'
+          channel: 'stable'
+          cache: true
+
+      - name: Run Mobile Tests
+        run: |
+          cd mobile
+          flutter pub get
+          flutter test
+
+  # 3. SonarQube/SonarCloud Quality Code Scan
+  sonarqube:
+    name: SonarQube Code Quality Analysis
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+
+      - name: SonarQube / SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@v5.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  # 4. Deploy to Google Cloud Run (Backend) and Web Admin
+  deploy:
+    name: Deploy to Cloud
+    runs-on: ubuntu-latest
+    needs: sonarqube
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Authentication with Google Cloud
+      - name: Google Auth
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+      - name: Set up Cloud SDK
+        uses: 'google-github-actions/setup-gcloud@v2'
+
+      # Deploy Backend to Google Cloud Run
+      - name: Deploy Backend to Google Cloud Run
+        run: |
+          gcloud run deploy sfinity-backend \
+            --source ./backend \
+            --region asia-southeast1 \
+            --allow-unauthenticated \
+            --set-env-vars FIREBASE_PROJECT_ID="${{ secrets.FIREBASE_PROJECT_ID }}",FIREBASE_CLIENT_EMAIL="${{ secrets.FIREBASE_CLIENT_EMAIL }}" \
+            --set-secrets JWT_SECRET=sfinity-jwt-secret:latest,SMTP_USER=sfinity-smtp-user:latest,SMTP_PASS=sfinity-smtp-pass:latest,FIREBASE_PRIVATE_KEY=sfinity-firebase-private-key:latest
