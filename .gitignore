@@ -54,3 +54,9 @@ mobile/macos/Flutter/
 mobile/windows/flutter/
 
 docs_private/
+
+# Jest coverage
+coverage/
+backend/coverage/
+
+docs-private/
