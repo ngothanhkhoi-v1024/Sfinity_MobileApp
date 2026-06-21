@@ -5,7 +5,6 @@ import '../../../../core/i18n/app_text.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../data/models/subscription_plan.dart';
 import '../../data/services/subscription_service.dart';
-import '../widgets/plan_card.dart';
 import '../widgets/vip_badge.dart';
 
 class SubscriptionPage extends StatefulWidget {
@@ -20,7 +19,6 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   late BillingCycle _selectedCycle;
   SubscriptionStatus? _currentStatus;
   bool _isLoading = true;
-  String? _selectedPlanId;
   bool _isPurchasing = false;
 
   @override
@@ -40,39 +38,33 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     }
   }
 
-  List<SubscriptionPlan> get _plansForCycle =>
-      SubscriptionPlan.forCycle(_selectedCycle);
-
   Future<void> _selectCycle(BillingCycle cycle) async {
-    setState(() {
-      _selectedCycle = cycle;
-      _selectedPlanId = null;
-    });
+    setState(() => _selectedCycle = cycle);
   }
 
-  Future<void> _purchase(SubscriptionPlan plan) async {
-    final confirm = await _showConfirmDialog(plan);
+  Future<void> _purchase() async {
+    final confirm = await _showConfirmDialog();
     if (confirm != true) return;
 
     setState(() => _isPurchasing = true);
-
     await Future.delayed(const Duration(seconds: 1));
-    await _service.purchasePlan(plan);
+    await _service.purchasePlan(SubscriptionPlan.pro, _selectedCycle);
     await _loadStatus();
 
     if (mounted) {
       setState(() => _isPurchasing = false);
-      _showSuccessDialog(plan);
+      _showSuccessDialog();
     }
   }
 
-  Future<bool?> _showConfirmDialog(SubscriptionPlan plan) {
+  Future<bool?> _showConfirmDialog() {
     final l10n = AppLocalizations.of(context);
     final langCode = l10n.locale.languageCode;
-    final price = plan.price;
-    final cycleLabel = plan.cycle == BillingCycle.yearly
-        ? (langCode == 'vi' ? '/năm' : '/year')
-        : (langCode == 'vi' ? '/tháng' : '/month');
+    final plan = SubscriptionPlan.pro;
+    final price = _selectedCycle == BillingCycle.yearly
+        ? plan.yearlyPrice
+        : plan.monthlyPrice;
+    final cycleLabel = plan.cycleLabel(langCode);
 
     return showDialog<bool>(
       context: context,
@@ -90,7 +82,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '${plan.getName(langCode)}$cycleLabel',
+              '${plan.getName(langCode)} $cycleLabel',
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
@@ -99,10 +91,10 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
             ),
             const SizedBox(height: 8),
             Text(
-              '${langCode == 'vi' ? "Giá" : "Price"}: $price VNĐ',
+              '$price VNĐ',
               style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
                 color: AppColors.primary,
               ),
             ),
@@ -139,7 +131,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     );
   }
 
-  void _showSuccessDialog(SubscriptionPlan plan) {
+  void _showSuccessDialog() {
     final l10n = AppLocalizations.of(context);
     final langCode = l10n.locale.languageCode;
 
@@ -174,8 +166,8 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
             const SizedBox(height: 8),
             Text(
               langCode == 'vi'
-                  ? 'Bạn đã nâng cấp lên ${plan.getName(langCode)} thành công.'
-                  : 'You have successfully upgraded to ${plan.getName(langCode)}.',
+                  ? 'Bạn đã nâng cấp Pro thành công.'
+                  : 'You have successfully upgraded to Pro.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
@@ -208,8 +200,9 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
+    final l10n = AppLocalizations.of(context);
     final langCode = l10n.locale.languageCode;
+    final plan = SubscriptionPlan.pro;
 
     return Scaffold(
       backgroundColor: AppColors.scaffold(context),
@@ -221,7 +214,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
           onPressed: () => context.pop(),
         ),
         title: Text(
-          langCode == 'vi' ? 'Nâng cấp VIP' : 'Upgrade to VIP',
+          l10n.upgradeVip,
           style: TextStyle(
             fontWeight: FontWeight.w700,
             fontSize: 17,
@@ -232,82 +225,24 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                if (_currentStatus != null &&
-                    _currentStatus!.tier != VipTier.free)
-                  _CurrentPlanBanner(
-                    status: _currentStatus!,
+          : SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+              child: Column(
+                children: [
+                  if (_currentStatus != null && _currentStatus!.isValid)
+                    _CurrentPlanBanner(status: _currentStatus!, langCode: langCode),
+                  _ProPlanCard(
+                    plan: plan,
                     langCode: langCode,
+                    selectedCycle: _selectedCycle,
+                    isVip: _currentStatus?.isValid ?? false,
+                    isPurchasing: _isPurchasing,
+                    onCycleChanged: _selectCycle,
+                    onSubscribe: _purchase,
                   ),
-                _buildCycleToggle(context, l10n, langCode),
-                Expanded(
-                  child: ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
-                    itemCount: _plansForCycle.length,
-                    itemBuilder: (ctx, index) {
-                      final plan = _plansForCycle[index];
-                      final isYearly =
-                          plan.cycle == BillingCycle.yearly;
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: PlanCard(
-                          plan: plan,
-                          langCode: langCode,
-                          isSelected: _selectedPlanId == plan.id ||
-                              (_selectedPlanId == null && index == 0),
-                          isCurrentPlan: _currentStatus?.planId ==
-                              plan.id,
-                          isYearly: isYearly,
-                          onTap: () {
-                            if (_currentStatus?.planId != plan.id) {
-                              setState(() => _selectedPlanId = plan.id);
-                            }
-                          },
-                          onSubscribe: _currentStatus?.planId != plan.id
-                              ? () => _purchase(plan)
-                              : null,
-                          isPurchasing: _isPurchasing,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-    );
-  }
-
-  Widget _buildCycleToggle(
-      BuildContext context, AppLocalizations l10n, String langCode) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.chipBg(context),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        padding: const EdgeInsets.all(4),
-        child: Row(
-          children: [
-            Expanded(
-              child: _CycleButton(
-                label: langCode == 'vi' ? 'Hàng tháng' : 'Monthly',
-                isActive: _selectedCycle == BillingCycle.monthly,
-                onTap: () => _selectCycle(BillingCycle.monthly),
+                ],
               ),
             ),
-            Expanded(
-              child: _CycleButton(
-                label: langCode == 'vi' ? 'Hàng năm' : 'Yearly',
-                isActive: _selectedCycle == BillingCycle.yearly,
-                badge: langCode == 'vi' ? 'Tiết kiệm 40%' : 'Save 40%',
-                onTap: () => _selectCycle(BillingCycle.yearly),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -323,8 +258,9 @@ class _CurrentPlanBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         gradient: AppColors.brandHeader(context),
@@ -335,14 +271,14 @@ class _CurrentPlanBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          VipBadge(tier: status.tier, size: VipBadgeSize.small),
+          VipBadge(tier: VipTier.pro, size: VipBadgeSize.small),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${langCode == 'vi' ? 'Gói hiện tại' : 'Current plan'}: ${status.tierLabel}',
+                  '${langCode == 'vi' ? 'Gói Pro hiện tại' : 'Current Pro plan'}',
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 14,
@@ -351,13 +287,243 @@ class _CurrentPlanBanner extends StatelessWidget {
                 ),
                 if (status.daysRemaining != null)
                   Text(
-                    '${status.daysRemaining} ${langCode == 'vi' ? 'ngày còn lại' : 'days remaining'}',
+                    '${status.daysRemaining} ${l10n.daysRemaining}',
                     style: TextStyle(
                       fontSize: 12,
                       color: AppColors.muted(context),
                     ),
                   ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProPlanCard extends StatelessWidget {
+  final SubscriptionPlan plan;
+  final String langCode;
+  final BillingCycle selectedCycle;
+  final bool isVip;
+  final bool isPurchasing;
+  final ValueChanged<BillingCycle> onCycleChanged;
+  final VoidCallback onSubscribe;
+
+  const _ProPlanCard({
+    required this.plan,
+    required this.langCode,
+    required this.selectedCycle,
+    required this.isVip,
+    required this.isPurchasing,
+    required this.onCycleChanged,
+    required this.onSubscribe,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = AppColors.primaryOf(context);
+    final isDark = AppColors.isDark(context);
+    final currentPrice = selectedCycle == BillingCycle.yearly
+        ? plan.yearlyPrice
+        : plan.monthlyPrice;
+    final savings = plan.savingsPercent;
+
+    return Column(
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: AppColors.card(context),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: primary.withValues(alpha: 0.3),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: primary.withValues(alpha: isDark ? 0.15 : 0.08),
+                blurRadius: 20,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              VipBadge(tier: VipTier.pro, size: VipBadgeSize.large),
+              const SizedBox(height: 16),
+              Text(
+                plan.getName(langCode),
+                style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.title(context),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                plan.getDescription(langCode),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.muted(context),
+                ),
+              ),
+              const SizedBox(height: 28),
+              Text(
+                currentPrice,
+                style: TextStyle(
+                  fontSize: 40,
+                  fontWeight: FontWeight.w800,
+                  color: primary,
+                  letterSpacing: -1,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'VNĐ${plan.cycleLabel(langCode)}',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.muted(context),
+                ),
+              ),
+              if (selectedCycle == BillingCycle.yearly && savings > 0) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    langCode == 'vi'
+                        ? 'Tiết kiệm $savings%'
+                        : 'Save $savings%',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: primary,
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 24),
+              _buildCycleToggle(context),
+              const SizedBox(height: 28),
+              const Divider(height: 1),
+              const SizedBox(height: 20),
+              ...plan.getFeatures(langCode).asMap().entries.map((e) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.check_circle_rounded,
+                        size: 18,
+                        color: primary,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          e.value,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.title(context),
+                            height: 1.3,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 54,
+                child: isPurchasing
+                    ? Container(
+                        decoration: BoxDecoration(
+                          gradient: AppColors.brandPill(context),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Center(
+                          child: SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          ),
+                        ),
+                      )
+                    : GestureDetector(
+                        onTap: isVip ? null : onSubscribe,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient:
+                                isVip ? null : AppColors.brandPill(context),
+                            color: isVip ? AppColors.chipBg(context) : null,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            isVip
+                                ? (langCode == 'vi'
+                                    ? 'Đã là Pro'
+                                    : 'Already Pro')
+                                : (langCode == 'vi'
+                                    ? 'Nâng cấp Pro'
+                                    : 'Upgrade to Pro'),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: isVip
+                                  ? AppColors.muted(context)
+                                  : Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCycleToggle(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.chipBg(context),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      padding: const EdgeInsets.all(4),
+      child: Row(
+        children: [
+          Expanded(
+            child: _CycleButton(
+              label: l10n.monthly,
+              isActive: selectedCycle == BillingCycle.monthly,
+              onTap: () => onCycleChanged(BillingCycle.monthly),
+            ),
+          ),
+          Expanded(
+            child: _CycleButton(
+              label: l10n.yearly,
+              badge: langCode == 'vi' ? 'Tiết kiệm ${plan.savingsPercent}%' : 'Save ${plan.savingsPercent}%',
+              isActive: selectedCycle == BillingCycle.yearly,
+              onTap: () => onCycleChanged(BillingCycle.yearly),
             ),
           ),
         ],
