@@ -600,6 +600,15 @@ class AppLocalizations {
       'unfavoriteDocMessage': 'Đã bỏ lưu tài liệu "{name}"',
       'undo': 'HOÀN TÁC',
       'cannotUnfavorite': 'Không thể bỏ lưu: {error}',
+      // Payment (MoMo)
+      'cannotOpenPaymentApp': 'Không thể mở ứng dụng thanh toán',
+      'paymentFailed': 'Thanh toán thất bại',
+      'paymentFailedDesc': 'Giao dịch của bạn chưa hoàn tất. Vui lòng thử lại.',
+      'paymentTimeout': 'Quá thời gian xác nhận thanh toán',
+      'paymentTimeoutDesc': 'Chúng tôi chưa nhận được xác nhận thanh toán. Vui lòng kiểm tra lịch sử giao dịch hoặc thử lại.',
+      'paymentSecureViaMoMo': 'Thanh toán bảo mật qua MoMo',
+      'paymentCancelled': 'Đã hủy thanh toán',
+      'upgradeWithMoMo': 'Nâng cấp Pro qua MoMo',
     },
     'en': {
       'appName': 'Sfinity',
@@ -1210,6 +1219,15 @@ class AppLocalizations {
       'pricePerYear': 'VND/year',
       'daysRemaining': 'days remaining',
       'currentPlan_': 'Current plan',
+      // Payment (MoMo)
+      'cannotOpenPaymentApp': 'Cannot open payment app',
+      'paymentFailed': 'Payment failed',
+      'paymentFailedDesc': 'Your payment was not completed. Please try again.',
+      'paymentTimeout': 'Payment verification timed out',
+      'paymentTimeoutDesc': 'We did not receive payment confirmation in time. Please check your transaction history or try again.',
+      'paymentSecureViaMoMo': 'Secure payment via MoMo',
+      'paymentCancelled': 'Payment cancelled',
+      'upgradeWithMoMo': 'Upgrade to Pro with MoMo',
     },
   };
 
@@ -1873,6 +1891,15 @@ class AppLocalizations {
   String get pricePerYear => _text('pricePerYear');
   String get daysRemaining => _text('daysRemaining');
   String get currentPlan_ => _text('currentPlan_');
+  // Payment (MoMo)
+  String get cannotOpenPaymentApp => _text('cannotOpenPaymentApp');
+  String get paymentFailed => _text('paymentFailed');
+  String get paymentFailedDesc => _text('paymentFailedDesc');
+  String get paymentTimeout => _text('paymentTimeout');
+  String get paymentTimeoutDesc => _text('paymentTimeoutDesc');
+  String get paymentSecureViaMoMo => _text('paymentSecureViaMoMo');
+  String get paymentCancelled => _text('paymentCancelled');
+  String get upgradeWithMoMo => _text('upgradeWithMoMo');
   String savePercent(int percent) => _format('savePercent', {'{percent}': '$percent'});
   // Method for offline profile load
   String offlineProfileLoad(String err) => _format('offlineProfileLoad', {'{name}': err});

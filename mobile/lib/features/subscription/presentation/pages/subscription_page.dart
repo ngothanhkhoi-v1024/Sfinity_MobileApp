@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -20,41 +22,145 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   SubscriptionStatus? _currentStatus;
   bool _isLoading = true;
   bool _isPurchasing = false;
+  String? _pendingOrderId;
+  Timer? _pollTimer;
 
   @override
   void initState() {
     super.initState();
     _selectedCycle = BillingCycle.monthly;
     _loadStatus();
+    _checkPendingCallback();
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadStatus() async {
     final status = await _service.getStatus();
-    if (mounted) {
-      setState(() {
-        _currentStatus = status;
-        _isLoading = false;
-      });
-    }
+    if (!mounted) return;
+    setState(() {
+      _currentStatus = status;
+      _isLoading = false;
+    });
+  }
+
+  /// Khi user quay về app từ MoMo qua deep link, cache sẽ có payload.
+  void _checkPendingCallback() {
+    final cb = SubscriptionService.consumeLastCallback();
+    if (cb == null) return;
+    _handleCallback(cb);
   }
 
   Future<void> _selectCycle(BillingCycle cycle) async {
+    if (_isPurchasing) return;
     setState(() => _selectedCycle = cycle);
   }
 
   Future<void> _purchase() async {
+    if (_isPurchasing) return;
     final confirm = await _showConfirmDialog();
     if (confirm != true) return;
 
     setState(() => _isPurchasing = true);
-    await Future.delayed(const Duration(seconds: 1));
-    await _service.purchasePlan(SubscriptionPlan.pro, _selectedCycle);
-    await _loadStatus();
+    try {
+      final info = await _service.createMoMoPayment(
+        plan: SubscriptionPlan.pro,
+        cycle: _selectedCycle,
+      );
+      _pendingOrderId = info.orderId;
 
-    if (mounted) {
+      final opened = await _service.openMoMoPayment(info);
+      if (!opened && mounted) {
+        _showErrorDialog(
+          l10nError: 'cannotOpenPaymentApp',
+        );
+      }
+      // Khi deep link quay lại, _checkPendingCallback sẽ xử lý tiếp.
+    } catch (e) {
+      if (!mounted) return;
       setState(() => _isPurchasing = false);
-      _showSuccessDialog();
+      _showErrorDialog(message: e.toString());
     }
+  }
+
+  void _handleCallback(PaymentCallbackPayload cb) {
+    _pollTimer?.cancel();
+    if (!cb.isSuccess) {
+      setState(() {
+        _isPurchasing = false;
+        _pendingOrderId = null;
+      });
+      _showErrorDialog(
+        l10nError: 'paymentFailed',
+        message: cb.message,
+      );
+      return;
+    }
+
+    // Bắt đầu poll trạng thái từ server (đợi IPN cập nhật).
+    setState(() => _isPurchasing = true);
+    _pollUntilDone(cb.orderId);
+  }
+
+  Future<void> _pollUntilDone(String orderId) async {
+    const maxAttempts = 30; // ~30s
+    var attempt = 0;
+    Timer? timer;
+    final completer = Completer<void>();
+
+    Future<void> tick() async {
+      if (!mounted) {
+        completer.complete();
+        return;
+      }
+      attempt++;
+      try {
+        final status = await _service.checkTransactionStatus(orderId);
+        if (status.isSuccess) {
+          timer?.cancel();
+          _pollTimer = null;
+          await _loadStatus();
+          if (!mounted) return;
+          setState(() {
+            _isPurchasing = false;
+            _pendingOrderId = null;
+          });
+          _showSuccessDialog();
+          completer.complete();
+          return;
+        }
+        if (status.isFailed) {
+          timer?.cancel();
+          _pollTimer = null;
+          if (!mounted) return;
+          setState(() {
+            _isPurchasing = false;
+            _pendingOrderId = null;
+          });
+          _showErrorDialog(l10nError: 'paymentFailed');
+          completer.complete();
+          return;
+        }
+      } catch (_) {
+        // ignore — sẽ retry ở tick sau
+      }
+      if (attempt >= maxAttempts) {
+        timer?.cancel();
+        _pollTimer = null;
+        if (!mounted) return;
+        setState(() => _isPurchasing = false);
+        _showErrorDialog(l10nError: 'paymentTimeout');
+        completer.complete();
+      }
+    }
+
+    timer = Timer.periodic(const Duration(seconds: 1), (_) => tick());
+    _pollTimer = timer;
+    await completer.future;
   }
 
   Future<bool?> _showConfirmDialog() {
@@ -198,6 +304,49 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     );
   }
 
+  void _showErrorDialog({
+    String? message,
+    String l10nError = 'paymentFailed',
+  }) {
+    final l10n = AppLocalizations.of(context);
+    final title = switch (l10nError) {
+      'cannotOpenPaymentApp' => l10n.cannotOpenPaymentApp,
+      'paymentTimeout' => l10n.paymentTimeout,
+      _ => l10n.paymentFailed,
+    };
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Icon(Icons.error_outline_rounded, color: Colors.red.shade400),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.title(context),
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          message ?? l10n.paymentFailedDesc,
+          style: TextStyle(color: AppColors.muted(context)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(l10n.close),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -278,7 +427,7 @@ class _CurrentPlanBanner extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${langCode == 'vi' ? 'Gói Pro hiện tại' : 'Current Pro plan'}',
+                  langCode == 'vi' ? 'Gói Pro hiện tại' : 'Current Pro plan',
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 14,
@@ -481,8 +630,8 @@ class _ProPlanCard extends StatelessWidget {
                                     ? 'Đã là Pro'
                                     : 'Already Pro')
                                 : (langCode == 'vi'
-                                    ? 'Nâng cấp Pro'
-                                    : 'Upgrade to Pro'),
+                                    ? 'Nâng cấp Pro qua MoMo'
+                                    : 'Upgrade to Pro with MoMo'),
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
@@ -494,6 +643,26 @@ class _ProPlanCard extends StatelessWidget {
                         ),
                       ),
               ),
+              const SizedBox(height: 8),
+              if (!isVip)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.lock_outline_rounded,
+                      size: 14,
+                      color: AppColors.muted(context),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      AppLocalizations.of(context).paymentSecureViaMoMo,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.muted(context),
+                      ),
+                    ),
+                  ],
+                ),
             ],
           ),
         ),

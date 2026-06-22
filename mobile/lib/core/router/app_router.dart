@@ -33,9 +33,10 @@ import '../../features/settings/presentation/pages/settings_page.dart';
 import '../../features/subscription/presentation/pages/subscription_page.dart';
 import '../auth/auth_state.dart';
 import '../constants/route_names.dart';
+import '../services/deep_link_handler.dart';
 
 GoRouter createAppRouter(AuthState auth) {
-  return GoRouter(
+  final router = GoRouter(
     initialLocation: RouteNames.splash,
     refreshListenable: auth,
     redirect: (context, state) {
@@ -227,4 +228,20 @@ GoRouter createAppRouter(AuthState auth) {
       ),
     ],
   );
+
+  // Bind router cho DeepLinkHandler để có thể gọi từ ngoài widget tree.
+  AppRouterNavigator.bind(_GoRouterAdapter(router));
+  return router;
+}
+
+/// Adapter đơn giản để DeepLinkHandler có thể yêu cầu router điều hướng
+/// tới trang subscription mà không cần import trực tiếp GoRouter.
+class _GoRouterAdapter implements GoRouterLike {
+  _GoRouterAdapter(this._router);
+  final GoRouter _router;
+
+  @override
+  void goToSubscription() {
+    _router.go(RouteNames.subscription);
+  }
 }
