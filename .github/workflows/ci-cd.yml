@@ -59,6 +59,12 @@ jobs:
           cd mobile
           flutter build apk --debug
 
+      - name: Upload Mobile APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: sfinity-debug-apk
+          path: mobile/build/app/outputs/flutter-apk/app-debug.apk
+
   # 2. Run Tests & Coverage
   test:
     name: Run Tests & Check Coverage
