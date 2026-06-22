@@ -280,44 +280,107 @@ class _SubscriptionPageState extends State<SubscriptionPage>
 
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
+                color: AppColors.primary.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                Icons.check_circle_rounded,
-                size: 56,
-                color: AppColors.primary,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Icon(
+                    Icons.check_circle_rounded,
+                    size: 72,
+                    color: AppColors.primary,
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFF7C4DFF), Color(0xFF651FFF)],
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF7C4DFF).withValues(alpha: 0.4),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.verified_rounded,
+                            size: 14,
+                            color: Colors.white,
+                          ),
+                          SizedBox(width: 3),
+                          Text(
+                            'PRO',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             Text(
               l10n.congratulations,
               style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
                 color: AppColors.title(context),
               ),
             ),
             const SizedBox(height: 8),
             Text(
               langCode == 'vi'
-                  ? 'Bạn đã nâng cấp Pro thành công.'
-                  : 'You have successfully upgraded to Pro.',
+                  ? 'Ban da nang cap Pro thanh cong!'
+                  : 'You have successfully upgraded to Pro!',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 15,
                 color: AppColors.muted(context),
+                height: 1.4,
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 8),
+            Text(
+              langCode == 'vi'
+                  ? 'Tu bay gio ban co the trai nghiem cac tinh nang Pro.'
+                  : 'You can now enjoy all Pro features.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                color: AppColors.muted(context).withValues(alpha: 0.7),
+              ),
+            ),
+            const SizedBox(height: 28),
             SizedBox(
               width: double.infinity,
               child: FilledButton(
@@ -332,7 +395,13 @@ class _SubscriptionPageState extends State<SubscriptionPage>
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-                child: Text(l10n.startEnjoying),
+                child: Text(
+                  langCode == 'vi' ? 'Bat dau trai nghiem!' : 'Start Enjoying!',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
             ),
           ],
