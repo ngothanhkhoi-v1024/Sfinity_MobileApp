@@ -60,4 +60,5 @@ abstract final class RouteNames {
 
   // Subscription
   static const subscription = '/subscription';
+  static const vnpayWebview = '/subscription/vnpay-webview';
 }

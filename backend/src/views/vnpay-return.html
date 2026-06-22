@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sfinity - Thanh Toán VNPay</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      border-radius: 24px;
+      padding: 40px;
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+    .icon {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+      font-size: 40px;
+    }
+    .success .icon {
+      background: #d4edda;
+      color: #28a745;
+    }
+    .failed .icon {
+      background: #f8d7da;
+      color: #dc3545;
+    }
+    .pending .icon {
+      background: #fff3cd;
+      color: #ffc107;
+    }
+    h1 {
+      font-size: 24px;
+      color: #333;
+      margin-bottom: 12px;
+    }
+    p {
+      color: #666;
+      font-size: 16px;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+    .order-info {
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .order-info .label {
+      font-size: 12px;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .order-info .value {
+      font-size: 18px;
+      color: #333;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+    .btn {
+      display: inline-block;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 16px 32px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+      margin-top: 8px;
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+    }
+    .countdown {
+      margin-top: 16px;
+      font-size: 14px;
+      color: #999;
+    }
+    .spinner {
+      width: 60px;
+      height: 60px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 24px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="content">
+    <div class="spinner"></div>
+    <h1>Đang xử lý...</h1>
+    <p>Vui lòng đợi trong giây lát</p>
+  </div>
+
+  <script>
+    // VNPay redirects to this page with query params.
+    // Parse the payment result and redirect to app deep link.
+    // The WebView in Flutter will catch sfinity:// scheme and pass it back
+    // to the app (via shouldOverrideUrlLoading / onLoadStop).
+    function formatAmount(amount) {
+      if (!amount) return '0';
+      var num = parseInt(amount) / 100;
+      return new Intl.NumberFormat('vi-VN').format(num) + ' VND';
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const vnp_ResponseCode = params.get('vnp_ResponseCode');
+    const vnp_TxnRef = params.get('vnp_TxnRef');
+    const vnp_Amount = params.get('vnp_Amount');
+    const vnp_OrderInfo = params.get('vnp_OrderInfo');
+    const vnp_TransactionStatus = params.get('vnp_TransactionStatus');
+
+    var status = 'pending';
+    var title = 'Dang xu ly';
+    var message = 'He thong dang xac nhan thanh toan cua ban...';
+
+    if (vnp_ResponseCode) {
+      if (vnp_ResponseCode === '00' && vnp_TransactionStatus === '00') {
+        status = 'success';
+        title = 'Thanh toan thanh cong!';
+        message = 'Cam on ban da thanh toan. Goi VIP cua ban da duoc kich hoat.';
+      } else if (vnp_ResponseCode === '24') {
+        status = 'failed';
+        title = 'Thanh toan bi huy';
+        message = 'Ban da huy thanh toan. Ban co the thu lai.';
+      } else {
+        status = 'failed';
+        title = 'Thanh toan that bai';
+        message = 'Da xay ra loi trong quá trình thanh toan. Ma loi: ' + vnp_ResponseCode;
+      }
+    }
+
+    var iconSvg;
+    if (status === 'success') {
+      iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="#28a745" stroke-width="3" width="40" height="40"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+    } else if (status === 'failed') {
+      iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="#dc3545" stroke-width="3" width="40" height="40"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+    } else {
+      iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="#ffc107" stroke-width="3" width="40" height="40"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>';
+    }
+
+    // Deep link to return to app — WebView will intercept this scheme.
+    var deepLink = 'sfinity://payment-vnpay-callback'
+      + '?orderId=' + encodeURIComponent(vnp_TxnRef || '')
+      + '&resultCode=' + encodeURIComponent(vnp_ResponseCode || '')
+      + '&message=' + encodeURIComponent(status === 'success' ? 'Thanh toan thanh cong' : (status === 'failed' ? title : ''));
+
+    document.getElementById('content').className = 'container ' + status;
+    document.getElementById('content').innerHTML =
+      '<div class="icon">' + iconSvg + '</div>' +
+      '<h1>' + title + '</h1>' +
+      '<p>' + message + '</p>' +
+      (vnp_Amount ? '<div class="order-info"><div class="label">So tien</div><div class="value">' + formatAmount(vnp_Amount) + '</div></div>' : '') +
+      (vnp_TxnRef ? '<div class="order-info"><div class="label">Ma giao dich</div><div class="value">' + vnp_TxnRef + '</div></div>' : '') +
+      '<a href="#" onclick="window.location.href=\'' + deepLink.replace(/'/g, "\\'") + '\'; return false;" class="btn"> Quay lai ung dung </a>' +
+      '<div class="countdown">Dang cho WebView xu ly...</div>';
+
+    // Trigger the deep link navigation — WebView will catch it.
+    setTimeout(function() {
+      window.location.href = deepLink;
+    }, 800);
+  </script>
+</body>
+</html>

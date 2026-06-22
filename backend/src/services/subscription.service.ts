@@ -156,7 +156,7 @@ export const subscriptionService = {
       vipPlanId: planId,
       vipCycle: cycle,
       vipExpiresAt: newExpires,
-      vipSource: 'momo',
+      vipSource: info.payType ?? 'vnpay',
       updatedAt: now,
     };
 

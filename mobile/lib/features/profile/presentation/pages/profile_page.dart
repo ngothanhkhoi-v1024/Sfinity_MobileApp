@@ -5,6 +5,8 @@ import '../../../../app.dart';
 import '../../../../core/constants/route_names.dart';
 import '../../../../core/i18n/app_text.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../subscription/data/models/subscription_plan.dart';
+import '../../../subscription/presentation/widgets/vip_badge.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -28,6 +30,15 @@ class ProfilePage extends StatelessWidget {
         final hasPassword = user?['hasPassword'] as bool? ?? false;
         final canChangeOrSetPassword =
             hasPassword || authProvider == 'google' || authProvider == 'facebook';
+        final isVipDb = user?['isVip'] == true;
+        final vipExpiresAtStr = user?['vipExpiresAt']?.toString();
+        var isVip = isVipDb;
+        if (isVipDb && vipExpiresAtStr != null) {
+          final expiresAt = DateTime.tryParse(vipExpiresAtStr);
+          if (expiresAt != null && DateTime.now().isAfter(expiresAt)) {
+            isVip = false;
+          }
+        }
 
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
@@ -37,6 +48,7 @@ class ProfilePage extends StatelessWidget {
               email: email,
               avatarUrl: avatarUrl,
               primary: primary,
+              isVip: isVip,
               onViewProfile: () => context.push(RouteNames.viewProfile),
             ),
             const SizedBox(height: 20),
@@ -142,6 +154,7 @@ class _ProfileHeader extends StatelessWidget {
     required this.email,
     required this.avatarUrl,
     required this.primary,
+    required this.isVip,
     required this.onViewProfile,
   });
 
@@ -149,6 +162,7 @@ class _ProfileHeader extends StatelessWidget {
   final String email;
   final String? avatarUrl;
   final Color primary;
+  final bool isVip;
   final VoidCallback onViewProfile;
 
   @override
@@ -190,15 +204,25 @@ class _ProfileHeader extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      displayName.isNotEmpty ? displayName : 'Người dùng',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: -0.2,
-                            color: AppColors.title(context),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            displayName.isNotEmpty ? displayName : 'Người dùng',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: -0.2,
+                                  color: AppColors.title(context),
+                                ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                        ),
+                        if (isVip) ...[
+                          const SizedBox(width: 8),
+                          const VipBadge(tier: VipTier.pro, size: VipBadgeSize.small),
+                        ],
+                      ],
                     ),
                     if (email.isNotEmpty) ...[
                       const SizedBox(height: 3),
