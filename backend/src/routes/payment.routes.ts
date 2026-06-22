@@ -24,6 +24,7 @@ paymentRouter.post(
       userId: req.user!.sub,
       planId: dto.planId,
       cycle: dto.cycle,
+      method: dto.method,
     });
     res.json({
       orderId: result.orderId,

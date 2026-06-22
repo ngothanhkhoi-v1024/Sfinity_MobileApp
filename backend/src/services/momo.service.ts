@@ -44,6 +44,7 @@ export interface CreatePaymentInput {
   userId: string;
   planId: PlanId;
   cycle: BillingCycle;
+  method?: 'captureWallet' | 'payWithMethod' | 'payWithATM' | 'payWithCC';
 }
 
 export interface CreatePaymentResult {
@@ -98,6 +99,7 @@ export const momoService = {
       requestId,
       amount,
       orderInfo,
+      requestType: input.method,
     });
 
     if (momoRes.resultCode !== 0 || !momoRes.payUrl) {
