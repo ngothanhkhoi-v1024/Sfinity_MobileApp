@@ -29,4 +29,10 @@ export const config = {
       : 'https://test-payment.momo.vn'),
   momoRedirectUrl: process.env.MOMO_REDIRECT_URL ?? 'sfinity://payment-callback',
   momoIpnUrl: process.env.MOMO_IPN_URL ?? '',
+  vnpayTmnCode: process.env.VNPAY_TMN_CODE ?? '',
+  vnpayHashSecret: process.env.VNPAY_HASH_SECRET ?? '',
+  vnpayUrl: process.env.VNPAY_URL ?? 'https://sandbox.vnpayment.vn/apis/paymentv2/vpcpay.html',
+  vnpayReturnUrl: process.env.VNPAY_RETURN_URL ?? 'sfinity://payment-vnpay-callback',
+  vnpayIpnUrl: process.env.VNPAY_IPN_URL ?? '',
+  vnpayApiUrl: process.env.VNPAY_API_URL ?? 'https://sandbox.vnpayment.vn/merchant_webapi/api/transaction',
 } as const;

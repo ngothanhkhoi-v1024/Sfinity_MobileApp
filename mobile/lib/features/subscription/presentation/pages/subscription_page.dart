@@ -9,6 +9,8 @@ import '../../data/models/subscription_plan.dart';
 import '../../data/services/subscription_service.dart';
 import '../widgets/vip_badge.dart';
 
+enum PaymentMethod { momo, vnpay }
+
 class SubscriptionPage extends StatefulWidget {
   const SubscriptionPage({super.key});
 
@@ -24,6 +26,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   bool _isPurchasing = false;
   String? _pendingOrderId;
   Timer? _pollTimer;
+  PaymentMethod _selectedPaymentMethod = PaymentMethod.momo;
 
   @override
   void initState() {
@@ -60,6 +63,11 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     setState(() => _selectedCycle = cycle);
   }
 
+  Future<void> _selectPaymentMethod(PaymentMethod method) async {
+    if (_isPurchasing) return;
+    setState(() => _selectedPaymentMethod = method);
+  }
+
   Future<void> _purchase() async {
     if (_isPurchasing) return;
     final confirm = await _showConfirmDialog();
@@ -67,19 +75,33 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
     setState(() => _isPurchasing = true);
     try {
-      final info = await _service.createMoMoPayment(
-        plan: SubscriptionPlan.pro,
-        cycle: _selectedCycle,
-      );
-      _pendingOrderId = info.orderId;
-
-      final opened = await _service.openMoMoPayment(info);
-      if (!opened && mounted) {
-        _showErrorDialog(
-          l10nError: 'cannotOpenPaymentApp',
+      if (_selectedPaymentMethod == PaymentMethod.vnpay) {
+        // VNPay flow
+        final info = await _service.createVnpayPayment(
+          plan: SubscriptionPlan.pro,
+          cycle: _selectedCycle,
         );
+        _pendingOrderId = info.orderId;
+
+        final opened = await _service.openVnpayPayment(info);
+        if (!opened && mounted) {
+          _showErrorDialog(message: 'Không thể mở trình duyệt thanh toán');
+        }
+      } else {
+        // MoMo flow
+        final info = await _service.createMoMoPayment(
+          plan: SubscriptionPlan.pro,
+          cycle: _selectedCycle,
+        );
+        _pendingOrderId = info.orderId;
+
+        final opened = await _service.openMoMoPayment(info);
+        if (!opened && mounted) {
+          _showErrorDialog(
+            l10nError: 'cannotOpenPaymentApp',
+          );
+        }
       }
-      // Khi deep link quay lại, _checkPendingCallback sẽ xử lý tiếp.
     } catch (e) {
       if (!mounted) return;
       setState(() => _isPurchasing = false);
@@ -384,9 +406,11 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                     plan: plan,
                     langCode: langCode,
                     selectedCycle: _selectedCycle,
+                    selectedPaymentMethod: _selectedPaymentMethod,
                     isVip: _currentStatus?.isValid ?? false,
                     isPurchasing: _isPurchasing,
                     onCycleChanged: _selectCycle,
+                    onPaymentMethodChanged: _selectPaymentMethod,
                     onSubscribe: _purchase,
                   ),
                 ],
@@ -455,18 +479,22 @@ class _ProPlanCard extends StatelessWidget {
   final SubscriptionPlan plan;
   final String langCode;
   final BillingCycle selectedCycle;
+  final PaymentMethod selectedPaymentMethod;
   final bool isVip;
   final bool isPurchasing;
   final ValueChanged<BillingCycle> onCycleChanged;
+  final ValueChanged<PaymentMethod> onPaymentMethodChanged;
   final VoidCallback onSubscribe;
 
   const _ProPlanCard({
     required this.plan,
     required this.langCode,
     required this.selectedCycle,
+    required this.selectedPaymentMethod,
     required this.isVip,
     required this.isPurchasing,
     required this.onCycleChanged,
+    required this.onPaymentMethodChanged,
     required this.onSubscribe,
   });
 
@@ -562,6 +590,10 @@ class _ProPlanCard extends StatelessWidget {
               ],
               const SizedBox(height: 24),
               _buildCycleToggle(context),
+              if (!isVip) ...[
+                const SizedBox(height: 16),
+                _buildPaymentMethodSelector(context),
+              ],
               const SizedBox(height: 28),
               const Divider(height: 1),
               const SizedBox(height: 20),
@@ -629,9 +661,13 @@ class _ProPlanCard extends StatelessWidget {
                                 ? (langCode == 'vi'
                                     ? 'Đã là Pro'
                                     : 'Already Pro')
-                                : (langCode == 'vi'
-                                    ? 'Nâng cấp Pro qua MoMo'
-                                    : 'Upgrade to Pro with MoMo'),
+                                : (selectedPaymentMethod == PaymentMethod.vnpay
+                                    ? (langCode == 'vi'
+                                        ? 'Nâng cấp Pro qua VNPay'
+                                        : 'Upgrade to Pro with VNPay')
+                                    : (langCode == 'vi'
+                                        ? 'Nâng cấp Pro qua MoMo'
+                                        : 'Upgrade to Pro with MoMo')),
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
@@ -655,7 +691,11 @@ class _ProPlanCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      AppLocalizations.of(context).paymentSecureViaMoMo,
+                      selectedPaymentMethod == PaymentMethod.vnpay
+                          ? (langCode == 'vi'
+                              ? 'Thanh toán bảo mật qua VNPay'
+                              : 'Secure payment via VNPay')
+                          : AppLocalizations.of(context).paymentSecureViaMoMo,
                       style: TextStyle(
                         fontSize: 12,
                         color: AppColors.muted(context),
@@ -696,6 +736,115 @@ class _ProPlanCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentMethodSelector(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          child: Text(
+            langCode == 'vi' ? 'Phương thức thanh toán' : 'Payment method',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: AppColors.muted(context),
+            ),
+          ),
+        ),
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.chipBg(context),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.all(4),
+          child: Row(
+            children: [
+              Expanded(
+                child: _PaymentMethodButton(
+                  label: 'MoMo',
+                  iconData: Icons.account_balance_wallet,
+                  iconColor: const Color(0xFFA50000),
+                  isActive: selectedPaymentMethod == PaymentMethod.momo,
+                  onTap: () => onPaymentMethodChanged(PaymentMethod.momo),
+                ),
+              ),
+              Expanded(
+                child: _PaymentMethodButton(
+                  label: 'VNPay',
+                  iconData: Icons.payment,
+                  iconColor: const Color(0xFF1A94DA),
+                  isActive: selectedPaymentMethod == PaymentMethod.vnpay,
+                  onTap: () => onPaymentMethodChanged(PaymentMethod.vnpay),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PaymentMethodButton extends StatelessWidget {
+  final String label;
+  final IconData iconData;
+  final Color iconColor;
+  final bool isActive;
+  final VoidCallback onTap;
+
+  const _PaymentMethodButton({
+    required this.label,
+    required this.iconData,
+    required this.iconColor,
+    required this.isActive,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: isActive ? AppColors.card(context) : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: isActive
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              iconData,
+              size: 18,
+              color: iconColor,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                color: isActive
+                    ? AppColors.title(context)
+                    : AppColors.muted(context),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
