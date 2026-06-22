@@ -57,4 +57,7 @@ abstract final class RouteNames {
   static const groupEdit = '/groups/:id/edit';
   static const groupDetail = '/groups/:id';
   static const groupChat = '/groups/:id/chat';
+
+  // Subscription
+  static const subscription = '/subscription';
 }

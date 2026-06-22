@@ -5,6 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'app.dart';
 import 'core/constants/place_tags.dart';
 import 'core/network/api_client.dart';
+import 'core/services/deep_link_handler.dart';
 import "firebase_options.dart";
 
 Future<void> _loadEnv() async {
@@ -30,6 +31,11 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Lắng nghe deep link MoMo → Sfinity (`sfinity://payment-callback?orderId=...`)
+  // Bắt đầu sớm để nhận cả cold-start (app mở từ link) lẫn warm-resume.
+  // ignore: discarded_futures
+  DeepLinkHandler.instance.start();
 
   // Load amenities asynchronously in the background
   _fetchAndInitAmenities();
