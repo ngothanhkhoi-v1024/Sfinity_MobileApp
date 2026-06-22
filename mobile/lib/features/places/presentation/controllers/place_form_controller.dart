@@ -146,6 +146,11 @@ class PlaceFormController extends ChangeNotifier {
       throw invalidCoordinates();
     }
 
+    final isNewPlace = editPlaceId == null || editPlaceId.isEmpty;
+    if (isNewPlace && !SfinityApp.userLimits.canCreatePlace) {
+      throw 'PLACE_LIMIT';
+    }
+
     loading = true;
     notifyListeners();
 
@@ -178,17 +183,32 @@ class PlaceFormController extends ChangeNotifier {
           errorMsg: () => 'Cannot create place',
         );
         resultingPlaceId = place.id;
+        await SfinityApp.userLimits.refresh();
       }
 
+      final photoErrors = <String>[];
       for (final image in pickedImages) {
-        await SfinityApp.placeEngagementRepository.uploadAndAddPhoto(
-          resultingPlaceId,
-          imageFile: image,
-        );
+        try {
+          await SfinityApp.placeEngagementRepository.uploadAndAddPhoto(
+            resultingPlaceId,
+            imageFile: image,
+          );
+        } on DioException catch (e) {
+          photoErrors.add(ApiClient.instance.errorMessage(e));
+        } catch (e) {
+          photoErrors.add(e.toString());
+        }
       }
       pickedImages.clear();
+
+      if (photoErrors.isNotEmpty) {
+        throw photoErrors.join('\n');
+      }
     } on DioException catch (e) {
       throw ApiClient.instance.errorMessage(e);
+    } catch (e) {
+      if (e is String) rethrow;
+      throw e.toString();
     } finally {
       loading = false;
       notifyListeners();

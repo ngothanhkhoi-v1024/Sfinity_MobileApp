@@ -31,6 +31,7 @@ import '../../features/report/presentation/pages/report_page.dart';
 import '../../features/security/presentation/pages/change_password_page.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
 import '../../features/subscription/presentation/pages/subscription_page.dart';
+import '../../features/subscription/presentation/pages/vnpay_webview_page.dart';
 import '../auth/auth_state.dart';
 import '../constants/route_names.dart';
 import '../services/deep_link_handler.dart';
@@ -193,6 +194,16 @@ GoRouter createAppRouter(AuthState auth) {
       GoRoute(
         path: RouteNames.subscription,
         builder: (_, __) => const SubscriptionPage(),
+      ),
+      GoRoute(
+        path: RouteNames.vnpayWebview,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return VnpayWebviewPage(
+            paymentUrl: extra?['paymentUrl'] as String? ?? '',
+            orderId: extra?['orderId'] as String? ?? '',
+          );
+        },
       ),
       // Group & Friends routes
       GoRoute(

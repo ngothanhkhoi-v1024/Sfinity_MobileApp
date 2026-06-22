@@ -24,7 +24,7 @@ groupRouter.post(
   '/',
   asyncHandler(async (req, res) => {
     const dto = await validateBody(CreateGroupDto, req.body);
-    res.status(201).json(await groupService.createGroup(req.user!.sub, dto));
+    res.status(201).json(await groupService.createGroup(req.user!.sub, dto, req.user!.role));
   }),
 );
 

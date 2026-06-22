@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:speech_to_text/speech_recognition_result.dart';
 
 import '../../../../app.dart';
 import '../../../../core/i18n/app_text.dart';
+import '../../../../core/services/speech_input_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../splash/presentation/widgets/academic_sealion_mascot.dart';
 import '../../data/models/assistant_message.dart';
@@ -42,6 +44,9 @@ class AssistantChatSheet extends StatefulWidget {
 class _AssistantChatSheetState extends State<AssistantChatSheet> {
   final _inputCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
+  final _speech = SpeechInputService.instance;
+  bool _listening = false;
+  bool _speechReady = false;
 
   @override
   void initState() {
@@ -51,10 +56,19 @@ class _AssistantChatSheetState extends State<AssistantChatSheet> {
       ctrl.clearMessages();
     }
     ctrl.addListener(_onControllerChanged);
+    _initSpeech();
+  }
+
+  Future<void> _initSpeech() async {
+    final ok = await _speech.initialize();
+    if (mounted) {
+      setState(() => _speechReady = ok && _speech.isAvailable);
+    }
   }
 
   @override
   void dispose() {
+    if (_listening) _speech.stop();
     SfinityApp.assistantController.removeListener(_onControllerChanged);
     _inputCtrl.dispose();
     _scrollCtrl.dispose();
@@ -86,16 +100,70 @@ class _AssistantChatSheetState extends State<AssistantChatSheet> {
     await SfinityApp.assistantController.send(message);
   }
 
+  Future<void> _toggleVoice() async {
+    final l10n = context.l10n;
+    if (_listening) {
+      await _speech.stop();
+      if (mounted) setState(() => _listening = false);
+      return;
+    }
+
+    if (!_speechReady) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.voiceSearchUnavailable)),
+      );
+      return;
+    }
+
+    final localeId = _speech.localeIdFor(Localizations.localeOf(context));
+    final granted = await _speech.ensureMicrophonePermission();
+    if (!granted) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.voiceSearchPermissionDenied)),
+        );
+      }
+      return;
+    }
+
+    if (!mounted) return;
+    final started = await _speech.startListening(
+      localeId: localeId,
+      onResult: (SpeechRecognitionResult result) {
+        _inputCtrl.text = result.recognizedWords;
+        _inputCtrl.selection = TextSelection.fromPosition(
+          TextPosition(offset: _inputCtrl.text.length),
+        );
+        if (result.finalResult) {
+          _speech.stop();
+          if (mounted) setState(() => _listening = false);
+          if (result.recognizedWords.trim().isNotEmpty) {
+            _send(result.recognizedWords);
+          }
+        }
+      },
+    );
+
+    if (mounted) setState(() => _listening = started);
+  }
+
   List<String> _quickSuggestions(AppLocalizations l10n) {
     return switch (widget.contextId) {
       'places' => [
+          'Gợi ý chỗ học gần tôi',
+          'Trời có mưa không?',
           l10n.assistantQuickCheckIn,
-          l10n.assistantQuickStudyNearMe,
         ],
-      'documents' => [l10n.assistantQuickUploadDoc],
+      'documents' => [
+          l10n.assistantQuickUploadDoc,
+          'Tìm tài liệu Toán',
+        ],
       'community' => [l10n.assistantQuickCreateGroup],
       'profile' => [l10n.assistantQuickSettings],
-      _ => [l10n.assistantQuickExplore],
+      _ => [
+          l10n.assistantQuickExplore,
+          'Nội dung nổi bật tuần này',
+        ],
     };
   }
 
@@ -158,6 +226,8 @@ class _AssistantChatSheetState extends State<AssistantChatSheet> {
                   content: m.content,
                   isUser: m.role == AssistantMessageRole.user,
                   isError: m.isError,
+                  actions: m.actions,
+                  sources: m.sources,
                 ),
               ),
               if (ctrl.loading)
@@ -207,6 +277,14 @@ class _AssistantChatSheetState extends State<AssistantChatSheet> {
           padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
           child: Row(
             children: [
+              IconButton(
+                onPressed: ctrl.loading || !_speechReady ? null : _toggleVoice,
+                tooltip: _listening ? l10n.voiceSearchListening : l10n.assistantVoiceInput,
+                icon: Icon(
+                  _listening ? Icons.mic : Icons.mic_none_rounded,
+                  color: _listening ? Theme.of(context).colorScheme.error : null,
+                ),
+              ),
               Expanded(
                 child: TextField(
                   controller: _inputCtrl,

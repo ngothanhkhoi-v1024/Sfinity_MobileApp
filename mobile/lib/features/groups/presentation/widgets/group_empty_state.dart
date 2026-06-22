@@ -2,8 +2,14 @@ import 'package:flutter/material.dart';
 import '../../../../core/i18n/app_text.dart';
 
 class GroupEmptyState extends StatelessWidget {
-  const GroupEmptyState({super.key, required this.onCreateGroup});
+  const GroupEmptyState({
+    super.key,
+    required this.onCreateGroup,
+    this.canCreateGroup = true,
+  });
+
   final VoidCallback onCreateGroup;
+  final bool canCreateGroup;
 
   @override
   Widget build(BuildContext context) {
@@ -31,14 +37,16 @@ class GroupEmptyState extends StatelessWidget {
             Text(l10n.noGroupsYet, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Text(
-              l10n.createGroupHint,
+              canCreateGroup ? l10n.createGroupHint : l10n.limitCreateGroup,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
             FilledButton.icon(
               onPressed: onCreateGroup,
-              icon: const Icon(Icons.add),
+              icon: Icon(
+                canCreateGroup ? Icons.add : Icons.workspace_premium_outlined,
+              ),
               label: Text(l10n.createGroupBtn),
             ),
           ],

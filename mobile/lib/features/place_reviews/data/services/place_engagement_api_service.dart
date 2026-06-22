@@ -29,10 +29,15 @@ class PlaceEngagementApiService {
     required String imageUrl,
     String? caption,
   }) {
-    return _api.post('/places/$placeId/photos', {
-      'imageUrl': imageUrl,
-      if (caption != null && caption.isNotEmpty) 'caption': caption,
-    });
+    return _api.post(
+      '/places/$placeId/photos',
+      {
+        'imageUrl': imageUrl,
+        if (caption != null && caption.isNotEmpty) 'caption': caption,
+      },
+      receiveTimeout: const Duration(seconds: 90),
+      sendTimeout: const Duration(seconds: 30),
+    );
   }
 
   Future<void> deletePhoto(String placeId, String photoId) {

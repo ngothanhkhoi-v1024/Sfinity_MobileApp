@@ -47,6 +47,7 @@ placesRouter.get(
     const lat = req.query.lat as string | undefined;
     const lng = req.query.lng as string | undefined;
     const radiusKm = req.query.radiusKm as string | undefined;
+    const minRating = req.query.minRating as string | undefined;
     const page = req.query.page as string | undefined;
     const limit = req.query.limit as string | undefined;
     const publishedOnly = req.query.publishedOnly as string | undefined;
@@ -62,6 +63,7 @@ placesRouter.get(
         lat: lat != null ? Number(lat) : undefined,
         lng: lng != null ? Number(lng) : undefined,
         radiusKm: radiusKm != null ? Number(radiusKm) : undefined,
+        minRating: minRating != null ? Number(minRating) : undefined,
         page: page ? Number(page) : 1,
         limit: limit ? Number(limit) : 20,
         publishedOnly: publishedOnly === 'true',

@@ -5,6 +5,8 @@ import '../../../../app.dart';
 import '../../../../core/constants/route_names.dart';
 import '../../../../core/i18n/app_text.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../subscription/data/models/subscription_plan.dart';
+import '../../../subscription/presentation/widgets/vip_badge.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -14,8 +16,12 @@ class ProfilePage extends StatelessWidget {
     final primary = AppColors.primaryOf(context);
 
     return AnimatedBuilder(
-      animation: SfinityApp.auth,
+      animation: Listenable.merge([
+        SfinityApp.auth,
+        SfinityApp.assistantFabPositionManager,
+      ]),
       builder: (context, _) {
+        final assistantFabVisible = SfinityApp.assistantFabPositionManager.visible;
         final user = SfinityApp.auth.user;
         final avatarUrl = user?['avatar']?.toString();
         final displayName = user?['name']?.toString() ?? '';
@@ -24,6 +30,15 @@ class ProfilePage extends StatelessWidget {
         final hasPassword = user?['hasPassword'] as bool? ?? false;
         final canChangeOrSetPassword =
             hasPassword || authProvider == 'google' || authProvider == 'facebook';
+        final isVipDb = user?['isVip'] == true;
+        final vipExpiresAtStr = user?['vipExpiresAt']?.toString();
+        var isVip = isVipDb;
+        if (isVipDb && vipExpiresAtStr != null) {
+          final expiresAt = DateTime.tryParse(vipExpiresAtStr);
+          if (expiresAt != null && DateTime.now().isAfter(expiresAt)) {
+            isVip = false;
+          }
+        }
 
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
@@ -33,6 +48,7 @@ class ProfilePage extends StatelessWidget {
               email: email,
               avatarUrl: avatarUrl,
               primary: primary,
+              isVip: isVip,
               onViewProfile: () => context.push(RouteNames.viewProfile),
             ),
             const SizedBox(height: 20),
@@ -102,6 +118,14 @@ class ProfilePage extends StatelessWidget {
             _ProfileSection(
               title: context.l10n.settings,
               children: [
+                _ProfileSwitchItem(
+                  icon: Icons.smart_toy_outlined,
+                  title: context.l10n.assistantShowFab,
+                  subtitle: context.l10n.assistantShowFabSubtitle,
+                  value: assistantFabVisible,
+                  onChanged: (value) =>
+                      SfinityApp.assistantFabPositionManager.setVisible(value),
+                ),
                 _ProfileMenuItem(
                   icon: Icons.settings_outlined,
                   title: context.l10n.settings,
@@ -130,6 +154,7 @@ class _ProfileHeader extends StatelessWidget {
     required this.email,
     required this.avatarUrl,
     required this.primary,
+    required this.isVip,
     required this.onViewProfile,
   });
 
@@ -137,6 +162,7 @@ class _ProfileHeader extends StatelessWidget {
   final String email;
   final String? avatarUrl;
   final Color primary;
+  final bool isVip;
   final VoidCallback onViewProfile;
 
   @override
@@ -178,15 +204,25 @@ class _ProfileHeader extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      displayName.isNotEmpty ? displayName : 'Người dùng',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: -0.2,
-                            color: AppColors.title(context),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            displayName.isNotEmpty ? displayName : 'Người dùng',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: -0.2,
+                                  color: AppColors.title(context),
+                                ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                        ),
+                        if (isVip) ...[
+                          const SizedBox(width: 8),
+                          const VipBadge(tier: VipTier.pro, size: VipBadgeSize.small),
+                        ],
+                      ],
                     ),
                     if (email.isNotEmpty) ...[
                       const SizedBox(height: 3),
@@ -261,6 +297,62 @@ class _ProfileSection extends StatelessWidget {
                 ],
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfileSwitchItem extends StatelessWidget {
+  const _ProfileSwitchItem({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: AppColors.muted(context)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                    color: AppColors.title(context),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.muted(context),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch.adaptive(
+            value: value,
+            onChanged: onChanged,
           ),
         ],
       ),

@@ -1,6 +1,8 @@
 import { getDb } from '../lib/firebase';
 import { HttpError } from '../lib/http-error';
+import { UserRole } from '../types/enums';
 import { CreateGroupDto, UpdateGroupDto } from '../dto/group.dto';
+import { vipLimitsService } from './vip-limits.service';
 
 const toDate = (val: any): Date => {
   if (!val) return new Date();
@@ -11,7 +13,9 @@ const toDate = (val: any): Date => {
 
 export const groupService = {
   /** Tạo nhóm mới */
-  async createGroup(creatorId: string, dto: CreateGroupDto) {
+  async createGroup(creatorId: string, dto: CreateGroupDto, role: UserRole = UserRole.USER) {
+    await vipLimitsService.assertCanCreateGroup(creatorId, role);
+
     const db = getDb();
     const groupRef = db.collection('groups').doc();
     const groupId = groupRef.id;

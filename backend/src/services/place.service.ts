@@ -14,6 +14,7 @@ import { HttpError } from '../lib/http-error';
 import { checkContentModeration } from '../lib/moderation';
 import { notificationsService } from './notifications.service';
 import { settingsService } from './settings.service';
+import { vipLimitsService } from './vip-limits.service';
 import {
   ContentModerationStatus,
   ContentVisibility,
@@ -67,6 +68,45 @@ async function getPlaceRaw(id: string) {
   return { id: doc.id, ...doc.data() } as any;
 }
 
+type PlaceRatingStats = { avgRating: number; reviewCount: number };
+
+async function loadPlaceRatingMap(): Promise<Map<string, PlaceRatingStats>> {
+  const snapshot = await getDb().collection('place_reviews').get();
+  const ratingsByPlace = new Map<string, number[]>();
+
+  for (const doc of snapshot.docs) {
+    const data = doc.data() as { placeId?: string; rating?: number };
+    const placeId = data.placeId;
+    const rating = data.rating;
+    if (typeof placeId !== 'string' || typeof rating !== 'number' || rating < 1 || rating > 5) {
+      continue;
+    }
+    const list = ratingsByPlace.get(placeId) ?? [];
+    list.push(rating);
+    ratingsByPlace.set(placeId, list);
+  }
+
+  const result = new Map<string, PlaceRatingStats>();
+  for (const [placeId, ratings] of ratingsByPlace) {
+    const reviewCount = ratings.length;
+    const avgRating =
+      Math.round((ratings.reduce((sum, value) => sum + value, 0) / reviewCount) * 10) / 10;
+    result.set(placeId, { avgRating, reviewCount });
+  }
+  return result;
+}
+
+function attachRatingStats(
+  items: any[],
+  ratingMap: Map<string, PlaceRatingStats>,
+): any[] {
+  return items.map((item) => {
+    const stats = ratingMap.get(item.id);
+    if (!stats) return item;
+    return { ...item, avgRating: stats.avgRating, reviewCount: stats.reviewCount };
+  });
+}
+
 function isOwnerOrAdmin(item: any, viewerId?: string, viewerRole?: UserRole): boolean {
   return viewerRole === UserRole.ADMIN || (!!viewerId && item.authorId === viewerId);
 }
@@ -86,6 +126,7 @@ export const placeService = {
     lat?: number;
     lng?: number;
     radiusKm?: number;
+    minRating?: number;
     page?: number;
     limit?: number;
     publishedOnly?: boolean;
@@ -161,6 +202,16 @@ export const placeService = {
       );
     }
 
+    const ratingMap = await loadPlaceRatingMap();
+    items = attachRatingStats(items, ratingMap);
+
+    if (params.minRating != null && params.minRating > 0) {
+      items = items.filter((item) => {
+        const stats = ratingMap.get(item.id);
+        return stats != null && stats.avgRating >= params.minRating!;
+      });
+    }
+
     if (hasGeo && radiusM != null) {
       items = items
         .map((item) => {
@@ -192,6 +243,8 @@ export const placeService = {
   },
 
   async create(authorId: string, dto: CreatePlaceDto, role: UserRole = UserRole.USER) {
+    await vipLimitsService.assertCanCreatePlace(authorId, role);
+
     const docRef = getDb().collection('places').doc();
 
     if (dto.zone != null && !isValidPlaceZone(dto.zone)) {
@@ -258,6 +311,9 @@ export const placeService = {
     };
 
     await docRef.set(newPlace);
+    if (role !== UserRole.ADMIN) {
+      await vipLimitsService.recordPlaceCreated(authorId);
+    }
     return placeService.findOne(docRef.id, authorId, role);
   },
 

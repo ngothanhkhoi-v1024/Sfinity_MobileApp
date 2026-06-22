@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/route_names.dart';
 import '../../../../core/i18n/app_text.dart';
+import '../../../../core/widgets/vip_limit_dialogs.dart';
 import '../../data/models/friend_model.dart';
 import '../controllers/friendship_controller.dart';
 
@@ -321,6 +322,8 @@ class _UserProfileBottomSheetState extends State<UserProfileBottomSheet> {
                       ),
                     );
                   }
+                } else if (mounted) {
+                  VipLimitDialogs.handleFriendshipError(context, widget.ctrl.error);
                 }
               },
               icon: const Icon(Icons.check),
@@ -394,6 +397,8 @@ class _UserProfileBottomSheetState extends State<UserProfileBottomSheet> {
                     SnackBar(content: Text(l10n.friendRequestSent)),
                   );
                 }
+              } else if (mounted) {
+                VipLimitDialogs.handleFriendshipError(context, widget.ctrl.error);
               }
             },
             icon: const Icon(Icons.person_add_alt_1_rounded),

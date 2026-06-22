@@ -76,7 +76,7 @@ class VipBadge extends StatelessWidget {
           ),
           SizedBox(width: paddingH * 0.3),
           Text(
-            'PRO',
+            'VIP',
             style: TextStyle(
               fontSize: fontSize,
               fontWeight: FontWeight.w800,

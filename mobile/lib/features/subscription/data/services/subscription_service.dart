@@ -145,8 +145,57 @@ class SubscriptionService {
   }
 
   // -----------------------------------------------------------------------
-  // Helpers
+  // VNPay payment flow
   // -----------------------------------------------------------------------
+
+  /// Tạo yêu cầu thanh toán VNPay trên backend. Trả về paymentUrl để mở
+  /// trình duyệt thanh toán.
+  Future<VnpayPaymentInfo> createVnpayPayment({
+    required SubscriptionPlan plan,
+    required BillingCycle cycle,
+    String? bankCode,
+  }) async {
+    final res = await ApiClient.instance.post('/payments/vnpay/create', {
+      'planId': plan.id,
+      'cycle': cycle.name,
+      if (bankCode != null) 'method': bankCode,
+    });
+    return VnpayPaymentInfo(
+      orderId: res['orderId'] as String,
+      amount: (res['amount'] as num?)?.toInt() ?? 0,
+      paymentUrl: res['paymentUrl'] as String? ?? '',
+      orderInfo: res['orderInfo'] as String? ?? '',
+      expiresAt: _parseDate(res['expiresAt']),
+    );
+  }
+
+  /// Mở URL thanh toán VNPay bằng trình duyệt.
+  Future<bool> openVnpayPayment(VnpayPaymentInfo info) async {
+    try {
+      final uri = Uri.parse(info.paymentUrl);
+      final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      return ok;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Poll trạng thái giao dịch VNPay từ backend.
+  Future<VnpayTxStatusResult> checkVnpayTransactionStatus(String orderId) async {
+    final res = await ApiClient.instance.get('/payments/vnpay/status/$orderId');
+    return VnpayTxStatusResult(
+      orderId: res['orderId'] as String,
+      status: (res['status'] as String?) ?? 'PENDING',
+      amount: (res['amount'] as num?)?.toInt() ?? 0,
+      planId: res['planId'] as String?,
+      cycle: _parseCycle(res['cycle']),
+    );
+  }
+
+  /// Kiểm tra callback từ VNPay (deep link return).
+  static PaymentCallbackPayload? consumeVnpayCallback() {
+    return _lastCallback;
+  }
 
   static BillingCycle? _parseCycle(dynamic raw) {
     if (raw is String) {
@@ -189,6 +238,42 @@ class MoMoTxStatusResult {
   final BillingCycle? cycle;
 
   const MoMoTxStatusResult({
+    required this.orderId,
+    required this.status,
+    required this.amount,
+    this.planId,
+    this.cycle,
+  });
+
+  bool get isSuccess => status == 'SUCCESS';
+  bool get isFailed => status == 'FAILED' || status == 'CANCELED';
+  bool get isPending => status == 'PENDING';
+}
+
+class VnpayPaymentInfo {
+  final String orderId;
+  final int amount;
+  final String paymentUrl;
+  final String orderInfo;
+  final DateTime? expiresAt;
+
+  const VnpayPaymentInfo({
+    required this.orderId,
+    required this.amount,
+    required this.paymentUrl,
+    required this.orderInfo,
+    this.expiresAt,
+  });
+}
+
+class VnpayTxStatusResult {
+  final String orderId;
+  final String status; // PENDING | SUCCESS | FAILED | CANCELED
+  final int amount;
+  final String? planId;
+  final BillingCycle? cycle;
+
+  const VnpayTxStatusResult({
     required this.orderId,
     required this.status,
     required this.amount,
@@ -268,8 +353,9 @@ class SubscriptionStatus {
 
   int? get daysRemaining {
     if (expiresAt == null) return null;
-    final diff = expiresAt!.difference(DateTime.now()).inDays;
-    return diff < 0 ? 0 : diff;
+    final diff = expiresAt!.difference(DateTime.now());
+    if (diff.isNegative) return 0;
+    return (diff.inSeconds / 86400).ceil();
   }
 
   static BillingCycle? _cycleFromName(dynamic name) {

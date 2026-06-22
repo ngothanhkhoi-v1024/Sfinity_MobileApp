@@ -1,13 +1,17 @@
 import { getDb } from '../lib/firebase';
 import { HttpError } from '../lib/http-error';
+import { UserRole } from '../types/enums';
 import { usersService } from './users.service';
+import { vipLimitsService } from './vip-limits.service';
 
 export const friendshipService = {
   /** Gửi lời mời kết bạn */
-  async sendRequest(requesterId: string, addresseeId: string) {
+  async sendRequest(requesterId: string, addresseeId: string, role: UserRole = UserRole.USER) {
     if (requesterId === addresseeId) {
       throw new HttpError(400, 'Không thể gửi lời mời kết bạn cho chính mình.', 'Bad Request');
     }
+
+    await vipLimitsService.assertCanAddFriend(requesterId, role);
 
     const db = getDb();
     const key1 = `${requesterId}_${addresseeId}`;
@@ -57,7 +61,12 @@ export const friendshipService = {
   },
 
   /** Chấp nhận hoặc từ chối lời mời */
-  async respondRequest(friendshipId: string, userId: string, accept: boolean) {
+  async respondRequest(
+    friendshipId: string,
+    userId: string,
+    accept: boolean,
+    role: UserRole = UserRole.USER,
+  ) {
     const db = getDb();
     const ref = db.collection('friendships').doc(friendshipId);
     const doc = await ref.get();
@@ -68,6 +77,8 @@ export const friendshipService = {
     if (friendship.status !== 'PENDING') throw new HttpError(409, 'Lời mời đã được xử lý.', 'Conflict');
 
     if (accept) {
+      await vipLimitsService.assertCanAddFriend(userId, role);
+      await vipLimitsService.assertCanAddFriend(friendship.requesterId as string);
       const updated = { status: 'ACCEPTED', updatedAt: new Date() };
       await ref.update(updated);
       return { ...friendship, ...updated };

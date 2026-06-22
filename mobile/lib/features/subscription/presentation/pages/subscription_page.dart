@@ -3,11 +3,16 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../app.dart';
+import '../../../../core/constants/route_names.dart';
 import '../../../../core/i18n/app_text.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../data/models/subscription_plan.dart';
+import '../../data/services/plans_catalog_service.dart';
 import '../../data/services/subscription_service.dart';
 import '../widgets/vip_badge.dart';
+
+enum PaymentMethod { momo, vnpay }
 
 class SubscriptionPage extends StatefulWidget {
   const SubscriptionPage({super.key});
@@ -16,36 +21,57 @@ class SubscriptionPage extends StatefulWidget {
   State<SubscriptionPage> createState() => _SubscriptionPageState();
 }
 
-class _SubscriptionPageState extends State<SubscriptionPage> {
+class _SubscriptionPageState extends State<SubscriptionPage>
+    with WidgetsBindingObserver {
   final _service = SubscriptionService();
   late BillingCycle _selectedCycle;
   SubscriptionStatus? _currentStatus;
+  SubscriptionPlan _plan = SubscriptionPlan.pro;
   bool _isLoading = true;
   bool _isPurchasing = false;
   String? _pendingOrderId;
   Timer? _pollTimer;
+  PaymentMethod _selectedPaymentMethod = PaymentMethod.vnpay;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _selectedCycle = BillingCycle.monthly;
-    _loadStatus();
+    _loadPageData();
     _checkPendingCallback();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _pollTimer?.cancel();
     super.dispose();
   }
 
-  Future<void> _loadStatus() async {
-    final status = await _service.getStatus();
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // User quay về từ WebView — kiểm tra callback mới
+      _checkPendingCallback();
+    }
+  }
+
+  Future<void> _loadPageData() async {
+    final results = await Future.wait([
+      _service.getStatus(),
+      PlansCatalogService.fetchProPlan(),
+    ]);
+    await SfinityApp.userLimits.refresh();
     if (!mounted) return;
     setState(() {
-      _currentStatus = status;
+      _currentStatus = results[0] as SubscriptionStatus;
+      _plan = results[1] as SubscriptionPlan;
       _isLoading = false;
     });
+    try {
+      await SfinityApp.auth.init();
+    } catch (_) {}
   }
 
   /// Khi user quay về app từ MoMo qua deep link, cache sẽ có payload.
@@ -60,6 +86,11 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     setState(() => _selectedCycle = cycle);
   }
 
+  Future<void> _selectPaymentMethod(PaymentMethod method) async {
+    if (_isPurchasing) return;
+    setState(() => _selectedPaymentMethod = method);
+  }
+
   Future<void> _purchase() async {
     if (_isPurchasing) return;
     final confirm = await _showConfirmDialog();
@@ -67,19 +98,36 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
     setState(() => _isPurchasing = true);
     try {
-      final info = await _service.createMoMoPayment(
-        plan: SubscriptionPlan.pro,
-        cycle: _selectedCycle,
-      );
-      _pendingOrderId = info.orderId;
-
-      final opened = await _service.openMoMoPayment(info);
-      if (!opened && mounted) {
-        _showErrorDialog(
-          l10nError: 'cannotOpenPaymentApp',
+      if (_selectedPaymentMethod == PaymentMethod.vnpay) {
+        // VNPay flow - mở WebView trong app
+        final info = await _service.createVnpayPayment(
+          plan: _plan,
+          cycle: _selectedCycle,
         );
+        _pendingOrderId = info.orderId;
+
+        // Điều hướng sang WebView để xử lý thanh toán VNPay
+        if (mounted) {
+          context.push(RouteNames.vnpayWebview, extra: {
+            'paymentUrl': info.paymentUrl,
+            'orderId': info.orderId,
+          });
+        }
+      } else {
+        // MoMo flow
+        final info = await _service.createMoMoPayment(
+          plan: _plan,
+          cycle: _selectedCycle,
+        );
+        _pendingOrderId = info.orderId;
+
+        final opened = await _service.openMoMoPayment(info);
+        if (!opened && mounted) {
+          _showErrorDialog(
+            l10nError: 'cannotOpenPaymentApp',
+          );
+        }
       }
-      // Khi deep link quay lại, _checkPendingCallback sẽ xử lý tiếp.
     } catch (e) {
       if (!mounted) return;
       setState(() => _isPurchasing = false);
@@ -123,7 +171,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         if (status.isSuccess) {
           timer?.cancel();
           _pollTimer = null;
-          await _loadStatus();
+          await _loadPageData();
           if (!mounted) return;
           setState(() {
             _isPurchasing = false;
@@ -166,7 +214,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   Future<bool?> _showConfirmDialog() {
     final l10n = AppLocalizations.of(context);
     final langCode = l10n.locale.languageCode;
-    final plan = SubscriptionPlan.pro;
+    final plan = _plan;
     final price = _selectedCycle == BillingCycle.yearly
         ? plan.yearlyPrice
         : plan.monthlyPrice;
@@ -174,65 +222,126 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
     return showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          l10n.confirmPurchase,
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            color: AppColors.title(context),
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: AppColors.card(context),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.payment_rounded,
+                  size: 36,
+                  color: AppColors.primary,
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                l10n.confirmPurchase,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.title(context),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.chipBg(context),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.border(context)),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      '${plan.getName(langCode)} $cycleLabel',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.muted(context),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '$price VNĐ',
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                l10n.youWillBeRedirected,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppColors.muted(context),
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+                        side: BorderSide(color: AppColors.border(context)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          l10n.cancel,
+                          style: TextStyle(
+                            color: AppColors.title(context),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          l10n.payNow,
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '${plan.getName(langCode)} $cycleLabel',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: AppColors.title(context),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '$price VNĐ',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                color: AppColors.primary,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              l10n.youWillBeRedirected,
-              style: TextStyle(
-                fontSize: 13,
-                color: AppColors.muted(context),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(
-              l10n.cancel,
-              style: TextStyle(color: AppColors.muted(context)),
-            ),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: Text(l10n.payNow),
-          ),
-        ],
       ),
     );
   }
@@ -243,50 +352,69 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
+                color: AppColors.primary.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.check_circle_rounded,
-                size: 56,
+                size: 72,
                 color: AppColors.primary,
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             Text(
               l10n.congratulations,
               style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
                 color: AppColors.title(context),
               ),
             ),
             const SizedBox(height: 8),
             Text(
               langCode == 'vi'
-                  ? 'Bạn đã nâng cấp Pro thành công.'
-                  : 'You have successfully upgraded to Pro.',
+                  ? 'Bạn đã nâng cấp VIP thành công!'
+                  : 'You have successfully upgraded to VIP!',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 15,
                 color: AppColors.muted(context),
+                height: 1.4,
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 8),
+            Text(
+              langCode == 'vi'
+                  ? 'Từ bây giờ bạn có thể trải nghiệm các tính năng VIP.'
+                  : 'You can now enjoy all VIP features.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                color: AppColors.muted(context).withValues(alpha: 0.7),
+              ),
+            ),
+            const SizedBox(height: 28),
             SizedBox(
               width: double.infinity,
               child: FilledButton(
                 onPressed: () {
                   Navigator.pop(ctx);
-                  context.pop();
+                  if (context.mounted) {
+                    if (context.canPop()) {
+                      context.pop();
+                    } else {
+                      context.go(RouteNames.home);
+                    }
+                  }
                 },
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.primary,
@@ -295,7 +423,13 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-                child: Text(l10n.startEnjoying),
+                child: Text(
+                  langCode == 'vi' ? 'Bắt đầu trải nghiệm!' : 'Start Enjoying!',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
             ),
           ],
@@ -351,7 +485,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final langCode = l10n.locale.languageCode;
-    final plan = SubscriptionPlan.pro;
+    final plan = _plan;
 
     return Scaffold(
       backgroundColor: AppColors.scaffold(context),
@@ -360,7 +494,13 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
-          onPressed: () => context.pop(),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go(RouteNames.home);
+            }
+          },
         ),
         title: Text(
           l10n.upgradeVip,
@@ -384,9 +524,11 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                     plan: plan,
                     langCode: langCode,
                     selectedCycle: _selectedCycle,
+                    selectedPaymentMethod: _selectedPaymentMethod,
                     isVip: _currentStatus?.isValid ?? false,
                     isPurchasing: _isPurchasing,
                     onCycleChanged: _selectCycle,
+                    onPaymentMethodChanged: _selectPaymentMethod,
                     onSubscribe: _purchase,
                   ),
                 ],
@@ -427,7 +569,7 @@ class _CurrentPlanBanner extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  langCode == 'vi' ? 'Gói Pro hiện tại' : 'Current Pro plan',
+                  langCode == 'vi' ? 'Gói VIP hiện tại' : 'Current VIP plan',
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 14,
@@ -455,18 +597,22 @@ class _ProPlanCard extends StatelessWidget {
   final SubscriptionPlan plan;
   final String langCode;
   final BillingCycle selectedCycle;
+  final PaymentMethod selectedPaymentMethod;
   final bool isVip;
   final bool isPurchasing;
   final ValueChanged<BillingCycle> onCycleChanged;
+  final ValueChanged<PaymentMethod> onPaymentMethodChanged;
   final VoidCallback onSubscribe;
 
   const _ProPlanCard({
     required this.plan,
     required this.langCode,
     required this.selectedCycle,
+    required this.selectedPaymentMethod,
     required this.isVip,
     required this.isPurchasing,
     required this.onCycleChanged,
+    required this.onPaymentMethodChanged,
     required this.onSubscribe,
   });
 
@@ -562,6 +708,7 @@ class _ProPlanCard extends StatelessWidget {
               ],
               const SizedBox(height: 24),
               _buildCycleToggle(context),
+              // Chỉ sử dụng phương thức thanh toán VNPay mặc định (Ẩn chọn MoMo)
               const SizedBox(height: 28),
               const Divider(height: 1),
               const SizedBox(height: 20),
@@ -627,11 +774,15 @@ class _ProPlanCard extends StatelessWidget {
                           child: Text(
                             isVip
                                 ? (langCode == 'vi'
-                                    ? 'Đã là Pro'
-                                    : 'Already Pro')
-                                : (langCode == 'vi'
-                                    ? 'Nâng cấp Pro qua MoMo'
-                                    : 'Upgrade to Pro with MoMo'),
+                                    ? 'Đã là VIP'
+                                    : 'Already VIP')
+                                : (selectedPaymentMethod == PaymentMethod.vnpay
+                                    ? (langCode == 'vi'
+                                        ? 'Nâng cấp VIP qua VNPay'
+                                        : 'Upgrade to VIP with VNPay')
+                                    : (langCode == 'vi'
+                                        ? 'Nâng cấp VIP qua MoMo'
+                                        : 'Upgrade to VIP with MoMo')),
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
@@ -655,7 +806,11 @@ class _ProPlanCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      AppLocalizations.of(context).paymentSecureViaMoMo,
+                      selectedPaymentMethod == PaymentMethod.vnpay
+                          ? (langCode == 'vi'
+                              ? 'Thanh toán bảo mật qua VNPay'
+                              : 'Secure payment via VNPay')
+                          : AppLocalizations.of(context).paymentSecureViaMoMo,
                       style: TextStyle(
                         fontSize: 12,
                         color: AppColors.muted(context),

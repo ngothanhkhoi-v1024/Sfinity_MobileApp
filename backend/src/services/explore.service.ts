@@ -45,7 +45,7 @@ export const exploreService = {
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
 
-    const [recentCheckinsSnap, allCheckinsSnap, documentsRes] = await Promise.all([
+    const [recentCheckinsSnap, allCheckinsSnap, documentsRes, placesRes] = await Promise.all([
       getDb()
         .collection('place_checkins')
         .where('createdAt', '>=', weekAgo)
@@ -54,6 +54,11 @@ export const exploreService = {
       documentService.findAll({
         publishedOnly: true,
         limit: 200,
+        page: 1,
+      }),
+      placeService.findAll({
+        publishedOnly: true,
+        limit: 8,
         page: 1,
       }),
     ]);
@@ -91,6 +96,15 @@ export const exploreService = {
       )
     ).filter(Boolean);
 
+    const featuredPlaces =
+      trendingPlaces.length > 0
+        ? trendingPlaces
+        : placesRes.items.slice(0, 8).map((place: any) => ({
+            ...place,
+            recentCheckInCount: 0,
+            isRecentTrend: false,
+          }));
+
     const trendingDocuments = [...documentsRes.items]
       .filter((item: any) => item.type !== 'place')
       .sort(
@@ -107,7 +121,7 @@ export const exploreService = {
         author: item.author ?? null,
       }));
 
-    return { trendingPlaces, trendingDocuments };
+    return { trendingPlaces: featuredPlaces, trendingDocuments };
   },
 
   async getWeeklyStats(userId: string) {

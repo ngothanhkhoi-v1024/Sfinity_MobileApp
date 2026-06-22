@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/i18n/app_text.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../study_near_me/presentation/widgets/study_near_me_button.dart';
-import 'place_tag_chips.dart';
+import 'place_map_filter_panel.dart';
 import 'places_header_panel.dart';
 import 'places_search_field.dart';
 
@@ -18,6 +18,8 @@ class PlacesMapToolbar extends StatefulWidget {
     required this.onSearchChanged,
     required this.filterTags,
     required this.onFilterChanged,
+    required this.minRating,
+    required this.onMinRatingChanged,
     required this.studyNearMeLoading,
     required this.onStudyNearMe,
     this.highlightBanner,
@@ -34,6 +36,8 @@ class PlacesMapToolbar extends StatefulWidget {
   final ValueChanged<String> onSearchChanged;
   final Set<String> filterTags;
   final ValueChanged<Set<String>> onFilterChanged;
+  final int? minRating;
+  final ValueChanged<int?> onMinRatingChanged;
   final bool studyNearMeLoading;
   final VoidCallback onStudyNearMe;
   final Widget? highlightBanner;
@@ -124,7 +128,7 @@ class _PlacesMapToolbarState extends State<PlacesMapToolbar> {
                               Text(
                                 activeCount > 0
                                     ? l10n.activeFilters(activeCount)
-                                    : l10n.filterAmenities,
+                                    : l10n.mapFilters,
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
@@ -150,15 +154,11 @@ class _PlacesMapToolbarState extends State<PlacesMapToolbar> {
                     : CrossFadeState.showFirst,
                 duration: const Duration(milliseconds: 220),
                 firstChild: const SizedBox(width: double.infinity),
-                secondChild: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    PlaceTagFilterBar(
-                      selected: widget.filterTags,
-                      onChanged: widget.onFilterChanged,
-                    ),
-                    const SizedBox(height: 6),
-                  ],
+                secondChild: PlaceMapFilterPanel(
+                  selectedTags: widget.filterTags,
+                  onTagsChanged: widget.onFilterChanged,
+                  minRating: widget.minRating,
+                  onMinRatingChanged: widget.onMinRatingChanged,
                 ),
               ),
               if (widget.highlightBanner != null) widget.highlightBanner!,

@@ -3,6 +3,8 @@ import { HttpError } from '../lib/http-error';
 import { checkContentModeration, extractTextFromPdf } from '../lib/moderation';
 import { notificationsService } from './notifications.service';
 import { settingsService } from './settings.service';
+import { vipLimitsService } from './vip-limits.service';
+import { logger } from '../lib/logger';
 import { placeService } from './place.service';
 import {
   applyContentState,
@@ -83,6 +85,33 @@ async function enrichDocument(item: any) {
     }
   }
 
+  let avgRating = normalized.avgRating;
+  let reviewCount = normalized.reviewCount;
+
+  if (avgRating === undefined || reviewCount === undefined) {
+    const reviewsSnapshot = await getDb()
+      .collection('document_reviews')
+      .where('documentId', '==', normalized.id)
+      .get();
+    const ratings = reviewsSnapshot.docs
+      .map((doc) => doc.data().rating as number)
+      .filter((r) => typeof r === 'number' && r >= 1 && r <= 5);
+    reviewCount = ratings.length;
+    avgRating =
+      reviewCount > 0
+        ? Math.round((ratings.reduce((a, b) => a + b, 0) / reviewCount) * 10) / 10
+        : null;
+
+    await getDb()
+      .collection('documents')
+      .doc(normalized.id)
+      .update({
+        avgRating: avgRating ?? null,
+        reviewCount,
+      })
+      .catch((err) => logger.error({ err }, 'Error caching document rating'));
+  }
+
   return {
     ...normalized,
     id: normalized.id,
@@ -92,6 +121,8 @@ async function enrichDocument(item: any) {
     updatedAt: toDate(normalized.updatedAt),
     author,
     category,
+    avgRating: avgRating ?? null,
+    reviewCount: reviewCount ?? 0,
   };
 }
 
@@ -242,7 +273,7 @@ export const documentService = {
             textToScan += ` [PDF Content: ${pdfText}]`;
           }
         } catch (err) {
-          console.error('[PDF Extraction Error during Create]', err);
+          logger.error({ fileUrl: dto.fileUrl, err }, 'PDF Extraction Error during Create');
         }
       }
 
@@ -385,7 +416,7 @@ export const documentService = {
             textToScan += ` [PDF Content: ${pdfText}]`;
           }
         } catch (err) {
-          console.error('[PDF Extraction Error during Update]', err);
+          logger.error({ fileUrl, err }, 'PDF Extraction Error during Update');
         }
       }
 
@@ -425,6 +456,10 @@ export const documentService = {
   async incrementDownload(id: string, viewerId?: string, viewerRole?: UserRole) {
     await documentService.findOne(id, viewerId, viewerRole);
 
+    if (viewerId) {
+      await vipLimitsService.assertCanDownload(viewerId, viewerRole);
+    }
+
     const docRef = getDb().collection('documents').doc(id);
     const doc = await docRef.get();
     if (!doc.exists) {
@@ -447,6 +482,7 @@ export const documentService = {
       } catch {
         // Non-blocking: weekly stats should not fail downloads.
       }
+      await vipLimitsService.recordDownload(viewerId);
     }
 
     return documentService.findOne(id, viewerId, viewerRole);
