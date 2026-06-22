@@ -53,6 +53,26 @@ paymentRouter.post(
   }),
 );
 
+const handleGetTransactionStatus = async (req: any, res: any) => {
+  const orderId = req.params.orderId;
+  const tx = await subscriptionService.getTransaction(orderId);
+  if (!tx) {
+    throw new HttpError(404, 'Không tìm thấy giao dịch', 'Not Found');
+  }
+  if (tx.userId !== req.user!.sub) {
+    throw new HttpError(403, 'Forbidden', 'Forbidden');
+  }
+  res.json({
+    orderId: tx.orderId,
+    status: tx.status,
+    resultCode: tx.resultCode,
+    amount: tx.amount,
+    planId: tx.planId,
+    cycle: tx.cycle,
+    paidAt: tx.paidAt,
+  });
+};
+
 /**
  * GET /api/payments/momo/status/:orderId
  * App gọi sau khi deep link trở về từ MoMo để xác nhận giao dịch đã được IPN
@@ -61,25 +81,7 @@ paymentRouter.post(
 paymentRouter.get(
   '/momo/status/:orderId',
   jwtAuthMiddleware,
-  asyncHandler(async (req, res) => {
-    const orderId = req.params.orderId;
-    const tx = await subscriptionService.getTransaction(orderId);
-    if (!tx) {
-      throw new HttpError(404, 'Không tìm thấy giao dịch', 'Not Found');
-    }
-    if (tx.userId !== req.user!.sub) {
-      throw new HttpError(403, 'Forbidden', 'Forbidden');
-    }
-    res.json({
-      orderId: tx.orderId,
-      status: tx.status,
-      resultCode: tx.resultCode,
-      amount: tx.amount,
-      planId: tx.planId,
-      cycle: tx.cycle,
-      paidAt: tx.paidAt,
-    });
-  }),
+  asyncHandler(handleGetTransactionStatus),
 );
 
 /**
@@ -264,30 +266,8 @@ paymentRouter.post(
   }),
 );
 
-/**
- * GET /api/payments/vnpay/status/:orderId
- * App gọi để kiểm tra trạng thái giao dịch VNPay.
- */
 paymentRouter.get(
   '/vnpay/status/:orderId',
   jwtAuthMiddleware,
-  asyncHandler(async (req, res) => {
-    const orderId = req.params.orderId;
-    const tx = await subscriptionService.getTransaction(orderId);
-    if (!tx) {
-      throw new HttpError(404, 'Không tìm thấy giao dịch', 'Not Found');
-    }
-    if (tx.userId !== req.user!.sub) {
-      throw new HttpError(403, 'Forbidden', 'Forbidden');
-    }
-    res.json({
-      orderId: tx.orderId,
-      status: tx.status,
-      resultCode: tx.resultCode,
-      amount: tx.amount,
-      planId: tx.planId,
-      cycle: tx.cycle,
-      paidAt: tx.paidAt,
-    });
-  }),
+  asyncHandler(handleGetTransactionStatus),
 );

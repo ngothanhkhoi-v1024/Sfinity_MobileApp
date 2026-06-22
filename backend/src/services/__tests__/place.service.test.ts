@@ -32,7 +32,9 @@ const mockCollection = jest.fn().mockReturnValue({
   doc: mockDoc,
   get: jest.fn().mockResolvedValue({
     docs: [],
+    size: 0,
   }),
+  where: jest.fn().mockReturnThis(),
 });
 
 jest.mock('../../lib/firebase', () => ({
