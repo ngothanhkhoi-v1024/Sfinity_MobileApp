@@ -505,13 +505,23 @@ class HomeShellPageState extends State<HomeShellPage> {
             children: _pages,
           ),
           if (SfinityApp.auth.isAuthenticated)
-            Positioned.fill(
-              child: AssistantDraggableEntry(
-                showHint: _showContextHint,
-                onOpenChat: _openAssistantChat,
-                onDismissHint: _dismissContextHint,
-                bottomReserved: 88 + bottomInset,
-              ),
+            AnimatedBuilder(
+              animation: SfinityApp.assistantFabPositionManager,
+              builder: (context, _) {
+                if (!SfinityApp.assistantFabPositionManager.visible) {
+                  return const SizedBox.shrink();
+                }
+                return Positioned.fill(
+                  child: AssistantDraggableEntry(
+                    showHint: _showContextHint,
+                    onOpenChat: _openAssistantChat,
+                    onDismissHint: _dismissContextHint,
+                    onHideFab: () =>
+                        SfinityApp.assistantFabPositionManager.setVisible(false),
+                    bottomReserved: 88 + bottomInset,
+                  ),
+                );
+              },
             ),
         ],
       ),

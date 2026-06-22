@@ -118,6 +118,10 @@ class AppLocalizations {
       'assistantActionOpenMap': 'Mở bản đồ',
       'assistantVoiceInput': 'Nói với hải cẩu',
       'assistantSources': 'Nguồn',
+      'assistantShowFab': 'Hiện trợ lý hải cẩu',
+      'assistantShowFabSubtitle': 'Icon nổi trên màn hình để hỏi nhanh',
+      'assistantHideFab': 'Ẩn trợ lý',
+      'assistantDropToHide': 'Thả để ẩn',
       'reportViolationTitle': 'Báo cáo vi phạm',
       'type': 'Loại',
       'documentType': 'Tài liệu',
@@ -752,6 +756,10 @@ class AppLocalizations {
       'assistantActionOpenMap': 'Open map',
       'assistantVoiceInput': 'Talk to the seal',
       'assistantSources': 'Sources',
+      'assistantShowFab': 'Show seal assistant',
+      'assistantShowFabSubtitle': 'Floating button on screen for quick help',
+      'assistantHideFab': 'Hide assistant',
+      'assistantDropToHide': 'Drop to hide',
       'reportViolationTitle': 'Report violation',
       'type': 'Type',
       'documentType': 'Document',
@@ -1419,6 +1427,10 @@ class AppLocalizations {
   String get assistantActionOpenMap => _text('assistantActionOpenMap');
   String get assistantVoiceInput => _text('assistantVoiceInput');
   String get assistantSources => _text('assistantSources');
+  String get assistantShowFab => _text('assistantShowFab');
+  String get assistantShowFabSubtitle => _text('assistantShowFabSubtitle');
+  String get assistantHideFab => _text('assistantHideFab');
+  String get assistantDropToHide => _text('assistantDropToHide');
   String get reportSubmitted => _text('reportSubmitted');
   String get reportViolationTitle => _text('reportViolationTitle');
   String get type => _text('type');
