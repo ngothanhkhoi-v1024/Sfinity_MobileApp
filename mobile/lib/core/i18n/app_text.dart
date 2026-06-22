@@ -609,6 +609,15 @@ class AppLocalizations {
       'paymentSecureViaMoMo': 'Thanh toán bảo mật qua MoMo',
       'paymentCancelled': 'Đã hủy thanh toán',
       'upgradeWithMoMo': 'Nâng cấp Pro qua MoMo',
+      // QR payment
+      'scanQrWithMoMo': 'Mở app MoMo và quét mã QR để thanh toán',
+      'qrAmountLabel': 'Số tiền',
+      'qrOrderLabel': 'Mã đơn hàng',
+      'qrWaitingPayment': 'Đang chờ thanh toán...',
+      'qrPaymentSuccess': 'Thanh toán thành công!',
+      'qrCancel': 'Hủy thanh toán',
+      'qrCopyOrderId': 'Sao chép mã đơn',
+      'qrCopied': 'Đã sao chép mã đơn hàng',
     },
     'en': {
       'appName': 'Sfinity',
@@ -1228,6 +1237,15 @@ class AppLocalizations {
       'paymentSecureViaMoMo': 'Secure payment via MoMo',
       'paymentCancelled': 'Payment cancelled',
       'upgradeWithMoMo': 'Upgrade to Pro with MoMo',
+      // QR payment
+      'scanQrWithMoMo': 'Open the MoMo app and scan the QR code to pay',
+      'qrAmountLabel': 'Amount',
+      'qrOrderLabel': 'Order ID',
+      'qrWaitingPayment': 'Waiting for payment...',
+      'qrPaymentSuccess': 'Payment successful!',
+      'qrCancel': 'Cancel payment',
+      'qrCopyOrderId': 'Copy order ID',
+      'qrCopied': 'Order ID copied',
     },
   };
 
@@ -1900,6 +1918,14 @@ class AppLocalizations {
   String get paymentSecureViaMoMo => _text('paymentSecureViaMoMo');
   String get paymentCancelled => _text('paymentCancelled');
   String get upgradeWithMoMo => _text('upgradeWithMoMo');
+  String get scanQrWithMoMo => _text('scanQrWithMoMo');
+  String get qrAmountLabel => _text('qrAmountLabel');
+  String get qrOrderLabel => _text('qrOrderLabel');
+  String get qrWaitingPayment => _text('qrWaitingPayment');
+  String get qrPaymentSuccess => _text('qrPaymentSuccess');
+  String get qrCancel => _text('qrCancel');
+  String get qrCopyOrderId => _text('qrCopyOrderId');
+  String get qrCopied => _text('qrCopied');
   String savePercent(int percent) => _format('savePercent', {'{percent}': '$percent'});
   // Method for offline profile load
   String offlineProfileLoad(String err) => _format('offlineProfileLoad', {'{name}': err});

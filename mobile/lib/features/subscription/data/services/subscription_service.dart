@@ -75,14 +75,26 @@ class SubscriptionService {
   // MoMo payment flow
   // -----------------------------------------------------------------------
 
-  /// Tạo yêu cầu thanh toán MoMo trên backend. Trả về thông tin để mở URL.
+  /// Phương thức MoMo tạo thanh toán — chọn `qr` để hiển thị QR trong app,
+  /// `app` để mở app MoMo qua deeplink (mặc định cũ).
+  static const String momoMethodApp = 'captureWallet';
+  static const String momoMethodQr = 'payWithMethod';
+
+  /// Tạo yêu cầu thanh toán MoMo trên backend. Trả về thông tin để mở URL
+  /// hoặc hiển thị QR.
+  ///
+  /// [method] mặc định là `momoMethodQr` (`payWithMethod`) — MoMo trả về
+  /// `qrCodeUrl` để hiển thị QR trong app. Truyền `momoMethodApp`
+  /// (`captureWallet`) nếu muốn flow mở app MoMo cũ.
   Future<MoMoPaymentInfo> createMoMoPayment({
     required SubscriptionPlan plan,
     required BillingCycle cycle,
+    String? method,
   }) async {
     final res = await ApiClient.instance.post('/payments/momo/create', {
       'planId': plan.id,
       'cycle': cycle.name,
+      if (method != null) 'method': method,
     });
     return MoMoPaymentInfo(
       orderId: res['orderId'] as String,

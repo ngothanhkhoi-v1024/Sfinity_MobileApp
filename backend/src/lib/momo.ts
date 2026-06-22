@@ -6,9 +6,9 @@ import { config } from './config';
  * Tham khảo tài liệu MoMo v2:
  *   https://developers.momo.vn/v2/docs/payment/api/wallet/onetime/
  *
- * MoMo dùng chữ ký HMAC-SHA256 với secret key (raw, không encode base64).
+ * MoMo dùng chữ ký HMAC-SHA256 với secret key.
  * Raw signature string = nối các cặp `key=value` bằng `&`, **sắp xếp khóa
- * theo thứ tự alphabet** (không phải thứ tự khai báo).
+ * theo thứ tự alphabet**.
  */
 export function buildRawSignature(params: Record<string, string>): string {
   return Object.keys(params)
@@ -90,15 +90,27 @@ export async function createMomoPayment(
     partnerCode: config.momoPartnerCode,
     redirectUrl: config.momoRedirectUrl,
     requestId: input.requestId,
-    requestType: input.requestType ?? 'payWithMethod',
+    requestType: input.requestType ?? 'captureWallet', // Dùng captureWallet như code C# mẫu
   };
+
+  // Debug: Log config values to verify they're loaded correctly
+  console.log('[MoMo Config] partnerCode:', config.momoPartnerCode);
+  console.log('[MoMo Config] accessKey:', config.momoAccessKey);
+  console.log('[MoMo Config] secretKey length:', config.momoSecretKey.length);
+
   const signature = signWithSecret(buildRawSignature(signatureParams));
 
+  // MoMo v2 yêu cầu amount là số nguyên trong JSON body, KHÔNG phải string
   const body = {
     ...signatureParams,
+    amount: input.amount, // Gửi số nguyên, không phải string
     lang,
     signature,
   };
+
+  // Debug: Log request to MoMo
+  console.log('[MoMo] Request body:', JSON.stringify(body, null, 2));
+  console.log('[MoMo] Raw signature string:', buildRawSignature(signatureParams));
 
   const url = `${config.momoBaseUrl.replace(/\/+$/, '')}/v2/gateway/api/create`;
 
@@ -116,6 +128,10 @@ export async function createMomoPayment(
   }
 
   const data = (await res.json()) as Record<string, unknown>;
+
+  // Debug: Log response from MoMo
+  console.log('[MoMo] Response:', JSON.stringify(data, null, 2));
+
   return {
     payUrl: typeof data.payUrl === 'string' ? data.payUrl : '',
     deeplink: typeof data.deeplink === 'string' ? data.deeplink : undefined,

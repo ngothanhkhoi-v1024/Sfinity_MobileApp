@@ -47,6 +47,9 @@ export interface CreatePaymentInput {
   method?: 'captureWallet' | 'payWithMethod' | 'payWithATM' | 'payWithCC';
 }
 
+// Default requestType cho MoMo - dùng captureWallet để test
+const DEFAULT_MOMO_REQUEST_TYPE = 'captureWallet' as const;
+
 export interface CreatePaymentResult {
   orderId: string;
   requestId: string;
@@ -82,7 +85,8 @@ export const momoService = {
 
     const orderId = newMomoOrderId('sfvip');
     const requestId = newMomoOrderId('req');
-    const orderInfo = `Thanh toán gói ${plan.name} - ${input.cycle === 'yearly' ? '1 năm' : '1 tháng'} - Sfinity`;
+    // Dùng orderInfo ASCII cho signature MoMo (không dấu tiếng Việt)
+    const orderInfo = `Thanh toan goi ${plan.name} - ${input.cycle === 'yearly' ? '1 nam' : '1 thang'} - Sfinity`;
 
     await subscriptionService.createTransaction({
       orderId,
@@ -99,7 +103,7 @@ export const momoService = {
       requestId,
       amount,
       orderInfo,
-      requestType: input.method,
+      requestType: input.method ?? DEFAULT_MOMO_REQUEST_TYPE,
     });
 
     if (momoRes.resultCode !== 0 || !momoRes.payUrl) {
