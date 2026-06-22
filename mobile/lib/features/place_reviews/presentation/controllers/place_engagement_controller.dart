@@ -4,6 +4,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../places/presentation/widgets/place_cover_image_picker.dart';
+
 import '../../../../app.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../places/data/services/place_location_service.dart';
@@ -229,22 +231,24 @@ class PlaceEngagementController extends ChangeNotifier {
 
   Future<bool> pickAndUploadPhoto(String placeId) async {
     final picker = ImagePicker();
-    final picked = await picker.pickImage(
-      source: ImageSource.gallery,
+    final picked = await picker.pickMultiImage(
       maxWidth: 1920,
       imageQuality: 85,
+      limit: kMaxPlacePhotos,
     );
-    if (picked == null) return false;
+    if (picked.isEmpty) return false;
 
     submitting = true;
     error = null;
     notifyListeners();
 
     try {
-      await SfinityApp.placeEngagementRepository.uploadAndAddPhoto(
-        placeId,
-        imageFile: File(picked.path),
-      );
+      for (final item in picked) {
+        await SfinityApp.placeEngagementRepository.uploadAndAddPhoto(
+          placeId,
+          imageFile: File(item.path),
+        );
+      }
       await load(placeId);
       submitting = false;
       notifyListeners();

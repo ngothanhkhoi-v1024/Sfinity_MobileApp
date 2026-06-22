@@ -764,8 +764,8 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
     if (result != null) {
       await StudyNearMeResultsSheet.show(
         context,
-        result: result,
-        onRetry: _onStudyNearMe,
+        controller: _studyNearMeCtrl,
+        onRefresh: () => _studyNearMeCtrl.loadNearby(location: _ctrl.myLocation),
       );
     }
   }

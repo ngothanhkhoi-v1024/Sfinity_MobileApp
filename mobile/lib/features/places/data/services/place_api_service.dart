@@ -34,6 +34,10 @@ class PlaceApiService {
     return _api.get('/places/$id');
   }
 
+  Future<Map<String, dynamic>> getPlaceWeather(String id) {
+    return _api.get('/places/$id/weather');
+  }
+
   Future<Map<String, dynamic>> createPlace(Map<String, dynamic> payload) {
     return _api.post('/places', payload);
   }
