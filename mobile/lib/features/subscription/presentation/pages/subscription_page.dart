@@ -395,7 +395,13 @@ class _SubscriptionPageState extends State<SubscriptionPage>
               child: FilledButton(
                 onPressed: () {
                   Navigator.pop(ctx);
-                  context.pop();
+                  if (context.mounted) {
+                    if (context.canPop()) {
+                      context.pop();
+                    } else {
+                      context.go(RouteNames.home);
+                    }
+                  }
                 },
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.primary,
@@ -475,7 +481,13 @@ class _SubscriptionPageState extends State<SubscriptionPage>
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
-          onPressed: () => context.pop(),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go(RouteNames.home);
+            }
+          },
         ),
         title: Text(
           l10n.upgradeVip,

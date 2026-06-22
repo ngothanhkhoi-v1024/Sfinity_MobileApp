@@ -30,7 +30,15 @@ class ProfilePage extends StatelessWidget {
         final hasPassword = user?['hasPassword'] as bool? ?? false;
         final canChangeOrSetPassword =
             hasPassword || authProvider == 'google' || authProvider == 'facebook';
-        final isVip = user?['isVip'] == true;
+        final isVipDb = user?['isVip'] == true;
+        final vipExpiresAtStr = user?['vipExpiresAt']?.toString();
+        var isVip = isVipDb;
+        if (isVipDb && vipExpiresAtStr != null) {
+          final expiresAt = DateTime.tryParse(vipExpiresAtStr);
+          if (expiresAt != null && DateTime.now().isAfter(expiresAt)) {
+            isVip = false;
+          }
+        }
 
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
