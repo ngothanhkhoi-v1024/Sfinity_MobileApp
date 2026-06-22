@@ -83,7 +83,7 @@ export const vnpayService = {
     };
 
     // Chỉ thêm bankCode nếu có giá trị
-    if (input.bankCode && input.bankCode.isNotEmpty) {
+    if (input.bankCode && input.bankCode.length > 0) {
       paymentParams.vnp_BankCode = input.bankCode;
     }
 

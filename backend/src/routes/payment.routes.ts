@@ -124,16 +124,61 @@ paymentRouter.post(
 /**
  * GET /api/payments/vnpay/return
  * VNPay redirect user về URL này sau khi thanh toán.
- * Không yêu cầu JWT - xác thực bằng signature.
+ * Redirect thẳng về app qua deep link sfinity://
  */
 paymentRouter.get(
   '/vnpay/return',
   asyncHandler(async (req, res) => {
     const queryString = req.url.split('?')[1] || '';
-    const result = await vnpayService.handleReturn(queryString);
-    // Redirect về app với kết quả
-    const redirectUrl = `${config.vnpayReturnUrl}?success=${result.success}&orderId=${result.orderId}&message=${encodeURIComponent(result.message)}`;
-    res.redirect(redirectUrl);
+    const params = new URLSearchParams(queryString);
+
+    const vnp_ResponseCode = params.get('vnp_ResponseCode') || '';
+    const vnp_TxnRef = params.get('vnp_TxnRef') || '';
+    const vnp_TransactionStatus = params.get('vnp_TransactionStatus') || '';
+    const vnp_Amount = params.get('vnp_Amount') || '';
+
+    const deepLinkParams = new URLSearchParams({
+      orderId: vnp_TxnRef,
+      resultCode: vnp_ResponseCode,
+      message: vnp_ResponseCode === '00' && vnp_TransactionStatus === '00'
+        ? 'Thanh toan thanh cong'
+        : `Thanh toan that bai: ${vnp_ResponseCode}`,
+    });
+
+    const deepLink = `sfinity://payment-callback?${deepLinkParams.toString()}`;
+
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Redirecting...</title>
+  <style>
+    body { font-family: -apple-system, sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; margin:0; background:#f5f5f5; }
+    .msg { background:white; padding:32px; border-radius:16px; text-align:center; box-shadow:0 4px 24px rgba(0,0,0,.1); }
+    .msg h2 { margin:0 0 8px; color:#333; }
+    .msg p { margin:0; color:#666; font-size:14px; }
+  </style>
+</head>
+<body>
+  <div class="msg">
+    <h2>${vnp_ResponseCode === '00' && vnp_TransactionStatus === '00' ? 'Thanh toan thanh cong!' : 'Da nhan ket qua thanh toan'}</h2>
+    <p>Dang chuyen ve ung dung...</p>
+  </div>
+  <script>
+    setTimeout(function() {
+      var iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = '${deepLink}';
+      document.body.appendChild(iframe);
+      setTimeout(function() { window.location.href = '${deepLink}'; }, 800);
+    }, 300);
+  </script>
+</body>
+</html>`;
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(html);
   }),
 );
 

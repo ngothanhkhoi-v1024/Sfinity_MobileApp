@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sfinity - Thanh Toán VNPay</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      border-radius: 24px;
+      padding: 40px;
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+    .icon {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+      font-size: 40px;
+    }
+    .success .icon {
+      background: #d4edda;
+      color: #28a745;
+    }
+    .failed .icon {
+      background: #f8d7da;
+      color: #dc3545;
+    }
+    .pending .icon {
+      background: #fff3cd;
+      color: #ffc107;
+    }
+    h1 {
+      font-size: 24px;
+      color: #333;
+      margin-bottom: 12px;
+    }
+    p {
+      color: #666;
+      font-size: 16px;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+    .order-info {
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .order-info .label {
+      font-size: 12px;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .order-info .value {
+      font-size: 18px;
+      color: #333;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+    .btn {
+      display: inline-block;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 16px 32px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+      margin-top: 8px;
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+    }
+    .countdown {
+      margin-top: 16px;
+      font-size: 14px;
+      color: #999;
+    }
+    .spinner {
+      width: 60px;
+      height: 60px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 24px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="content">
+    <div class="spinner"></div>
+    <h1>Đang xử lý...</h1>
+    <p>Vui lòng đợi trong giây lát</p>
+  </div>
+
+  <script>
+    // Parse URL params (VNPay sends them via query string)
+    const params = new URLSearchParams(window.location.search);
+    const vnp_ResponseCode = params.get('vnp_ResponseCode');
+    const vnp_TxnRef = params.get('vnp_TxnRef');
+    const vnp_Amount = params.get('vnp_Amount');
+    const vnp_OrderInfo = params.get('vnp_OrderInfo');
+
+    // Format amount (VNPay sends amount * 100)
+    function formatAmount(amount) {
+      if (!amount) return '0';
+      const num = parseInt(amount) / 100;
+      return new Intl.NumberFormat('vi-VN').format(num) + ' đ';
+    }
+
+    // Determine status based on response code
+    let status = 'pending';
+    let title = 'Đang xử lý';
+    let message = 'Hệ thống đang xác nhận thanh toán của bạn...';
+
+    if (vnp_ResponseCode) {
+      if (vnp_ResponseCode === '00') {
+        status = 'success';
+        title = 'Thanh toán thành công!';
+        message = 'Cảm ơn bạn đã thanh toán. Gói VIP của bạn đã được kích hoạt.';
+      } else if (vnp_ResponseCode === '24') {
+        status = 'failed';
+        title = 'Thanh toán bị hủy';
+        message = 'Bạn đã hủy thanh toán. Bạn có thể thử lại.';
+      } else {
+        status = 'failed';
+        title = 'Thanh toán thất bại';
+        message = 'Đã xảy ra lỗi trong quá trình thanh toán. Mã lỗi: ' + vnp_ResponseCode;
+      }
+    }
+
+    // SVG icons
+    const iconSuccess = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+    const iconFailed = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+    const iconPending = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>';
+
+    const iconSvg = status === 'success' ? iconSuccess : status === 'failed' ? iconFailed : iconPending;
+
+    // Build deep link to return to app.
+    // App expects: sfinity://payment-callback?orderId=...&resultCode=...&message=...
+    const deepLink = 'sfinity://payment-callback'
+      + '?orderId=' + encodeURIComponent(vnp_TxnRef || '')
+      + '&resultCode=' + encodeURIComponent(vnp_ResponseCode || '')
+      + '&message=' + encodeURIComponent(status === 'success' ? 'Thanh toán thành công' : (status === 'failed' ? title : ''));
+
+    // Build result URL for web fallback (no app installed)
+    const resultParams = new URLSearchParams({
+      success: status === 'success' ? 'true' : 'false',
+      code: vnp_ResponseCode || '',
+      orderId: vnp_TxnRef || '',
+    }).toString();
+    const resultUrl = 'sfinity://payment-result?' + resultParams;
+
+    document.getElementById('content').className = 'container ' + status;
+    document.getElementById('content').innerHTML = `
+      <div class="icon">${iconSvg}</div>
+      <h1>${title}</h1>
+      <p>${message}</p>
+      ${vnp_Amount ? '<div class="order-info"><div class="label">Số tiền</div><div class="value">' + formatAmount(vnp_Amount) + '</div></div>' : ''}
+      ${vnp_TxnRef ? '<div class="order-info"><div class="label">Mã giao dịch</div><div class="value">' + vnp_TxnRef + '</div></div>' : ''}
+      <a href="${deepLink}" class="btn" id="returnBtn"> Quay lại ứng dụng </a>
+      <div class="countdown" id="countdownText">Tự động chuyển về app sau <span id="countdown">5</span> giây...</div>
+    `;
+
+    // Use iframe trick to open custom scheme on mobile browsers.
+    // window.location.href often fails on mobile because browsers block
+    // auto-navigation to unverified custom schemes.
+    function tryOpenApp(url) {
+      var iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = url;
+      document.body.appendChild(iframe);
+      setTimeout(function() { document.body.removeChild(iframe); }, 1000);
+    }
+
+    // Countdown and redirect
+    let count = 5;
+    const countdownEl = document.getElementById('countdown');
+    const countdownText = document.getElementById('countdownText');
+    const interval = setInterval(function() {
+      count--;
+      if (countdownEl) countdownEl.textContent = count;
+      if (count <= 0) {
+        clearInterval(interval);
+        if (countdownText) countdownText.style.display = 'none';
+        tryOpenApp(deepLink);
+        // Fallback: try standard location change after iframe attempt
+        setTimeout(function() { window.location.href = resultUrl; }, 800);
+      }
+    }, 1000);
+
+    // Try to open app immediately via iframe
+    setTimeout(function() { tryOpenApp(deepLink); }, 500);
+  </script>
+</body>
+</html>
