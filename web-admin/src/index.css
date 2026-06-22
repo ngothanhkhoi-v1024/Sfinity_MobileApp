@@ -318,6 +318,198 @@ body {
   margin-top: 4px;
 }
 
+.stat-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.stat-card-top .stat-card-icon {
+  margin-bottom: 0;
+}
+
+.stat-card-hint {
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
+.stat-card--hero .stat-card-value {
+  font-size: 32px;
+}
+
+.stat-card--hero .ant-card-body {
+  padding: 22px 22px !important;
+}
+
+/* Dashboard */
+.dashboard-page {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.dashboard-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 320px;
+}
+
+.dashboard-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.dashboard-range-picker {
+  min-width: 260px;
+}
+
+.dashboard-filter-banner {
+  margin-bottom: 24px;
+  border-radius: 16px !important;
+  border: 1px solid #e2e8f0 !important;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+}
+
+.dashboard-filter-banner .ant-card-body {
+  padding: 18px 22px !important;
+}
+
+.dashboard-filter-banner__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.dashboard-filter-banner__label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+
+.dashboard-filter-banner__value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.dashboard-filter-banner__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dashboard-chip {
+  font-size: 12px;
+  color: #64748b;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  padding: 6px 12px;
+}
+
+.dashboard-chip strong {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.dashboard-section {
+  margin-bottom: 24px;
+}
+
+.dashboard-section__title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+  margin-bottom: 12px;
+}
+
+.dashboard-chart-card__header {
+  margin-bottom: 16px;
+}
+
+.dashboard-chart-card__title {
+  margin: 0 !important;
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+
+.dashboard-chart-card__subtitle {
+  display: block;
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.dashboard-insights {
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-insight-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.dashboard-insight-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.dashboard-insight-row strong {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.dashboard-chart-empty {
+  height: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.dashboard-chart-empty .anticon {
+  font-size: 32px;
+}
+
+.dashboard-chart-empty--sm {
+  height: 260px;
+}
+
+.dashboard-empty {
+  text-align: center;
+  padding: 48px !important;
+}
+
 /* Page header */
 .page-header {
   margin-bottom: 24px;
@@ -450,6 +642,41 @@ body {
 }
 
 [data-theme='dark'] .stat-card-label {
+  color: #94a3b8 !important;
+}
+
+[data-theme='dark'] .stat-card-hint {
+  background: #222 !important;
+  border-color: #333 !important;
+  color: #94a3b8 !important;
+}
+
+[data-theme='dark'] .dashboard-filter-banner {
+  background: linear-gradient(135deg, #1a1a1a 0%, #141414 100%) !important;
+  border-color: #2d2d2d !important;
+}
+
+[data-theme='dark'] .dashboard-filter-banner__value {
+  color: #f8fafc !important;
+}
+
+[data-theme='dark'] .dashboard-chip {
+  background: #222 !important;
+  border-color: #333 !important;
+  color: #94a3b8 !important;
+}
+
+[data-theme='dark'] .dashboard-chip strong {
+  color: #f8fafc !important;
+}
+
+[data-theme='dark'] .dashboard-section__title,
+[data-theme='dark'] .dashboard-chart-card__title {
+  color: #f8fafc !important;
+}
+
+[data-theme='dark'] .dashboard-insight-row {
+  border-bottom-color: #2d2d2d !important;
   color: #94a3b8 !important;
 }
 
