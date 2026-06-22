@@ -18,6 +18,26 @@ function removeDiacritics(str: string): string {
     .replace(/Đ/g, 'D');
 }
 
+function isSafeUrl(urlStr: string): boolean {
+  try {
+    const parsed = new URL(urlStr);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return false;
+    }
+    const hostname = parsed.hostname.toLowerCase();
+    const allowedDomains = [
+      'firebasestorage.googleapis.com',
+      'storage.googleapis.com',
+      'localhost',
+      '127.0.0.1',
+      '10.0.2.2',
+    ];
+    return allowedDomains.some((domain) => hostname === domain || hostname.endsWith('.' + domain));
+  } catch {
+    return false;
+  }
+}
+
 function localProfanityCheck(text: string): ModerationResult | null {
   const lowercaseText = text.toLowerCase();
   const normalizedText = removeDiacritics(lowercaseText);
@@ -216,6 +236,10 @@ Hãy trả về duy nhất một đối tượng JSON có định dạng sau:
  * @param pdfUrl URL liên kết trực tiếp của file PDF
  */
 export async function extractTextFromPdf(pdfUrl: string): Promise<string> {
+  if (!isSafeUrl(pdfUrl)) {
+    logger.error({ pdfUrl }, 'PDF Download blocked: URL is not safe (SSRF protection)');
+    return '';
+  }
   try {
     const response = await fetch(pdfUrl);
     if (!response.ok) {
@@ -291,6 +315,10 @@ async function fetchImageAsBase64(
         base64: fromAdmin.buffer.toString('base64'),
         mimeType: fromAdmin.mimeType,
       };
+    }
+
+    if (!isSafeUrl(imageUrl)) {
+      return { error: 'Image URL is not safe (SSRF protection)' };
     }
 
     const controller = new AbortController();
