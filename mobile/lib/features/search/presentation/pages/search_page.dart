@@ -7,6 +7,7 @@ import '../../../../core/network/api_client.dart';
 import '../../../../core/i18n/app_text.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../document/presentation/widgets/document_card.dart';
+import '../../../../shared/widgets/voice_search_suffix.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -308,18 +309,17 @@ class _SearchPageState extends State<SearchPage> {
                 decoration: InputDecoration(
                   hintText: l10n.quickLookupHint,
                   prefixIcon: Icon(Icons.manage_search_rounded, color: AppColors.muted(context)),
-                  suffixIcon: _query.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear_rounded, size: 20),
-                          onPressed: () {
-                            _query.clear();
-                            setState(() {
-                              _results = [];
-                              _hasSearched = false;
-                            });
-                          },
-                        )
-                      : null,
+                  suffixIcon: VoiceSearchSuffix(
+                    controller: _query,
+                    onChanged: (_) => setState(() {}),
+                    onSubmitted: (text) => _search(customQuery: text),
+                    onClear: () {
+                      setState(() {
+                        _results = [];
+                        _hasSearched = false;
+                      });
+                    },
+                  ),
                   border: InputBorder.none,
                   enabledBorder: InputBorder.none,
                   focusedBorder: InputBorder.none,

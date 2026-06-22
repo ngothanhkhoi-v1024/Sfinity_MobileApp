@@ -19,4 +19,16 @@ export const config = {
   geminiApiKey: process.env.GEMINI_API_KEY, // Reload triggered v2
   nodeEnv: process.env.NODE_ENV ?? 'development',
   logLevel: process.env.LOG_LEVEL ?? 'info',
+  geminiModel: process.env.GEMINI_MODEL ?? 'gemini-2.5-flash',
+  momoEnv: process.env.MOMO_ENV ?? 'sandbox',
+  momoPartnerCode: process.env.MOMO_PARTNER_CODE ?? '',
+  momoAccessKey: process.env.MOMO_ACCESS_KEY ?? '',
+  momoSecretKey: process.env.MOMO_SECRET_KEY ?? '',
+  momoBaseUrl:
+    process.env.MOMO_BASE_URL ??
+    (process.env.MOMO_ENV === 'production'
+      ? 'https://payment.momo.vn'
+      : 'https://test-payment.momo.vn'),
+  momoRedirectUrl: process.env.MOMO_REDIRECT_URL ?? 'sfinity://payment-callback',
+  momoIpnUrl: process.env.MOMO_IPN_URL ?? '',
 } as const;

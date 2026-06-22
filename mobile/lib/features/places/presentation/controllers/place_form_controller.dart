@@ -9,6 +9,7 @@ import '../../../../core/constants/map_config.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/services/geocoding_service.dart';
 import '../../data/models/place_model.dart';
+import '../widgets/place_cover_image_picker.dart';
 
 class PlaceFormController extends ChangeNotifier {
   PlaceFormController({
@@ -29,8 +30,9 @@ class PlaceFormController extends ChangeNotifier {
   bool loadingPlace = false;
   bool geocodingAddress = false;
   List<GeocodingResult> searchResults = [];
-  File? pickedCoverImage;
-  String? coverPreviewUrl;
+  final List<File> pickedImages = [];
+  final List<String> existingPhotoUrls = [];
+  static const maxPhotos = kMaxPlacePhotos;
 
   Future<void> loadForEdit(String placeId) async {
     loadingPlace = true;
@@ -50,7 +52,7 @@ class PlaceFormController extends ChangeNotifier {
       if (address == null || address!.isEmpty) {
         await resolveAddress(picked);
       }
-      await _loadCoverPreview(placeId);
+      await _loadExistingPhotos(placeId);
     } on DioException catch (e) {
       throw ApiClient.instance.errorMessage(e);
     } finally {
@@ -67,26 +69,34 @@ class PlaceFormController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> _loadCoverPreview(String placeId) async {
+  Future<void> _loadExistingPhotos(String placeId) async {
     try {
       final result = await SfinityApp.placeEngagementRepository.getPhotos(placeId);
-      if (result.photos.isNotEmpty) {
-        coverPreviewUrl = result.photos.first.imageUrl;
-      }
+      existingPhotoUrls
+        ..clear()
+        ..addAll(result.photos.map((p) => p.imageUrl));
     } catch (_) {}
   }
 
-  void setPickedCover(File? file) {
-    pickedCoverImage = file;
-    if (file != null) {
-      coverPreviewUrl = null;
-    }
+  int get remainingPhotoSlots =>
+      maxPhotos - existingPhotoUrls.length - pickedImages.length;
+
+  void addPickedImages(List<File> files) {
+    if (files.isEmpty) return;
+    final room = remainingPhotoSlots;
+    if (room <= 0) return;
+    pickedImages.addAll(files.take(room));
     notifyListeners();
   }
 
-  void clearCover() {
-    pickedCoverImage = null;
-    coverPreviewUrl = null;
+  void removePickedAt(int index) {
+    if (index < 0 || index >= pickedImages.length) return;
+    pickedImages.removeAt(index);
+    notifyListeners();
+  }
+
+  void clearPickedImages() {
+    pickedImages.clear();
     notifyListeners();
   }
 
@@ -170,12 +180,13 @@ class PlaceFormController extends ChangeNotifier {
         resultingPlaceId = place.id;
       }
 
-      if (pickedCoverImage != null) {
+      for (final image in pickedImages) {
         await SfinityApp.placeEngagementRepository.uploadAndAddPhoto(
           resultingPlaceId,
-          imageFile: pickedCoverImage!,
+          imageFile: image,
         );
       }
+      pickedImages.clear();
     } on DioException catch (e) {
       throw ApiClient.instance.errorMessage(e);
     } finally {

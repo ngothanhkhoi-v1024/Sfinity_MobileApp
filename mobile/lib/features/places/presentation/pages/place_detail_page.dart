@@ -13,8 +13,9 @@ import '../../../place_reviews/presentation/widgets/place_rating_section.dart';
 import '../../data/models/place_model.dart';
 import '../controllers/place_detail_controller.dart';
 import '../places_map_focus.dart' show PlacesMapFocus, PlacesMapFocusSource;
-import '../widgets/place_detail_photo_carousel.dart';
+import '../widgets/place_detail_photo_carousel.dart' show PlaceDetailPhotoCarousel, showPlacePhotoViewer;
 import '../widgets/place_directions_section.dart';
+import '../widgets/place_weather_section.dart';
 import '../widgets/place_tag_chips.dart';
 import '../../../../core/theme/app_colors.dart';
 
@@ -287,13 +288,59 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: [
-            PlaceDetailPhotoCarousel(photos: photos),
+            PlaceDetailPhotoCarousel(
+              key: ValueKey(photos.map((p) => p.id).join(',')),
+              photos: photos,
+            ),
+            if (photos.length > 1) ...[
+              const SizedBox(height: 4),
+              SizedBox(
+                height: 72,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: photos.length,
+                  separatorBuilder: (_, index) => const SizedBox(width: 8),
+                  itemBuilder: (context, index) {
+                    final url = photos[index].imageUrl;
+                    return GestureDetector(
+                      onTap: () => showPlacePhotoViewer(
+                        context,
+                        photos.map((p) => p.imageUrl).toList(),
+                        initialIndex: index,
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.network(
+                          url,
+                          width: 72,
+                          height: 72,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, e, s) => Container(
+                            width: 72,
+                            color: isDark ? const Color(0xFF333333) : const Color(0xFFE8E4DE),
+                            child: const Icon(Icons.broken_image_outlined, size: 20),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
             _PlaceInfoCard(
               place: place,
               theme: theme,
               isDark: isDark,
               primary: primary,
             ),
+            if (place.latitude != null && place.longitude != null) ...[
+              const SizedBox(height: 12),
+              PlaceWeatherSection(
+                placeId: widget.placeId,
+                isDark: isDark,
+              ),
+            ],
             const SizedBox(height: 16),
             if (showCommunitySave) ...[
               _SaveCommunityPlaceButton(
