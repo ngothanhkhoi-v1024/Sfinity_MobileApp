@@ -41,14 +41,14 @@ class GroupEmptyState extends StatelessWidget {
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
               textAlign: TextAlign.center,
             ),
-            if (canCreateGroup) ...[
-              const SizedBox(height: 24),
-              FilledButton.icon(
-                onPressed: onCreateGroup,
-                icon: const Icon(Icons.add),
-                label: Text(l10n.createGroupBtn),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: onCreateGroup,
+              icon: Icon(
+                canCreateGroup ? Icons.add : Icons.workspace_premium_outlined,
               ),
-            ],
+              label: Text(l10n.createGroupBtn),
+            ),
           ],
         ),
       ),

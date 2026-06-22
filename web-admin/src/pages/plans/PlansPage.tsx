@@ -18,7 +18,6 @@ import {
   fetchPlanSettings,
   updatePlanSettings,
   type FreeLimitsConfig,
-  type PlanConfig,
   type PlanSettings,
 } from '@/api/plans';
 import { formatVnd } from '@/api/subscriptions';
@@ -30,7 +29,6 @@ const { Title, Text } = Typography;
 interface FormValues {
   pro: {
     name: string;
-    nameVi: string;
     monthlyPrice: number;
     yearlyPrice: number;
     enabled: boolean;
@@ -49,8 +47,7 @@ function toFormValues(settings: PlanSettings): FormValues {
   };
   return {
     pro: {
-      name: pro.name,
-      nameVi: pro.nameVi,
+      name: pro.nameVi?.trim() || pro.name,
       monthlyPrice: pro.monthlyPrice,
       yearlyPrice: pro.yearlyPrice,
       enabled: pro.enabled,
@@ -86,7 +83,13 @@ export function PlansPage() {
       setSaving(true);
       await updatePlanSettings({
         plans: {
-          pro: values.pro as Partial<PlanConfig>,
+          pro: {
+            name: values.pro.name,
+            nameVi: values.pro.name,
+            monthlyPrice: values.pro.monthlyPrice,
+            yearlyPrice: values.pro.yearlyPrice,
+            enabled: values.pro.enabled,
+          },
         },
         freeLimits: values.freeLimits,
       });
@@ -132,18 +135,9 @@ export function PlansPage() {
                 </div>
               </div>
 
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item name={['pro', 'name']} label="Tên gói (EN)" rules={[{ required: true }]}>
-                    <Input />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item name={['pro', 'nameVi']} label="Tên gói (VI)" rules={[{ required: true }]}>
-                    <Input />
-                  </Form.Item>
-                </Col>
-              </Row>
+              <Form.Item name={['pro', 'name']} label="Tên gói" rules={[{ required: true }]}>
+                <Input placeholder="VD: VIP Pro" />
+              </Form.Item>
 
               <Row gutter={16}>
                 <Col span={12}>

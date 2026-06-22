@@ -44,6 +44,17 @@ abstract final class VipLimitDialogs {
     );
   }
 
+  static void onCreateGroupPressed(
+    BuildContext context, {
+    required bool canCreateGroup,
+  }) {
+    if (!canCreateGroup) {
+      showLimitReached(context, message: context.l10n.limitCreateGroup);
+      return;
+    }
+    context.push(RouteNames.groupCreate);
+  }
+
   static bool handleFriendshipError(BuildContext context, String? error) {
     if (error == 'FRIEND_LIMIT') {
       showLimitReached(context, message: context.l10n.limitFriendsReached);
