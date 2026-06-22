@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { config } from '../lib/config';
 import { getDb, getFirebaseAuth } from '../lib/firebase';
 import { HttpError } from '../lib/http-error';
+import { logger } from '../lib/logger';
 import { AuthProvider, UserRole, UserStatus } from '../types/enums';
 import { mailService } from './mail.service';
 import type {
@@ -101,7 +102,7 @@ export const authService = {
   async login(dto: LoginDto, adminOnly = false) {
     const email = dto.email.trim().toLowerCase();
     const snapshot = await getDb().collection('users').where('email', '==', email).limit(1).get();
-    
+
     if (snapshot.empty) {
       throw new HttpError(401, 'Email hoặc mật khẩu không đúng', 'Unauthorized');
     }
@@ -142,7 +143,7 @@ export const authService = {
         }
       } catch (err: any) {
         if (err instanceof HttpError) throw err;
-        console.error('Lỗi kiểm tra trạng thái xác thực email từ Firebase:', err);
+        logger.error({ msg: 'Lỗi kiểm tra trạng thái xác thực email từ Firebase', err });
       }
     }
 
@@ -168,10 +169,15 @@ export const authService = {
     }
 
     const authProvider = mapFirebaseProvider(tokenProvider);
-    const email = decoded.email?.trim().toLowerCase();
+    let email = decoded.email?.trim().toLowerCase();
 
     if (!email) {
-      throw new HttpError(400, 'Firebase token không có email', 'Bad Request');
+      // Fallback: dùng Firebase UID làm email placeholder cho Facebook login
+      if (decoded.firebase?.sign_in_provider === 'facebook.com') {
+        email = `fb_${decoded.uid}@sfinity.facebook`;
+      } else {
+        throw new HttpError(400, 'Firebase token không có email', 'Bad Request');
+      }
     }
 
     const displayName =
@@ -375,9 +381,9 @@ export const authService = {
       await getFirebaseAuth().updateUser(firebaseUser.uid, {
         password: dto.newPassword,
       });
-      console.log(`Đã đồng bộ cập nhật mật khẩu mới sang Firebase Auth cho: ${user.email}`);
+      logger.info({ msg: 'Đã đồng bộ cập nhật mật khẩu mới sang Firebase Auth', email: user.email });
     } catch (err) {
-      console.error('Không thể đồng bộ cập nhật mật khẩu sang Firebase Auth:', err);
+      logger.error({ msg: 'Không thể đồng bộ cập nhật mật khẩu sang Firebase Auth', err });
     }
 
     await userRef.update({
@@ -429,7 +435,7 @@ export const authService = {
     try {
       await mailService.sendForgotPasswordOtp(email, user.name, code);
     } catch (err) {
-      console.error('Lỗi khi gửi email lấy lại mật khẩu OTP:', err);
+      logger.error({ msg: 'Lỗi khi gửi email lấy lại mật khẩu OTP', err });
     }
 
     return {
@@ -441,7 +447,7 @@ export const authService = {
   async resetPassword(dto: ResetPasswordDto) {
     const email = dto.email.trim().toLowerCase();
     const resetsColl = getDb().collection('password_resets');
-    
+
     // Fetch resets for email & code to check in memory
     const snapshot = await resetsColl
       .where('email', '==', email)
@@ -454,7 +460,7 @@ export const authService = {
       const records = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as any));
       // Sort desc by createdAt to get latest
       records.sort((a, b) => toDate(b.createdAt).getTime() - toDate(a.createdAt).getTime());
-      
+
       const latest = records[0];
       if (toDate(latest.expiresAt).getTime() > Date.now()) {
         record = latest;
@@ -480,9 +486,9 @@ export const authService = {
       await getFirebaseAuth().updateUser(firebaseUser.uid, {
         password: dto.newPassword,
       });
-      console.log(`Đã đồng bộ cập nhật mật khẩu mới sang Firebase Auth cho: ${email}`);
+      logger.info({ msg: 'Đã đồng bộ cập nhật mật khẩu mới sang Firebase Auth', email });
     } catch (err) {
-      console.error('Không thể đồng bộ cập nhật mật khẩu sang Firebase Auth:', err);
+      logger.error({ msg: 'Không thể đồng bộ cập nhật mật khẩu sang Firebase Auth', err });
     }
 
     const batch = getDb().batch();

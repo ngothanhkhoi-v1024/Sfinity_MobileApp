@@ -2,6 +2,7 @@ const { PDFParse } = require('pdf-parse');
 import { config } from './config';
 import { downloadFirebaseStorageObject } from './firebase-storage';
 import { extractGeminiText, geminiGenerateContent } from './gemini-client';
+import { logger } from './logger';
 
 export interface ModerationResult {
   flagged: boolean;
@@ -113,6 +114,7 @@ Hãy trả về duy nhất một đối tượng JSON có định dạng sau:
     });
 
     if (!result.ok) {
+      logger.error({ status: result.status, error: result.error }, 'Gemini API Error');
       return {
         flagged: false,
         categories: [],
@@ -129,7 +131,7 @@ Hãy trả về duy nhất một đối tượng JSON có định dạng sau:
       };
     }
   } catch (error: any) {
-    console.error('[Gemini API Exception] Failed to moderate text:', error);
+    logger.error({ err: error }, 'Gemini API Exception: Failed to moderate text');
     return {
       flagged: false,
       categories: [],
@@ -177,7 +179,7 @@ Hãy trả về duy nhất một đối tượng JSON có định dạng sau:
 
     if (!response.ok) {
       const errorDetail = await response.text().catch(() => '');
-      console.error('[OpenAI Chat Moderation Error] API error status:', response.status, errorDetail);
+      logger.error({ status: response.status, errorDetail }, 'OpenAI Chat Moderation Error');
       return {
         flagged: false,
         categories: [],
@@ -198,7 +200,7 @@ Hãy trả về duy nhất một đối tượng JSON có định dạng sau:
       };
     }
   } catch (error: any) {
-    console.error('[OpenAI Chat Moderation Exception] Failed to moderate text:', error);
+    logger.error({ err: error }, 'OpenAI Chat Moderation Exception: Failed to moderate text');
     return {
       flagged: false,
       categories: [],
@@ -217,7 +219,7 @@ export async function extractTextFromPdf(pdfUrl: string): Promise<string> {
   try {
     const response = await fetch(pdfUrl);
     if (!response.ok) {
-      console.error('[PDF Download Error] Failed to fetch PDF from URL:', pdfUrl, 'Status:', response.status);
+      logger.error({ pdfUrl, status: response.status }, 'PDF Download Error: Failed to fetch PDF from URL');
       return '';
     }
 
@@ -232,7 +234,7 @@ export async function extractTextFromPdf(pdfUrl: string): Promise<string> {
     // Dọn dẹp khoảng trắng thừa và cắt ngắn để tránh tràn token OpenAI
     return text.replace(/\s+/g, ' ').trim().slice(0, 15000);
   } catch (error) {
-    console.error('[PDF Extraction Error] Failed to extract text from PDF:', error);
+    logger.error({ err: error }, 'PDF Extraction Error: Failed to extract text from PDF');
     return '';
   }
 }

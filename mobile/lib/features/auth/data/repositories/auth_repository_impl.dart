@@ -6,6 +6,7 @@ import '../services/auth_local_database.dart';
 import '../services/firebase_auth_service.dart';
 import '../services/firestore_user_service.dart';
 import '../services/social_auth_service.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   AuthRepositoryImpl({
@@ -101,22 +102,6 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> loginWithFacebook() async {
-    final accessToken = await _socialAuthService.signInWithFacebook();
-
-    final credential = FacebookAuthProvider.credential(accessToken);
-    final userCredential = await _firebaseAuthService.signInWithCredential(credential);
-    if (userCredential.user != null) {
-      await _firestoreUserService.syncUser(
-        userCredential.user!,
-        provider: 'facebook.com',
-      );
-    }
-
-    return _loginWithFirebase('facebook.com');
-  }
-
-  @override
   Future<Map<String, dynamic>> getProfile() {
     return _apiService.getProfile();
   }
@@ -184,6 +169,29 @@ class AuthRepositoryImpl implements AuthRepository {
       code: code,
       newPassword: newPassword,
     );
+  }
+  @override
+  Future<Map<String, dynamic>> loginWithFacebook() async {
+    final accessToken = await _socialAuthService.signInWithFacebook();
+
+    // Lấy thêm user data từ Facebook để có email
+    final userData = await FacebookAuth.instance.getUserData(
+      fields: 'email,name,picture',
+    );
+
+    final credential = FacebookAuthProvider.credential(accessToken);
+    final userCredential = await _firebaseAuthService.signInWithCredential(credential);
+
+    // Cập nhật email nếu Firebase user chưa có
+    if (userCredential.user != null) {
+      await _firestoreUserService.syncUser(
+        userCredential.user!,
+        provider: 'facebook.com',
+        displayName: userData['name'] as String?,
+      );
+    }
+
+    return _loginWithFirebase('facebook.com');
   }
 
   Future<Map<String, dynamic>> _loginWithFirebase(String provider) async {

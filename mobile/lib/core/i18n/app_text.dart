@@ -134,6 +134,7 @@ class AppLocalizations {
       'forgotPasswordQuestion': 'Quên mật khẩu?',
       'orContinueWith': 'Hoặc tiếp tục với',
       'continueWithGoogle': 'Đăng nhập với Google',
+      'continueWithFacebook': 'Đăng nhập với Facebook',
       'noAccountYetRegister': 'Chưa có tài khoản? Đăng ký',
       'forgotPassword': 'Quên mật khẩu',
       'forgotPasswordDescription': 'Nhập email đã đăng ký để nhận mã OTP khôi phục mật khẩu.',
@@ -767,6 +768,7 @@ class AppLocalizations {
       'forgotPasswordQuestion': 'Forgot password?',
       'orContinueWith': 'Or continue with',
       'continueWithGoogle': 'Continue with Google',
+      'continueWithFacebook': 'Continue with Facebook',
       'noAccountYetRegister': 'No account yet? Register',
       'forgotPassword': 'Forgot password',
       'forgotPasswordDescription': 'Enter your registered email to receive a password reset OTP.',
@@ -1434,6 +1436,7 @@ class AppLocalizations {
   String get forgotPasswordQuestion => _text('forgotPasswordQuestion');
   String get orContinueWith => _text('orContinueWith');
   String get continueWithGoogle => _text('continueWithGoogle');
+  String get continueWithFacebook => _text('continueWithFacebook');
   String get noAccountYetRegister => _text('noAccountYetRegister');
   String get forgotPassword => _text('forgotPassword');
   String get forgotPasswordDescription => _text('forgotPasswordDescription');

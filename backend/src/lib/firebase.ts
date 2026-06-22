@@ -61,3 +61,24 @@ export function getFirebaseStorage(): Storage {
 export function isFirebaseReady(): boolean {
   return isFirebaseConfigured();
 }
+
+export function getStorageBucket() {
+  if (!isFirebaseConfigured()) {
+    throw new Error(
+      'Firebase chưa cấu hình. Điền FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY trong backend/.env',
+    );
+  }
+
+  const firebaseApp =
+    getApps()[0] ??
+    initializeApp({
+      credential: cert({
+        projectId: config.firebaseProjectId!,
+        clientEmail: config.firebaseClientEmail!,
+        privateKey: config.firebasePrivateKey!.replace(/\\n/g, '\n'),
+      }),
+    });
+
+  const bucketName = `${config.firebaseProjectId}.firebasestorage.app`;
+  return getStorage(firebaseApp).bucket(bucketName);
+}
