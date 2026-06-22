@@ -1,4 +1,4 @@
-import { IsIn, IsString, MinLength } from 'class-validator';
+import { IsIn, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class CreateMomoPaymentDto {
   @IsString()
@@ -8,6 +8,14 @@ export class CreateMomoPaymentDto {
   @IsString()
   @IsIn(['monthly', 'yearly'])
   cycle!: 'monthly' | 'yearly';
+
+  /**
+   * MoMo payment method. Nếu bỏ trống → dùng `payWithMethod` (đa năng: QR +
+   * trang chọn method). Mobile dùng để hiển thị QR trong app thay vì mở app MoMo.
+   */
+  @IsOptional()
+  @IsIn(['captureWallet', 'payWithMethod', 'payWithATM', 'payWithCC'])
+  method?: 'captureWallet' | 'payWithMethod' | 'payWithATM' | 'payWithCC';
 }
 
 /** IPN do MoMo gửi tới — không validate chặt vì MoMo tự ký HMAC. */

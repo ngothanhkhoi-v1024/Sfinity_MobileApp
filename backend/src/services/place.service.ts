@@ -11,6 +11,7 @@ import {
 import { getDb } from '../lib/firebase';
 import { distanceMeters } from '../lib/geo';
 import { HttpError } from '../lib/http-error';
+import { checkContentModeration } from '../lib/moderation';
 import { notificationsService } from './notifications.service';
 import { settingsService } from './settings.service';
 import {
@@ -219,12 +220,33 @@ export const placeService = {
                 : ContentModerationStatus.PENDING,
             };
 
+    let moderationStatus = state.moderationStatus;
+    let aiRejected = false;
+    let rejectionReason = null;
+
+    if (role !== UserRole.ADMIN && state.visibility === ContentVisibility.PUBLIC) {
+      const textToScan = `${dto.title} ${dto.body ?? ''} ${dto.address ?? ''}`;
+      const modResult = await checkContentModeration(textToScan);
+      if (modResult.flagged) {
+        moderationStatus = ContentModerationStatus.REJECTED;
+        aiRejected = true;
+        rejectionReason = `Tự động từ chối bởi AI. Vi phạm danh mục: ${modResult.categories.join(', ')}`;
+      } else if (modResult.error) {
+        moderationStatus = ContentModerationStatus.PENDING;
+        rejectionReason = `Lỗi hệ thống khi kiểm duyệt tự động: ${modResult.error}. Cần chờ quản trị viên duyệt thủ công.`;
+      } else {
+        moderationStatus = ContentModerationStatus.APPROVED;
+      }
+    }
+
     const newPlace: any = {
       id: docRef.id,
       title: dto.title,
       body: dto.body ?? '',
       visibility: state.visibility,
-      moderationStatus: state.moderationStatus,
+      moderationStatus,
+      aiRejected,
+      rejectionReason,
       authorId,
       latitude: dto.latitude,
       longitude: dto.longitude,
@@ -304,6 +326,32 @@ export const placeService = {
         ].includes(currentState.moderationStatus)
       ) {
         nextModeration = publicModeration;
+      }
+    }
+
+    if (
+      role !== UserRole.ADMIN &&
+      nextVisibility === ContentVisibility.PUBLIC &&
+      (hasContentChanges || (currentState.visibility === ContentVisibility.PRIVATE && nextVisibility === ContentVisibility.PUBLIC))
+    ) {
+      const title = dto.title !== undefined ? dto.title : (item.title ?? '');
+      const body = dto.body !== undefined ? (dto.body ?? '') : (item.body ?? '');
+      const address = dto.address !== undefined ? (dto.address ?? '') : (item.address ?? '');
+      const textToScan = `${title} ${body} ${address}`;
+
+      const modResult = await checkContentModeration(textToScan);
+      if (modResult.flagged) {
+        nextModeration = ContentModerationStatus.REJECTED;
+        updateData.aiRejected = true;
+        updateData.rejectionReason = `Tự động từ chối bởi AI. Vi phạm danh mục: ${modResult.categories.join(', ')}`;
+      } else if (modResult.error) {
+        nextModeration = ContentModerationStatus.PENDING;
+        updateData.aiRejected = null;
+        updateData.rejectionReason = `Lỗi hệ thống khi kiểm duyệt tự động: ${modResult.error}. Cần chờ quản trị viên duyệt thủ công.`;
+      } else {
+        nextModeration = ContentModerationStatus.APPROVED;
+        updateData.aiRejected = null;
+        updateData.rejectionReason = null;
       }
     }
 

@@ -48,6 +48,14 @@ export interface CreateMomoPaymentInput {
   orderInfo: string;
   extraData?: string;
   lang?: 'vi' | 'en';
+  /**
+   * MoMo requestType quyết định trải nghiệm thanh toán.
+   * - `captureWallet`: mở app MoMo qua deeplink (mặc định cũ, có deeplink).
+   * - `payWithMethod`: trang MoMo cho phép chọn QR ATM / thẻ / MoMo → có `qrCodeUrl`.
+   * - `payWithATM`: chỉ QR ATM nội địa → có `qrCodeUrl`.
+   * - `payWithCC`: chỉ QR thẻ quốc tế → có `qrCodeUrl`.
+   */
+  requestType?: 'captureWallet' | 'payWithMethod' | 'payWithATM' | 'payWithCC';
 }
 
 export interface CreateMomoPaymentResult {
@@ -82,7 +90,7 @@ export async function createMomoPayment(
     partnerCode: config.momoPartnerCode,
     redirectUrl: config.momoRedirectUrl,
     requestId: input.requestId,
-    requestType: 'captureWallet',
+    requestType: input.requestType ?? 'payWithMethod',
   };
   const signature = signWithSecret(buildRawSignature(signatureParams));
 
