@@ -105,16 +105,45 @@ class _ExplorePageState extends State<ExplorePage> {
     });
   }
 
+  List<Map<String, dynamic>> _parseFeedItems(dynamic res) {
+    return (res['items'] as List? ?? []).cast<Map<String, dynamic>>();
+  }
+
+  DateTime _itemCreatedAt(Map<String, dynamic> item) {
+    return DateTime.tryParse(item['createdAt']?.toString() ?? '') ?? DateTime(0);
+  }
+
+  List<Map<String, dynamic>> _mergeFeedItems(
+    List<Map<String, dynamic>> docs,
+    List<Map<String, dynamic>> places,
+  ) {
+    final merged = [...docs, ...places];
+    merged.sort((a, b) => _itemCreatedAt(b).compareTo(_itemCreatedAt(a)));
+    return merged;
+  }
+
   Future<void> _runApiSearch(String query) async {
     setState(() => _searchingApi = true);
     try {
-      final res = await ApiClient.instance.get('/document', query: {
-        'search': query,
-        'publishedOnly': 'true',
-        'limit': '30',
-      });
+      final results = await Future.wait([
+        ApiClient.instance.get('/document', query: {
+          'search': query,
+          'publishedOnly': 'true',
+          'limit': '30',
+        }),
+        ApiClient.instance.get('/places', query: {
+          'search': query,
+          'publishedOnly': 'true',
+          'limit': '30',
+        }),
+      ]);
       if (!mounted || _searchController.text.trim() != query) return;
-      setState(() => _apiSearchResults = res['items'] as List? ?? []);
+      setState(() {
+        _apiSearchResults = _mergeFeedItems(
+          _parseFeedItems(results[0]),
+          _parseFeedItems(results[1]),
+        );
+      });
     } on DioException {
       if (mounted && _searchController.text.trim() == query) {
         setState(() => _apiSearchResults = []);
@@ -197,11 +226,20 @@ class _ExplorePageState extends State<ExplorePage> {
       _error = null;
     });
     try {
-      final res = await ApiClient.instance.get('/document', query: {
-        'publishedOnly': 'true',
-        'limit': '20',
-      });
-      _items = res['items'] as List? ?? [];
+      final results = await Future.wait([
+        ApiClient.instance.get('/document', query: {
+          'publishedOnly': 'true',
+          'limit': '20',
+        }),
+        ApiClient.instance.get('/places', query: {
+          'publishedOnly': 'true',
+          'limit': '20',
+        }),
+      ]);
+      _items = _mergeFeedItems(
+        _parseFeedItems(results[0]),
+        _parseFeedItems(results[1]),
+      );
       _apiSearchResults = null;
     } on DioException catch (e) {
       _error = ApiClient.instance.errorMessage(e);
