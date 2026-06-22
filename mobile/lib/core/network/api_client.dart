@@ -32,8 +32,22 @@ class ApiClient {
     return _asMap(res.data);
   }
 
-  Future<Map<String, dynamic>> post(String path, Map<String, dynamic> body) async {
-    final res = await _dio.post<dynamic>(path, data: body);
+  Future<Map<String, dynamic>> post(
+    String path,
+    Map<String, dynamic> body, {
+    Duration? receiveTimeout,
+    Duration? sendTimeout,
+  }) async {
+    final res = await _dio.post<dynamic>(
+      path,
+      data: body,
+      options: (receiveTimeout != null || sendTimeout != null)
+          ? Options(
+              receiveTimeout: receiveTimeout,
+              sendTimeout: sendTimeout,
+            )
+          : null,
+    );
     return _asMap(res.data);
   }
 

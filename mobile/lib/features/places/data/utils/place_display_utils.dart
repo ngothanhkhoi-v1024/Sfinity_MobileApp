@@ -23,18 +23,24 @@ abstract final class PlaceDisplayUtils {
   static String listSectionSubtitle({
     required int count,
     required Set<String> filterTags,
+    int? minRating,
     required bool hasUserLocation,
     required int nearbyRadiusKm,
   }) {
     if (count == 0) {
-      return filterTags.isEmpty ? 'No places yet' : 'No places match filters';
+      final hasFilters = filterTags.isNotEmpty || minRating != null;
+      return hasFilters ? 'No places match filters' : 'No places yet';
+    }
+
+    final parts = <String>['$count places'];
+    if (minRating != null) {
+      parts.add('≥ $minRating★');
     }
     if (filterTags.isNotEmpty) {
-      return '$count places · ${PlaceTags.labelsFor(filterTags.toList())}';
+      parts.add(PlaceTags.labelsFor(filterTags.toList()));
+    } else if (hasUserLocation && minRating == null) {
+      parts.add('within $nearbyRadiusKm km');
     }
-    if (hasUserLocation) {
-      return '$count places · within $nearbyRadiusKm km';
-    }
-    return '$count places';
+    return parts.join(' · ');
   }
 }

@@ -64,8 +64,15 @@ class PlaceEngagementRepositoryImpl implements PlaceEngagementRepository {
     final snapshot = await uploadTask;
     final imageUrl = await snapshot.ref.getDownloadURL();
 
-    final res = await _api.addPhoto(placeId, imageUrl: imageUrl, caption: caption);
-    return PlacePhotoModel.fromJson(Map<String, dynamic>.from(res));
+    try {
+      final res = await _api.addPhoto(placeId, imageUrl: imageUrl, caption: caption);
+      return PlacePhotoModel.fromJson(Map<String, dynamic>.from(res));
+    } catch (e) {
+      try {
+        await ref.delete();
+      } catch (_) {}
+      rethrow;
+    }
   }
 
   @override
