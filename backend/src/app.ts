@@ -1,4 +1,6 @@
 import 'reflect-metadata';
+import path from 'path';
+import fs from 'fs';
 import cors from 'cors';
 import express from 'express';
 import swaggerUi from 'swagger-ui-express';
@@ -14,6 +16,22 @@ export function createApp() {
   app.use(express.json());
   app.use(loggingMiddleware);
   app.use('/uploads', express.static('./uploads'));
+  
+  // Fallback for missing images in uploads directory to prevent frontend loading crashes
+  app.use('/uploads', (req, res, next) => {
+    const ext = path.extname(req.path).toLowerCase();
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+    if (imageExtensions.includes(ext)) {
+      const fallbackPath = path.join(__dirname, '../uploads/placeholder.png');
+      if (fs.existsSync(fallbackPath)) {
+        res.setHeader('Content-Type', 'image/png');
+        res.sendFile(fallbackPath);
+        return;
+      }
+    }
+    next();
+  });
+
   app.use('/api', apiRouter);
   app.use(
     '/api/docs',
