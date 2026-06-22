@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/widgets/vip_limit_dialogs.dart';
 import '../../../../app.dart';
 import '../../../../core/constants/route_names.dart';
 import '../../../../core/i18n/app_text.dart';
@@ -153,8 +154,15 @@ class _CommunityPageState extends State<CommunityPage>
 
     final myGroups = _groupCtrl.groups;
     if (myGroups.isEmpty) {
-      return GroupEmptyState(
-        onCreateGroup: () => context.push(RouteNames.groupCreate),
+      return ListenableBuilder(
+        listenable: SfinityApp.userLimits,
+        builder: (context, _) => GroupEmptyState(
+          onCreateGroup: () => VipLimitDialogs.onCreateGroupPressed(
+            context,
+            canCreateGroup: SfinityApp.userLimits.canCreateGroup,
+          ),
+          canCreateGroup: SfinityApp.userLimits.canCreateGroup,
+        ),
       );
     }
 
@@ -215,9 +223,17 @@ class _CommunityPageState extends State<CommunityPage>
   }
 
   Widget _buildCreateGroupButton(BuildContext context, ColorScheme cs) {
-    return AppBarAddButton(
-      tooltip: context.l10n.createGroup,
-      onPressed: () => context.push(RouteNames.groupCreate),
+    return ListenableBuilder(
+      listenable: SfinityApp.userLimits,
+      builder: (context, _) {
+        return AppBarAddButton(
+          tooltip: context.l10n.createGroup,
+          onPressed: () => VipLimitDialogs.onCreateGroupPressed(
+            context,
+            canCreateGroup: SfinityApp.userLimits.canCreateGroup,
+          ),
+        );
+      },
     );
   }
 

@@ -39,6 +39,8 @@ export function AdminLayout() {
       { key: '/', icon: <DashboardOutlined />, label: t('menu.dashboard') },
       { type: 'divider' },
       { key: '/users', icon: <TeamOutlined />, label: t('menu.users') },
+      { key: '/plans', icon: <CrownOutlined />, label: t('menu.plans') },
+      { key: '/subscriptions', icon: <CrownOutlined />, label: t('menu.subscriptions') },
       { key: '/content', icon: <AppstoreOutlined />, label: t('menu.content') },
       { key: '/categories', icon: <TagsOutlined />, label: t('menu.categories') },
       { key: '/amenities', icon: <ToolOutlined />, label: t('menu.amenities') },
@@ -57,8 +59,10 @@ export function AdminLayout() {
     .filter((item): item is { key: string } => !!item && 'key' in item && typeof item.key === 'string')
     .map((item) => item.key);
 
-  const selectedKey =
-    flatKeys.find((key) => key !== '/' && location.pathname.startsWith(key)) ?? '/';
+  const selectedKey = (() => {
+    if (location.pathname === '/' || location.pathname.startsWith('/dashboard')) return '/';
+    return flatKeys.find((key) => key !== '/' && location.pathname.startsWith(key)) ?? '/';
+  })();
 
   const userMenu = {
     items: [

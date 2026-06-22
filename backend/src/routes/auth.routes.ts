@@ -4,6 +4,7 @@ import { asyncHandler } from '../lib/async-handler';
 import { validateBody } from '../lib/validate';
 import { jwtAuthMiddleware } from '../middleware/jwt.middleware';
 import { authService } from '../services/auth.service';
+import { vipLimitsService } from '../services/vip-limits.service';
 import { LoginDto, RegisterDto } from '../dto/login.dto';
 import { FirebaseLoginDto } from '../dto/firebase-login.dto';
 import {
@@ -69,6 +70,14 @@ authRouter.get(
   jwtAuthMiddleware,
   asyncHandler(async (req, res) => {
     res.json(await authService.getProfile(req.user!.sub));
+  }),
+);
+
+authRouter.get(
+  '/me/limits',
+  jwtAuthMiddleware,
+  asyncHandler(async (req, res) => {
+    res.json(await vipLimitsService.getStatus(req.user!.sub, req.user!.role));
   }),
 );
 

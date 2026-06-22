@@ -26,7 +26,16 @@ export const usersService = {
     address?: string;
     createdAt: any;
     updatedAt: any;
+    isVip?: boolean;
+    vipExpiresAt?: any;
+    vipPlanId?: string;
+    vipCycle?: string;
+    vipSource?: string;
   }) {
+    const expiresAt = user.vipExpiresAt ? toDate(user.vipExpiresAt) : null;
+    const vipActive =
+      user.isVip === true && (!expiresAt || expiresAt.getTime() > Date.now());
+
     return {
       id: user.id,
       email: user.email ?? '',
@@ -38,6 +47,12 @@ export const usersService = {
       gender: user.gender ?? '',
       birthDate: user.birthDate ?? '',
       address: user.address ?? '',
+      isVip: user.isVip === true,
+      vipActive,
+      vipExpiresAt: expiresAt,
+      vipPlanId: user.vipPlanId ?? null,
+      vipCycle: user.vipCycle ?? null,
+      vipSource: user.vipSource ?? null,
       createdAt: toDate(user.createdAt),
       updatedAt: toDate(user.updatedAt),
     };

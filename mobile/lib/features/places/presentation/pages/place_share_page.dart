@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../../core/constants/map_config.dart';
 import '../../../../core/i18n/app_text.dart';
+import '../../../../core/widgets/vip_limit_dialogs.dart';
 import '../../../../core/services/geocoding_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../data/services/place_location_service.dart';
@@ -147,11 +148,14 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
         context.pop();
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
-        );
+      if (!mounted) return;
+      if (e.toString() == 'PLACE_LIMIT') {
+        VipLimitDialogs.showLimitReached(context, message: l10n.limitPlacesReached);
+        return;
       }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
     }
   }
 

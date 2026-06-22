@@ -10,6 +10,12 @@ export interface UserRecord {
   gender?: string;
   birthDate?: string;
   address?: string;
+  isVip?: boolean;
+  vipActive?: boolean;
+  vipExpiresAt?: string | null;
+  vipPlanId?: string | null;
+  vipCycle?: string | null;
+  vipSource?: string | null;
   createdAt: string;
   updatedAt: string;
 }

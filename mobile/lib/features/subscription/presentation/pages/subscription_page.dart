@@ -8,6 +8,7 @@ import '../../../../core/constants/route_names.dart';
 import '../../../../core/i18n/app_text.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../data/models/subscription_plan.dart';
+import '../../data/services/plans_catalog_service.dart';
 import '../../data/services/subscription_service.dart';
 import '../widgets/vip_badge.dart';
 
@@ -25,6 +26,7 @@ class _SubscriptionPageState extends State<SubscriptionPage>
   final _service = SubscriptionService();
   late BillingCycle _selectedCycle;
   SubscriptionStatus? _currentStatus;
+  SubscriptionPlan _plan = SubscriptionPlan.pro;
   bool _isLoading = true;
   bool _isPurchasing = false;
   String? _pendingOrderId;
@@ -36,7 +38,7 @@ class _SubscriptionPageState extends State<SubscriptionPage>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _selectedCycle = BillingCycle.monthly;
-    _loadStatus();
+    _loadPageData();
     _checkPendingCallback();
   }
 
@@ -55,11 +57,16 @@ class _SubscriptionPageState extends State<SubscriptionPage>
     }
   }
 
-  Future<void> _loadStatus() async {
-    final status = await _service.getStatus();
+  Future<void> _loadPageData() async {
+    final results = await Future.wait([
+      _service.getStatus(),
+      PlansCatalogService.fetchProPlan(),
+    ]);
+    await SfinityApp.userLimits.refresh();
     if (!mounted) return;
     setState(() {
-      _currentStatus = status;
+      _currentStatus = results[0] as SubscriptionStatus;
+      _plan = results[1] as SubscriptionPlan;
       _isLoading = false;
     });
     try {
@@ -94,7 +101,7 @@ class _SubscriptionPageState extends State<SubscriptionPage>
       if (_selectedPaymentMethod == PaymentMethod.vnpay) {
         // VNPay flow - mở WebView trong app
         final info = await _service.createVnpayPayment(
-          plan: SubscriptionPlan.pro,
+          plan: _plan,
           cycle: _selectedCycle,
         );
         _pendingOrderId = info.orderId;
@@ -109,7 +116,7 @@ class _SubscriptionPageState extends State<SubscriptionPage>
       } else {
         // MoMo flow
         final info = await _service.createMoMoPayment(
-          plan: SubscriptionPlan.pro,
+          plan: _plan,
           cycle: _selectedCycle,
         );
         _pendingOrderId = info.orderId;
@@ -164,7 +171,7 @@ class _SubscriptionPageState extends State<SubscriptionPage>
         if (status.isSuccess) {
           timer?.cancel();
           _pollTimer = null;
-          await _loadStatus();
+          await _loadPageData();
           if (!mounted) return;
           setState(() {
             _isPurchasing = false;
@@ -207,7 +214,7 @@ class _SubscriptionPageState extends State<SubscriptionPage>
   Future<bool?> _showConfirmDialog() {
     final l10n = AppLocalizations.of(context);
     final langCode = l10n.locale.languageCode;
-    final plan = SubscriptionPlan.pro;
+    final plan = _plan;
     final price = _selectedCycle == BillingCycle.yearly
         ? plan.yearlyPrice
         : plan.monthlyPrice;
@@ -472,7 +479,7 @@ class _SubscriptionPageState extends State<SubscriptionPage>
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final langCode = l10n.locale.languageCode;
-    final plan = SubscriptionPlan.pro;
+    final plan = _plan;
 
     return Scaffold(
       backgroundColor: AppColors.scaffold(context),

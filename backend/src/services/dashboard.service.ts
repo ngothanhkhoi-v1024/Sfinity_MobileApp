@@ -1,6 +1,7 @@
 import { getDb } from '../lib/firebase';
 import { isPubliclyVisible } from '../lib/content-state';
 import { UserRole, ReportStatus } from '../types/enums';
+import { adminSubscriptionService } from './admin-subscription.service';
 
 const toDate = (val: unknown): Date => {
   if (!val) return new Date(0);
@@ -191,6 +192,11 @@ export const dashboardService = {
 
     const activityByDay = Array.from(activityBuckets.values());
 
+    const [revenue, vipUsers] = await Promise.all([
+      adminSubscriptionService.getRevenueStats(range),
+      adminSubscriptionService.countVipUsers(),
+    ]);
+
     return {
       users: users.length,
       admins: admins.length,
@@ -212,6 +218,14 @@ export const dashboardService = {
       activityFrom: formatDayKey(activityRange.from),
       activityTo: formatDayKey(activityRange.to),
       activityByDay,
+      vipUsers,
+      revenue: {
+        totalRevenue: revenue.totalRevenue,
+        transactionCount: revenue.transactionCount,
+        byPlan: revenue.byPlan,
+        byCycle: revenue.byCycle,
+        revenueByDay: revenue.revenueByDay,
+      },
     };
   },
 };

@@ -426,7 +426,7 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
                 const SizedBox(height: 20),
               ],
             ],
-            if (isMine) ...[
+            if (kPlaceDocumentsEnabled && isMine) ...[
               _SectionTitle(
                 icon: Icons.upload_file_outlined,
                 title: l10n.managePlace,
@@ -470,6 +470,7 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
               ),
               const SizedBox(height: 20),
             ],
+            if (kPlaceDocumentsEnabled) ...[
             _SectionTitle(
               icon: Icons.menu_book_outlined,
               title: l10n.documentsAtPlace,
@@ -551,6 +552,7 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
                   ),
                 );
               }),
+            ],
           ],
         ),
       ),

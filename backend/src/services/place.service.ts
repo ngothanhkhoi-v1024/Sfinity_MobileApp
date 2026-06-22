@@ -14,6 +14,7 @@ import { HttpError } from '../lib/http-error';
 import { checkContentModeration } from '../lib/moderation';
 import { notificationsService } from './notifications.service';
 import { settingsService } from './settings.service';
+import { vipLimitsService } from './vip-limits.service';
 import {
   ContentModerationStatus,
   ContentVisibility,
@@ -242,6 +243,8 @@ export const placeService = {
   },
 
   async create(authorId: string, dto: CreatePlaceDto, role: UserRole = UserRole.USER) {
+    await vipLimitsService.assertCanCreatePlace(authorId, role);
+
     const docRef = getDb().collection('places').doc();
 
     if (dto.zone != null && !isValidPlaceZone(dto.zone)) {
@@ -308,6 +311,9 @@ export const placeService = {
     };
 
     await docRef.set(newPlace);
+    if (role !== UserRole.ADMIN) {
+      await vipLimitsService.recordPlaceCreated(authorId);
+    }
     return placeService.findOne(docRef.id, authorId, role);
   },
 

@@ -87,21 +87,27 @@ class DocumentDetailController extends ChangeNotifier {
     }
   }
 
-  Future<bool> triggerDownload(String fileUrl) async {
+  Future<bool> triggerDownload(String fileUrl, {void Function(String message)? onLimitReached}) async {
     if (document == null) return false;
+
+    final limits = SfinityApp.userLimits;
+    if (!limits.canDownloadDocument) {
+      error = 'limit';
+      notifyListeners();
+      onLimitReached?.call('downloads');
+      return false;
+    }
+
     downloading = true;
     error = null;
     notifyListeners();
 
     try {
-      try {
-        await ApiClient.instance.patch('/document/${document!['id']}/download', {});
-        if (document!['downloadsCount'] != null) {
-          document!['downloadsCount'] = (document!['downloadsCount'] as int) + 1;
-        }
-      } catch (e) {
-        debugPrint('Failed to increment download count: $e');
+      await ApiClient.instance.patch('/document/${document!['id']}/download', {});
+      if (document!['downloadsCount'] != null) {
+        document!['downloadsCount'] = (document!['downloadsCount'] as int) + 1;
       }
+      await SfinityApp.userLimits.refresh();
       
       final uri = Uri.parse(fileUrl);
       bool launched = false;
@@ -121,6 +127,10 @@ class DocumentDetailController extends ChangeNotifier {
       }
     } on DioException catch (e) {
       error = ApiClient.instance.errorMessage(e);
+      if (e.response?.statusCode == 403) {
+        await SfinityApp.userLimits.refresh();
+        onLimitReached?.call('downloads');
+      }
       return false;
     } catch (e) {
       error = e.toString();

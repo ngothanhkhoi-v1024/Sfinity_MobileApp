@@ -5,6 +5,9 @@ import '../../../../app.dart';
 import '../../../../core/network/api_client.dart';
 import '../../data/models/place_model.dart';
 
+/// Tạm tắt — phần tài liệu tại địa điểm đang lỗi.
+const kPlaceDocumentsEnabled = false;
+
 class PlaceDetailController extends ChangeNotifier {
   PlaceModel? place;
   List<Map<String, dynamic>> documents = [];
@@ -25,8 +28,10 @@ class PlaceDetailController extends ChangeNotifier {
       loading = false;
       notifyListeners();
 
-      documents = await SfinityApp.placeRepository.listDocumentsAtPlace(placeId);
-      notifyListeners();
+      if (kPlaceDocumentsEnabled) {
+        documents = await SfinityApp.placeRepository.listDocumentsAtPlace(placeId);
+        notifyListeners();
+      }
     } on DioException catch (e) {
       error = ApiClient.instance.errorMessage(e);
       loading = false;

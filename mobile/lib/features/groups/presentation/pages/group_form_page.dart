@@ -7,6 +7,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 
 import '../../../../app.dart';
 import '../../../../core/i18n/app_text.dart';
+import '../../../../core/widgets/vip_limit_dialogs.dart';
 import '../controllers/group_controller.dart';
 
 class GroupFormPage extends StatefulWidget {
@@ -122,6 +123,10 @@ class _GroupFormPageState extends State<GroupFormPage> {
           context.pop();
         }
       } else {
+        if (!SfinityApp.userLimits.canCreateGroup) {
+          VipLimitDialogs.showLimitReached(context, message: l10n.limitCreateGroup);
+          return;
+        }
         final group = await _groupCtrl.createGroup(
           name: name,
           description: _descCtrl.text.trim(),

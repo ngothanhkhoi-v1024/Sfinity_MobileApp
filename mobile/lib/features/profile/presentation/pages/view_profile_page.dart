@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../app.dart';
 import '../../../../core/constants/route_names.dart';
 import '../../../../core/i18n/app_text.dart';
+import '../../../../core/widgets/vip_limit_dialogs.dart';
 import '../../../friendships/data/models/friend_model.dart';
 import '../../../friendships/presentation/controllers/friendship_controller.dart';
 
@@ -516,6 +517,8 @@ class _FriendActionSectionState extends State<_FriendActionSection> {
         SnackBar(content: Text(context.l10n.friendRequestSent)),
       );
       _syncFriendshipState();
+    } else {
+      VipLimitDialogs.handleFriendshipError(context, _ctrl.error);
     }
   }
 

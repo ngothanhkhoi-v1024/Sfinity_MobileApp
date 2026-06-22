@@ -3,6 +3,7 @@ import { HttpError } from '../lib/http-error';
 import { checkContentModeration, extractTextFromPdf } from '../lib/moderation';
 import { notificationsService } from './notifications.service';
 import { settingsService } from './settings.service';
+import { vipLimitsService } from './vip-limits.service';
 import { logger } from '../lib/logger';
 import { placeService } from './place.service';
 import {
@@ -455,6 +456,10 @@ export const documentService = {
   async incrementDownload(id: string, viewerId?: string, viewerRole?: UserRole) {
     await documentService.findOne(id, viewerId, viewerRole);
 
+    if (viewerId) {
+      await vipLimitsService.assertCanDownload(viewerId, viewerRole);
+    }
+
     const docRef = getDb().collection('documents').doc(id);
     const doc = await docRef.get();
     if (!doc.exists) {
@@ -477,6 +482,7 @@ export const documentService = {
       } catch {
         // Non-blocking: weekly stats should not fail downloads.
       }
+      await vipLimitsService.recordDownload(viewerId);
     }
 
     return documentService.findOne(id, viewerId, viewerRole);

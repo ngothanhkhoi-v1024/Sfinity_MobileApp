@@ -49,7 +49,7 @@ friendshipRouter.post(
   '/request',
   asyncHandler(async (req, res) => {
     const dto = await validateBody(SendFriendRequestDto, req.body);
-    res.status(201).json(await friendshipService.sendRequest(req.user!.sub, dto.addresseeId));
+    res.status(201).json(await friendshipService.sendRequest(req.user!.sub, dto.addresseeId, req.user!.role));
   }),
 );
 
@@ -59,7 +59,7 @@ friendshipRouter.patch(
   asyncHandler(async (req, res) => {
     const dto = await validateBody(RespondFriendRequestDto, req.body);
     res.json(
-      await friendshipService.respondRequest(req.params.id, req.user!.sub, dto.action === 'accept'),
+      await friendshipService.respondRequest(req.params.id, req.user!.sub, dto.action === 'accept', req.user!.role),
     );
   }),
 );
