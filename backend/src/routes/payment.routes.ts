@@ -145,14 +145,14 @@ paymentRouter.get(
         : `Thanh toan that bai: ${vnp_ResponseCode}`,
     });
 
-    const deepLink = `sfinity://payment-callback?${deepLinkParams.toString()}`;
+    const deepLink = `sfinity://payment-vnpay-callback?${deepLinkParams.toString()}`;
 
     const html = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Redirecting...</title>
+  <title>Sfinity - Thanh Toan VNPay</title>
   <style>
     body { font-family: -apple-system, sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; margin:0; background:#f5f5f5; }
     .msg { background:white; padding:32px; border-radius:16px; text-align:center; box-shadow:0 4px 24px rgba(0,0,0,.1); }
@@ -166,13 +166,8 @@ paymentRouter.get(
     <p>Dang chuyen ve ung dung...</p>
   </div>
   <script>
-    setTimeout(function() {
-      var iframe = document.createElement('iframe');
-      iframe.style.display = 'none';
-      iframe.src = '${deepLink}';
-      document.body.appendChild(iframe);
-      setTimeout(function() { window.location.href = '${deepLink}'; }, 800);
-    }, 300);
+    // WebView will intercept sfinity:// scheme and pass back to app.
+    window.location.href = '${deepLink}';
   </script>
 </body>
 </html>`;

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/constants/route_names.dart';
 import '../../../../core/i18n/app_text.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../data/models/subscription_plan.dart';
@@ -18,7 +19,8 @@ class SubscriptionPage extends StatefulWidget {
   State<SubscriptionPage> createState() => _SubscriptionPageState();
 }
 
-class _SubscriptionPageState extends State<SubscriptionPage> {
+class _SubscriptionPageState extends State<SubscriptionPage>
+    with WidgetsBindingObserver {
   final _service = SubscriptionService();
   late BillingCycle _selectedCycle;
   SubscriptionStatus? _currentStatus;
@@ -31,6 +33,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _selectedCycle = BillingCycle.monthly;
     _loadStatus();
     _checkPendingCallback();
@@ -38,8 +41,17 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _pollTimer?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // User quay về từ WebView — kiểm tra callback mới
+      _checkPendingCallback();
+    }
   }
 
   Future<void> _loadStatus() async {
@@ -76,16 +88,19 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     setState(() => _isPurchasing = true);
     try {
       if (_selectedPaymentMethod == PaymentMethod.vnpay) {
-        // VNPay flow
+        // VNPay flow - mở WebView trong app
         final info = await _service.createVnpayPayment(
           plan: SubscriptionPlan.pro,
           cycle: _selectedCycle,
         );
         _pendingOrderId = info.orderId;
 
-        final opened = await _service.openVnpayPayment(info);
-        if (!opened && mounted) {
-          _showErrorDialog(message: 'Không thể mở trình duyệt thanh toán');
+        // Điều hướng sang WebView để xử lý thanh toán VNPay
+        if (mounted) {
+          context.push(RouteNames.vnpayWebview, extra: {
+            'paymentUrl': info.paymentUrl,
+            'orderId': info.orderId,
+          });
         }
       } else {
         // MoMo flow

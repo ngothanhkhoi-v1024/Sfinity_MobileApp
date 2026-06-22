@@ -125,103 +125,72 @@
   </div>
 
   <script>
-    // Parse URL params (VNPay sends them via query string)
+    // VNPay redirects to this page with query params.
+    // Parse the payment result and redirect to app deep link.
+    // The WebView in Flutter will catch sfinity:// scheme and pass it back
+    // to the app (via shouldOverrideUrlLoading / onLoadStop).
+    function formatAmount(amount) {
+      if (!amount) return '0';
+      var num = parseInt(amount) / 100;
+      return new Intl.NumberFormat('vi-VN').format(num) + ' VND';
+    }
+
     const params = new URLSearchParams(window.location.search);
     const vnp_ResponseCode = params.get('vnp_ResponseCode');
     const vnp_TxnRef = params.get('vnp_TxnRef');
     const vnp_Amount = params.get('vnp_Amount');
     const vnp_OrderInfo = params.get('vnp_OrderInfo');
+    const vnp_TransactionStatus = params.get('vnp_TransactionStatus');
 
-    // Format amount (VNPay sends amount * 100)
-    function formatAmount(amount) {
-      if (!amount) return '0';
-      const num = parseInt(amount) / 100;
-      return new Intl.NumberFormat('vi-VN').format(num) + ' đ';
-    }
-
-    // Determine status based on response code
-    let status = 'pending';
-    let title = 'Đang xử lý';
-    let message = 'Hệ thống đang xác nhận thanh toán của bạn...';
+    var status = 'pending';
+    var title = 'Dang xu ly';
+    var message = 'He thong dang xac nhan thanh toan cua ban...';
 
     if (vnp_ResponseCode) {
-      if (vnp_ResponseCode === '00') {
+      if (vnp_ResponseCode === '00' && vnp_TransactionStatus === '00') {
         status = 'success';
-        title = 'Thanh toán thành công!';
-        message = 'Cảm ơn bạn đã thanh toán. Gói VIP của bạn đã được kích hoạt.';
+        title = 'Thanh toan thanh cong!';
+        message = 'Cam on ban da thanh toan. Goi VIP cua ban da duoc kich hoat.';
       } else if (vnp_ResponseCode === '24') {
         status = 'failed';
-        title = 'Thanh toán bị hủy';
-        message = 'Bạn đã hủy thanh toán. Bạn có thể thử lại.';
+        title = 'Thanh toan bi huy';
+        message = 'Ban da huy thanh toan. Ban co the thu lai.';
       } else {
         status = 'failed';
-        title = 'Thanh toán thất bại';
-        message = 'Đã xảy ra lỗi trong quá trình thanh toán. Mã lỗi: ' + vnp_ResponseCode;
+        title = 'Thanh toan that bai';
+        message = 'Da xay ra loi trong quá trình thanh toan. Ma loi: ' + vnp_ResponseCode;
       }
     }
 
-    // SVG icons
-    const iconSuccess = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>';
-    const iconFailed = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
-    const iconPending = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>';
+    var iconSvg;
+    if (status === 'success') {
+      iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="#28a745" stroke-width="3" width="40" height="40"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+    } else if (status === 'failed') {
+      iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="#dc3545" stroke-width="3" width="40" height="40"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+    } else {
+      iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="#ffc107" stroke-width="3" width="40" height="40"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>';
+    }
 
-    const iconSvg = status === 'success' ? iconSuccess : status === 'failed' ? iconFailed : iconPending;
-
-    // Build deep link to return to app.
-    // App expects: sfinity://payment-callback?orderId=...&resultCode=...&message=...
-    const deepLink = 'sfinity://payment-callback'
+    // Deep link to return to app — WebView will intercept this scheme.
+    var deepLink = 'sfinity://payment-vnpay-callback'
       + '?orderId=' + encodeURIComponent(vnp_TxnRef || '')
       + '&resultCode=' + encodeURIComponent(vnp_ResponseCode || '')
-      + '&message=' + encodeURIComponent(status === 'success' ? 'Thanh toán thành công' : (status === 'failed' ? title : ''));
-
-    // Build result URL for web fallback (no app installed)
-    const resultParams = new URLSearchParams({
-      success: status === 'success' ? 'true' : 'false',
-      code: vnp_ResponseCode || '',
-      orderId: vnp_TxnRef || '',
-    }).toString();
-    const resultUrl = 'sfinity://payment-result?' + resultParams;
+      + '&message=' + encodeURIComponent(status === 'success' ? 'Thanh toan thanh cong' : (status === 'failed' ? title : ''));
 
     document.getElementById('content').className = 'container ' + status;
-    document.getElementById('content').innerHTML = `
-      <div class="icon">${iconSvg}</div>
-      <h1>${title}</h1>
-      <p>${message}</p>
-      ${vnp_Amount ? '<div class="order-info"><div class="label">Số tiền</div><div class="value">' + formatAmount(vnp_Amount) + '</div></div>' : ''}
-      ${vnp_TxnRef ? '<div class="order-info"><div class="label">Mã giao dịch</div><div class="value">' + vnp_TxnRef + '</div></div>' : ''}
-      <a href="${deepLink}" class="btn" id="returnBtn"> Quay lại ứng dụng </a>
-      <div class="countdown" id="countdownText">Tự động chuyển về app sau <span id="countdown">5</span> giây...</div>
-    `;
+    document.getElementById('content').innerHTML =
+      '<div class="icon">' + iconSvg + '</div>' +
+      '<h1>' + title + '</h1>' +
+      '<p>' + message + '</p>' +
+      (vnp_Amount ? '<div class="order-info"><div class="label">So tien</div><div class="value">' + formatAmount(vnp_Amount) + '</div></div>' : '') +
+      (vnp_TxnRef ? '<div class="order-info"><div class="label">Ma giao dich</div><div class="value">' + vnp_TxnRef + '</div></div>' : '') +
+      '<a href="#" onclick="window.location.href=\'' + deepLink.replace(/'/g, "\\'") + '\'; return false;" class="btn"> Quay lai ung dung </a>' +
+      '<div class="countdown">Dang cho WebView xu ly...</div>';
 
-    // Use iframe trick to open custom scheme on mobile browsers.
-    // window.location.href often fails on mobile because browsers block
-    // auto-navigation to unverified custom schemes.
-    function tryOpenApp(url) {
-      var iframe = document.createElement('iframe');
-      iframe.style.display = 'none';
-      iframe.src = url;
-      document.body.appendChild(iframe);
-      setTimeout(function() { document.body.removeChild(iframe); }, 1000);
-    }
-
-    // Countdown and redirect
-    let count = 5;
-    const countdownEl = document.getElementById('countdown');
-    const countdownText = document.getElementById('countdownText');
-    const interval = setInterval(function() {
-      count--;
-      if (countdownEl) countdownEl.textContent = count;
-      if (count <= 0) {
-        clearInterval(interval);
-        if (countdownText) countdownText.style.display = 'none';
-        tryOpenApp(deepLink);
-        // Fallback: try standard location change after iframe attempt
-        setTimeout(function() { window.location.href = resultUrl; }, 800);
-      }
-    }, 1000);
-
-    // Try to open app immediately via iframe
-    setTimeout(function() { tryOpenApp(deepLink); }, 500);
+    // Trigger the deep link navigation — WebView will catch it.
+    setTimeout(function() {
+      window.location.href = deepLink;
+    }, 800);
   </script>
 </body>
 </html>

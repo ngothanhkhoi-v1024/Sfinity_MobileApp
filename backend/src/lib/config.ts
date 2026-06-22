@@ -32,7 +32,19 @@ export const config = {
   vnpayTmnCode: process.env.VNPAY_TMN_CODE ?? '',
   vnpayHashSecret: process.env.VNPAY_HASH_SECRET ?? '',
   vnpayUrl: process.env.VNPAY_URL ?? 'https://sandbox.vnpayment.vn/apis/paymentv2/vpcpay.html',
-  vnpayReturnUrl: process.env.VNPAY_RETURN_URL ?? 'sfinity://payment-vnpay-callback',
+  /**
+   * VNPay Return URL — VNPay redirect user về URL này sau khi thanh toán.
+   *
+   * Với WebView (in-app browser):
+   *   - Phải là HTTP/HTTPS URL để WebView load được.
+   *   - Dev (Android Emulator):  http://10.0.2.2:3000/api/payments/vnpay/return
+   *     (10.0.2.2 = host machine từ emulator)
+   *   - Production / thiết bị thật: https://yourdomain.com/api/payments/vnpay/return
+   *
+   * Luôn đặt biến môi trường VNPAY_RETURN_URL trong backend/.env
+   * (KHÔNG dùng deep link scheme ở đây vì WebView không intercept được).
+   */
+  vnpayReturnUrl: process.env.VNPAY_RETURN_URL ?? 'http://10.0.2.2:3000/api/payments/vnpay/return',
   vnpayIpnUrl: process.env.VNPAY_IPN_URL ?? '',
   vnpayApiUrl: process.env.VNPAY_API_URL ?? 'https://sandbox.vnpayment.vn/merchant_webapi/api/transaction',
 } as const;
