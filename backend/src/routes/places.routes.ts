@@ -13,6 +13,8 @@ import { placeService } from '../services/place.service';
 import { placeCheckInService } from '../services/place-checkin.service';
 import { placePhotoService } from '../services/place-photo.service';
 import { placeReviewService } from '../services/place-review.service';
+import { weatherService } from '../services/weather.service';
+import { HttpError } from '../lib/http-error';
 import {
   ContentModerationStatus,
   ContentVisibility,
@@ -86,6 +88,28 @@ placesRouter.get(
     res.json(
       await placeService.findOne(req.params.id, req.user?.sub, req.user?.role),
     );
+  }),
+);
+
+placesRouter.get(
+  '/:id/weather',
+  optionalJwtAuthMiddleware,
+  asyncHandler(async (req, res) => {
+    const place = await placeService.findOne(
+      req.params.id,
+      req.user?.sub,
+      req.user?.role,
+    );
+    const lat = place.latitude;
+    const lng = place.longitude;
+    if (typeof lat !== 'number' || typeof lng !== 'number') {
+      throw new HttpError(
+        404,
+        'Địa điểm chưa có tọa độ.',
+        'Not Found',
+      );
+    }
+    res.json(await weatherService.getCurrentWeather(lat, lng));
   }),
 );
 

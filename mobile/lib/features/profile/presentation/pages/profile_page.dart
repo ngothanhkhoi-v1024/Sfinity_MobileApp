@@ -58,6 +58,11 @@ class ProfilePage extends StatelessWidget {
               title: context.l10n.studyGroups,
               children: [
                 _ProfileMenuItem(
+                  icon: Icons.workspace_premium_outlined,
+                  title: context.l10n.upgradeVip,
+                  onTap: () => context.push(RouteNames.subscription),
+                ),
+                _ProfileMenuItem(
                   icon: Icons.notifications_outlined,
                   title: context.l10n.notifications,
                   onTap: () => context.push(RouteNames.notifications),

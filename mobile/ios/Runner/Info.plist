@@ -30,6 +30,10 @@
 	<string>Sfinity cần vị trí của bạn để hiển thị địa điểm gần trên bản đồ.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Sfinity cần quyền truy cập thư viện ảnh để đổi ảnh đại diện.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Sfinity cần quyền micro để tìm kiếm bằng giọng nói.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Sfinity cần nhận dạng giọng nói để chuyển thành từ khóa tìm kiếm.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -57,6 +61,20 @@
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<!-- Deep link scheme `sfinity` dùng cho callback từ MoMo. -->
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.sfinity.payment</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>sfinity</string>
+			</array>
+		</dict>
+	</array>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>

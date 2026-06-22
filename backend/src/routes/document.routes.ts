@@ -1,5 +1,6 @@
 import { ContentModerationStatus, ContentVisibility, UserRole } from '../types/enums';
 import { Router } from 'express';
+import { checkContentModeration, extractTextFromPdf } from '../lib/moderation';
 
 import { AdminApproveDto, AdminDeleteDto, AdminHideDto, AdminUnhideDto } from '../dto/admin-document.dto';
 import { CreateDocumentDto, UpdateDocumentDto } from '../dto/document.dto';
@@ -14,6 +15,40 @@ import { documentReviewService } from '../services/document-review.service';
 const adminOnly = [jwtAuthMiddleware, rolesMiddleware(UserRole.ADMIN)] as const;
 
 export const documentRouter = Router();
+
+documentRouter.post(
+  '/test-moderation',
+  asyncHandler(async (req, res) => {
+    const { title, body, fileUrl } = req.body;
+    let textToScan = `${title ?? ''} ${body ?? ''}`;
+    let pdfText = '';
+    let pdfError = null;
+
+    if (fileUrl && fileUrl.toLowerCase().includes('.pdf')) {
+      try {
+        pdfText = await extractTextFromPdf(fileUrl);
+      } catch (err: any) {
+        pdfError = err.message || String(err);
+      }
+    }
+
+    if (pdfText) {
+      textToScan += ` [PDF Content: ${pdfText}]`;
+    }
+
+    const modResult = await checkContentModeration(textToScan);
+
+    res.json({
+      originalTitle: title ?? null,
+      originalBody: body ?? null,
+      fileUrl: fileUrl ?? null,
+      extractedPdfText: pdfText || null,
+      pdfError,
+      scannedTextTotalLength: textToScan.length,
+      moderationResult: modResult,
+    });
+  }),
+);
 
 documentRouter.get(
   '/',

@@ -21,6 +21,7 @@ export const openApiDocument = {
     { name: 'admin' },
     { name: 'friends' },
     { name: 'groups' },
+    { name: 'payments' },
   ],
   components: {
     securitySchemes: {
@@ -217,6 +218,14 @@ export const openApiDocument = {
           title: { type: 'string', minLength: 2 },
           body: { type: 'string', minLength: 2 },
           userId: { type: 'string' },
+        },
+      },
+      CreateMomoPaymentDto: {
+        type: 'object',
+        required: ['planId', 'cycle'],
+        properties: {
+          planId: { type: 'string', enum: ['pro'] },
+          cycle: { type: 'string', enum: ['monthly', 'yearly'] },
         },
       },
     },
@@ -433,6 +442,28 @@ export const openApiDocument = {
         summary: 'Delete category (admin)',
         security: [{ bearerAuth: [] }],
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'OK' } },
+      },
+    },
+    '/api/document/test-moderation': {
+      post: {
+        tags: ['document'],
+        summary: 'Test PDF text extraction & OpenAI content moderation',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  title: { type: 'string' },
+                  body: { type: 'string' },
+                  fileUrl: { type: 'string', description: 'URL of the PDF file' },
+                },
+              },
+            },
+          },
+        },
         responses: { '200': { description: 'OK' } },
       },
     },
@@ -978,6 +1009,58 @@ export const openApiDocument = {
           { name: 'uid', in: 'path', required: true, schema: { type: 'string' } },
         ],
         responses: { '200': { description: 'OK' } },
+      },
+    },
+    '/api/payments/momo/create': {
+      post: {
+        tags: ['payments'],
+        summary: 'Create a MoMo payment request for VIP plan',
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/CreateMomoPaymentDto' },
+            },
+          },
+        },
+        responses: {
+          '200': { description: 'MoMo payUrl + deeplink returned' },
+          '400': { description: 'Bad request' },
+          '401': { description: 'Unauthorized' },
+          '502': { description: 'MoMo rejected the request' },
+          '503': { description: 'MoMo not configured on server' },
+        },
+      },
+    },
+    '/api/payments/momo/ipn': {
+      post: {
+        tags: ['payments'],
+        summary: 'MoMo IPN webhook (server-to-server). HMAC verified internally.',
+        requestBody: {
+          required: true,
+          content: { 'application/json': { schema: { type: 'object' } } },
+        },
+        responses: { '200': { description: 'Always 200; body has resultCode/message' } },
+      },
+    },
+    '/api/payments/momo/status/{orderId}': {
+      get: {
+        tags: ['payments'],
+        summary: 'Check status of a MoMo transaction',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'orderId', in: 'path', required: true, schema: { type: 'string' } },
+        ],
+        responses: { '200': { description: 'Transaction status' } },
+      },
+    },
+    '/api/payments/subscription/me': {
+      get: {
+        tags: ['payments'],
+        summary: 'Current VIP subscription status for the user',
+        security: [{ bearerAuth: [] }],
+        responses: { '200': { description: 'VIP status' } },
       },
     },
   },

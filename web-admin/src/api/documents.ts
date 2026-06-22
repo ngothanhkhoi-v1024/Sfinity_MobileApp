@@ -24,6 +24,8 @@ export interface DocumentItem {
   updatedAt: string;
   author?: { id: string; name: string; email: string };
   category?: { id: string; name: string; slug?: string } | null;
+  aiRejected?: boolean | null;
+  rejectionReason?: string | null;
 }
 
 export interface DocumentListResponse {
