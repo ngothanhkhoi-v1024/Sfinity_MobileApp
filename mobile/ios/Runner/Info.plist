@@ -30,6 +30,10 @@
 	<string>Sfinity cần vị trí của bạn để hiển thị địa điểm gần trên bản đồ.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Sfinity cần quyền truy cập thư viện ảnh để đổi ảnh đại diện.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Sfinity cần quyền micro để tìm kiếm bằng giọng nói.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Sfinity cần nhận dạng giọng nói để chuyển thành từ khóa tìm kiếm.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

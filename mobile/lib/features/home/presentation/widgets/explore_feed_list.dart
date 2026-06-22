@@ -11,6 +11,7 @@ class ExploreFeedSectionHeader extends StatelessWidget {
     required this.showingSaved,
     required this.placeCount,
     required this.docCount,
+    this.subtitle,
   });
 
   final String title;
@@ -18,45 +19,64 @@ class ExploreFeedSectionHeader extends StatelessWidget {
   final bool showingSaved;
   final int placeCount;
   final int docCount;
+  final String? subtitle;
 
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
 
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         if (showingSaved)
           Padding(
             padding: const EdgeInsets.only(right: 6),
             child: Icon(Icons.bookmark_rounded, size: 18, color: primary),
           ),
-        Text(
-          title,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.3,
-                color: AppColors.title(context),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.3,
+                          color: AppColors.title(context),
+                        ),
+                  ),
+                  if (count > 0) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: primary.withValues(alpha: AppColors.isDark(context) ? 0.18 : 0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '$count',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: primary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
-        ),
-        if (count > 0) ...[
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: primary.withValues(alpha: AppColors.isDark(context) ? 0.18 : 0.1),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              '$count',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: primary,
-              ),
-            ),
+              if (subtitle != null) ...[
+                const SizedBox(height: 2),
+                Text(
+                  subtitle!,
+                  style: TextStyle(fontSize: 11, color: AppColors.muted(context)),
+                ),
+              ],
+            ],
           ),
-        ],
-        const Spacer(),
+        ),
         _StatChip(
           icon: Icons.location_on_outlined,
           value: placeCount,
@@ -69,6 +89,47 @@ class ExploreFeedSectionHeader extends StatelessWidget {
           color: AppColors.title(context),
         ),
       ],
+    );
+  }
+}
+
+class ExploreFeedLoadMore extends StatelessWidget {
+  const ExploreFeedLoadMore({
+    super.key,
+    required this.hasMore,
+    required this.remaining,
+    required this.onLoadMore,
+  });
+
+  final bool hasMore;
+  final int remaining;
+  final VoidCallback onLoadMore;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final primary = Theme.of(context).colorScheme.primary;
+
+    if (!hasMore) {
+      return const SizedBox(height: 8);
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, bottom: 8),
+      child: SizedBox(
+        width: double.infinity,
+        child: OutlinedButton.icon(
+          onPressed: onLoadMore,
+          icon: Icon(Icons.expand_more_rounded, size: 18, color: primary),
+          label: Text(l10n.exploreLoadMore(remaining)),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: primary,
+            side: BorderSide(color: primary.withValues(alpha: 0.35)),
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+      ),
     );
   }
 }

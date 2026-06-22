@@ -69,6 +69,10 @@ class AppLocalizations {
       'uploadStudyMaterialsSubtitle': 'Ghi chú, slide, đề thi, tóm tắt môn học…',
       'retry': 'Thử lại',
       'searchHint': 'Tìm kiếm...',
+      'voiceSearch': 'Tìm bằng giọng nói',
+      'voiceSearchListening': 'Đang nghe...',
+      'voiceSearchPermissionDenied': 'Cần quyền micro để tìm bằng giọng nói.',
+      'voiceSearchUnavailable': 'Nhận dạng giọng nói không khả dụng trên thiết bị này.',
       'noNotifications': 'Không có thông báo',
       'markAllRead': 'Đọc tất cả',
       'deleteNotification': 'Xóa thông báo',
@@ -188,6 +192,9 @@ class AppLocalizations {
       'invitesTab': 'Lời mời',
       'placeDetail': 'Chi tiết Không gian Học tập',
       'interactionCheckin': 'Tương tác & Check-in',
+      'placeWeatherToday': 'Thời tiết hôm nay',
+      'placeWeatherHumidity': 'Độ ẩm {value}%',
+      'placeWeatherTemperature': '{value}°C',
       'checkinsToday': '{count} lượt check-in hôm nay',
       'checkInNow': 'Check-in ngay',
       'sharedAccount': 'Tài khoản chia sẻ',
@@ -268,8 +275,10 @@ class AppLocalizations {
       'placeDescription': 'Mô tả địa điểm',
       'additionalDescription': 'Mô tả bổ sung',
       'placeDescriptionHint': 'Mô tả ngắn gọn về địa điểm này...',
-      'placeCoverImage': 'Ảnh nền',
-      'placeCoverImageHint': 'Hiển thị ở đầu trang chi tiết địa điểm',
+      'placeCoverImage': 'Hình ảnh địa điểm',
+      'placeCoverImageHint': 'Thêm nhiều ảnh — hiển thị ở đầu trang chi tiết',
+      'placePhotosMax': 'Tối đa {max} ảnh',
+      'addMorePhotos': 'Thêm ảnh',
       'placePickLocationHint': 'Chạm bản đồ hoặc dùng nút vị trí hiện tại',
       'removeCoverImage': 'Xóa ảnh nền',
       'placeDescriptionDetail': 'Chi tiết về địa điểm',
@@ -421,6 +430,8 @@ class AppLocalizations {
       'noComments': 'Chưa có bình luận',
       'all': 'Tất cả',
       'newest': 'Mới nhất',
+      'exploreLoadMore': 'Xem thêm ({remaining})',
+      'exploreShowingCount': '{shown}/{total}',
       'featuredHighlights': 'Nổi bật',
       'featuredPlaces': 'Địa điểm nổi bật',
       'featuredDocuments': 'Tài liệu nổi bật',
@@ -484,6 +495,10 @@ class AppLocalizations {
       'close': 'Đóng',
       'exploreTopPanel': 'Khám phá',
       'studyNearMe': 'Học gần tôi',
+      'studyNearMeNearest': 'Gợi ý gần nhất',
+      'studyNearMeMoreInRadius': 'Còn {count} mục khác trong bán kính',
+      'studyNearMeViewAll': 'Xem tất cả ({count})',
+      'studyNearMeShowLess': 'Thu gọn',
       'pleaseLogin': 'Vui lòng đăng nhập',
       // Missing validators
       'enterValidEmail': 'Nhập email hợp lệ',
@@ -661,6 +676,10 @@ class AppLocalizations {
       'uploadStudyMaterialsSubtitle': 'Notes, slides, exam papers, subject summaries…',
       'retry': 'Retry',
       'searchHint': 'Search...',
+      'voiceSearch': 'Search by voice',
+      'voiceSearchListening': 'Listening...',
+      'voiceSearchPermissionDenied': 'Microphone permission is required for voice search.',
+      'voiceSearchUnavailable': 'Speech recognition is not available on this device.',
       'noNotifications': 'No notifications',
       'markAllRead': 'Mark all read',
       'deleteNotification': 'Delete notification',
@@ -775,6 +794,9 @@ class AppLocalizations {
       'invitesTab': 'Invitations',
       'placeDetail': 'Study space detail',
       'interactionCheckin': 'Interaction & check-in',
+      'placeWeatherToday': 'Weather today',
+      'placeWeatherHumidity': 'Humidity {value}%',
+      'placeWeatherTemperature': '{value}°C',
       'checkinsToday': '{count} check-ins today',
       'checkInNow': 'Check in now',
       'sharedAccount': 'Shared by',
@@ -860,8 +882,10 @@ class AppLocalizations {
       'placeDescription': 'Place description',
       'additionalDescription': 'Additional description',
       'placeDescriptionHint': 'Brief description of this place...',
-      'placeCoverImage': 'Cover image',
-      'placeCoverImageHint': 'Shown at the top of the place detail page',
+      'placeCoverImage': 'Place photos',
+      'placeCoverImageHint': 'Add multiple photos — shown at the top of place detail',
+      'placePhotosMax': 'Up to {max} photos',
+      'addMorePhotos': 'Add more',
       'placePickLocationHint': 'Tap the map or use the current location button',
       'removeCoverImage': 'Remove cover image',
       'placeDescriptionDetail': 'Place details',
@@ -1012,6 +1036,8 @@ class AppLocalizations {
       'noComments': 'No comments',
       'all': 'All',
       'newest': 'Newest',
+      'exploreLoadMore': 'Load more ({remaining})',
+      'exploreShowingCount': '{shown}/{total}',
       'featuredHighlights': 'Highlights',
       'featuredPlaces': 'Featured places',
       'featuredDocuments': 'Featured documents',
@@ -1076,6 +1102,10 @@ class AppLocalizations {
       'close': 'Close',
       'exploreTopPanel': 'Explore',
       'studyNearMe': 'Study near me',
+      'studyNearMeNearest': 'Nearest suggestion',
+      'studyNearMeMoreInRadius': '{count} more items in this radius',
+      'studyNearMeViewAll': 'View all ({count})',
+      'studyNearMeShowLess': 'Show less',
       'pleaseLogin': 'Please sign in',
       // Missing validators
       'enterValidEmail': 'Please enter a valid email',
@@ -1266,6 +1296,10 @@ class AppLocalizations {
   String get uploadStudyMaterialsSubtitle => _text('uploadStudyMaterialsSubtitle');
   String get retry => _text('retry');
   String get searchHint => _text('searchHint');
+  String get voiceSearch => _text('voiceSearch');
+  String get voiceSearchListening => _text('voiceSearchListening');
+  String get voiceSearchPermissionDenied => _text('voiceSearchPermissionDenied');
+  String get voiceSearchUnavailable => _text('voiceSearchUnavailable');
   String get noNotifications => _text('noNotifications');
   String get markAllRead => _text('markAllRead');
   String get deleteNotification => _text('deleteNotification');
@@ -1376,6 +1410,13 @@ class AppLocalizations {
   String get invitesTab => _text('invitesTab');
   String get placeDetail => _text('placeDetail');
   String get interactionCheckin => _text('interactionCheckin');
+  String get placeWeatherToday => _text('placeWeatherToday');
+  String placeWeatherHumidity(int value) =>
+      _format('placeWeatherHumidity', {'{value}': '$value'});
+  String placeWeatherTemperature(double value) => _format(
+        'placeWeatherTemperature',
+        {'{value}': value.toStringAsFixed(value.truncateToDouble() == value ? 0 : 1)},
+      );
   String checkinsToday(int count) => _format('checkinsToday', {'{count}': '$count'});
   String get checkInNow => _text('checkInNow');
   String get sharedAccount => _text('sharedAccount');
@@ -1467,6 +1508,8 @@ class AppLocalizations {
   String get placeDescriptionHint => _text('placeDescriptionHint');
   String get placeCoverImage => _text('placeCoverImage');
   String get placeCoverImageHint => _text('placeCoverImageHint');
+  String placePhotosMax(int max) => _format('placePhotosMax', {'{max}': '$max'});
+  String get addMorePhotos => _text('addMorePhotos');
   String get placePickLocationHint => _text('placePickLocationHint');
   String get removeCoverImage => _text('removeCoverImage');
   String get placeDescriptionDetail => _text('placeDescriptionDetail');
@@ -1642,6 +1685,11 @@ class AppLocalizations {
   String get noComments => _text('noComments');
   String get all => _text('all');
   String get newest => _text('newest');
+  String exploreLoadMore(int remaining) =>
+      _text('exploreLoadMore').replaceAll('{remaining}', '$remaining');
+  String exploreShowingCount(int shown, int total) => _text('exploreShowingCount')
+      .replaceAll('{shown}', '$shown')
+      .replaceAll('{total}', '$total');
   String get featuredHighlights => _text('featuredHighlights');
   String get featuredPlaces => _text('featuredPlaces');
   String get featuredDocuments => _text('featuredDocuments');
@@ -1720,6 +1768,12 @@ class AppLocalizations {
   String get close => _text('close');
   String get exploreTopPanel => _text('exploreTopPanel');
   String get studyNearMe => _text('studyNearMe');
+  String get studyNearMeNearest => _text('studyNearMeNearest');
+  String studyNearMeMoreInRadius(int count) =>
+      _text('studyNearMeMoreInRadius').replaceAll('{count}', '$count');
+  String studyNearMeViewAll(int count) =>
+      _text('studyNearMeViewAll').replaceAll('{count}', '$count');
+  String get studyNearMeShowLess => _text('studyNearMeShowLess');
   String get pleaseLogin => _text('pleaseLogin');
   String get apiError => _text('apiError');
   // Missing validators getters

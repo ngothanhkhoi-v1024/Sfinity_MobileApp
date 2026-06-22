@@ -335,14 +335,18 @@ class _PlaceSharePageState extends State<PlaceSharePage> {
                   ),
                   const SizedBox(height: 16),
                   PlaceCoverImagePicker(
-                    pickedFile: _ctrl.pickedCoverImage,
-                    previewUrl: _ctrl.coverPreviewUrl,
+                    pickedFiles: _ctrl.pickedImages,
+                    existingUrls: _ctrl.existingPhotoUrls,
                     enabled: !_ctrl.loading,
+                    maxPhotos: PlaceFormController.maxPhotos,
                     onPick: () async {
-                      final file = await pickPlaceCoverImage(context);
-                      if (file != null) _ctrl.setPickedCover(file);
+                      final files = await pickPlacePhotos(
+                        context,
+                        remainingSlots: _ctrl.remainingPhotoSlots,
+                      );
+                      if (files.isNotEmpty) _ctrl.addPickedImages(files);
                     },
-                    onClear: _ctrl.clearCover,
+                    onRemovePicked: _ctrl.removePickedAt,
                   ),
                   const SizedBox(height: 12),
                   TextField(

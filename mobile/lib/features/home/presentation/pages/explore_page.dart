@@ -24,12 +24,15 @@ class ExplorePage extends StatefulWidget {
 }
 
 class _ExplorePageState extends State<ExplorePage> {
+  static const _feedPageSize = 6;
+
   List<dynamic> _items = [];
   bool _loading = true;
   String? _error;
   late final StudyNearMeController _studyNearMeCtrl;
   final _searchController = TextEditingController();
   ExploreFilter _filter = ExploreFilter.all;
+  int _feedVisibleCount = _feedPageSize;
   bool _searchingApi = false;
   List<dynamic>? _apiSearchResults;
   Timer? _debounce;
@@ -72,12 +75,34 @@ class _ExplorePageState extends State<ExplorePage> {
       if (!mounted) return;
       final q = _searchController.text.trim();
       if (q.isEmpty) {
-        setState(() => _apiSearchResults = null);
+        setState(() {
+          _apiSearchResults = null;
+          _feedVisibleCount = _feedPageSize;
+        });
         return;
       }
       _runApiSearch(q);
     });
-    setState(() {});
+    setState(() {
+      _feedVisibleCount = _feedPageSize;
+    });
+  }
+
+  void _resetFeedPagination() {
+    _feedVisibleCount = _feedPageSize;
+  }
+
+  void _onFilterChanged(ExploreFilter filter) {
+    setState(() {
+      _filter = filter;
+      _resetFeedPagination();
+    });
+  }
+
+  void _loadMoreFeed() {
+    setState(() {
+      _feedVisibleCount += _feedPageSize;
+    });
   }
 
   Future<void> _runApiSearch(String query) async {
@@ -119,8 +144,8 @@ class _ExplorePageState extends State<ExplorePage> {
     if (result != null) {
       await StudyNearMeResultsSheet.show(
         context,
-        result: result,
-        onRetry: _onStudyNearMe,
+        controller: _studyNearMeCtrl,
+        onRefresh: () => _studyNearMeCtrl.loadNearby(),
       );
     }
   }
@@ -237,14 +262,21 @@ class _ExplorePageState extends State<ExplorePage> {
 
   Future<void> _toggleSavedView() async {
     if (_showingSaved) {
-      setState(() => _showingSaved = false);
+      setState(() {
+        _showingSaved = false;
+        _resetFeedPagination();
+      });
       return;
     }
-    setState(() => _showingSaved = true);
+    setState(() {
+      _showingSaved = true;
+      _resetFeedPagination();
+    });
     await _loadFavorites();
   }
 
   Future<void> _onRefresh() async {
+    setState(_resetFeedPagination);
     await Future.wait([
       if (_showingSaved) _loadFavorites() else _load(),
       _loadExploreMeta(),
@@ -275,6 +307,8 @@ class _ExplorePageState extends State<ExplorePage> {
     final isDark = theme.brightness == Brightness.dark;
     final primary = theme.colorScheme.primary;
     final visible = _visibleItems;
+    final paginated = visible.take(_feedVisibleCount).toList();
+    final hasMoreFeed = _feedVisibleCount < visible.length;
     final isSearching = _searchController.text.trim().isNotEmpty;
     final displayPlaceCount = _showingSaved ? _savedPlaceCount : _placeCount;
     final displayDocCount = _showingSaved ? _savedDocCount : _docCount;
@@ -300,10 +334,7 @@ class _ExplorePageState extends State<ExplorePage> {
                   ExploreTopPanel(
                     searchController: _searchController,
                     searchHint: l10n.searchHint,
-                    filter: _filter,
-                    primary: primary,
-                    onFilterChanged: (f) => setState(() => _filter = f),
-                    onSearchChanged: (_) => setState(() {}),
+                    onSearchChanged: (_) => setState(() => _resetFeedPagination()),
                     onSearchSubmitted: (q) {
                       if (q.trim().isNotEmpty) _runApiSearch(q.trim());
                     },
@@ -377,12 +408,21 @@ class _ExplorePageState extends State<ExplorePage> {
                     ],
                   ],
                   const SizedBox(height: 12),
+                  ExploreFilterRow(
+                    filter: _filter,
+                    primary: primary,
+                    onChanged: _onFilterChanged,
+                  ),
+                  const SizedBox(height: 10),
                   ExploreFeedSectionHeader(
                     title: sectionTitle,
                     count: visible.length,
                     showingSaved: _showingSaved,
                     placeCount: displayPlaceCount,
                     docCount: displayDocCount,
+                    subtitle: visible.isNotEmpty
+                        ? l10n.exploreShowingCount(paginated.length, visible.length)
+                        : null,
                   ),
                   if (isSearching && visible.isEmpty && !_searchingApi)
                     Padding(
@@ -436,9 +476,16 @@ class _ExplorePageState extends State<ExplorePage> {
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
-                    final item = visible[index];
+                    if (index == paginated.length) {
+                      return ExploreFeedLoadMore(
+                        hasMore: hasMoreFeed,
+                        remaining: visible.length - paginated.length,
+                        onLoadMore: _loadMoreFeed,
+                      );
+                    }
+                    final item = paginated[index];
                     return Padding(
-                      padding: EdgeInsets.only(bottom: index < visible.length - 1 ? 10 : 0),
+                      padding: EdgeInsets.only(bottom: index < paginated.length - 1 ? 10 : 0),
                       child: ExploreFeedCard(
                         item: item,
                         isPlace: _isPlace(item),
@@ -446,7 +493,7 @@ class _ExplorePageState extends State<ExplorePage> {
                       ),
                     );
                   },
-                  childCount: visible.length,
+                  childCount: paginated.length + 1,
                 ),
               ),
             ),
@@ -695,8 +742,6 @@ class _ExploreLoadingView extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
       children: [
         Container(height: 48, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(12))),
-        const SizedBox(height: 8),
-        Container(height: 36, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(12))),
         const SizedBox(height: 10),
         Row(
           children: [
@@ -709,7 +754,9 @@ class _ExploreLoadingView extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Container(height: 150, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(12))),
-        const SizedBox(height: 14),
+        const SizedBox(height: 12),
+        Container(height: 36, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(12))),
+        const SizedBox(height: 10),
         Row(
           children: [
             Container(height: 18, width: 90, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(6))),

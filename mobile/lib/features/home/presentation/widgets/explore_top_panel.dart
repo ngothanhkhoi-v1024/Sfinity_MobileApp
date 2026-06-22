@@ -11,60 +11,42 @@ class ExploreTopPanel extends StatelessWidget {
     super.key,
     required this.searchController,
     required this.searchHint,
-    required this.filter,
-    required this.primary,
-    required this.onFilterChanged,
     required this.onSearchChanged,
     required this.onSearchSubmitted,
   });
 
   final TextEditingController searchController;
   final String searchHint;
-  final ExploreFilter filter;
-  final Color primary;
-  final ValueChanged<ExploreFilter> onFilterChanged;
   final ValueChanged<String> onSearchChanged;
   final ValueChanged<String> onSearchSubmitted;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        PlacesSearchField(
-          controller: searchController,
-          hint: searchHint,
-          onChanged: onSearchChanged,
-          onSubmitted: onSearchSubmitted,
-        ),
-        const SizedBox(height: 10),
-        _FilterRow(
-          filter: filter,
-          primary: primary,
-          onChanged: onFilterChanged,
-          l10n: l10n,
-        ),
-      ],
+    return PlacesSearchField(
+      controller: searchController,
+      hint: searchHint,
+      onChanged: onSearchChanged,
+      onSubmitted: onSearchSubmitted,
     );
   }
 }
 
-class _FilterRow extends StatelessWidget {
-  const _FilterRow({
+/// Bộ lọc Tất cả / Địa điểm / Tài liệu — đặt ngay trên feed Mới nhất.
+class ExploreFilterRow extends StatelessWidget {
+  const ExploreFilterRow({
+    super.key,
     required this.filter,
     required this.primary,
     required this.onChanged,
-    required this.l10n,
   });
 
   final ExploreFilter filter;
   final Color primary;
   final ValueChanged<ExploreFilter> onChanged;
-  final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final options = [
       (ExploreFilter.all, l10n.all),
       (ExploreFilter.place, l10n.places),
