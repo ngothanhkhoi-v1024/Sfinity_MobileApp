@@ -100,20 +100,28 @@ class AppLocalizations {
       'enterAtLeast5Characters': 'Nhập ít nhất 5 ký tự',
       'thanksForYourFeedback': 'Cảm ơn phản hồi của bạn!',
       'assistantTitle': 'Hải cẩu Sfinity',
-      'assistantSubtitle': 'Trợ lý hướng dẫn sử dụng app',
+      'assistantSubtitle': 'Gợi ý địa điểm, thời tiết & hướng dẫn app',
       'assistantPlaceholder': 'Hỏi về cách dùng Sfinity...',
       'assistantContextHint': 'Bạn cần hải cẩu giúp không?',
       'assistantDismissHint': 'Đã hiểu',
       'assistantOpenChat': 'Hỏi hải cẩu',
       'assistantThinking': 'Hải cẩu đang suy nghĩ...',
-      'assistantWelcome': '🦭 Chào bạn! Mình chỉ hỗ trợ hướng dẫn dùng app Sfinity thôi nhé — không giải bài tập và không xem được dữ liệu riêng tư của bạn. Hỏi mình bất cứ điều gì về app!',
+      'assistantWelcome': '🦭 Chào bạn! Mình có thể gợi ý chỗ học gần bạn, thời tiết, tìm địa điểm/tài liệu và hướng dẫn dùng app. Bật GPS để gợi ý chính xác hơn nhé!',
       'assistantQuickExplore': 'Khám phá dùng thế nào?',
       'assistantQuickCheckIn': 'Check-in thế nào?',
       'assistantQuickStudyNearMe': 'Học gần tôi là gì?',
       'assistantQuickUploadDoc': 'Tải tài liệu thế nào?',
       'assistantQuickCreateGroup': 'Tạo nhóm học?',
       'assistantQuickSettings': 'Đổi ngôn ngữ & giao diện',
-      'reportSubmitted': 'Đã gửi báo cáo',
+      'assistantActionOpenPlace': 'Xem địa điểm',
+      'assistantActionOpenDocument': 'Xem tài liệu',
+      'assistantActionOpenMap': 'Mở bản đồ',
+      'assistantVoiceInput': 'Nói với hải cẩu',
+      'assistantSources': 'Nguồn',
+      'assistantShowFab': 'Hiện trợ lý hải cẩu',
+      'assistantShowFabSubtitle': 'Icon nổi trên màn hình để hỏi nhanh',
+      'assistantHideFab': 'Ẩn trợ lý',
+      'assistantDropToHide': 'Thả để ẩn',
       'reportViolationTitle': 'Báo cáo vi phạm',
       'type': 'Loại',
       'documentType': 'Tài liệu',
@@ -130,6 +138,7 @@ class AppLocalizations {
       'forgotPasswordQuestion': 'Quên mật khẩu?',
       'orContinueWith': 'Hoặc tiếp tục với',
       'continueWithGoogle': 'Đăng nhập với Google',
+      'continueWithFacebook': 'Đăng nhập với Facebook',
       'noAccountYetRegister': 'Chưa có tài khoản? Đăng ký',
       'forgotPassword': 'Quên mật khẩu',
       'forgotPasswordDescription': 'Nhập email đã đăng ký để nhận mã OTP khôi phục mật khẩu.',
@@ -319,6 +328,10 @@ class AppLocalizations {
       'invalidCoordinates': 'Tọa độ không hợp lệ',
       'allZones': 'Tất cả khu vực',
       'filterAmenities': 'Lọc tiện nghi',
+      'mapFilters': 'Bộ lọc',
+      'filterByRating': 'Đánh giá tối thiểu',
+      'filterRatingAny': 'Tất cả',
+      'filterRatingMin': '{rating}★ trở lên',
       'activeFilters': '{count} bộ lọc',
       'placeHiddenByFilters': 'Địa điểm đang bị ẩn bởi bộ lọc',
       'clearMapSelection': 'Bỏ chọn',
@@ -745,20 +758,28 @@ class AppLocalizations {
       'enterAtLeast5Characters': 'Enter at least 5 characters',
       'thanksForYourFeedback': 'Thanks for your feedback!',
       'assistantTitle': 'Sfinity Seal',
-      'assistantSubtitle': 'App usage guide assistant',
+      'assistantSubtitle': 'Places, weather & app guide',
       'assistantPlaceholder': 'Ask about using Sfinity...',
       'assistantContextHint': 'Need help from the seal?',
       'assistantDismissHint': 'Got it',
       'assistantOpenChat': 'Ask the seal',
       'assistantThinking': 'Seal is thinking...',
-      'assistantWelcome': '🦭 Hi! I only help with using the Sfinity app — no homework answers and no access to your private data. Ask me anything about the app!',
+      'assistantWelcome': '🦭 Hi! I can suggest study spots near you, weather, find places/documents, and guide you through the app. Enable GPS for better suggestions!',
       'assistantQuickExplore': 'How does Explore work?',
       'assistantQuickCheckIn': 'How to check in?',
       'assistantQuickStudyNearMe': 'What is Study Near Me?',
       'assistantQuickUploadDoc': 'How to upload documents?',
       'assistantQuickCreateGroup': 'How to create a study group?',
       'assistantQuickSettings': 'Change language & theme',
-      'reportSubmitted': 'Report submitted',
+      'assistantActionOpenPlace': 'View place',
+      'assistantActionOpenDocument': 'View document',
+      'assistantActionOpenMap': 'Open map',
+      'assistantVoiceInput': 'Talk to the seal',
+      'assistantSources': 'Sources',
+      'assistantShowFab': 'Show seal assistant',
+      'assistantShowFabSubtitle': 'Floating button on screen for quick help',
+      'assistantHideFab': 'Hide assistant',
+      'assistantDropToHide': 'Drop to hide',
       'reportViolationTitle': 'Report violation',
       'type': 'Type',
       'documentType': 'Document',
@@ -775,6 +796,7 @@ class AppLocalizations {
       'forgotPasswordQuestion': 'Forgot password?',
       'orContinueWith': 'Or continue with',
       'continueWithGoogle': 'Continue with Google',
+      'continueWithFacebook': 'Continue with Facebook',
       'noAccountYetRegister': 'No account yet? Register',
       'forgotPassword': 'Forgot password',
       'forgotPasswordDescription': 'Enter your registered email to receive a password reset OTP.',
@@ -964,6 +986,10 @@ class AppLocalizations {
       'invalidCoordinates': 'Invalid coordinates',
       'allZones': 'All zones',
       'filterAmenities': 'Filter amenities',
+      'mapFilters': 'Filters',
+      'filterByRating': 'Minimum rating',
+      'filterRatingAny': 'Any',
+      'filterRatingMin': '{rating}★+',
       'activeFilters': '{count} filters',
       'placeHiddenByFilters': 'Place hidden by active filters',
       'clearMapSelection': 'Clear selection',
@@ -1416,6 +1442,15 @@ class AppLocalizations {
   String get assistantQuickUploadDoc => _text('assistantQuickUploadDoc');
   String get assistantQuickCreateGroup => _text('assistantQuickCreateGroup');
   String get assistantQuickSettings => _text('assistantQuickSettings');
+  String get assistantActionOpenPlace => _text('assistantActionOpenPlace');
+  String get assistantActionOpenDocument => _text('assistantActionOpenDocument');
+  String get assistantActionOpenMap => _text('assistantActionOpenMap');
+  String get assistantVoiceInput => _text('assistantVoiceInput');
+  String get assistantSources => _text('assistantSources');
+  String get assistantShowFab => _text('assistantShowFab');
+  String get assistantShowFabSubtitle => _text('assistantShowFabSubtitle');
+  String get assistantHideFab => _text('assistantHideFab');
+  String get assistantDropToHide => _text('assistantDropToHide');
   String get reportSubmitted => _text('reportSubmitted');
   String get reportViolationTitle => _text('reportViolationTitle');
   String get type => _text('type');
@@ -1433,6 +1468,7 @@ class AppLocalizations {
   String get forgotPasswordQuestion => _text('forgotPasswordQuestion');
   String get orContinueWith => _text('orContinueWith');
   String get continueWithGoogle => _text('continueWithGoogle');
+  String get continueWithFacebook => _text('continueWithFacebook');
   String get noAccountYetRegister => _text('noAccountYetRegister');
   String get forgotPassword => _text('forgotPassword');
   String get forgotPasswordDescription => _text('forgotPasswordDescription');
@@ -1626,6 +1662,11 @@ class AppLocalizations {
   String get invalidCoordinates => _text('invalidCoordinates');
   String get allZones => _text('allZones');
   String get filterAmenities => _text('filterAmenities');
+  String get mapFilters => _text('mapFilters');
+  String get filterByRating => _text('filterByRating');
+  String get filterRatingAny => _text('filterRatingAny');
+  String filterRatingMin(int rating) =>
+      _format('filterRatingMin', {'{rating}': '$rating'});
   String activeFilters(int count) => _format('activeFilters', {'{count}': '$count'});
   String get placeHiddenByFilters => _text('placeHiddenByFilters');
   String get clearMapSelection => _text('clearMapSelection');

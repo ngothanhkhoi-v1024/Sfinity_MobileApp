@@ -16,6 +16,7 @@ class PlaceApiService {
     String? authorId,
     bool publishedOnly = false,
     int limit = 50,
+    int? minRating,
   }) {
     return _api.get('/places', query: {
       if (search != null) 'search': search,
@@ -25,6 +26,7 @@ class PlaceApiService {
       if (radiusKm != null) 'radiusKm': radiusKm.toString(),
       if (zone != null && zone.isNotEmpty) 'zone': zone,
       if (authorId != null) 'authorId': authorId,
+      if (minRating != null && minRating > 0) 'minRating': minRating.toString(),
       'publishedOnly': publishedOnly.toString(),
       'limit': limit.toString(),
     });

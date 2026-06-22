@@ -180,15 +180,29 @@ class PlaceFormController extends ChangeNotifier {
         resultingPlaceId = place.id;
       }
 
+      final photoErrors = <String>[];
       for (final image in pickedImages) {
-        await SfinityApp.placeEngagementRepository.uploadAndAddPhoto(
-          resultingPlaceId,
-          imageFile: image,
-        );
+        try {
+          await SfinityApp.placeEngagementRepository.uploadAndAddPhoto(
+            resultingPlaceId,
+            imageFile: image,
+          );
+        } on DioException catch (e) {
+          photoErrors.add(ApiClient.instance.errorMessage(e));
+        } catch (e) {
+          photoErrors.add(e.toString());
+        }
       }
       pickedImages.clear();
+
+      if (photoErrors.isNotEmpty) {
+        throw photoErrors.join('\n');
+      }
     } on DioException catch (e) {
       throw ApiClient.instance.errorMessage(e);
+    } catch (e) {
+      if (e is String) rethrow;
+      throw e.toString();
     } finally {
       loading = false;
       notifyListeners();

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { asyncHandler } from '../lib/async-handler';
+import { HttpError } from '../lib/http-error';
 import { jwtAuthMiddleware } from '../middleware/jwt.middleware';
 import { rolesMiddleware } from '../middleware/roles.middleware';
 import { UserRole } from '../types/enums';
@@ -12,9 +13,7 @@ export const amenitiesRouter = Router();
 amenitiesRouter.get(
   '/',
   asyncHandler(async (_req, res) => {
-    console.log('[route] GET /amenities');
     const result = await amenitiesService.findAll();
-    console.log('[route] returning:', result.length, 'items');
     res.json(result);
   }),
 );
@@ -35,8 +34,7 @@ amenitiesRouter.post(
       description?: string;
     };
     if (!name) {
-      res.status(400).json({ error: 'name là bắt buộc' });
-      return;
+      throw new HttpError(400, 'name là bắt buộc', 'Bad Request');
     }
     res.status(201).json(await amenitiesService.create({ name, description }));
   }),

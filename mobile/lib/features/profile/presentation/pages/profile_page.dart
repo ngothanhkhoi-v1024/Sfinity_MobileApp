@@ -16,8 +16,12 @@ class ProfilePage extends StatelessWidget {
     final primary = AppColors.primaryOf(context);
 
     return AnimatedBuilder(
-      animation: SfinityApp.auth,
+      animation: Listenable.merge([
+        SfinityApp.auth,
+        SfinityApp.assistantFabPositionManager,
+      ]),
       builder: (context, _) {
+        final assistantFabVisible = SfinityApp.assistantFabPositionManager.visible;
         final user = SfinityApp.auth.user;
         final avatarUrl = user?['avatar']?.toString();
         final displayName = user?['name']?.toString() ?? '';
@@ -106,6 +110,14 @@ class ProfilePage extends StatelessWidget {
             _ProfileSection(
               title: context.l10n.settings,
               children: [
+                _ProfileSwitchItem(
+                  icon: Icons.smart_toy_outlined,
+                  title: context.l10n.assistantShowFab,
+                  subtitle: context.l10n.assistantShowFabSubtitle,
+                  value: assistantFabVisible,
+                  onChanged: (value) =>
+                      SfinityApp.assistantFabPositionManager.setVisible(value),
+                ),
                 _ProfileMenuItem(
                   icon: Icons.settings_outlined,
                   title: context.l10n.settings,
@@ -277,6 +289,62 @@ class _ProfileSection extends StatelessWidget {
                 ],
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfileSwitchItem extends StatelessWidget {
+  const _ProfileSwitchItem({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: AppColors.muted(context)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                    color: AppColors.title(context),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.muted(context),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch.adaptive(
+            value: value,
+            onChanged: onChanged,
           ),
         ],
       ),

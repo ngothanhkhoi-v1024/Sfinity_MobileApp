@@ -34,6 +34,9 @@ class DocumentCard extends StatelessWidget {
       (item['category'] as Map?)?['name']?.toString() ?? 'Tai lieu',
     );
 
+    final avgRating = item['avgRating'] != null ? (item['avgRating'] as num).toDouble() : null;
+    final reviewCount = item['reviewCount'] as int? ?? 0;
+
     final visibility = documentVisibilityOf(item);
     final moderationStatus = documentModerationStatusOf(item);
     final description = body.isEmpty ? '' : body.split('\n').first.trim();
@@ -87,7 +90,7 @@ class DocumentCard extends StatelessWidget {
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                    ),
+                     ),
                     const SizedBox(height: 10),
                     Wrap(
                       spacing: 6,
@@ -141,6 +144,23 @@ class DocumentCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                        if (avgRating != null && reviewCount > 0) ...[
+                          const Icon(
+                            Icons.star_rounded,
+                            size: 14,
+                            color: Colors.amber,
+                          ),
+                          const SizedBox(width: 2),
+                          Text(
+                            '${avgRating.toStringAsFixed(1)} ($reviewCount)',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.muted(context),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                        ],
                         Icon(
                           Icons.file_download_outlined,
                           size: 14,

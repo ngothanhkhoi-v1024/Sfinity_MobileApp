@@ -1,5 +1,8 @@
 const { PDFParse } = require('pdf-parse');
 import { config } from './config';
+import { downloadFirebaseStorageObject } from './firebase-storage';
+import { extractGeminiText, geminiGenerateContent } from './gemini-client';
+import { logger } from './logger';
 
 export interface ModerationResult {
   flagged: boolean;
@@ -53,47 +56,44 @@ function localProfanityCheck(text: string): ModerationResult | null {
  * @param text Nội dung cần kiểm duyệt
  */
 export async function checkContentModeration(text: string): Promise<ModerationResult> {
-  // 1. Kiểm tra bằng bộ lọc nhạy cảm local trước (để tiết kiệm chi phí & làm fallback)
-  // const localResult = localProfanityCheck(text);
-  // if (localResult) {
-  //   return localResult;
-  // }
-
-  // 2. Ưu tiên sử dụng Google Gemini API nếu có API Key
-  if (config.geminiApiKey) {
-    return checkGeminiModeration(text);
+  const trimmed = text.trim();
+  if (!trimmed) {
+    return { flagged: false, categories: [] };
   }
 
-  // 3. Sử dụng OpenAI GPT-4o-mini làm phương án fallback
-  // if (config.openaiApiKey) {
-  //   return checkOpenAIModeration(text);
-  // }
+  const localResult = localProfanityCheck(trimmed);
+  if (localResult) {
+    return localResult;
+  }
 
-  // Mặc định bỏ qua kiểm duyệt tự động để tránh làm gián đoạn hệ thống nếu không cấu hình gì
+  if (config.geminiApiKey) {
+    return checkGeminiModeration(trimmed);
+  }
+
   return { flagged: false, categories: [] };
+}
+
+function scanCombinedText(...parts: Array<string | undefined | null>): ModerationResult | null {
+  const combined = parts
+    .map((p) => p?.trim())
+    .filter(Boolean)
+    .join(' ');
+  if (!combined) return null;
+  return localProfanityCheck(combined);
 }
 
 async function checkGeminiModeration(text: string): Promise<ModerationResult> {
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${config.geminiApiKey}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [
+    const result = await geminiGenerateContent({
+      contents: [
+        {
+          parts: [{ text }],
+        },
+      ],
+      systemInstruction: {
+        parts: [
           {
-            parts: [
-              {
-                text: text
-              }
-            ]
-          }
-        ],
-        systemInstruction: {
-          parts: [
-            {
-              text: `Bạn là hệ thống kiểm duyệt nội dung (tài liệu, địa điểm học tập) tự động cho ứng dụng Sfinity.
+            text: `Bạn là hệ thống kiểm duyệt nội dung (tài liệu, địa điểm học tập) tự động cho ứng dụng Sfinity.
 Nhiệm vụ của bạn là phân tích nội dung văn bản và xác định xem nó có chứa các nội dung cấm sau hay không:
 1. Từ ngữ thô tục, tục tĩu, chửi bậy tiếng Việt (bao gồm cả các từ viết tắt, tiếng lóng tục tĩu như: con cặc, đụ má, mẹ mày béo, v.v.).
 2. Hướng dẫn hành vi nguy hại, chế tạo vũ khí, chất nổ, pháo nổ, hoặc chất cấm.
@@ -103,29 +103,26 @@ Hãy trả về duy nhất một đối tượng JSON có định dạng sau:
 {
   "flagged": true hoặc false,
   "categories": ["danh_sách_danh_mục_vi_phạm_bằng_tiếng_anh_hoặc_tiếng_viet"]
-}`
-            }
-          ]
-        },
-        generationConfig: {
-          responseMimeType: 'application/json',
-          temperature: 0.1
-        }
-      }),
+}`,
+          },
+        ],
+      },
+      generationConfig: {
+        responseMimeType: 'application/json',
+        temperature: 0.1,
+      },
     });
 
-    if (!response.ok) {
-      const errorDetail = await response.text().catch(() => '');
-      console.error('[Gemini API Error] API error status:', response.status, errorDetail);
+    if (!result.ok) {
+      logger.error({ status: result.status, error: result.error }, 'Gemini API Error');
       return {
         flagged: false,
         categories: [],
-        error: `Gemini API Error ${response.status}: ${errorDetail.slice(0, 200)}`
+        error: result.error,
       };
     }
 
-    const data = await response.json() as any;
-    const content = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    const content = extractGeminiText(result.data);
     if (content) {
       const parsed = JSON.parse(content) as { flagged: boolean; categories?: string[] };
       return {
@@ -134,7 +131,7 @@ Hãy trả về duy nhất một đối tượng JSON có định dạng sau:
       };
     }
   } catch (error: any) {
-    console.error('[Gemini API Exception] Failed to moderate text:', error);
+    logger.error({ err: error }, 'Gemini API Exception: Failed to moderate text');
     return {
       flagged: false,
       categories: [],
@@ -182,7 +179,7 @@ Hãy trả về duy nhất một đối tượng JSON có định dạng sau:
 
     if (!response.ok) {
       const errorDetail = await response.text().catch(() => '');
-      console.error('[OpenAI Chat Moderation Error] API error status:', response.status, errorDetail);
+      logger.error({ status: response.status, errorDetail }, 'OpenAI Chat Moderation Error');
       return {
         flagged: false,
         categories: [],
@@ -203,7 +200,7 @@ Hãy trả về duy nhất một đối tượng JSON có định dạng sau:
       };
     }
   } catch (error: any) {
-    console.error('[OpenAI Chat Moderation Exception] Failed to moderate text:', error);
+    logger.error({ err: error }, 'OpenAI Chat Moderation Exception: Failed to moderate text');
     return {
       flagged: false,
       categories: [],
@@ -222,7 +219,7 @@ export async function extractTextFromPdf(pdfUrl: string): Promise<string> {
   try {
     const response = await fetch(pdfUrl);
     if (!response.ok) {
-      console.error('[PDF Download Error] Failed to fetch PDF from URL:', pdfUrl, 'Status:', response.status);
+      logger.error({ pdfUrl, status: response.status }, 'PDF Download Error: Failed to fetch PDF from URL');
       return '';
     }
 
@@ -237,7 +234,236 @@ export async function extractTextFromPdf(pdfUrl: string): Promise<string> {
     // Dọn dẹp khoảng trắng thừa và cắt ngắn để tránh tràn token OpenAI
     return text.replace(/\s+/g, ' ').trim().slice(0, 15000);
   } catch (error) {
-    console.error('[PDF Extraction Error] Failed to extract text from PDF:', error);
+    logger.error({ err: error }, 'PDF Extraction Error: Failed to extract text from PDF');
     return '';
   }
+}
+
+export interface ImageModerationResult extends ModerationResult {
+  mimeType?: string;
+  imageFetched?: boolean;
+  /** Gemini trả 429 — hết quota free tier, không thể OCR ảnh lúc này. */
+  quotaExceeded?: boolean;
+}
+
+function isGeminiQuotaError(status: number, error?: string): boolean {
+  if (status === 429) return true;
+  const msg = (error ?? '').toLowerCase();
+  return msg.includes('429') || msg.includes('quota') || msg.includes('resource_exhausted');
+}
+
+const IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+const IMAGE_FETCH_TIMEOUT_MS = 20_000;
+
+const IMAGE_MODERATION_PROMPT = `Bạn là hệ thống kiểm duyệt ảnh tự động cho ứng dụng Sfinity (địa điểm học tập).
+
+BƯỚC 1 — OCR: Đọc TOÀN BỘ chữ/nhãn/text trong ảnh vào trường visible_text (chuỗi rỗng nếu không có chữ).
+
+BƯỚC 2 — Đánh giá vi phạm. flagged=true nếu ẢNH hoặc CHỮ trong ảnh có:
+1. Khoả thân, gợi cảm, nội dung khiêu dâm.
+2. Bạo lực, máu, vũ khí, hướng dẫn chế tạo bom/pháo/thuốc nổ/vũ khí.
+3. Ma túy, chất cấm, hành vi phạm pháp rõ ràng.
+4. Nội dung thù hận, phân biệt đối xử.
+5. Spam/quảng cáo rõ ràng không liên quan địa điểm học tập.
+
+Cho phép: quán cafe, thư viện, lớp học, sách, bàn ghế, phong cảnh, selfie bình thường.
+
+Trả về DUY NHẤT JSON:
+{
+  "flagged": true hoặc false,
+  "categories": ["danh_muc_vi_pham"],
+  "visible_text": "mọi chữ đọc được trong ảnh"
+}`;
+
+async function fetchImageAsBase64(
+  imageUrl: string,
+): Promise<{ base64: string; mimeType: string } | { error: string }> {
+  try {
+    const fromAdmin = await downloadFirebaseStorageObject(imageUrl);
+    if (fromAdmin) {
+      if (fromAdmin.buffer.byteLength > IMAGE_MAX_BYTES) {
+        return { error: 'Image too large for moderation' };
+      }
+      if (fromAdmin.buffer.byteLength === 0) {
+        return { error: 'Empty image' };
+      }
+      return {
+        base64: fromAdmin.buffer.toString('base64'),
+        mimeType: fromAdmin.mimeType,
+      };
+    }
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), IMAGE_FETCH_TIMEOUT_MS);
+
+    const response = await fetch(imageUrl, { signal: controller.signal });
+    clearTimeout(timeout);
+
+    if (!response.ok) {
+      return { error: `Cannot fetch image: HTTP ${response.status}` };
+    }
+
+    const contentType = response.headers.get('content-type')?.split(';')[0]?.trim() ?? '';
+    const mimeType = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(contentType)
+      ? contentType
+      : 'image/jpeg';
+
+    const buffer = Buffer.from(await response.arrayBuffer());
+    if (buffer.byteLength > IMAGE_MAX_BYTES) {
+      return { error: 'Image too large for moderation' };
+    }
+    if (buffer.byteLength === 0) {
+      return { error: 'Empty image' };
+    }
+
+    return { base64: buffer.toString('base64'), mimeType };
+  } catch (err: any) {
+    return { error: err?.message || 'Failed to fetch image' };
+  }
+}
+
+async function checkGeminiImageModeration(
+  imageUrl: string,
+  caption?: string,
+): Promise<ImageModerationResult> {
+  const localCaptionHit = scanCombinedText(caption);
+  if (localCaptionHit?.flagged) {
+    return { ...localCaptionHit, mimeType: undefined };
+  }
+
+  const imageData = await fetchImageAsBase64(imageUrl);
+  if ('error' in imageData) {
+    return { flagged: false, categories: [], error: imageData.error };
+  }
+
+  const captionHint = caption?.trim()
+    ? `\nChú thích ảnh từ người dùng: "${caption.trim()}"`
+    : '';
+
+  try {
+    const body = {
+      contents: [
+        {
+          parts: [
+            {
+              inlineData: {
+                mimeType: imageData.mimeType,
+                data: imageData.base64,
+              },
+            },
+            {
+              text: `Kiểm duyệt ảnh địa điểm học tập. Đọc kỹ mọi chữ trong ảnh.${captionHint}`,
+            },
+          ],
+        },
+      ],
+      systemInstruction: {
+        parts: [{ text: IMAGE_MODERATION_PROMPT }],
+      },
+      generationConfig: {
+        responseMimeType: 'application/json',
+        temperature: 0.1,
+      },
+    };
+
+    // Một model / ảnh — free tier ~20 req/ngày/model; gọi nhiều model sẽ hết quota rất nhanh.
+    const visionModel = config.geminiModel || 'gemini-2.0-flash';
+    const result = await geminiGenerateContent(body, { models: [visionModel] });
+
+    if (!result.ok) {
+      const quotaExceeded = isGeminiQuotaError(result.status, result.error);
+      if (quotaExceeded) {
+        console.warn(
+          '[Gemini Image Moderation] Quota exceeded — skipping vision check for this upload.',
+        );
+      }
+      return {
+        flagged: false,
+        categories: [],
+        error: result.error,
+        imageFetched: true,
+        quotaExceeded,
+        mimeType: imageData.mimeType,
+      };
+    }
+
+    const content = extractGeminiText(result.data);
+    if (content) {
+      const rawHit = scanCombinedText(content);
+      if (rawHit?.flagged) {
+        return {
+          flagged: true,
+          categories: rawHit.categories,
+          mimeType: imageData.mimeType,
+        };
+      }
+
+      const parsed = JSON.parse(content) as {
+        flagged: boolean;
+        categories?: string[];
+        visible_text?: string;
+      };
+
+      const localTextHit = scanCombinedText(parsed.visible_text, caption);
+      if (localTextHit?.flagged) {
+        return {
+          flagged: true,
+          categories: localTextHit.categories,
+          mimeType: imageData.mimeType,
+        };
+      }
+
+      if (parsed.visible_text?.trim()) {
+        const textMod = await checkContentModeration(parsed.visible_text);
+        if (textMod.flagged) {
+          return {
+            flagged: true,
+            categories: textMod.categories,
+            mimeType: imageData.mimeType,
+          };
+        }
+      }
+
+      return {
+        flagged: parsed.flagged === true,
+        categories: parsed.categories || (parsed.flagged ? ['image_violation'] : []),
+        mimeType: imageData.mimeType,
+      };
+    }
+
+    return {
+      flagged: false,
+      categories: [],
+      error: 'Empty Gemini vision response',
+      imageFetched: true,
+      mimeType: imageData.mimeType,
+    };
+  } catch (error: any) {
+    console.error('[Gemini Image Moderation] Exception:', error);
+    return {
+      flagged: false,
+      categories: [],
+      error: error.message || String(error),
+      imageFetched: true,
+      mimeType: imageData.mimeType,
+    };
+  }
+}
+
+/**
+ * Kiểm duyệt ảnh địa điểm qua Gemini Vision (fetch URL → base64 → model).
+ */
+export async function checkImageModeration(
+  imageUrl: string,
+  caption?: string,
+): Promise<ImageModerationResult> {
+  if (!imageUrl?.trim()) {
+    return { flagged: false, categories: [], error: 'Missing image URL' };
+  }
+
+  if (!config.geminiApiKey) {
+    return { flagged: false, categories: [] };
+  }
+
+  return checkGeminiImageModeration(imageUrl, caption);
 }

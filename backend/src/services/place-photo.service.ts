@@ -1,5 +1,7 @@
-import { getDb } from '../lib/firebase';
+import { deleteFirebaseStorageObject } from '../lib/firebase-storage';
 import { HttpError } from '../lib/http-error';
+import { checkContentModeration, checkImageModeration } from '../lib/moderation';
+import { getDb } from '../lib/firebase';
 import { UserRole } from '../types/enums';
 import { placeService } from './place.service';
 import type { CreatePlacePhotoDto } from '../dto/place-photo.dto';
@@ -19,6 +21,10 @@ async function assertPlaceExists(
   viewerRole?: UserRole,
 ): Promise<void> {
   await placeService.findOne(placeId, viewerId, viewerRole);
+}
+
+async function rejectUploadedImage(imageUrl: string): Promise<void> {
+  await deleteFirebaseStorageObject(imageUrl);
 }
 
 export const placePhotoService = {
@@ -68,6 +74,44 @@ export const placePhotoService = {
     role: UserRole = UserRole.USER,
   ) {
     await assertPlaceExists(placeId, userId, role);
+
+    let moderationSkipped = false;
+
+    if (role !== UserRole.ADMIN) {
+      if (dto.caption?.trim()) {
+        const captionMod = await checkContentModeration(dto.caption.trim());
+        if (captionMod.flagged) {
+          await rejectUploadedImage(dto.imageUrl);
+          throw new HttpError(
+            422,
+            `Ảnh bị từ chối: chú thích vi phạm (${captionMod.categories.join(', ')})`,
+            'Unprocessable Entity',
+          );
+        }
+      }
+
+      const imageMod = await checkImageModeration(dto.imageUrl, dto.caption);
+      if (imageMod.flagged) {
+        await rejectUploadedImage(dto.imageUrl);
+        throw new HttpError(
+          422,
+          `Ảnh bị từ chối bởi hệ thống kiểm duyệt. Danh mục: ${imageMod.categories.join(', ') || 'image_violation'}`,
+          'Unprocessable Entity',
+        );
+      }
+      if (imageMod.error) {
+        moderationSkipped = true;
+        const reason = imageMod.quotaExceeded
+          ? 'Gemini quota exceeded (free tier ~20 req/ngày/model)'
+          : imageMod.error;
+        console.warn(
+          '[place-photo] Image moderation skipped, allowing upload:',
+          reason,
+          dto.imageUrl,
+        );
+      }
+    }
+
     const docRef = getDb().collection('place_photos').doc();
     const photo = {
       id: docRef.id,
@@ -75,6 +119,7 @@ export const placePhotoService = {
       userId,
       imageUrl: dto.imageUrl,
       caption: dto.caption ?? null,
+      moderationSkipped,
       createdAt: new Date(),
     };
     await docRef.set(photo);
@@ -91,6 +136,9 @@ export const placePhotoService = {
       throw new HttpError(403, 'Forbidden', 'Forbidden');
     }
     await doc.ref.delete();
+    if (data.imageUrl) {
+      await deleteFirebaseStorageObject(data.imageUrl);
+    }
     return { success: true };
   },
 };

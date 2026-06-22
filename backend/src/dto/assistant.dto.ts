@@ -3,6 +3,7 @@ import {
   ArrayMaxSize,
   IsArray,
   IsIn,
+  IsNumber,
   IsOptional,
   IsString,
   MaxLength,
@@ -20,6 +21,14 @@ export class AssistantHistoryItemDto {
   content!: string;
 }
 
+export class AssistantLocationDto {
+  @IsNumber()
+  lat!: number;
+
+  @IsNumber()
+  lng!: number;
+}
+
 export class AssistantChatDto {
   @IsString()
   @MinLength(1)
@@ -30,6 +39,11 @@ export class AssistantChatDto {
   @IsString()
   @MaxLength(50)
   context?: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => AssistantLocationDto)
+  location?: AssistantLocationDto;
 
   @IsOptional()
   @IsArray()

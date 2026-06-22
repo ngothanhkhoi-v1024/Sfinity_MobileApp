@@ -26,6 +26,7 @@ class PlaceRepositoryImpl implements PlaceRepository {
       authorId: query.authorId,
       publishedOnly: query.publishedOnly,
       limit: query.limit,
+      minRating: query.minRating,
     );
     return PlaceMapper.listFromRaw(res['items'] as List? ?? []);
   }

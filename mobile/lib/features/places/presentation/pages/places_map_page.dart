@@ -736,9 +736,14 @@ class _PlacesMapPageState extends State<PlacesMapPage> {
         _onSearchChanged(value);
       },
       filterTags: _ctrl.filterTags,
-      filterCount: _ctrl.filterTags.length,
+      filterCount: _ctrl.activeFilterCount,
+      minRating: _ctrl.minRating,
       onFilterChanged: (tags) {
         _ctrl.setFilterTags(tags);
+        _scheduleFilterReload();
+      },
+      onMinRatingChanged: (rating) {
+        _ctrl.setMinRating(rating);
         _scheduleFilterReload();
       },
       studyNearMeLoading: _studyNearMeCtrl.loading,
