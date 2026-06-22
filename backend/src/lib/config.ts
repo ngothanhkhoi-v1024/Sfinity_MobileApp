@@ -16,7 +16,9 @@ export const config = {
   smtpFrom: process.env.SMTP_FROM ?? 'Sfinity <no-reply@sfinity.com>',
   openaiApiKey: process.env.OPENAI_API_KEY,
   openaiModel: process.env.OPENAI_MODEL ?? 'gpt-4o-mini',
-  geminiApiKey: process.env.GEMINI_API_KEY,
+  geminiApiKey: process.env.GEMINI_API_KEY, // Reload triggered v2
+  nodeEnv: process.env.NODE_ENV ?? 'development',
+  logLevel: process.env.LOG_LEVEL ?? 'info',
   geminiModel: process.env.GEMINI_MODEL ?? 'gemini-2.5-flash',
   momoEnv: process.env.MOMO_ENV ?? 'sandbox',
   momoPartnerCode: process.env.MOMO_PARTNER_CODE ?? '',

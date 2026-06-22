@@ -167,12 +167,19 @@ class _EditProfilePageState extends State<EditProfilePage> {
         merged['avatar'] = avatarUrl;
       }
       if (merged['avatar'] != null && merged['avatar'].toString().isNotEmpty) {
-        var avatarStr = merged['avatar'].toString().split('?').first;
-        // Android emulator: localhost → 10.0.2.2
-        if (avatarStr.startsWith('http://localhost:')) {
-          avatarStr = avatarStr.replaceFirst('http://localhost:', 'http://10.0.2.2:');
+        var avatarStr = merged['avatar'].toString();
+        if (avatarStr.contains('firebasestorage.googleapis.com')) {
+          // Firebase Storage URLs already contain alt=media and access token, append cache buster with &
+          avatarStr = '$avatarStr&v=${DateTime.now().millisecondsSinceEpoch}';
+        } else {
+          avatarStr = avatarStr.split('?').first;
+          // Android emulator: localhost → 10.0.2.2
+          if (avatarStr.startsWith('http://localhost:')) {
+            avatarStr = avatarStr.replaceFirst('http://localhost:', 'http://10.0.2.2:');
+          }
+          avatarStr = '$avatarStr?v=${DateTime.now().millisecondsSinceEpoch}';
         }
-        merged['avatar'] = '$avatarStr?v=${DateTime.now().millisecondsSinceEpoch}';
+        merged['avatar'] = avatarStr;
       }
       SfinityApp.auth.setUser(merged);
 

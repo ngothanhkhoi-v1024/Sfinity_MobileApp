@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { config } from '../lib/config';
 import { getDb, getFirebaseAuth } from '../lib/firebase';
 import { HttpError } from '../lib/http-error';
+import { logger } from '../lib/logger';
 import { AuthProvider, UserRole, UserStatus } from '../types/enums';
 import { mailService } from './mail.service';
 import type {
@@ -142,7 +143,7 @@ export const authService = {
         }
       } catch (err: any) {
         if (err instanceof HttpError) throw err;
-        console.error('Lỗi kiểm tra trạng thái xác thực email từ Firebase:', err);
+        logger.error({ msg: 'Lỗi kiểm tra trạng thái xác thực email từ Firebase', err });
       }
     }
 
@@ -375,9 +376,9 @@ export const authService = {
       await getFirebaseAuth().updateUser(firebaseUser.uid, {
         password: dto.newPassword,
       });
-      console.log(`Đã đồng bộ cập nhật mật khẩu mới sang Firebase Auth cho: ${user.email}`);
+      logger.info({ msg: 'Đã đồng bộ cập nhật mật khẩu mới sang Firebase Auth', email: user.email });
     } catch (err) {
-      console.error('Không thể đồng bộ cập nhật mật khẩu sang Firebase Auth:', err);
+      logger.error({ msg: 'Không thể đồng bộ cập nhật mật khẩu sang Firebase Auth', err });
     }
 
     await userRef.update({
@@ -429,7 +430,7 @@ export const authService = {
     try {
       await mailService.sendForgotPasswordOtp(email, user.name, code);
     } catch (err) {
-      console.error('Lỗi khi gửi email lấy lại mật khẩu OTP:', err);
+      logger.error({ msg: 'Lỗi khi gửi email lấy lại mật khẩu OTP', err });
     }
 
     return {
@@ -480,9 +481,9 @@ export const authService = {
       await getFirebaseAuth().updateUser(firebaseUser.uid, {
         password: dto.newPassword,
       });
-      console.log(`Đã đồng bộ cập nhật mật khẩu mới sang Firebase Auth cho: ${email}`);
+      logger.info({ msg: 'Đã đồng bộ cập nhật mật khẩu mới sang Firebase Auth', email });
     } catch (err) {
-      console.error('Không thể đồng bộ cập nhật mật khẩu sang Firebase Auth:', err);
+      logger.error({ msg: 'Không thể đồng bộ cập nhật mật khẩu sang Firebase Auth', err });
     }
 
     const batch = getDb().batch();

@@ -3,6 +3,7 @@ import { HttpError } from '../lib/http-error';
 import { ReportStatus } from '../types/enums';
 import type { CreateReportDto, ResolveReportDto } from '../dto/report.dto';
 import { documentService } from './document.service';
+import { logger } from '../lib/logger';
 
 const toDate = (val: any): Date => {
   if (!val) return new Date();
@@ -112,7 +113,7 @@ export const reportsService = {
         try {
           await documentService.adminHide(report.targetId, reason);
         } catch (err) {
-          console.error(`Không thể tự động ẩn tài liệu ${report.targetId}:`, err);
+          logger.error({ targetId: report.targetId, err }, 'Failed to automatically hide document');
         }
       }
     }
