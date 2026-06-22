@@ -9,6 +9,9 @@ import '../../../../shared/widgets/error_view.dart';
 import '../../../document/presentation/widgets/document_list_skeleton.dart';
 import '../../data/models/place_model.dart';
 import '../utils/place_state.dart';
+import '../../../../core/constants/place_tags.dart';
+import '../../../../core/constants/place_zones.dart';
+import '../../../../shared/widgets/app_bar_add_button.dart';
 import '../widgets/place_mini_map_preview.dart';
 
 class MyPlacesPage extends StatefulWidget {
@@ -208,7 +211,6 @@ class _MyPlacesPageState extends State<MyPlacesPage> with SingleTickerProviderSt
   Widget build(BuildContext context) {
     final primary = AppColors.primaryOf(context);
     final l10n = context.l10n;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: AppColors.scaffold(context),
@@ -219,42 +221,12 @@ class _MyPlacesPageState extends State<MyPlacesPage> with SingleTickerProviderSt
         ),
         elevation: 0,
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 10),
-            child: Tooltip(
-              message: l10n.sharePlace,
-              child: Material(
-                color: Colors.transparent,
-                child: Ink(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: primary.withValues(alpha: isDark ? 0.22 : 0.12),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: primary.withValues(alpha: isDark ? 0.24 : 0.18),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: isDark ? 0.16 : 0.04),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: () async {
-                      await context.push(RouteNames.placeShare);
-                      _loadPlaces();
-                    },
-                    child: Center(
-                      child: Icon(Icons.add_rounded, color: primary, size: 19),
-                    ),
-                  ),
-                ),
-              ),
-            ),
+          AppBarAddButton(
+            tooltip: l10n.sharePlace,
+            onPressed: () async {
+              await context.push(RouteNames.placeShare);
+              _loadPlaces();
+            },
           ),
         ],
       ),
@@ -581,7 +553,8 @@ class _MyPlaceCard extends StatelessWidget {
                         children: [
                           if (place.zone != null && place.zone!.isNotEmpty) ...[
                             _Badge(
-                              text: place.zone!.toUpperCase(),
+                              text: PlaceZones.byId(place.zone)?.label.toUpperCase() ??
+                                  place.zone!.toUpperCase(),
                               color: primary,
                               bgOpacity: 0.08,
                             ),
@@ -589,7 +562,8 @@ class _MyPlaceCard extends StatelessWidget {
                           ],
                           if (place.tags.isNotEmpty)
                             _Badge(
-                              text: place.tags.first,
+                              text: PlaceTags.byId(place.tags.first)?.label ??
+                                  place.tags.first,
                               color: AppColors.muted(context),
                               backgroundColor: AppColors.chipBg(context),
                             ),
