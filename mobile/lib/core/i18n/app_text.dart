@@ -600,6 +600,24 @@ class AppLocalizations {
       'unfavoriteDocMessage': 'Đã bỏ lưu tài liệu "{name}"',
       'undo': 'HOÀN TÁC',
       'cannotUnfavorite': 'Không thể bỏ lưu: {error}',
+      // Payment (MoMo)
+      'cannotOpenPaymentApp': 'Không thể mở ứng dụng thanh toán',
+      'paymentFailed': 'Thanh toán thất bại',
+      'paymentFailedDesc': 'Giao dịch của bạn chưa hoàn tất. Vui lòng thử lại.',
+      'paymentTimeout': 'Quá thời gian xác nhận thanh toán',
+      'paymentTimeoutDesc': 'Chúng tôi chưa nhận được xác nhận thanh toán. Vui lòng kiểm tra lịch sử giao dịch hoặc thử lại.',
+      'paymentSecureViaMoMo': 'Thanh toán bảo mật qua MoMo',
+      'paymentCancelled': 'Đã hủy thanh toán',
+      'upgradeWithMoMo': 'Nâng cấp Pro qua MoMo',
+      // QR payment
+      'scanQrWithMoMo': 'Mở app MoMo và quét mã QR để thanh toán',
+      'qrAmountLabel': 'Số tiền',
+      'qrOrderLabel': 'Mã đơn hàng',
+      'qrWaitingPayment': 'Đang chờ thanh toán...',
+      'qrPaymentSuccess': 'Thanh toán thành công!',
+      'qrCancel': 'Hủy thanh toán',
+      'qrCopyOrderId': 'Sao chép mã đơn',
+      'qrCopied': 'Đã sao chép mã đơn hàng',
     },
     'en': {
       'appName': 'Sfinity',
@@ -1190,6 +1208,44 @@ class AppLocalizations {
       'unfavoriteDocMessage': 'Unsaved document "{name}"',
       'undo': 'UNDO',
       'cannotUnfavorite': 'Cannot unsave: {error}',
+      // Subscription
+      'upgradeVip': 'Upgrade to VIP',
+      'upgradeVipSubtitle': 'Unlock all premium features',
+      'currentPlan': 'Current plan',
+      'chooseThisPlan': 'Choose this plan',
+      'payNow': 'Pay now',
+      'confirmSubscription': 'Confirm purchase',
+      'confirmPurchase': 'Confirm purchase',
+      'youWillBeRedirected': 'You will be redirected to the payment gateway to complete.',
+      'congratulations': 'Congratulations!',
+      'upgradeSuccess': 'You have successfully upgraded.',
+      'startEnjoying': 'Start enjoying',
+      'monthly': 'Monthly',
+      'yearly': 'Yearly',
+      'savePercent': 'Save {percent}%',
+      'mostPopular': 'Most popular',
+      'pricePerMonth': 'VND/month',
+      'pricePerYear': 'VND/year',
+      'daysRemaining': 'days remaining',
+      'currentPlan_': 'Current plan',
+      // Payment (MoMo)
+      'cannotOpenPaymentApp': 'Cannot open payment app',
+      'paymentFailed': 'Payment failed',
+      'paymentFailedDesc': 'Your payment was not completed. Please try again.',
+      'paymentTimeout': 'Payment verification timed out',
+      'paymentTimeoutDesc': 'We did not receive payment confirmation in time. Please check your transaction history or try again.',
+      'paymentSecureViaMoMo': 'Secure payment via MoMo',
+      'paymentCancelled': 'Payment cancelled',
+      'upgradeWithMoMo': 'Upgrade to Pro with MoMo',
+      // QR payment
+      'scanQrWithMoMo': 'Open the MoMo app and scan the QR code to pay',
+      'qrAmountLabel': 'Amount',
+      'qrOrderLabel': 'Order ID',
+      'qrWaitingPayment': 'Waiting for payment...',
+      'qrPaymentSuccess': 'Payment successful!',
+      'qrCancel': 'Cancel payment',
+      'qrCopyOrderId': 'Copy order ID',
+      'qrCopied': 'Order ID copied',
     },
   };
 
@@ -1835,6 +1891,42 @@ class AppLocalizations {
   String unfavoriteDocMessage(String name) => _format('unfavoriteDocMessage', {'{name}': name});
   String get undo => _text('undo');
   String cannotUnfavorite(String error) => _format('cannotUnfavorite', {'{error}': error});
+  // Subscription getters
+  String get upgradeVip => _text('upgradeVip');
+  String get upgradeVipSubtitle => _text('upgradeVipSubtitle');
+  String get currentPlan => _text('currentPlan');
+  String get chooseThisPlan => _text('chooseThisPlan');
+  String get payNow => _text('payNow');
+  String get confirmPurchase => _text('confirmPurchase');
+  String get youWillBeRedirected => _text('youWillBeRedirected');
+  String get congratulations => _text('congratulations');
+  String get upgradeSuccess => _text('upgradeSuccess');
+  String get startEnjoying => _text('startEnjoying');
+  String get monthly => _text('monthly');
+  String get yearly => _text('yearly');
+  String get mostPopular => _text('mostPopular');
+  String get pricePerMonth => _text('pricePerMonth');
+  String get pricePerYear => _text('pricePerYear');
+  String get daysRemaining => _text('daysRemaining');
+  String get currentPlan_ => _text('currentPlan_');
+  // Payment (MoMo)
+  String get cannotOpenPaymentApp => _text('cannotOpenPaymentApp');
+  String get paymentFailed => _text('paymentFailed');
+  String get paymentFailedDesc => _text('paymentFailedDesc');
+  String get paymentTimeout => _text('paymentTimeout');
+  String get paymentTimeoutDesc => _text('paymentTimeoutDesc');
+  String get paymentSecureViaMoMo => _text('paymentSecureViaMoMo');
+  String get paymentCancelled => _text('paymentCancelled');
+  String get upgradeWithMoMo => _text('upgradeWithMoMo');
+  String get scanQrWithMoMo => _text('scanQrWithMoMo');
+  String get qrAmountLabel => _text('qrAmountLabel');
+  String get qrOrderLabel => _text('qrOrderLabel');
+  String get qrWaitingPayment => _text('qrWaitingPayment');
+  String get qrPaymentSuccess => _text('qrPaymentSuccess');
+  String get qrCancel => _text('qrCancel');
+  String get qrCopyOrderId => _text('qrCopyOrderId');
+  String get qrCopied => _text('qrCopied');
+  String savePercent(int percent) => _format('savePercent', {'{percent}': '$percent'});
   // Method for offline profile load
   String offlineProfileLoad(String err) => _format('offlineProfileLoad', {'{name}': err});
 
