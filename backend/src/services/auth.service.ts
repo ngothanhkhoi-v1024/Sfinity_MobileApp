@@ -37,6 +37,8 @@ function sanitizeUser(user: {
   gender?: string;
   address?: string;
   passwordHash?: string;
+  isVip?: boolean;
+  vipExpiresAt?: any;
 }) {
   return {
     id: user.id,
@@ -52,6 +54,8 @@ function sanitizeUser(user: {
     gender: user.gender ?? undefined,
     address: user.address ?? undefined,
     hasPassword: !!user.passwordHash,
+    isVip: user.isVip ?? false,
+    vipExpiresAt: user.vipExpiresAt ? toDate(user.vipExpiresAt) : undefined,
   };
 }
 

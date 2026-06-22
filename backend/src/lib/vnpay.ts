@@ -180,8 +180,7 @@ export function isVnpaySuccess(responseCode: string): boolean {
 
 /**
  * Parse VNPay return URL params (from query string).
- * Quan trọng: KHÔNG decode giá trị vì VNPay dùng raw value cho signature.
- * Chỉ decode key (key luôn là ASCII).
+ * Giải mã các giá trị query string đúng chuẩn để signature generator mã hóa lại chính xác (tránh double URL-encoding).
  */
 export function parseVnpayReturnParams(queryString: string): Record<string, string> {
   const params: Record<string, string> = {};
@@ -193,8 +192,9 @@ export function parseVnpayReturnParams(queryString: string): Record<string, stri
     const eqIndex = pair.indexOf('=');
     if (eqIndex > 0) {
       const key = decodeURIComponent(pair.substring(0, eqIndex));
-      // Giữ nguyên raw value — không decode để signature khớp với VNPay
-      const value = pair.substring(eqIndex + 1);
+      // Giải mã dấu '+' thành khoảng trắng trước khi dùng decodeURIComponent
+      const rawValue = pair.substring(eqIndex + 1);
+      const value = decodeURIComponent(rawValue.replace(/\+/g, '%20'));
       params[key] = value;
     } else if (pair) {
       params[decodeURIComponent(pair)] = '';

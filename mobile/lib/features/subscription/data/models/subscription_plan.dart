@@ -53,8 +53,8 @@ class SubscriptionPlan {
 
   static const SubscriptionPlan pro = SubscriptionPlan(
     id: 'pro',
-    nameVi: 'Pro',
-    nameEn: 'Pro',
+    nameVi: 'VIP',
+    nameEn: 'VIP',
     descriptionVi: 'Mở khóa toàn bộ tính năng cao cấp của Sfinity',
     descriptionEn: 'Unlock all premium features of Sfinity',
     monthlyPrice: '49.000',
@@ -62,22 +62,14 @@ class SubscriptionPlan {
     cycle: BillingCycle.monthly,
     featuresVi: [
       'Tải tài liệu không giới hạn',
-      'Lưu địa điểm yêu thích không giới hạn',
       'Tạo nhóm học tập không giới hạn',
-      'Chia sẻ vị trí nhóm',
-      'Xem địa điểm nổi bật không giới hạn',
-      'Check-in không giới hạn',
-      'Huy hiệu Pro trên hồ sơ',
+      'Huy hiệu VIP trên hồ sơ',
       'Hỗ trợ ưu tiên',
     ],
     featuresEn: [
       'Unlimited document downloads',
-      'Unlimited favorite places',
       'Unlimited study groups',
-      'Group location sharing',
-      'Unlimited featured places',
-      'Unlimited check-ins',
-      'Pro badge on profile',
+      'VIP badge on profile',
       'Priority support',
     ],
   );

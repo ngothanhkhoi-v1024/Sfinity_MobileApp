@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../app.dart';
 import '../../../../core/constants/route_names.dart';
 import '../../../../core/i18n/app_text.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -28,7 +29,7 @@ class _SubscriptionPageState extends State<SubscriptionPage>
   bool _isPurchasing = false;
   String? _pendingOrderId;
   Timer? _pollTimer;
-  PaymentMethod _selectedPaymentMethod = PaymentMethod.momo;
+  PaymentMethod _selectedPaymentMethod = PaymentMethod.vnpay;
 
   @override
   void initState() {
@@ -61,6 +62,9 @@ class _SubscriptionPageState extends State<SubscriptionPage>
       _currentStatus = status;
       _isLoading = false;
     });
+    try {
+      await SfinityApp.auth.init();
+    } catch (_) {}
   }
 
   /// Khi user quay về app từ MoMo qua deep link, cache sẽ có payload.
@@ -211,65 +215,120 @@ class _SubscriptionPageState extends State<SubscriptionPage>
 
     return showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          l10n.confirmPurchase,
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            color: AppColors.title(context),
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: AppColors.card(context),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.payment_rounded,
+                  size: 36,
+                  color: AppColors.primary,
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                l10n.confirmPurchase,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.title(context),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.chipBg(context),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.border(context)),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      '${plan.getName(langCode)} $cycleLabel',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.muted(context),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '$price VNĐ',
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                l10n.youWillBeRedirected,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppColors.muted(context),
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        side: BorderSide(color: AppColors.border(context)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: Text(
+                        l10n.cancel,
+                        style: TextStyle(
+                          color: AppColors.title(context),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: Text(
+                        l10n.payNow,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '${plan.getName(langCode)} $cycleLabel',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: AppColors.title(context),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '$price VNĐ',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                color: AppColors.primary,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              l10n.youWillBeRedirected,
-              style: TextStyle(
-                fontSize: 13,
-                color: AppColors.muted(context),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(
-              l10n.cancel,
-              style: TextStyle(color: AppColors.muted(context)),
-            ),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: Text(l10n.payNow),
-          ),
-        ],
       ),
     );
   }
@@ -292,60 +351,10 @@ class _SubscriptionPageState extends State<SubscriptionPage>
                 color: AppColors.primary.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Icon(
-                    Icons.check_circle_rounded,
-                    size: 72,
-                    color: AppColors.primary,
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [Color(0xFF7C4DFF), Color(0xFF651FFF)],
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF7C4DFF).withValues(alpha: 0.4),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.verified_rounded,
-                            size: 14,
-                            color: Colors.white,
-                          ),
-                          SizedBox(width: 3),
-                          Text(
-                            'PRO',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+              child: Icon(
+                Icons.check_circle_rounded,
+                size: 72,
+                color: AppColors.primary,
               ),
             ),
             const SizedBox(height: 24),
@@ -360,8 +369,8 @@ class _SubscriptionPageState extends State<SubscriptionPage>
             const SizedBox(height: 8),
             Text(
               langCode == 'vi'
-                  ? 'Ban da nang cap Pro thanh cong!'
-                  : 'You have successfully upgraded to Pro!',
+                  ? 'Bạn đã nâng cấp VIP thành công!'
+                  : 'You have successfully upgraded to VIP!',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 15,
@@ -372,8 +381,8 @@ class _SubscriptionPageState extends State<SubscriptionPage>
             const SizedBox(height: 8),
             Text(
               langCode == 'vi'
-                  ? 'Tu bay gio ban co the trai nghiem cac tinh nang Pro.'
-                  : 'You can now enjoy all Pro features.',
+                  ? 'Từ bây giờ bạn có thể trải nghiệm các tính năng VIP.'
+                  : 'You can now enjoy all VIP features.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13,
@@ -396,7 +405,7 @@ class _SubscriptionPageState extends State<SubscriptionPage>
                   ),
                 ),
                 child: Text(
-                  langCode == 'vi' ? 'Bat dau trai nghiem!' : 'Start Enjoying!',
+                  langCode == 'vi' ? 'Bắt đầu trải nghiệm!' : 'Start Enjoying!',
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
@@ -535,7 +544,7 @@ class _CurrentPlanBanner extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  langCode == 'vi' ? 'Gói Pro hiện tại' : 'Current Pro plan',
+                  langCode == 'vi' ? 'Gói VIP hiện tại' : 'Current VIP plan',
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 14,
@@ -674,10 +683,7 @@ class _ProPlanCard extends StatelessWidget {
               ],
               const SizedBox(height: 24),
               _buildCycleToggle(context),
-              if (!isVip) ...[
-                const SizedBox(height: 16),
-                _buildPaymentMethodSelector(context),
-              ],
+              // Chỉ sử dụng phương thức thanh toán VNPay mặc định (Ẩn chọn MoMo)
               const SizedBox(height: 28),
               const Divider(height: 1),
               const SizedBox(height: 20),
@@ -743,15 +749,15 @@ class _ProPlanCard extends StatelessWidget {
                           child: Text(
                             isVip
                                 ? (langCode == 'vi'
-                                    ? 'Đã là Pro'
-                                    : 'Already Pro')
+                                    ? 'Đã là VIP'
+                                    : 'Already VIP')
                                 : (selectedPaymentMethod == PaymentMethod.vnpay
                                     ? (langCode == 'vi'
-                                        ? 'Nâng cấp Pro qua VNPay'
-                                        : 'Upgrade to Pro with VNPay')
+                                        ? 'Nâng cấp VIP qua VNPay'
+                                        : 'Upgrade to VIP with VNPay')
                                     : (langCode == 'vi'
-                                        ? 'Nâng cấp Pro qua MoMo'
-                                        : 'Upgrade to Pro with MoMo')),
+                                        ? 'Nâng cấp VIP qua MoMo'
+                                        : 'Upgrade to VIP with MoMo')),
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
@@ -820,115 +826,6 @@ class _ProPlanCard extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildPaymentMethodSelector(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 8),
-          child: Text(
-            langCode == 'vi' ? 'Phương thức thanh toán' : 'Payment method',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: AppColors.muted(context),
-            ),
-          ),
-        ),
-        Container(
-          decoration: BoxDecoration(
-            color: AppColors.chipBg(context),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          padding: const EdgeInsets.all(4),
-          child: Row(
-            children: [
-              Expanded(
-                child: _PaymentMethodButton(
-                  label: 'MoMo',
-                  iconData: Icons.account_balance_wallet,
-                  iconColor: const Color(0xFFA50000),
-                  isActive: selectedPaymentMethod == PaymentMethod.momo,
-                  onTap: () => onPaymentMethodChanged(PaymentMethod.momo),
-                ),
-              ),
-              Expanded(
-                child: _PaymentMethodButton(
-                  label: 'VNPay',
-                  iconData: Icons.payment,
-                  iconColor: const Color(0xFF1A94DA),
-                  isActive: selectedPaymentMethod == PaymentMethod.vnpay,
-                  onTap: () => onPaymentMethodChanged(PaymentMethod.vnpay),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _PaymentMethodButton extends StatelessWidget {
-  final String label;
-  final IconData iconData;
-  final Color iconColor;
-  final bool isActive;
-  final VoidCallback onTap;
-
-  const _PaymentMethodButton({
-    required this.label,
-    required this.iconData,
-    required this.iconColor,
-    required this.isActive,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: isActive ? AppColors.card(context) : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: isActive
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.06),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              iconData,
-              size: 18,
-              color: iconColor,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                color: isActive
-                    ? AppColors.title(context)
-                    : AppColors.muted(context),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

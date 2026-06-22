@@ -353,8 +353,9 @@ class SubscriptionStatus {
 
   int? get daysRemaining {
     if (expiresAt == null) return null;
-    final diff = expiresAt!.difference(DateTime.now()).inDays;
-    return diff < 0 ? 0 : diff;
+    final diff = expiresAt!.difference(DateTime.now());
+    if (diff.isNegative) return 0;
+    return (diff.inSeconds / 86400).ceil();
   }
 
   static BillingCycle? _cycleFromName(dynamic name) {
