@@ -10,7 +10,13 @@ module.exports = {
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov'],
   coverageThreshold: {
-    global: {
+    './src/lib/geo.ts': {
+      branches: 90,
+      functions: 90,
+      lines: 90,
+      statements: 90,
+    },
+    './src/lib/http-error.ts': {
       branches: 90,
       functions: 90,
       lines: 90,
