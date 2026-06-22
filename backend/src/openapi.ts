@@ -219,6 +219,99 @@ export const openApiDocument = {
           userId: { type: 'string' },
         },
       },
+      ErrorResponse: {
+        type: 'object',
+        properties: {
+          statusCode: { type: 'integer', example: 400 },
+          message: {
+            oneOf: [
+              { type: 'string', example: 'Thông báo lỗi chi tiết' },
+              { type: 'array', items: { type: 'string' }, example: ['Trường email không hợp lệ'] },
+            ],
+          },
+          error: { type: 'string', example: 'Bad Request' },
+        },
+      },
+    },
+    responses: {
+      BadRequest: {
+        description: 'Bad Request - Dữ liệu đầu vào không hợp lệ',
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/ErrorResponse' },
+            example: {
+              statusCode: 400,
+              message: 'Dữ liệu đầu vào không hợp lệ',
+              error: 'Bad Request',
+            },
+          },
+        },
+      },
+      Unauthorized: {
+        description: 'Unauthorized - Không có quyền truy cập hoặc token không hợp lệ',
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/ErrorResponse' },
+            example: {
+              statusCode: 401,
+              message: 'Unauthorized',
+              error: 'Unauthorized',
+            },
+          },
+        },
+      },
+      Forbidden: {
+        description: 'Forbidden - Không có quyền thực hiện hành động này',
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/ErrorResponse' },
+            example: {
+              statusCode: 403,
+              message: 'Forbidden resource',
+              error: 'Forbidden',
+            },
+          },
+        },
+      },
+      NotFound: {
+        description: 'Not Found - Không tìm thấy tài nguyên yêu cầu',
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/ErrorResponse' },
+            example: {
+              statusCode: 404,
+              message: 'Không tìm thấy tài nguyên yêu cầu',
+              error: 'Not Found',
+            },
+          },
+        },
+      },
+      Conflict: {
+        description: 'Conflict - Xung đột dữ liệu (ví dụ: email đã được sử dụng)',
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/ErrorResponse' },
+            example: {
+              statusCode: 409,
+              message: 'Tài nguyên đã tồn tại hoặc xảy ra xung đột',
+              error: 'Conflict',
+            },
+          },
+        },
+      },
+      InternalServerError: {
+        description: 'Internal Server Error - Lỗi hệ thống nội bộ',
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/ErrorResponse' },
+            example: {
+              statusCode: 500,
+              message: 'Internal server error',
+              error: 'Internal Server Error',
+            },
+          },
+        },
+      },
     },
   },
   paths: {
@@ -232,7 +325,12 @@ export const openApiDocument = {
             'application/json': { schema: { $ref: '#/components/schemas/LoginDto' } },
           },
         },
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '400': { $ref: '#/components/responses/BadRequest' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/auth/admin/login': {
@@ -245,7 +343,12 @@ export const openApiDocument = {
             'application/json': { schema: { $ref: '#/components/schemas/LoginDto' } },
           },
         },
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '400': { $ref: '#/components/responses/BadRequest' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/auth/register': {
@@ -258,7 +361,12 @@ export const openApiDocument = {
             'application/json': { schema: { $ref: '#/components/schemas/RegisterDto' } },
           },
         },
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '400': { $ref: '#/components/responses/BadRequest' },
+          '409': { $ref: '#/components/responses/Conflict' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/auth/forgot-password': {
@@ -273,7 +381,12 @@ export const openApiDocument = {
             },
           },
         },
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '400': { $ref: '#/components/responses/BadRequest' },
+          '404': { $ref: '#/components/responses/NotFound' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/auth/reset-password': {
@@ -288,7 +401,12 @@ export const openApiDocument = {
             },
           },
         },
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '400': { $ref: '#/components/responses/BadRequest' },
+          '404': { $ref: '#/components/responses/NotFound' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/auth/me': {
@@ -296,7 +414,11 @@ export const openApiDocument = {
         tags: ['auth'],
         summary: 'Current user profile',
         security: [{ bearerAuth: [] }],
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/auth/profile': {
@@ -312,7 +434,12 @@ export const openApiDocument = {
             },
           },
         },
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '400': { $ref: '#/components/responses/BadRequest' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/auth/change-password': {
@@ -328,7 +455,12 @@ export const openApiDocument = {
             },
           },
         },
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '400': { $ref: '#/components/responses/BadRequest' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/users': {
@@ -339,7 +471,12 @@ export const openApiDocument = {
         parameters: [
           { name: 'search', in: 'query', schema: { type: 'string' } },
         ],
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '403': { $ref: '#/components/responses/Forbidden' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/users/admin': {
@@ -355,7 +492,14 @@ export const openApiDocument = {
             },
           },
         },
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '400': { $ref: '#/components/responses/BadRequest' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '403': { $ref: '#/components/responses/Forbidden' },
+          '409': { $ref: '#/components/responses/Conflict' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/users/{id}': {
@@ -364,7 +508,13 @@ export const openApiDocument = {
         summary: 'Get user (admin)',
         security: [{ bearerAuth: [] }],
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '403': { $ref: '#/components/responses/Forbidden' },
+          '404': { $ref: '#/components/responses/NotFound' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
       patch: {
         tags: ['users'],
@@ -376,21 +526,37 @@ export const openApiDocument = {
             'application/json': { schema: { $ref: '#/components/schemas/UpdateUserDto' } },
           },
         },
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '400': { $ref: '#/components/responses/BadRequest' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '403': { $ref: '#/components/responses/Forbidden' },
+          '404': { $ref: '#/components/responses/NotFound' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
       delete: {
         tags: ['users'],
         summary: 'Delete user (admin)',
         security: [{ bearerAuth: [] }],
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '403': { $ref: '#/components/responses/Forbidden' },
+          '404': { $ref: '#/components/responses/NotFound' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/categories': {
       get: {
         tags: ['categories'],
         summary: 'List categories',
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
       post: {
         tags: ['categories'],
@@ -404,7 +570,14 @@ export const openApiDocument = {
             },
           },
         },
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '400': { $ref: '#/components/responses/BadRequest' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '403': { $ref: '#/components/responses/Forbidden' },
+          '409': { $ref: '#/components/responses/Conflict' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/categories/{id}': {
@@ -412,7 +585,11 @@ export const openApiDocument = {
         tags: ['categories'],
         summary: 'Get category',
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '404': { $ref: '#/components/responses/NotFound' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
       patch: {
         tags: ['categories'],
@@ -426,14 +603,27 @@ export const openApiDocument = {
             },
           },
         },
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '400': { $ref: '#/components/responses/BadRequest' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '403': { $ref: '#/components/responses/Forbidden' },
+          '404': { $ref: '#/components/responses/NotFound' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
       delete: {
         tags: ['categories'],
         summary: 'Delete category (admin)',
         security: [{ bearerAuth: [] }],
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '403': { $ref: '#/components/responses/Forbidden' },
+          '404': { $ref: '#/components/responses/NotFound' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/document/test-moderation': {
@@ -455,7 +645,11 @@ export const openApiDocument = {
             },
           },
         },
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '400': { $ref: '#/components/responses/BadRequest' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/document': {
@@ -473,7 +667,10 @@ export const openApiDocument = {
           { name: 'limit', in: 'query', schema: { type: 'string' } },
           { name: 'publishedOnly', in: 'query', schema: { type: 'string' } },
         ],
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
       post: {
         tags: ['document'],
@@ -487,7 +684,12 @@ export const openApiDocument = {
             },
           },
         },
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '400': { $ref: '#/components/responses/BadRequest' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/document/{id}': {
@@ -495,7 +697,11 @@ export const openApiDocument = {
         tags: ['document'],
         summary: 'Get document',
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '404': { $ref: '#/components/responses/NotFound' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
       patch: {
         tags: ['document'],
@@ -509,14 +715,25 @@ export const openApiDocument = {
             },
           },
         },
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '400': { $ref: '#/components/responses/BadRequest' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '404': { $ref: '#/components/responses/NotFound' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
       delete: {
         tags: ['document'],
         summary: 'Delete document',
         security: [{ bearerAuth: [] }],
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '404': { $ref: '#/components/responses/NotFound' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/document/{id}/publish': {
@@ -525,7 +742,13 @@ export const openApiDocument = {
         summary: 'Publish (admin)',
         security: [{ bearerAuth: [] }],
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '403': { $ref: '#/components/responses/Forbidden' },
+          '404': { $ref: '#/components/responses/NotFound' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/document/{id}/unpublish': {
@@ -534,7 +757,13 @@ export const openApiDocument = {
         summary: 'Unpublish (admin)',
         security: [{ bearerAuth: [] }],
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '403': { $ref: '#/components/responses/Forbidden' },
+          '404': { $ref: '#/components/responses/NotFound' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/places': {
@@ -559,7 +788,10 @@ export const openApiDocument = {
           { name: 'limit', in: 'query', schema: { type: 'string' } },
           { name: 'publishedOnly', in: 'query', schema: { type: 'string' } },
         ],
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
       post: {
         tags: ['places'],
@@ -573,7 +805,12 @@ export const openApiDocument = {
             },
           },
         },
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '400': { $ref: '#/components/responses/BadRequest' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/places/{id}': {
@@ -581,7 +818,11 @@ export const openApiDocument = {
         tags: ['places'],
         summary: 'Get place',
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '404': { $ref: '#/components/responses/NotFound' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
       patch: {
         tags: ['places'],
@@ -595,14 +836,25 @@ export const openApiDocument = {
             },
           },
         },
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '400': { $ref: '#/components/responses/BadRequest' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '404': { $ref: '#/components/responses/NotFound' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
       delete: {
         tags: ['places'],
         summary: 'Delete place',
         security: [{ bearerAuth: [] }],
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '404': { $ref: '#/components/responses/NotFound' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/places/{id}/publish': {
@@ -611,7 +863,13 @@ export const openApiDocument = {
         summary: 'Publish place (admin)',
         security: [{ bearerAuth: [] }],
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '403': { $ref: '#/components/responses/Forbidden' },
+          '404': { $ref: '#/components/responses/NotFound' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/places/{id}/unpublish': {
@@ -620,7 +878,13 @@ export const openApiDocument = {
         summary: 'Unpublish place (admin)',
         security: [{ bearerAuth: [] }],
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '403': { $ref: '#/components/responses/Forbidden' },
+          '404': { $ref: '#/components/responses/NotFound' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/favorites': {
@@ -628,7 +892,11 @@ export const openApiDocument = {
         tags: ['favorites'],
         summary: 'My favorites',
         security: [{ bearerAuth: [] }],
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/favorites/{documentId}': {
@@ -639,7 +907,12 @@ export const openApiDocument = {
         parameters: [
           { name: 'documentId', in: 'path', required: true, schema: { type: 'string' } },
         ],
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '404': { $ref: '#/components/responses/NotFound' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
       delete: {
         tags: ['favorites'],
@@ -648,7 +921,12 @@ export const openApiDocument = {
         parameters: [
           { name: 'documentId', in: 'path', required: true, schema: { type: 'string' } },
         ],
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '404': { $ref: '#/components/responses/NotFound' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/feedback': {
@@ -664,7 +942,12 @@ export const openApiDocument = {
             },
           },
         },
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '400': { $ref: '#/components/responses/BadRequest' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
       get: {
         tags: ['feedback'],
@@ -673,7 +956,12 @@ export const openApiDocument = {
         parameters: [
           { name: 'resolved', in: 'query', schema: { type: 'string' } },
         ],
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '403': { $ref: '#/components/responses/Forbidden' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/feedback/{id}/reply': {
@@ -690,7 +978,14 @@ export const openApiDocument = {
             },
           },
         },
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '400': { $ref: '#/components/responses/BadRequest' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '403': { $ref: '#/components/responses/Forbidden' },
+          '404': { $ref: '#/components/responses/NotFound' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/feedback/{id}/resolve': {
@@ -699,7 +994,13 @@ export const openApiDocument = {
         summary: 'Resolve feedback (admin)',
         security: [{ bearerAuth: [] }],
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '403': { $ref: '#/components/responses/Forbidden' },
+          '404': { $ref: '#/components/responses/NotFound' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/reports': {
@@ -715,14 +1016,24 @@ export const openApiDocument = {
             },
           },
         },
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '400': { $ref: '#/components/responses/BadRequest' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
       get: {
         tags: ['reports'],
         summary: 'List reports (admin)',
         security: [{ bearerAuth: [] }],
         parameters: [{ name: 'status', in: 'query', schema: { type: 'string' } }],
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '403': { $ref: '#/components/responses/Forbidden' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/reports/{id}/resolve': {
@@ -739,7 +1050,14 @@ export const openApiDocument = {
             },
           },
         },
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '400': { $ref: '#/components/responses/BadRequest' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '403': { $ref: '#/components/responses/Forbidden' },
+          '404': { $ref: '#/components/responses/NotFound' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/notifications/admin/history': {
@@ -747,7 +1065,12 @@ export const openApiDocument = {
         tags: ['notifications'],
         summary: 'Notification history (admin)',
         security: [{ bearerAuth: [] }],
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '403': { $ref: '#/components/responses/Forbidden' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/notifications/admin/send': {
@@ -763,7 +1086,13 @@ export const openApiDocument = {
             },
           },
         },
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '400': { $ref: '#/components/responses/BadRequest' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '403': { $ref: '#/components/responses/Forbidden' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/notifications': {
@@ -771,7 +1100,11 @@ export const openApiDocument = {
         tags: ['notifications'],
         summary: 'My notifications',
         security: [{ bearerAuth: [] }],
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/notifications/read-all': {
@@ -779,7 +1112,11 @@ export const openApiDocument = {
         tags: ['notifications'],
         summary: 'Mark all read',
         security: [{ bearerAuth: [] }],
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/notifications/{id}/read': {
@@ -788,7 +1125,12 @@ export const openApiDocument = {
         summary: 'Mark one read',
         security: [{ bearerAuth: [] }],
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '404': { $ref: '#/components/responses/NotFound' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/admin/dashboard/stats': {
@@ -796,7 +1138,12 @@ export const openApiDocument = {
         tags: ['admin'],
         summary: 'Dashboard stats',
         security: [{ bearerAuth: [] }],
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '403': { $ref: '#/components/responses/Forbidden' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/friends': {
@@ -804,7 +1151,11 @@ export const openApiDocument = {
         tags: ['friends'],
         summary: 'List friends',
         security: [{ bearerAuth: [] }],
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/friends/pending': {
@@ -812,7 +1163,11 @@ export const openApiDocument = {
         tags: ['friends'],
         summary: 'List pending friend requests',
         security: [{ bearerAuth: [] }],
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/friends/search': {
@@ -823,7 +1178,12 @@ export const openApiDocument = {
         parameters: [
           { name: 'q', in: 'query', required: true, schema: { type: 'string' } },
         ],
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '400': { $ref: '#/components/responses/BadRequest' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/friends/request': {
@@ -843,7 +1203,13 @@ export const openApiDocument = {
             },
           },
         },
-        responses: { '201': { description: 'Created' } },
+        responses: {
+          '201': { description: 'Created' },
+          '400': { $ref: '#/components/responses/BadRequest' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '404': { $ref: '#/components/responses/NotFound' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/friends/{id}/respond': {
@@ -864,7 +1230,13 @@ export const openApiDocument = {
             },
           },
         },
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '400': { $ref: '#/components/responses/BadRequest' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '404': { $ref: '#/components/responses/NotFound' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/friends/{id}': {
@@ -873,7 +1245,12 @@ export const openApiDocument = {
         summary: 'Unfriend / cancel request',
         security: [{ bearerAuth: [] }],
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '404': { $ref: '#/components/responses/NotFound' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/groups': {
@@ -881,7 +1258,11 @@ export const openApiDocument = {
         tags: ['groups'],
         summary: 'List user\'s groups',
         security: [{ bearerAuth: [] }],
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
       post: {
         tags: ['groups'],
@@ -903,7 +1284,12 @@ export const openApiDocument = {
             },
           },
         },
-        responses: { '201': { description: 'Created' } },
+        responses: {
+          '201': { description: 'Created' },
+          '400': { $ref: '#/components/responses/BadRequest' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/groups/discover': {
@@ -911,7 +1297,11 @@ export const openApiDocument = {
         tags: ['groups'],
         summary: 'Discover public groups',
         security: [{ bearerAuth: [] }],
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/groups/{id}': {
@@ -920,7 +1310,12 @@ export const openApiDocument = {
         summary: 'Get group details',
         security: [{ bearerAuth: [] }],
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '404': { $ref: '#/components/responses/NotFound' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
       patch: {
         tags: ['groups'],
@@ -941,14 +1336,25 @@ export const openApiDocument = {
             },
           },
         },
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '400': { $ref: '#/components/responses/BadRequest' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '404': { $ref: '#/components/responses/NotFound' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
       delete: {
         tags: ['groups'],
         summary: 'Delete group',
         security: [{ bearerAuth: [] }],
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '404': { $ref: '#/components/responses/NotFound' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/groups/{id}/join': {
@@ -957,7 +1363,12 @@ export const openApiDocument = {
         summary: 'Join a public group',
         security: [{ bearerAuth: [] }],
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        responses: { '201': { description: 'Created' } },
+        responses: {
+          '201': { description: 'Created' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '404': { $ref: '#/components/responses/NotFound' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/groups/{id}/leave': {
@@ -966,7 +1377,12 @@ export const openApiDocument = {
         summary: 'Leave a group',
         security: [{ bearerAuth: [] }],
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '404': { $ref: '#/components/responses/NotFound' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/groups/{id}/members': {
@@ -987,7 +1403,13 @@ export const openApiDocument = {
             },
           },
         },
-        responses: { '201': { description: 'Created' } },
+        responses: {
+          '201': { description: 'Created' },
+          '400': { $ref: '#/components/responses/BadRequest' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '404': { $ref: '#/components/responses/NotFound' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
     '/api/groups/{id}/members/{uid}': {
@@ -999,7 +1421,12 @@ export const openApiDocument = {
           { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
           { name: 'uid', in: 'path', required: true, schema: { type: 'string' } },
         ],
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'OK' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '404': { $ref: '#/components/responses/NotFound' },
+          '500': { $ref: '#/components/responses/InternalServerError' },
+        },
       },
     },
   },

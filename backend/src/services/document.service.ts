@@ -3,6 +3,7 @@ import { HttpError } from '../lib/http-error';
 import { checkContentModeration, extractTextFromPdf } from '../lib/moderation';
 import { notificationsService } from './notifications.service';
 import { settingsService } from './settings.service';
+import { logger } from '../lib/logger';
 import { placeService } from './place.service';
 import {
   applyContentState,
@@ -242,7 +243,7 @@ export const documentService = {
             textToScan += ` [PDF Content: ${pdfText}]`;
           }
         } catch (err) {
-          console.error('[PDF Extraction Error during Create]', err);
+          logger.error({ fileUrl: dto.fileUrl, err }, 'PDF Extraction Error during Create');
         }
       }
 
@@ -385,7 +386,7 @@ export const documentService = {
             textToScan += ` [PDF Content: ${pdfText}]`;
           }
         } catch (err) {
-          console.error('[PDF Extraction Error during Update]', err);
+          logger.error({ fileUrl, err }, 'PDF Extraction Error during Update');
         }
       }
 

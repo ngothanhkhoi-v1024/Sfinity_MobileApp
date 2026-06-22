@@ -4,6 +4,7 @@ import express from 'express';
 import swaggerUi from 'swagger-ui-express';
 
 import { errorMiddleware } from './middleware/error.middleware';
+import { loggingMiddleware } from './middleware/logging.middleware';
 import { openApiDocument } from './openapi';
 import { apiRouter } from './routes';
 
@@ -11,6 +12,7 @@ export function createApp() {
   const app = express();
   app.use(cors({ origin: true, credentials: true }));
   app.use(express.json());
+  app.use(loggingMiddleware);
   app.use('/uploads', express.static('./uploads'));
   app.use('/api', apiRouter);
   app.use(
