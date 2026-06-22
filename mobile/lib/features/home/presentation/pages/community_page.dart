@@ -153,8 +153,12 @@ class _CommunityPageState extends State<CommunityPage>
 
     final myGroups = _groupCtrl.groups;
     if (myGroups.isEmpty) {
-      return GroupEmptyState(
-        onCreateGroup: () => context.push(RouteNames.groupCreate),
+      return ListenableBuilder(
+        listenable: SfinityApp.userLimits,
+        builder: (context, _) => GroupEmptyState(
+          onCreateGroup: () => context.push(RouteNames.groupCreate),
+          canCreateGroup: SfinityApp.userLimits.canCreateGroup,
+        ),
       );
     }
 
@@ -215,9 +219,17 @@ class _CommunityPageState extends State<CommunityPage>
   }
 
   Widget _buildCreateGroupButton(BuildContext context, ColorScheme cs) {
-    return AppBarAddButton(
-      tooltip: context.l10n.createGroup,
-      onPressed: () => context.push(RouteNames.groupCreate),
+    return ListenableBuilder(
+      listenable: SfinityApp.userLimits,
+      builder: (context, _) {
+        if (!SfinityApp.userLimits.canCreateGroup) {
+          return const SizedBox.shrink();
+        }
+        return AppBarAddButton(
+          tooltip: context.l10n.createGroup,
+          onPressed: () => context.push(RouteNames.groupCreate),
+        );
+      },
     );
   }
 

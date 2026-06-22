@@ -13,6 +13,7 @@ import 'core/services/assistant_hint_manager.dart';
 import 'core/services/locale_manager.dart';
 import 'core/services/notification_manager.dart';
 import 'core/services/theme_manager.dart';
+import 'core/services/user_limits_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/data/repositories/auth_repository_impl.dart';
 import 'features/auth/data/services/auth_api_service.dart';
@@ -61,6 +62,7 @@ class SfinityApp extends StatefulWidget {
   static AssistantHintManager get assistantHintManager => _SfinityAppState.assistantHintManager;
   static AssistantFabPositionManager get assistantFabPositionManager =>
       _SfinityAppState.assistantFabPositionManager;
+  static UserLimitsService get userLimits => _SfinityAppState.userLimits;
 
   @override
   State<SfinityApp> createState() => _SfinityAppState();
@@ -74,6 +76,7 @@ class _SfinityAppState extends State<SfinityApp> {
   static late final AssistantController assistantController;
   static late final AssistantHintManager assistantHintManager;
   static late final AssistantFabPositionManager assistantFabPositionManager;
+  static late final UserLimitsService userLimits;
   late final GoRouter _router = createAppRouter(auth);
 
   @override
@@ -121,7 +124,12 @@ class _SfinityAppState extends State<SfinityApp> {
     );
 
     auth = AuthState(authRepository);
-    auth.init();
+    auth.init().then((_) {
+      if (auth.isAuthenticated) {
+        userLimits.refresh();
+      }
+    });
+    auth.addListener(_onAuthChanged);
 
     localeManager = LocaleManager();
     localeManager.init();
@@ -138,6 +146,22 @@ class _SfinityAppState extends State<SfinityApp> {
 
     assistantFabPositionManager = AssistantFabPositionManager();
     assistantFabPositionManager.init();
+
+    userLimits = UserLimitsService();
+  }
+
+  void _onAuthChanged() {
+    if (auth.isAuthenticated) {
+      userLimits.refresh();
+    } else {
+      userLimits.clear();
+    }
+  }
+
+  @override
+  void dispose() {
+    auth.removeListener(_onAuthChanged);
+    super.dispose();
   }
 
   @override

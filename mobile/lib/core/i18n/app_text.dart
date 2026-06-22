@@ -659,6 +659,14 @@ class AppLocalizations {
       'paymentSecureViaMoMo': 'Thanh toán bảo mật qua MoMo',
       'paymentCancelled': 'Đã hủy thanh toán',
       'upgradeWithMoMo': 'Nâng cấp VIP qua MoMo',
+      // Free user limits
+      'limitReachedTitle': 'Đã đạt giới hạn',
+      'limitDownloadsReached': 'Bạn đã hết 10 lượt tải tài liệu. Nâng cấp VIP để tải không giới hạn.',
+      'limitPlacesReached': 'Bạn đã hết 10 lượt đăng địa điểm. Nâng cấp VIP để đăng không giới hạn.',
+      'limitFriendsReached': 'Bạn đã đạt giới hạn 10 bạn bè. Nâng cấp VIP để kết bạn không giới hạn.',
+      'limitCreateGroup': 'Tài khoản thường không thể tạo nhóm. Tham gia nhóm công khai hoặc nâng cấp VIP.',
+      'freeUsageRemaining': 'Còn {remaining}/{limit} lượt',
+      'freeFriendsRemaining': 'Bạn bè: {remaining}/{limit}',
       // QR payment
       'scanQrWithMoMo': 'Mở app MoMo và quét mã QR để thanh toán',
       'qrAmountLabel': 'Số tiền',
@@ -1317,6 +1325,14 @@ class AppLocalizations {
       'paymentSecureViaMoMo': 'Secure payment via MoMo',
       'paymentCancelled': 'Payment cancelled',
       'upgradeWithMoMo': 'Upgrade to Pro with MoMo',
+      // Free user limits
+      'limitReachedTitle': 'Limit reached',
+      'limitDownloadsReached': 'You have used all 10 document downloads. Upgrade to VIP for unlimited downloads.',
+      'limitPlacesReached': 'You have used all 10 place posts. Upgrade to VIP for unlimited posts.',
+      'limitFriendsReached': 'You have reached the 10 friend limit. Upgrade to VIP for unlimited friends.',
+      'limitCreateGroup': 'Free accounts cannot create groups. Join public groups or upgrade to VIP.',
+      'freeUsageRemaining': '{remaining}/{limit} remaining',
+      'freeFriendsRemaining': 'Friends: {remaining}/{limit}',
       // QR payment
       'scanQrWithMoMo': 'Open the MoMo app and scan the QR code to pay',
       'qrAmountLabel': 'Amount',
@@ -2039,6 +2055,15 @@ class AppLocalizations {
   String get paymentSecureViaMoMo => _text('paymentSecureViaMoMo');
   String get paymentCancelled => _text('paymentCancelled');
   String get upgradeWithMoMo => _text('upgradeWithMoMo');
+  String get limitReachedTitle => _text('limitReachedTitle');
+  String get limitDownloadsReached => _text('limitDownloadsReached');
+  String get limitPlacesReached => _text('limitPlacesReached');
+  String get limitFriendsReached => _text('limitFriendsReached');
+  String get limitCreateGroup => _text('limitCreateGroup');
+  String freeUsageRemaining(int remaining, int limit) =>
+      _format('freeUsageRemaining', {'{remaining}': '$remaining', '{limit}': '$limit'});
+  String freeFriendsRemaining(int remaining, int limit) =>
+      _format('freeFriendsRemaining', {'{remaining}': '$remaining', '{limit}': '$limit'});
   String get scanQrWithMoMo => _text('scanQrWithMoMo');
   String get qrAmountLabel => _text('qrAmountLabel');
   String get qrOrderLabel => _text('qrOrderLabel');

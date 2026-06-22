@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/i18n/app_text.dart';
+import '../../../../core/widgets/vip_limit_dialogs.dart';
 import '../controllers/friendship_controller.dart';
 import 'friend_request_tile.dart';
 import 'user_profile_bottom_sheet.dart';
@@ -305,6 +306,7 @@ class _AddFriendsTabState extends State<AddFriendsTab> {
                 );
               }
             } else if (mounted) {
+              if (VipLimitDialogs.handleFriendshipError(context, ctrl.error)) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text(ctrl.error ?? l10n.friendRequestError), backgroundColor: Colors.red),
               );

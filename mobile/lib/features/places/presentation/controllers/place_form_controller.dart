@@ -146,6 +146,11 @@ class PlaceFormController extends ChangeNotifier {
       throw invalidCoordinates();
     }
 
+    final isNewPlace = editPlaceId == null || editPlaceId.isEmpty;
+    if (isNewPlace && !SfinityApp.userLimits.canCreatePlace) {
+      throw 'PLACE_LIMIT';
+    }
+
     loading = true;
     notifyListeners();
 
@@ -178,6 +183,7 @@ class PlaceFormController extends ChangeNotifier {
           errorMsg: () => 'Cannot create place',
         );
         resultingPlaceId = place.id;
+        await SfinityApp.userLimits.refresh();
       }
 
       final photoErrors = <String>[];

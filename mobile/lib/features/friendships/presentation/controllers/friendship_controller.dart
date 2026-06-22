@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../../data/models/friend_model.dart';
 import '../../data/repositories/friendship_repository.dart';
+import '../../../../app.dart';
 
 class FriendshipController extends ChangeNotifier {
   FriendshipController(this._repository);
@@ -78,6 +79,11 @@ class FriendshipController extends ChangeNotifier {
   }
 
   Future<bool> sendRequest(String addresseeId) async {
+    if (!SfinityApp.userLimits.canAddFriend) {
+      _error = 'FRIEND_LIMIT';
+      notifyListeners();
+      return false;
+    }
     try {
       await _repository.sendRequest(addresseeId);
       
@@ -98,20 +104,28 @@ class FriendshipController extends ChangeNotifier {
         );
       }
       await loadSentRequests();
+      await SfinityApp.userLimits.refresh();
       notifyListeners();
       return true;
     } catch (e) {
       _error = e.toString().replaceFirst('Exception: ', '');
+      await SfinityApp.userLimits.refresh();
       notifyListeners();
       return false;
     }
   }
 
   Future<bool> respondRequest(String friendshipId, bool accept) async {
+    if (accept && !SfinityApp.userLimits.canAddFriend) {
+      _error = 'FRIEND_LIMIT';
+      notifyListeners();
+      return false;
+    }
     try {
       await _repository.respondRequest(friendshipId, accept);
       _pendingRequests.removeWhere((r) => r.id == friendshipId);
       if (accept) await loadFriends();
+      await SfinityApp.userLimits.refresh();
       notifyListeners();
       return true;
     } catch (e) {
@@ -145,9 +159,11 @@ class FriendshipController extends ChangeNotifier {
       }
       
       notifyListeners();
+      await SfinityApp.userLimits.refresh();
       return true;
     } catch (e) {
       _error = e.toString().replaceFirst('Exception: ', '');
+      await SfinityApp.userLimits.refresh();
       notifyListeners();
       return false;
     }

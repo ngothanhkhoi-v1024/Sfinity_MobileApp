@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../app.dart';
 import '../../../../core/i18n/app_text.dart';
+import '../../../../core/widgets/vip_limit_dialogs.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../controllers/document_detail_controller.dart';
@@ -376,7 +377,16 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
       return;
     }
 
-    final success = await _controller.triggerDownload(fileUrl);
+    final success = await _controller.triggerDownload(
+      fileUrl,
+      onLimitReached: (_) {
+        if (!mounted) return;
+        VipLimitDialogs.showLimitReached(
+          context,
+          message: l10n.limitDownloadsReached,
+        );
+      },
+    );
     if (!mounted) return;
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -385,7 +395,7 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
           backgroundColor: Theme.of(context).colorScheme.primary,
         ),
       );
-    } else if (_controller.error != null) {
+    } else if (_controller.error != null && _controller.error != 'limit') {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.cannotOpenDocument(_controller.error!))),
       );

@@ -20,6 +20,14 @@ interface DashboardStatsRaw {
   activityFrom?: string;
   activityTo?: string;
   activityByDay?: DashboardActivityDay[];
+  vipUsers?: { active: number; expired: number; total: number };
+  revenue?: {
+    totalRevenue: number;
+    transactionCount: number;
+    byPlan: { planId: string; planName: string; count: number; revenue: number }[];
+    byCycle: { cycle: string; count: number; revenue: number }[];
+    revenueByDay: { date: string; revenue: number }[];
+  };
 }
 
 export interface DashboardActivityDay {
@@ -46,6 +54,14 @@ export interface DashboardStats {
   activityFrom: string;
   activityTo: string;
   activityByDay: DashboardActivityDay[];
+  vipUsers: { active: number; expired: number; total: number };
+  revenue: {
+    totalRevenue: number;
+    transactionCount: number;
+    byPlan: { planId: string; planName: string; count: number; revenue: number }[];
+    byCycle: { cycle: string; count: number; revenue: number }[];
+    revenueByDay: { date: string; revenue: number }[];
+  };
 }
 
 export interface DashboardStatsParams {
@@ -75,6 +91,14 @@ function normalizeStats(raw: DashboardStatsRaw): DashboardStats {
     activityFrom: raw.activityFrom ?? '',
     activityTo: raw.activityTo ?? '',
     activityByDay: raw.activityByDay ?? [],
+    vipUsers: raw.vipUsers ?? { active: 0, expired: 0, total: 0 },
+    revenue: raw.revenue ?? {
+      totalRevenue: 0,
+      transactionCount: 0,
+      byPlan: [],
+      byCycle: [],
+      revenueByDay: [],
+    },
   };
 }
 

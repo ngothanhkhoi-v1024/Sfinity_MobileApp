@@ -57,6 +57,7 @@ class _SubscriptionPageState extends State<SubscriptionPage>
 
   Future<void> _loadStatus() async {
     final status = await _service.getStatus();
+    await SfinityApp.userLimits.refresh();
     if (!mounted) return;
     setState(() {
       _currentStatus = status;

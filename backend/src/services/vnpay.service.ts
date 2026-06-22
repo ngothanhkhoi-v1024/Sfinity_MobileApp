@@ -11,7 +11,7 @@ import {
 } from '../lib/vnpay';
 import { HttpError } from '../lib/http-error';
 import { subscriptionService } from './subscription.service';
-import { PLAN_CATALOG, getPlanPrice } from './momo.service';
+import { planSettingsService } from './plan-settings.service';
 
 export type PaymentMethod = 'vnpay';
 
@@ -43,12 +43,12 @@ export const vnpayService = {
       );
     }
 
-    const plan = PLAN_CATALOG[input.planId];
+    const plan = await planSettingsService.getPlan(input.planId);
     if (!plan) {
-      throw new HttpError(400, 'Gói không hợp lệ', 'Bad Request');
+      throw new HttpError(400, 'Gói không hợp lệ hoặc đã tắt', 'Bad Request');
     }
 
-    const amount = getPlanPrice(input.planId, input.cycle);
+    const amount = await planSettingsService.getPlanPrice(input.planId, input.cycle);
     const orderId = newVnpayTxnRef('sfvip');
     const now = new Date();
     const expireDate = new Date(now.getTime() + 15 * 60 * 1000); // 15 minutes expiry

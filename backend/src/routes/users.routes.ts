@@ -9,6 +9,8 @@ import { validateBody } from '../lib/validate';
 import { jwtAuthMiddleware } from '../middleware/jwt.middleware';
 import { rolesMiddleware } from '../middleware/roles.middleware';
 import { usersService } from '../services/users.service';
+import { adminSubscriptionService } from '../services/admin-subscription.service';
+import { AdminUpdateSubscriptionDto } from '../dto/admin-subscription.dto';
 
 const adminOnly = [jwtAuthMiddleware, rolesMiddleware(UserRole.ADMIN)] as const;
 
@@ -31,6 +33,37 @@ usersRouter.post(
     res.json(
       await usersService.createAdmin(dto.email, dto.password, dto.name),
     );
+  }),
+);
+
+usersRouter.get(
+  '/:id/subscription',
+  ...adminOnly,
+  asyncHandler(async (req, res) => {
+    res.json(await adminSubscriptionService.getUserSubscription(req.params.id));
+  }),
+);
+
+usersRouter.patch(
+  '/:id/subscription',
+  ...adminOnly,
+  asyncHandler(async (req, res) => {
+    const dto = await validateBody(AdminUpdateSubscriptionDto, req.body);
+    res.json(
+      await adminSubscriptionService.updateUserSubscription(
+        req.params.id,
+        dto,
+        req.user!.sub,
+      ),
+    );
+  }),
+);
+
+usersRouter.post(
+  '/:id/subscription/reset-usage',
+  ...adminOnly,
+  asyncHandler(async (req, res) => {
+    res.json(await adminSubscriptionService.resetUserUsage(req.params.id));
   }),
 );
 

@@ -48,10 +48,18 @@ class _GroupListPageState extends State<GroupListPage> {
               tooltip: l10n.friends,
               onPressed: () => context.push(RouteNames.friends),
             ),
-            IconButton(
-              icon: Icon(Icons.add_circle_outline, color: cs.primary),
-              tooltip: l10n.createGroup,
-              onPressed: () => context.push(RouteNames.groupCreate),
+            ListenableBuilder(
+              listenable: SfinityApp.userLimits,
+              builder: (context, _) {
+                if (!SfinityApp.userLimits.canCreateGroup) {
+                  return const SizedBox.shrink();
+                }
+                return IconButton(
+                  icon: Icon(Icons.add_circle_outline, color: cs.primary),
+                  tooltip: l10n.createGroup,
+                  onPressed: () => context.push(RouteNames.groupCreate),
+                );
+              },
             ),
           ],
           bottom: TabBar(
@@ -115,7 +123,13 @@ class _GroupListPageState extends State<GroupListPage> {
         final myGroups = _ctrl.groups;
 
         if (myGroups.isEmpty && invites.isEmpty) {
-          return GroupEmptyState(onCreateGroup: () => context.push(RouteNames.groupCreate));
+          return ListenableBuilder(
+            listenable: SfinityApp.userLimits,
+            builder: (context, _) => GroupEmptyState(
+              onCreateGroup: () => context.push(RouteNames.groupCreate),
+              canCreateGroup: SfinityApp.userLimits.canCreateGroup,
+            ),
+          );
         }
 
         return RefreshIndicator(

@@ -6,39 +6,11 @@ import {
   verifySignature,
 } from '../lib/momo';
 import { HttpError } from '../lib/http-error';
+import { planSettingsService } from './plan-settings.service';
 import { subscriptionService } from './subscription.service';
 
 export type PlanId = 'pro';
 export type BillingCycle = 'monthly' | 'yearly';
-
-export const PLAN_CATALOG: Record<
-  PlanId,
-  {
-    id: PlanId;
-    name: string;
-    monthlyPrice: number;
-    yearlyPrice: number;
-  }
-> = {
-  pro: {
-    id: 'pro',
-    name: 'Pro',
-    monthlyPrice: 49000,
-    yearlyPrice: 399000,
-  },
-};
-
-export function getPlanPrice(planId: PlanId, cycle: BillingCycle): number {
-  const plan = PLAN_CATALOG[planId];
-  if (!plan) throw new HttpError(400, 'Gói không hợp lệ', 'Bad Request');
-  return cycle === 'yearly' ? plan.yearlyPrice : plan.monthlyPrice;
-}
-
-export function getPlanName(planId: PlanId): string {
-  const plan = PLAN_CATALOG[planId];
-  if (!plan) throw new HttpError(400, 'Gói không hợp lệ', 'Bad Request');
-  return plan.name;
-}
 
 export interface CreatePaymentInput {
   userId: string;
@@ -77,11 +49,11 @@ export const momoService = {
         'Service Unavailable',
       );
     }
-    const plan = PLAN_CATALOG[input.planId];
+    const plan = await planSettingsService.getPlan(input.planId);
     if (!plan) {
-      throw new HttpError(400, 'Gói không hợp lệ', 'Bad Request');
+      throw new HttpError(400, 'Gói không hợp lệ hoặc đã tắt', 'Bad Request');
     }
-    const amount = getPlanPrice(input.planId, input.cycle);
+    const amount = await planSettingsService.getPlanPrice(input.planId, input.cycle);
 
     const orderId = newMomoOrderId('sfvip');
     const requestId = newMomoOrderId('req');
