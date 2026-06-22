@@ -12,10 +12,9 @@ import '../../../friendships/data/models/friend_model.dart';
 import '../../../study_near_me/presentation/controllers/study_near_me_controller.dart';
 import '../../../study_near_me/presentation/widgets/study_near_me_results_sheet.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../widgets/explore_featured_section.dart';
+import '../widgets/explore_feed_list.dart';
+import '../widgets/explore_insights_carousel.dart';
 import '../widgets/explore_top_panel.dart';
-import '../widgets/explore_top_users_section.dart';
-import '../widgets/explore_weekly_chart.dart';
 
 class ExplorePage extends StatefulWidget {
   const ExplorePage({super.key});
@@ -327,21 +326,10 @@ class _ExplorePageState extends State<ExplorePage> {
                         ],
                       ),
                     ),
-                  const SizedBox(height: 14),
-                  _StudyNearMeBanner(
-                    loading: _studyNearMeCtrl.loading,
-                    onPressed: _onStudyNearMe,
-                    primary: primary,
-                  ),
-                  const SizedBox(height: 12),
-                  _ExploreStatsStrip(
-                    placeCount: displayPlaceCount,
-                    docCount: displayDocCount,
-                    showingSaved: _showingSaved,
-                    primary: primary,
-                  ),
-                  const SizedBox(height: 12),
-                  _ExploreActionRow(
+                  const SizedBox(height: 10),
+                  _ExploreQuickActions(
+                    studyNearMeLoading: _studyNearMeCtrl.loading,
+                    onStudyNearMe: _onStudyNearMe,
                     savedLabel: l10n.saved,
                     savedSelected: _showingSaved,
                     onSaved: _toggleSavedView,
@@ -353,11 +341,18 @@ class _ExplorePageState extends State<ExplorePage> {
                   ),
                   if (!isSearching && !_showingSaved) ...[
                     if (!_loadingExploreMeta &&
-                        (_trendingPlaces.isNotEmpty || _trendingDocuments.isNotEmpty)) ...[
-                      const SizedBox(height: 18),
-                      ExploreFeaturedSection(
+                        (_trendingPlaces.isNotEmpty ||
+                            _trendingDocuments.isNotEmpty ||
+                            _weeklyDays.isNotEmpty ||
+                            _topUsers.isNotEmpty)) ...[
+                      const SizedBox(height: 12),
+                      ExploreInsightsCarousel(
                         trendingPlaces: _trendingPlaces,
                         trendingDocuments: _trendingDocuments,
+                        weeklyDays: _weeklyDays,
+                        totalPlaces: _weeklyTotalPlaces,
+                        totalDownloads: _weeklyTotalDownloads,
+                        topUsers: _topUsers,
                         onPlaceTap: (item) {
                           final id = item['id']?.toString() ?? '';
                           if (id.isNotEmpty) context.push('/places/$id');
@@ -366,20 +361,6 @@ class _ExplorePageState extends State<ExplorePage> {
                           final id = item['id']?.toString() ?? '';
                           if (id.isNotEmpty) context.push('/document/$id');
                         },
-                      ),
-                    ],
-                    if (!_loadingExploreMeta && _weeklyDays.isNotEmpty) ...[
-                      const SizedBox(height: 18),
-                      ExploreWeeklyChart(
-                        days: _weeklyDays,
-                        totalPlaces: _weeklyTotalPlaces,
-                        totalDownloads: _weeklyTotalDownloads,
-                      ),
-                    ],
-                    if (!_loadingExploreMeta && _topUsers.isNotEmpty) ...[
-                      const SizedBox(height: 18),
-                      ExploreTopUsersSection(
-                        users: _topUsers,
                         onUserTap: (user) {
                           final id = user['id']?.toString() ?? '';
                           if (id.isEmpty) return;
@@ -395,11 +376,13 @@ class _ExplorePageState extends State<ExplorePage> {
                       ),
                     ],
                   ],
-                  const SizedBox(height: 18),
-                  _ExploreFeedSectionHeader(
+                  const SizedBox(height: 12),
+                  ExploreFeedSectionHeader(
                     title: sectionTitle,
                     count: visible.length,
                     showingSaved: _showingSaved,
+                    placeCount: displayPlaceCount,
+                    docCount: displayDocCount,
                   ),
                   if (isSearching && visible.isEmpty && !_searchingApi)
                     Padding(
@@ -410,7 +393,7 @@ class _ExplorePageState extends State<ExplorePage> {
                         onClear: _clearSearch,
                       ),
                     ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                 ]),
               ),
             ),
@@ -456,11 +439,10 @@ class _ExplorePageState extends State<ExplorePage> {
                     final item = visible[index];
                     return Padding(
                       padding: EdgeInsets.only(bottom: index < visible.length - 1 ? 10 : 0),
-                      child: _ExploreFeedCard(
-                        title: item['title']?.toString() ?? '',
+                      child: ExploreFeedCard(
+                        item: item,
                         isPlace: _isPlace(item),
                         onTap: () => _openItem(item),
-                        primary: primary,
                       ),
                     );
                   },
@@ -474,95 +456,10 @@ class _ExplorePageState extends State<ExplorePage> {
   }
 }
 
-class _ExploreFeedSectionHeader extends StatelessWidget {
-  const _ExploreFeedSectionHeader({
-    required this.title,
-    required this.count,
-    required this.showingSaved,
-  });
-
-  final String title;
-  final int count;
-  final bool showingSaved;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Text(
-          title,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                letterSpacing: -0.2,
-                color: AppColors.title(context),
-              ),
-        ),
-        if (showingSaved) ...[
-          const SizedBox(width: 6),
-          Icon(Icons.bookmark_rounded, size: 16, color: AppColors.muted(context)),
-        ],
-        const Spacer(),
-        if (count > 0)
-          Text(
-            '$count',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.muted(context),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class _ExploreStatsStrip extends StatelessWidget {
-  const _ExploreStatsStrip({
-    required this.placeCount,
-    required this.docCount,
-    required this.showingSaved,
-    required this.primary,
-  });
-
-  final int placeCount;
-  final int docCount;
-  final bool showingSaved;
-  final Color primary;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final muted = AppColors.muted(context);
-
-    return Text.rich(
-      TextSpan(
-        style: TextStyle(fontSize: 13, color: muted, height: 1.4),
-        children: [
-          TextSpan(
-            text: '$placeCount',
-            style: TextStyle(
-              fontWeight: FontWeight.w700,
-              color: showingSaved ? muted : AppColors.secondary,
-            ),
-          ),
-          TextSpan(text: ' ${l10n.places}'),
-          const TextSpan(text: '  ·  '),
-          TextSpan(
-            text: '$docCount',
-            style: TextStyle(
-              fontWeight: FontWeight.w700,
-              color: AppColors.title(context),
-            ),
-          ),
-          TextSpan(text: ' ${l10n.documents}'),
-        ],
-      ),
-    );
-  }
-}
-
-class _ExploreActionRow extends StatelessWidget {
-  const _ExploreActionRow({
+class _ExploreQuickActions extends StatelessWidget {
+  const _ExploreQuickActions({
+    required this.studyNearMeLoading,
+    required this.onStudyNearMe,
     required this.savedLabel,
     required this.savedSelected,
     required this.onSaved,
@@ -570,6 +467,8 @@ class _ExploreActionRow extends StatelessWidget {
     required this.primary,
   });
 
+  final bool studyNearMeLoading;
+  final VoidCallback? onStudyNearMe;
   final String savedLabel;
   final bool savedSelected;
   final VoidCallback onSaved;
@@ -581,80 +480,98 @@ class _ExploreActionRow extends StatelessWidget {
     final l10n = context.l10n;
     return Row(
       children: [
-        Expanded(
-          child: _MinimalActionTile(
-            icon: Icons.bookmark_outline_rounded,
-            label: savedLabel,
-            selected: savedSelected,
-            accent: primary,
-            onTap: onSaved,
-          ),
+        _CompactActionChip(
+          icon: Icons.near_me_outlined,
+          label: l10n.studyNearMe,
+          loading: studyNearMeLoading,
+          accent: AppColors.secondary,
+          onTap: studyNearMeLoading ? null : onStudyNearMe,
         ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _MinimalActionTile(
-            icon: Icons.add_rounded,
-            label: l10n.share,
-            accent: primary,
-            onTap: onCreate,
-          ),
+        const SizedBox(width: 8),
+        _CompactActionChip(
+          icon: Icons.bookmark_outline_rounded,
+          label: savedLabel,
+          selected: savedSelected,
+          accent: primary,
+          onTap: onSaved,
+        ),
+        const SizedBox(width: 8),
+        _CompactActionChip(
+          icon: Icons.add_rounded,
+          label: l10n.share,
+          accent: primary,
+          onTap: onCreate,
         ),
       ],
     );
   }
 }
 
-class _MinimalActionTile extends StatelessWidget {
-  const _MinimalActionTile({
+class _CompactActionChip extends StatelessWidget {
+  const _CompactActionChip({
     required this.icon,
     required this.label,
     required this.accent,
     required this.onTap,
     this.selected = false,
+    this.loading = false,
   });
 
   final IconData icon;
   final String label;
   final Color accent;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final bool selected;
+  final bool loading;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.card(context),
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          height: 48,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: selected ? accent.withValues(alpha: 0.45) : AppColors.border(context),
-            ),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                icon,
-                size: 18,
-                color: selected ? accent : AppColors.muted(context),
+    return Expanded(
+      child: Material(
+        color: AppColors.card(context),
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(10),
+          child: Container(
+            height: 40,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: selected ? accent.withValues(alpha: 0.45) : AppColors.border(context),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                    color: selected ? accent : AppColors.title(context),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (loading)
+                  SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: accent),
+                  )
+                else
+                  Icon(
+                    icon,
+                    size: 16,
+                    color: selected ? accent : AppColors.muted(context),
+                  ),
+                const SizedBox(width: 5),
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                      color: selected ? accent : AppColors.title(context),
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -683,204 +600,6 @@ class _ExploreNoResults extends StatelessWidget {
         Text(l10n.noSearchResults(query)),
         TextButton(onPressed: onClear, child: Text(l10n.clearSearch)),
       ],
-    );
-  }
-}
-
-class _StudyNearMeBanner extends StatelessWidget {
-  const _StudyNearMeBanner({
-    required this.loading,
-    required this.onPressed,
-    required this.primary,
-  });
-
-  final bool loading;
-  final VoidCallback? onPressed;
-  final Color primary;
-
-  static const _accent = AppColors.secondary;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final isDark = AppColors.isDark(context);
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: loading ? null : onPressed,
-        borderRadius: BorderRadius.circular(16),
-        child: Ink(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: isDark
-                  ? [const Color(0xFF2A1A12), const Color(0xFF1A1A1A)]
-                  : [const Color(0xFFFFF7ED), Colors.white],
-            ),
-            border: Border.all(color: _accent.withValues(alpha: isDark ? 0.35 : 0.22)),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-            child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [_accent, Color(0xFFE65100)],
-                  ),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: loading
-                    ? Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                      )
-                    : const Icon(Icons.near_me_outlined, color: Colors.white, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.studyNearMe,
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.title(context),
-                        letterSpacing: -0.1,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      l10n.places,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.muted(context),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(Icons.chevron_right_rounded, size: 20, color: AppColors.muted(context)),
-            ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ExploreFeedCard extends StatelessWidget {
-  const _ExploreFeedCard({
-    required this.title,
-    required this.isPlace,
-    required this.onTap,
-    required this.primary,
-  });
-
-  final String title;
-  final bool isPlace;
-  final VoidCallback onTap;
-  final Color primary;
-
-  static const _accent = AppColors.secondary;
-  static const _accentDeep = Color(0xFFE65100);
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final label = isPlace ? l10n.places : l10n.documents;
-    final isDark = AppColors.isDark(context);
-
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Ink(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            gradient: LinearGradient(
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-              colors: isDark
-                  ? [const Color(0xFF2A1A12), const Color(0xFF1A1A1A)]
-                  : [const Color(0xFFFFF7ED), Colors.white],
-            ),
-            border: Border.all(
-              color: _accent.withValues(alpha: isDark ? 0.3 : 0.18),
-            ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-            child: Row(
-              children: [
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: isPlace
-                          ? [_accent, _accentDeep]
-                          : [_accent.withValues(alpha: 0.85), const Color(0xFFFF8A50)],
-                    ),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    isPlace ? Icons.location_on_rounded : Icons.article_rounded,
-                    size: 18,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                          height: 1.35,
-                          color: AppColors.title(context),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: _accent.withValues(alpha: isDark ? 0.18 : 0.1),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          label,
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: _accentDeep,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.muted(context)),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
@@ -976,28 +695,36 @@ class _ExploreLoadingView extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
       children: [
         Container(height: 48, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(12))),
+        const SizedBox(height: 8),
+        Container(height: 36, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(12))),
         const SizedBox(height: 10),
-        Container(height: 40, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(12))),
-        const SizedBox(height: 14),
-        Container(height: 66, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(14))),
-        const SizedBox(height: 12),
-        Container(height: 14, width: 200, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(6))),
-        const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(child: Container(height: 48, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(12)))),
-            const SizedBox(width: 10),
-            Expanded(child: Container(height: 48, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(12)))),
+            Expanded(child: Container(height: 40, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(10)))),
+            const SizedBox(width: 8),
+            Expanded(child: Container(height: 40, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(10)))),
+            const SizedBox(width: 8),
+            Expanded(child: Container(height: 40, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(10)))),
           ],
         ),
-        const SizedBox(height: 24),
-        Container(height: 16, width: 80, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(6))),
         const SizedBox(height: 12),
+        Container(height: 150, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(12))),
+        const SizedBox(height: 14),
+        Row(
+          children: [
+            Container(height: 18, width: 90, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(6))),
+            const Spacer(),
+            Container(height: 22, width: 52, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(8))),
+            const SizedBox(width: 6),
+            Container(height: 22, width: 52, decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(8))),
+          ],
+        ),
+        const SizedBox(height: 10),
         ...List.generate(4, (_) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.only(bottom: 10),
               child: Container(
-                height: 64,
-                decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(12)),
+                height: 72,
+                decoration: BoxDecoration(color: skeleton, borderRadius: BorderRadius.circular(16)),
               ),
             )),
       ],

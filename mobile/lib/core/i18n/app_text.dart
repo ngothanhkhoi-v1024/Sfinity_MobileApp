@@ -427,6 +427,8 @@ class AppLocalizations {
       'recentCheckins': '{count} check-in gần đây',
       'totalCheckins': '{count} lượt check-in',
       'popularDownloads': '{count} lượt tải',
+      'insightsTabWeek': 'Tuần này',
+      'insightsTabRank': 'BXH',
       'weeklyActivity': 'Hoạt động tuần này',
       'weeklyActivitySubtitle': 'Theo dõi địa điểm đã ghé và tài liệu đã tải',
       'weeklyPlacesVisited': 'Địa điểm đã ghé',
@@ -1016,6 +1018,8 @@ class AppLocalizations {
       'recentCheckins': '{count} recent check-ins',
       'totalCheckins': '{count} check-ins',
       'popularDownloads': '{count} downloads',
+      'insightsTabWeek': 'This week',
+      'insightsTabRank': 'Rank',
       'weeklyActivity': 'This week',
       'weeklyActivitySubtitle': 'Places visited and documents downloaded',
       'weeklyPlacesVisited': 'Places visited',
@@ -1644,6 +1648,8 @@ class AppLocalizations {
   String recentCheckins(int count) => _format('recentCheckins', {'{count}': '$count'});
   String totalCheckins(int count) => _format('totalCheckins', {'{count}': '$count'});
   String popularDownloads(int count) => _format('popularDownloads', {'{count}': '$count'});
+  String get insightsTabWeek => _text('insightsTabWeek');
+  String get insightsTabRank => _text('insightsTabRank');
   String get weeklyActivity => _text('weeklyActivity');
   String get weeklyActivitySubtitle => _text('weeklyActivitySubtitle');
   String get weeklyPlacesVisited => _text('weeklyPlacesVisited');
