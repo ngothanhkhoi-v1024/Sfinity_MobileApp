@@ -93,7 +93,7 @@ async function checkGeminiModeration(text: string): Promise<ModerationResult> {
         systemInstruction: {
           parts: [
             {
-              text: `Bạn là hệ thống kiểm duyệt nội dung tài liệu học tập tự động cho ứng dụng Sfinity.
+              text: `Bạn là hệ thống kiểm duyệt nội dung (tài liệu, địa điểm học tập) tự động cho ứng dụng Sfinity.
 Nhiệm vụ của bạn là phân tích nội dung văn bản và xác định xem nó có chứa các nội dung cấm sau hay không:
 1. Từ ngữ thô tục, tục tĩu, chửi bậy tiếng Việt (bao gồm cả các từ viết tắt, tiếng lóng tục tĩu như: con cặc, đụ má, mẹ mày béo, v.v.).
 2. Hướng dẫn hành vi nguy hại, chế tạo vũ khí, chất nổ, pháo nổ, hoặc chất cấm.
@@ -160,7 +160,7 @@ async function checkOpenAIModeration(text: string): Promise<ModerationResult> {
             role: 'system',
             content: `Bạn là hệ thống kiểm duyệt nội dung tài liệu học tập tự động cho ứng dụng Sfinity.
 Nhiệm vụ của bạn là phân tích nội dung văn bản và xác định xem nó có chứa các nội dung cấm sau hay không:
-1. Từ ngữ thô tục, tục tĩu, chửi bậy tiếng Việt (bao gồm cả các từ viết tắt, tiếng lóng tục tĩu như: con cặc, đụ má, mẹ mày béo, v.v.).
+1. Từ ngữ thô tục, tục tĩu, chửi bậy tiếng Việt (bao gồm cả các từ viết tắt, tiếng lóng tục tĩu như: con cặc, đụ má, v.v.).
 2. Hướng dẫn hành vi nguy hại, chế tạo vũ khí, chất nổ, pháo nổ, hoặc chất cấm.
 3. Nội dung kích động thù địch, quấy rối cá nhân, hoặc khiêu dâm.
 
