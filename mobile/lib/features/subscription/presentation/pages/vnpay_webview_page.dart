@@ -215,19 +215,30 @@ class _VnpayWebviewPageState extends State<VnpayWebviewPage> {
     showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Huy thanh toan?'),
+        icon: const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 36),
+        title: const Text('Hủy thanh toán?', style: TextStyle(fontWeight: FontWeight.bold)),
         content: const Text(
-          'Ban co chac muon huy thanh toan khong?',
+          'Bạn có chắc chắn muốn hủy giao dịch thanh toán này không?',
+          textAlign: TextAlign.center,
         ),
+        actionsAlignment: MainAxisAlignment.spaceEvenly,
         actions: [
-          TextButton(
+          OutlinedButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Khong'),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Không', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Huy'),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.red,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Hủy', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),

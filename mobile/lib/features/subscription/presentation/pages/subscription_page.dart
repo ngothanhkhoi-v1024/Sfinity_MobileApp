@@ -299,17 +299,20 @@ class _SubscriptionPageState extends State<SubscriptionPage>
                     child: OutlinedButton(
                       onPressed: () => Navigator.pop(ctx, false),
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
                         side: BorderSide(color: AppColors.border(context)),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
                       ),
-                      child: Text(
-                        l10n.cancel,
-                        style: TextStyle(
-                          color: AppColors.title(context),
-                          fontWeight: FontWeight.w600,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          l10n.cancel,
+                          style: TextStyle(
+                            color: AppColors.title(context),
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ),
@@ -320,14 +323,17 @@ class _SubscriptionPageState extends State<SubscriptionPage>
                       onPressed: () => Navigator.pop(ctx, true),
                       style: FilledButton.styleFrom(
                         backgroundColor: AppColors.primary,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
                       ),
-                      child: Text(
-                        l10n.payNow,
-                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          l10n.payNow,
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
                       ),
                     ),
                   ),
