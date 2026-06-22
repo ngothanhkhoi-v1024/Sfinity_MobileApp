@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Sfinity</string>
+    <string name="facebook_app_id">825406317320479</string>
+    <string name="fb_login_protocol_scheme">fb825406317320479</string>
+    <string name="facebook_client_token">66d90b78755088b663ab2892f23c4241</string>
+</resources>

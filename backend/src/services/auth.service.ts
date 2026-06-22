@@ -102,7 +102,7 @@ export const authService = {
   async login(dto: LoginDto, adminOnly = false) {
     const email = dto.email.trim().toLowerCase();
     const snapshot = await getDb().collection('users').where('email', '==', email).limit(1).get();
-    
+
     if (snapshot.empty) {
       throw new HttpError(401, 'Email hoặc mật khẩu không đúng', 'Unauthorized');
     }
@@ -169,10 +169,15 @@ export const authService = {
     }
 
     const authProvider = mapFirebaseProvider(tokenProvider);
-    const email = decoded.email?.trim().toLowerCase();
+    let email = decoded.email?.trim().toLowerCase();
 
     if (!email) {
-      throw new HttpError(400, 'Firebase token không có email', 'Bad Request');
+      // Fallback: dùng Firebase UID làm email placeholder cho Facebook login
+      if (decoded.firebase?.sign_in_provider === 'facebook.com') {
+        email = `fb_${decoded.uid}@sfinity.facebook`;
+      } else {
+        throw new HttpError(400, 'Firebase token không có email', 'Bad Request');
+      }
     }
 
     const displayName =
@@ -442,7 +447,7 @@ export const authService = {
   async resetPassword(dto: ResetPasswordDto) {
     const email = dto.email.trim().toLowerCase();
     const resetsColl = getDb().collection('password_resets');
-    
+
     // Fetch resets for email & code to check in memory
     const snapshot = await resetsColl
       .where('email', '==', email)
@@ -455,7 +460,7 @@ export const authService = {
       const records = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as any));
       // Sort desc by createdAt to get latest
       records.sort((a, b) => toDate(b.createdAt).getTime() - toDate(a.createdAt).getTime());
-      
+
       const latest = records[0];
       if (toDate(latest.expiresAt).getTime() > Date.now()) {
         record = latest;
