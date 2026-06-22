@@ -73,6 +73,7 @@ class PlaceListQuery {
     this.authorId,
     this.publishedOnly = false,
     this.limit = 50,
+    this.minRating,
   });
 
   final String? search;
@@ -84,6 +85,7 @@ class PlaceListQuery {
   final String? authorId;
   final bool publishedOnly;
   final int limit;
+  final int? minRating;
 }
 
 /// Payload tạo/cập nhật địa điểm.

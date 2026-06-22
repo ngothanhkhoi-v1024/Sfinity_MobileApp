@@ -4,7 +4,6 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../../app.dart';
 import '../../../../core/constants/map_config.dart';
-import '../../../../core/i18n/app_text.dart';
 import '../../../../core/network/api_client.dart';
 import '../../data/models/place_model.dart';
 import '../../data/services/place_location_service.dart';
@@ -28,6 +27,7 @@ class PlacesMapController extends ChangeNotifier {
   String? locationHint;
   String searchQuery = '';
   Set<String> filterTags = {};
+  int? minRating;
 
   List<PlaceModel> publicPlaces = [];
   List<PlaceModel> myPlaces = [];
@@ -45,7 +45,10 @@ class PlacesMapController extends ChangeNotifier {
     return [...base, focus];
   }
 
-  bool get hasActiveFilters => filterTags.isNotEmpty || searchQuery.trim().isNotEmpty;
+  bool get hasActiveFilters =>
+      filterTags.isNotEmpty || searchQuery.trim().isNotEmpty || minRating != null;
+
+  int get activeFilterCount => filterTags.length + (minRating != null ? 1 : 0);
 
   bool isPlaceInCurrentResults(String placeId) =>
       activePlaces.any((p) => p.id == placeId);
@@ -70,6 +73,7 @@ class PlacesMapController extends ChangeNotifier {
   String listSectionSubtitle(int count) => PlaceDisplayUtils.listSectionSubtitle(
         count: count,
         filterTags: filterTags,
+        minRating: minRating,
         hasUserLocation: myLocation != null,
         nearbyRadiusKm: placesNearbyRadiusKm,
       );
@@ -127,6 +131,7 @@ class PlacesMapController extends ChangeNotifier {
           radiusKm: me != null ? placesNearbyRadiusKm.toDouble() : null,
           search: search.isNotEmpty ? search : null,
           tags: filterTags,
+          minRating: minRating,
         ),
       );
 
@@ -137,6 +142,7 @@ class PlacesMapController extends ChangeNotifier {
             authorId: currentUserId,
             search: search.isNotEmpty ? search : null,
             tags: filterTags,
+            minRating: minRating,
           ),
         );
       } else {
@@ -169,6 +175,11 @@ class PlacesMapController extends ChangeNotifier {
 
   void setFilterTags(Set<String> tags) {
     filterTags = tags;
+    notifyListeners();
+  }
+
+  void setMinRating(int? value) {
+    minRating = value;
     notifyListeners();
   }
 

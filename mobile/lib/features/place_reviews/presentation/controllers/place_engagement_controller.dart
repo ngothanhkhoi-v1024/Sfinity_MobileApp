@@ -76,24 +76,44 @@ class PlaceEngagementController extends ChangeNotifier {
     error = null;
     notifyListeners();
 
+    Object? reviewsError;
+    Object? photosError;
+    Object? checkInError;
+
     try {
-      final reviewsFuture =
-          SfinityApp.placeEngagementRepository.getReviews(placeId);
-      final photosFuture =
-          SfinityApp.placeEngagementRepository.getPhotos(placeId);
-      final checkInFuture =
-          SfinityApp.placeEngagementRepository.getCheckInStatus(placeId);
-      final results =
-          await Future.wait([reviewsFuture, photosFuture, checkInFuture]);
-      reviewSummary = results[0] as PlaceReviewSummary;
-      photoResult = results[1] as PlacePhotoListResult;
-      checkInStatus = results[2] as PlaceCheckInStatus;
+      reviewSummary = await SfinityApp.placeEngagementRepository.getReviews(placeId);
       _applyOwnReviewOrdering();
     } on DioException catch (e) {
-      error = ApiClient.instance.errorMessage(e);
+      reviewsError = ApiClient.instance.errorMessage(e);
     } catch (e) {
-      error = e.toString();
+      reviewsError = e;
     }
+
+    try {
+      photoResult = await SfinityApp.placeEngagementRepository.getPhotos(placeId);
+    } on DioException catch (e) {
+      photosError = ApiClient.instance.errorMessage(e);
+    } catch (e) {
+      photosError = e;
+    }
+
+    try {
+      checkInStatus =
+          await SfinityApp.placeEngagementRepository.getCheckInStatus(placeId);
+    } on DioException catch (e) {
+      checkInError = ApiClient.instance.errorMessage(e);
+    } catch (e) {
+      checkInError = e;
+    }
+
+    if (reviewsError != null && photosError != null && checkInError != null) {
+      error = reviewsError.toString();
+    } else if (photosError != null) {
+      error = photosError.toString();
+    } else if (reviewsError != null) {
+      error = reviewsError.toString();
+    }
+
     loading = false;
     notifyListeners();
   }
