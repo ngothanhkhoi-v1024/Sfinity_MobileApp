@@ -84,6 +84,33 @@ async function enrichDocument(item: any) {
     }
   }
 
+  let avgRating = normalized.avgRating;
+  let reviewCount = normalized.reviewCount;
+
+  if (avgRating === undefined || reviewCount === undefined) {
+    const reviewsSnapshot = await getDb()
+      .collection('document_reviews')
+      .where('documentId', '==', normalized.id)
+      .get();
+    const ratings = reviewsSnapshot.docs
+      .map((doc) => doc.data().rating as number)
+      .filter((r) => typeof r === 'number' && r >= 1 && r <= 5);
+    reviewCount = ratings.length;
+    avgRating =
+      reviewCount > 0
+        ? Math.round((ratings.reduce((a, b) => a + b, 0) / reviewCount) * 10) / 10
+        : null;
+
+    await getDb()
+      .collection('documents')
+      .doc(normalized.id)
+      .update({
+        avgRating: avgRating ?? null,
+        reviewCount,
+      })
+      .catch((err) => logger.error({ err }, 'Error caching document rating'));
+  }
+
   return {
     ...normalized,
     id: normalized.id,
@@ -93,6 +120,8 @@ async function enrichDocument(item: any) {
     updatedAt: toDate(normalized.updatedAt),
     author,
     category,
+    avgRating: avgRating ?? null,
+    reviewCount: reviewCount ?? 0,
   };
 }
 
