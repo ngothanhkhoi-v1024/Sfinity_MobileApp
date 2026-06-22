@@ -10,25 +10,25 @@ class DocumentListController extends ChangeNotifier {
   bool loading = true;
   String? error;
   String searchQuery = '';
-  String selectedCategory = 'Táº¥t cáº£';
-  String selectedStatusFilter = 'Táº¥t cáº£';
+  String selectedCategory = 'Tất cả';
+  String selectedStatusFilter = 'Tất cả';
   bool communityMode = true;
 
-  final List<String> categories = ['Táº¥t cáº£', 'BĂ i giáº£ng', 'Äá» thi', 'Ghi chĂº', 'KhĂ¡c'];
+  List<String> categories = ['Tất cả', 'Bài giảng', 'Đề thi', 'Ghi chú', 'Khác'];
   final List<String> statusFilters = [
-    'Táº¥t cáº£',
-    'Chá» duyá»‡t',
-    'ÄĂ£ duyá»‡t',
-    'Tá»« chá»‘i',
-    'Chá»‰ mĂ¬nh tĂ´i',
-    'Bá»‹ áº©n',
+    'Tất cả',
+    'Chờ duyệt',
+    'Đã duyệt',
+    'Từ chối',
+    'Chỉ mình tôi',
+    'Bị ẩn',
   ];
   final TextEditingController searchController = TextEditingController();
 
   void setCommunityMode(bool val) {
     communityMode = val;
-    selectedStatusFilter = 'Táº¥t cáº£';
-    selectedCategory = 'Táº¥t cáº£';
+    selectedStatusFilter = 'Tất cả';
+    selectedCategory = 'Tất cả';
     load();
   }
 
@@ -38,6 +38,16 @@ class DocumentListController extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // Tải danh mục động từ database
+      final dbCats = await SfinityApp.documentRepository.getCategories();
+      final List<String> fetchedNames = dbCats
+          .map((c) => (c['name'] as String?) ?? '')
+          .where((name) => name.isNotEmpty)
+          .toList();
+      fetchedNames.remove('Tất cả');
+      fetchedNames.remove('Khác');
+      categories = ['Tất cả', ...fetchedNames, 'Khác'];
+
       final currentUserId = SfinityApp.auth.user?['id']?.toString();
       final res = await SfinityApp.documentRepository.getDocuments(
         publishedOnly: communityMode ? true : null,
@@ -67,29 +77,30 @@ class DocumentListController extends ChangeNotifier {
           body.contains(searchQuery) ||
           subjectCode.contains(searchQuery);
 
-      if (selectedCategory != 'Táº¥t cáº£') {
-        final categoryName = (mapItem['category'] as Map?)?['name']?.toString() ?? 'KhĂ¡c';
+      if (selectedCategory != 'Tất cả') {
+        final categoryName = (mapItem['category'] as Map?)?['name']?.toString() ?? 'Khác';
+        final knownCategories = categories.where((c) => c != 'Tất cả' && c != 'Khác').toList();
         final matchesCategory = categoryName.toLowerCase() == selectedCategory.toLowerCase() ||
-            (selectedCategory == 'KhĂ¡c' &&
-                !categories.sublist(1, 4).contains(categoryName));
+            (selectedCategory == 'Khác' &&
+                !knownCategories.any((kc) => kc.toLowerCase() == categoryName.toLowerCase()));
         if (!matchesCategory) return false;
       }
 
-      if (!communityMode && selectedStatusFilter != 'Táº¥t cáº£') {
+      if (!communityMode && selectedStatusFilter != 'Tất cả') {
         final visibility = documentVisibilityOf(mapItem);
         final moderation = documentModerationStatusOf(mapItem);
         final matchesStatus = switch (selectedStatusFilter) {
-          'Chá» duyá»‡t' =>
+          'Chờ duyệt' =>
             visibility == documentVisibilityPublic &&
             moderation == documentModerationPending,
-          'ÄĂ£ duyá»‡t' =>
+          'Đã duyệt' =>
             visibility == documentVisibilityPublic &&
             moderation == documentModerationApproved,
-          'Tá»« chá»‘i' =>
+          'Từ chối' =>
             visibility == documentVisibilityPublic &&
             moderation == documentModerationRejected,
-          'Chá»‰ mĂ¬nh tĂ´i' => visibility == documentVisibilityPrivate,
-          'Bá»‹ áº©n' =>
+          'Chỉ mình tôi' => visibility == documentVisibilityPrivate,
+          'Bị ẩn' =>
             visibility == documentVisibilityPublic &&
             moderation == documentModerationHidden,
           _ => true,

@@ -157,16 +157,67 @@ function rejectPrivateDataRequest(message: string): string | null {
   return null;
 }
 
+function buildSystemPrompt(context?: string): string {
+  const contextLine =
+    context && CONTEXT_HINTS[context] ? `\n\nNgữ cảnh màn hình hiện tại: ${CONTEXT_HINTS[context]}` : '';
+  return SYSTEM_PROMPT + contextLine;
+}
+
+async function callGemini(
+  message: string,
+  context: string | undefined,
+  history: AssistantChatDto['history'],
+): Promise<string> {
+  const contents: { role: 'user' | 'model'; parts: { text: string }[] }[] = [];
+
+  for (const item of history ?? []) {
+    contents.push({
+      role: item.role === 'user' ? 'user' : 'model',
+      parts: [{ text: item.content }],
+    });
+  }
+  contents.push({ role: 'user', parts: [{ text: message }] });
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${config.geminiModel}:generateContent?key=${config.geminiApiKey}`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents,
+      systemInstruction: { parts: [{ text: buildSystemPrompt(context) }] },
+      generationConfig: {
+        temperature: 0.4,
+        maxOutputTokens: 600,
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text().catch(() => '');
+    throw new HttpError(
+      502,
+      'AI service temporarily unavailable',
+      errText.slice(0, 120) || 'Bad Gateway',
+    );
+  }
+
+  const data = (await response.json()) as {
+    candidates?: { content?: { parts?: { text?: string }[] } }[];
+  };
+  const reply = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+  if (!reply) {
+    throw new HttpError(502, 'Empty AI response', 'Bad Gateway');
+  }
+  return reply;
+}
+
 async function callOpenAI(
   message: string,
   context: string | undefined,
   history: AssistantChatDto['history'],
 ): Promise<string> {
-  const contextLine =
-    context && CONTEXT_HINTS[context] ? `\n\nNgữ cảnh màn hình hiện tại: ${CONTEXT_HINTS[context]}` : '';
-
   const messages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
-    { role: 'system', content: SYSTEM_PROMPT + contextLine },
+    { role: 'system', content: buildSystemPrompt(context) },
   ];
 
   for (const item of history ?? []) {
@@ -207,6 +258,20 @@ async function callOpenAI(
   return reply;
 }
 
+async function callAi(
+  message: string,
+  context: string | undefined,
+  history: AssistantChatDto['history'],
+): Promise<string> {
+  if (config.geminiApiKey) {
+    return callGemini(message, context, history);
+  }
+  if (config.openaiApiKey) {
+    return callOpenAI(message, context, history);
+  }
+  throw new HttpError(502, 'No AI provider configured', 'Bad Gateway');
+}
+
 export const assistantService = {
   async chat(userId: string, dto: AssistantChatDto): Promise<{ reply: string; source: 'ai' | 'faq' }> {
     checkRateLimit(userId);
@@ -217,12 +282,12 @@ export const assistantService = {
     const privateBlock = rejectPrivateDataRequest(dto.message);
     if (privateBlock) return { reply: privateBlock, source: 'faq' };
 
-    if (!config.openaiApiKey) {
+    if (!config.geminiApiKey && !config.openaiApiKey) {
       return { reply: fallbackReply(dto.message, dto.context), source: 'faq' };
     }
 
     try {
-      const reply = await callOpenAI(dto.message, dto.context, dto.history);
+      const reply = await callAi(dto.message, dto.context, dto.history);
       return { reply, source: 'ai' };
     } catch (err) {
       if (err instanceof HttpError) throw err;

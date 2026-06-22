@@ -99,6 +99,10 @@ export const documentReviewService = {
       await docRef.update(payload);
       const updated = await docRef.get();
       const summary = await documentReviewService.getSummary(documentId);
+      await getDb().collection('documents').doc(documentId).update({
+        avgRating: summary.avgRating,
+        reviewCount: summary.reviewCount,
+      });
       return {
         review: { id: updated.id, ...updated.data(), createdAt: toDate(updated.data()?.createdAt) },
         ...summary,
@@ -112,6 +116,10 @@ export const documentReviewService = {
     });
     const created = await docRef.get();
     const summary = await documentReviewService.getSummary(documentId);
+    await getDb().collection('documents').doc(documentId).update({
+      avgRating: summary.avgRating,
+      reviewCount: summary.reviewCount,
+    });
     return {
       review: { id: created.id, ...created.data(), createdAt: toDate(created.data()?.createdAt) },
       ...summary,
@@ -132,6 +140,11 @@ export const documentReviewService = {
     }
 
     await existing.docs[0].ref.delete();
-    return documentReviewService.getSummary(documentId);
+    const summary = await documentReviewService.getSummary(documentId);
+    await getDb().collection('documents').doc(documentId).update({
+      avgRating: summary.avgRating,
+      reviewCount: summary.reviewCount,
+    });
+    return summary;
   },
 };

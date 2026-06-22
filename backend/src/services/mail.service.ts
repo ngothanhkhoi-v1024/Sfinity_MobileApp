@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import { config } from '../lib/config';
+import { logger } from '../lib/logger';
 
 let transporterPromise: Promise<nodemailer.Transporter> | null = null;
 
@@ -21,9 +22,9 @@ async function getTransporter(): Promise<nodemailer.Transporter> {
 
   if (!transporterPromise) {
     transporterPromise = (async () => {
-      console.log('Đang khởi tạo tài khoản Ethereal Mail thử nghiệm...');
+      logger.info('Initializing test Ethereal Mail account...');
       const testAccount = await nodemailer.createTestAccount();
-      console.log(`Đã tạo tài khoản test Ethereal: User = ${testAccount.user}`);
+      logger.info(`Test Ethereal account created: User = ${testAccount.user}`);
       return nodemailer.createTransport({
         host: 'smtp.ethereal.email',
         port: 587,
@@ -49,15 +50,15 @@ export const mailService = {
         html,
       });
 
-      console.log(`[Email] Đã gửi email tới: ${to} | Subject: ${subject}`);
+      logger.info({ to, subject }, 'Email sent successfully');
 
       const previewUrl = nodemailer.getTestMessageUrl(info);
       if (previewUrl) {
-        console.log(`[Email Preview Link] Xem nội dung email chi tiết tại: ${previewUrl}`);
+        logger.info({ previewUrl }, 'Email preview link available');
       }
       return info;
     } catch (error) {
-      console.error('[Email Error] Gửi email thất bại:', error);
+      logger.error({ to, subject, err: error }, 'Failed to send email');
       throw error;
     }
   },
